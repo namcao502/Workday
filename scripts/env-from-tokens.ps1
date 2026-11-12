@@ -1,5 +1,5 @@
 # Writes the repo-root .env as a plain-text copy of NOIS Workday's tokens.env (DPAPI values decrypted for this
-# Windows user), plus WORKDAY_JIRA_API_TOKEN. Prints no secret. .env is gitignored; never commit it.
+# Windows user), plus WORKDAY_JIRA_API_TOKEN and WORKDAY_HRM_API_KEY. Prints no secret. .env is gitignored; never commit it.
 param(
 	[string]$Source = 'C:\Project\Backend-DotNet\docs\local-config\tokens.env'
 )
@@ -21,7 +21,8 @@ $plainLines = Get-Content $Source | ForEach-Object {
 	}
 }
 $jiraToken = ($plainLines | Where-Object { $_ -match '^JIRA_API_TOKEN=' } | Select-Object -Last 1) -replace '^JIRA_API_TOKEN=', ''
+$hrmKey = ($plainLines | Where-Object { $_ -match '^HRM_API_KEY=' } | Select-Object -Last 1) -replace '^HRM_API_KEY=', ''
 
-@('# Plain-text copy of tokens.env. Gitignored; never commit.') + $plainLines + "WORKDAY_JIRA_API_TOKEN=$jiraToken" |
+@('# Plain-text copy of tokens.env. Gitignored; never commit.') + $plainLines + "WORKDAY_JIRA_API_TOKEN=$jiraToken" + "WORKDAY_HRM_API_KEY=$hrmKey" |
 	Set-Content -Encoding utf8 $destination
 Write-Output "Wrote $destination ($($plainLines.Count) lines)"

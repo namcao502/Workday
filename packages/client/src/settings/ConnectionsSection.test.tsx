@@ -9,6 +9,7 @@ const SAVED_JIRA: JiraConfig = {
   email: 'me@example.com',
   projectKey: 'ABC',
   assignedJql: 'assignee = currentUser()',
+  mineJql: 'assignee = currentUser()',
   maxResults: 50,
   etaFieldId: null,
   devPriorityFieldId: null,
@@ -100,4 +101,17 @@ it('each Jira field explains what to enter', () => {
     'placeholder',
     'https://yourcompany.atlassian.net',
   )
+})
+
+it('Save sends the query for my tickets, empty as an empty string', async () => {
+  const fetchMock = stubFetch(() => jsonResponse(connectedSettings('file')))
+  renderWithQuery(<ConnectionsSection settings={connectedSettings('file')} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Advanced' }))
+  expect(screen.getByLabelText('Query for my tickets')).toHaveValue('assignee = currentUser()')
+  fireEvent.change(screen.getByLabelText('Query for my tickets'), { target: { value: '' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalled()
+  })
+  expect(sentJson(fetchMock)).toHaveProperty('jira.mineJql', '')
 })

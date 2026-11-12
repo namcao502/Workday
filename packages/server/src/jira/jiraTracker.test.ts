@@ -10,6 +10,7 @@ const CONFIG: JiraConfig = {
   email: 'me@example.com',
   projectKey: 'MDP',
   assignedJql: 'assignee = currentUser()',
+  mineJql: 'assignee = currentUser()',
   maxResults: 50,
   etaFieldId: 'customfield_10735',
   devPriorityFieldId: 'customfield_11111',
@@ -176,6 +177,43 @@ describe('getTicket', () => {
   it('returns null on 404 and throws on 500', async () => {
     expect(await trackerReturning(404, '{}').tracker.getTicket('MDP-404')).toBeNull()
     await expect(trackerReturning(500, '{}').tracker.getTicket('MDP-1')).rejects.toThrow()
+  })
+})
+
+describe('filterMine', () => {
+  it('filterMine sends key in (...) with the configured mineJql', async () => {
+    const body = JSON.stringify({ issues: [{ key: 'MDP-1' }, { key: 'MDP-3' }] })
+    const { tracker, fetchMock } = trackerReturning(200, body)
+    const mine = await tracker.filterMine(['MDP-1', 'MDP-2', 'MDP-3'])
+    expect([...mine]).toEqual(['MDP-1', 'MDP-3'])
+    expect(sentUrl(fetchMock)).toBe(`${BASE_URL}/rest/api/3/search/jql`)
+    expect(JSON.parse(sentBody(fetchMock))).toEqual({
+      jql: 'key in (MDP-1,MDP-2,MDP-3) AND (assignee = currentUser())',
+      maxResults: 3,
+      fields: ['summary'],
+    })
+  })
+
+  it('leaves anything that is not a ticket key out of the JQL', async () => {
+    const { tracker, fetchMock } = trackerReturning(200, JSON.stringify({ issues: [] }))
+    await tracker.filterMine(['MDP-1', 'MDP-1) OR (project = X', 'oops'])
+    expect(JSON.parse(sentBody(fetchMock))).toMatchObject({
+      jql: 'key in (MDP-1) AND (assignee = currentUser())',
+      maxResults: 1,
+    })
+    const none = trackerReturning(200, '{}')
+    expect((await none.tracker.filterMine(['not a key'])).size).toBe(0)
+    expect(none.fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('returns an empty set without a call for no keys', async () => {
+    const { tracker, fetchMock } = trackerReturning(200, '{}')
+    expect((await tracker.filterMine([])).size).toBe(0)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('throws on a failed search', async () => {
+    await expect(trackerReturning(500, '{}').tracker.filterMine(['MDP-1'])).rejects.toThrow()
   })
 })
 

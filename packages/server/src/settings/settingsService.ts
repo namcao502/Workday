@@ -1,16 +1,35 @@
 import type {
+  AppError,
+  HoursLog,
+  HrmConfig,
   JiraCheckRequest,
   JiraCheckResult,
   JiraConfig,
   SettingsUpdate,
   SettingsView,
+  SheetLog,
   TicketTracker,
+  TscConfig,
+  TscSessionResult,
+  TscSignInResult,
   WorkdayConfig,
 } from '@workday/core'
 import type { BoardService } from '../board/boardService.js'
-import { loadJiraToken, saveConfig, saveSecrets, type JiraToken } from '../config.js'
+import {
+  DEFAULT_OFF_MARKER,
+  loadHrmKey,
+  loadJiraToken,
+  readFileSecrets,
+  saveConfig,
+  saveSecrets,
+  type HrmKey,
+  type JiraToken,
+} from '../config.js'
 import type { EventSink } from '../events.js'
-import { sameBaseUrl } from './parseSettings.js'
+import type { LogTimer } from '../timesheet/logScheduler.js'
+import { sheetAppError } from '../timesheet/logEntry.js'
+import type { TimesheetService } from '../timesheet/timesheetService.js'
+import { sameBaseUrl, type HrmCheckRequest } from './parseSettings.js'
 
 export interface Scheduler {
   start(pollMinutes: number): void
@@ -24,6 +43,10 @@ export interface SettingsServiceDeps {
   readonly scheduler: Scheduler
   readonly events: EventSink
   readonly createTracker: (jira: JiraConfig, token: string) => TicketTracker
+  readonly timesheet: TimesheetService
+  readonly logScheduler: LogTimer
+  readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
+  readonly createSheetLog: (tsc: TscConfig) => SheetLog
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -32,9 +55,21 @@ export type UpdateOutcome =
   | { readonly ok: true; readonly view: SettingsView }
   | { readonly ok: false; readonly reason: 'tokenRequired' }
 
+export type HrmCheckResult =
+  { readonly ok: true } | { readonly ok: false; readonly error: AppError }
+
+interface AppliedState {
+  readonly config: WorkdayConfig
+  readonly token: string | null
+  readonly hrmKey: string | null
+}
+
+const NOT_CONFIGURED: AppError = { code: 'timesheetNotConfigured' }
+
 const CHECK_ONLY_JIRA: Omit<JiraConfig, 'baseUrl' | 'email'> = {
   projectKey: '',
   assignedJql: '',
+  mineJql: '',
   maxResults: 1,
   etaFieldId: null,
   devPriorityFieldId: null,
@@ -44,12 +79,16 @@ const CHECK_ONLY_JIRA: Omit<JiraConfig, 'baseUrl' | 'email'> = {
 export class SettingsService {
   private config: WorkdayConfig
   private jiraToken: JiraToken
+  private hrmKey: HrmKey
   private tracker: TicketTracker | null = null
+  private hours: HoursLog | null = null
+  private sheet: SheetLog | null = null
   private updates: Promise<unknown> = Promise.resolve()
 
   constructor(private readonly deps: SettingsServiceDeps) {
     this.config = deps.config
     this.jiraToken = loadJiraToken(deps.dataDir)
+    this.hrmKey = loadHrmKey(deps.dataDir)
   }
 
   // Builds the tracker and starts polling from the loaded config; called once at startup.
@@ -58,10 +97,11 @@ export class SettingsService {
   }
 
   view(): SettingsView {
-    const { port, timeZone, pollMinutes, theme, language, jira } = this.config
+    const { port, timeZone, pollMinutes, theme, language, jira, timesheet } = this.config
     return {
-      config: { port, timeZone, pollMinutes, theme, language, jira },
+      config: { port, timeZone, pollMinutes, theme, language, jira, timesheet },
       jiraTokenSource: this.jiraToken.source,
+      hrmKeySource: this.hrmKey.source,
     }
   }
 
@@ -92,35 +132,89 @@ export class SettingsService {
     return { ok: false, error: { code } }
   }
 
+  // The saved key goes only to the MCP URL it was saved for.
+  async checkHrm(request: HrmCheckRequest): Promise<HrmCheckResult | 'tokenRequired'> {
+    const savedHrm = this.config.timesheet.hrm
+    const canUseSavedKey = savedHrm !== null && sameBaseUrl(savedHrm.mcpUrl, request.mcpUrl)
+    const apiKey = request.hrmApiKey ?? (canUseSavedKey ? this.hrmKey.key : null)
+    if (apiKey === null) {
+      return 'tokenRequired'
+    }
+    const hrm = { mcpUrl: request.mcpUrl, projectId: savedHrm?.projectId ?? '' }
+    const validation = await this.deps.createHoursLog(hrm, apiKey).validate()
+    if (validation.ok) {
+      return { ok: true }
+    }
+    const code = validation.reason === 'rejected' ? 'hrmRejected' : 'hrmUnreachable'
+    return { ok: false, error: { code } }
+  }
+
+  async checkTscSession(): Promise<TscSessionResult> {
+    if (this.sheet === null) {
+      return { error: NOT_CONFIGURED, detail: null }
+    }
+    const session = await this.sheet.checkSession()
+    return 'signedIn' in session
+      ? { signedIn: session.signedIn }
+      : { error: sheetAppError(session), detail: session.detail }
+  }
+
+  // A fresh session may unblock days kept by an earlier run, so a successful sign-in runs the catch-up.
+  async signInTsc(): Promise<TscSignInResult> {
+    if (this.sheet === null) {
+      return { ok: false, error: NOT_CONFIGURED, detail: null }
+    }
+    const result = await this.sheet.signIn()
+    if (!result.ok) {
+      return { ok: false, error: sheetAppError(result), detail: result.detail }
+    }
+    this.deps.timesheet.catchUp().catch((error: unknown) => {
+      this.logError('Catch-up after the TSC sign-in failed', error)
+    })
+    return { ok: true }
+  }
+
   private async runUpdate(update: SettingsUpdate): Promise<UpdateOutcome> {
-    if (this.wouldSendTokenElsewhere(update)) {
+    if (this.wouldSendTokenElsewhere(update) || this.wouldSendHrmKeyElsewhere(update)) {
       return { ok: false, reason: 'tokenRequired' }
     }
-    const previous = { config: this.config, token: this.jiraToken.token }
-    const { jiraApiToken, ...configFields } = update
+    const previous: AppliedState = {
+      config: this.config,
+      token: this.jiraToken.token,
+      hrmKey: this.hrmKey.key,
+    }
+    const { jiraApiToken, hrmApiKey, ...configFields } = update
     const nextConfig = { ...this.config, ...configFields }
     // Both files are written before memory changes, so a failed write leaves the running settings as they were.
     await saveConfig(this.deps.dataDir, nextConfig)
-    if (jiraApiToken !== undefined) {
-      await this.saveTokenOrRollBack(jiraApiToken, previous.config)
+    if (jiraApiToken !== undefined || hrmApiKey !== undefined) {
+      await this.saveSecretsOrRollBack({ jiraApiToken, hrmApiKey }, previous.config)
     }
     this.jiraToken = loadJiraToken(this.deps.dataDir)
+    this.hrmKey = loadHrmKey(this.deps.dataDir)
     this.config = nextConfig
     this.apply(previous)
     this.deps.events.broadcast({ type: 'settings.changed' })
     return { ok: true, view: this.view() }
   }
 
-  // A config naming the new host beside the old host's token would send that token there after a restart.
-  private async saveTokenOrRollBack(token: string, previousConfig: WorkdayConfig): Promise<void> {
+  // A config naming the new host beside the old host's secret would send that secret there after a restart.
+  private async saveSecretsOrRollBack(
+    changes: { readonly jiraApiToken: string | undefined; readonly hrmApiKey: string | undefined },
+    previousConfig: WorkdayConfig,
+  ): Promise<void> {
     try {
-      await saveSecrets(this.deps.dataDir, { jiraApiToken: token })
+      // The unchanged secret keeps the file's value, never an env override's.
+      const saved = readFileSecrets(this.deps.dataDir)
+      await saveSecrets(this.deps.dataDir, {
+        jiraApiToken: changes.jiraApiToken ?? saved.jiraApiToken,
+        hrmApiKey: changes.hrmApiKey ?? saved.hrmApiKey,
+      })
     } catch (error: unknown) {
       try {
         await saveConfig(this.deps.dataDir, previousConfig)
       } catch (rollbackError: unknown) {
-        const logError = this.deps.logError ?? console.error
-        logError('Rolling config.json back failed', rollbackError)
+        this.logError('Rolling config.json back failed', rollbackError)
       }
       throw error
     }
@@ -139,7 +233,19 @@ export class SettingsService {
     return savedJira === null || !sameBaseUrl(savedJira.baseUrl, nextJira.baseUrl)
   }
 
-  private apply(previous: { config: WorkdayConfig; token: string | null } | null): void {
+  private wouldSendHrmKeyElsewhere(update: SettingsUpdate): boolean {
+    const nextHrm = update.timesheet?.hrm
+    if (nextHrm === undefined || nextHrm === null || update.hrmApiKey !== undefined) {
+      return false
+    }
+    if (this.hrmKey.source !== 'file') {
+      return false
+    }
+    const savedHrm = this.config.timesheet.hrm
+    return savedHrm === null || !sameBaseUrl(savedHrm.mcpUrl, nextHrm.mcpUrl)
+  }
+
+  private apply(previous: AppliedState | null): void {
     const { jira, pollMinutes, timeZone } = this.config
     const token = this.jiraToken.token
     const trackerChanged =
@@ -155,5 +261,47 @@ export class SettingsService {
     } else if (previous === null || trackerChanged || previous.config.pollMinutes !== pollMinutes) {
       this.deps.scheduler.start(pollMinutes)
     }
+    this.applyTimesheet(previous)
+  }
+
+  private applyTimesheet(previous: AppliedState | null): void {
+    const { jira, timeZone, timesheet } = this.config
+    const { hrm, tsc, logTime } = timesheet
+    const hrmKey = this.hrmKey.key
+    const hoursChanged =
+      previous === null ||
+      previous.hrmKey !== hrmKey ||
+      JSON.stringify(previous.config.timesheet.hrm) !== JSON.stringify(hrm)
+    if (hoursChanged) {
+      this.hours = hrm !== null && hrmKey !== null ? this.deps.createHoursLog(hrm, hrmKey) : null
+    }
+    if (
+      previous === null ||
+      JSON.stringify(previous.config.timesheet.tsc) !== JSON.stringify(tsc)
+    ) {
+      this.sheet = tsc === null ? null : this.deps.createSheetLog(tsc)
+    }
+    this.deps.timesheet.configure({
+      sheet: this.sheet,
+      hours: this.hours,
+      tracker: this.tracker,
+      projectKey: jira?.projectKey ?? null,
+      timeZone,
+      logTime,
+      offMarker: tsc?.offMarker ?? DEFAULT_OFF_MARKER,
+    })
+    if (previous === null) {
+      this.deps.logScheduler.start(logTime, timeZone)
+    } else if (
+      previous.config.timesheet.logTime !== logTime ||
+      previous.config.timeZone !== timeZone
+    ) {
+      this.deps.logScheduler.setLogTime(logTime, timeZone)
+    }
+  }
+
+  private logError(message: string, error: unknown): void {
+    const logError = this.deps.logError ?? console.error
+    logError(message, error)
   }
 }

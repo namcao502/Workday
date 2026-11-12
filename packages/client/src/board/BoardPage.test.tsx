@@ -54,6 +54,7 @@ function connectedSettings(): SettingsView {
         email: 'me@example.com',
         projectKey: 'MDP',
         assignedJql: 'assignee = currentUser()',
+        mineJql: 'assignee = currentUser()',
         maxResults: 50,
         etaFieldId: null,
         devPriorityFieldId: null,

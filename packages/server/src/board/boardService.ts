@@ -110,6 +110,22 @@ export class BoardService {
     }
   }
 
+  // Every key on the board, dismissed ones included: the user's own tickets for the timesheet checks.
+  knownKeys(): ReadonlySet<string> {
+    const listKeys = SECTIONS.flatMap((section) => Object.keys(this.state[section]))
+    return new Set([...listKeys, ...Object.keys(this.state.dismissed)])
+  }
+
+  summaryOf(key: string): string | null {
+    for (const section of SECTIONS) {
+      const ticket = this.state[section][key]
+      if (ticket !== undefined) {
+        return ticket.summary
+      }
+    }
+    return this.state.dismissed[key]?.ticket.summary ?? null
+  }
+
   // A poll asked for while one runs on the same tracker shares it, so Jira is called once.
   poll(): Promise<void> {
     const { jira, tracker } = this.settings

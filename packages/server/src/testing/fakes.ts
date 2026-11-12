@@ -1,4 +1,16 @@
-import type { BoardState, Ticket, TicketTracker, TrackerValidation } from '@workday/core'
+import type {
+  BoardState,
+  HoursLog,
+  HoursWrite,
+  HrmTask,
+  SheetError,
+  SheetLog,
+  SheetRead,
+  SheetWrite,
+  Ticket,
+  TicketTracker,
+  TrackerValidation,
+} from '@workday/core'
 
 export function makeTicket(key: string, overrides: Partial<Ticket> = {}): Ticket {
   return {
@@ -41,7 +53,10 @@ export function deferred<Value>(): Deferred<Value> {
 export class FakeTracker implements TicketTracker {
   readonly live = new Map<string, Ticket>()
   readonly failingKeys = new Set<string>()
+  readonly mine = new Set<string>()
   readonly getTicketCalls: string[] = []
+  readonly filterMineCalls: (readonly string[])[] = []
+  filterMineFails = false
   assignedCalls = 0
   assigned: () => Promise<Readonly<Record<string, Ticket>>> = () => Promise.resolve({})
   validation: TrackerValidation = { ok: true, displayName: 'Test User' }
@@ -63,7 +78,96 @@ export class FakeTracker implements TicketTracker {
     return Promise.resolve(this.live.get(key) ?? null)
   }
 
+  filterMine(keys: readonly string[]): Promise<ReadonlySet<string>> {
+    this.filterMineCalls.push(keys)
+    if (this.filterMineFails) {
+      return Promise.reject(new Error('Jira search failed'))
+    }
+    return Promise.resolve(new Set(keys.filter((key) => this.mine.has(key))))
+  }
+
   ticketUrl(key: string): string {
     return `https://jira.example/browse/${key}`
+  }
+}
+
+// Records every call; each result can be replaced by a test (e.g. with a deferred to hold the call).
+export class FakeSheetLog implements SheetLog {
+  readonly writes: { readonly date: string; readonly text: string }[] = []
+  readonly offWrites: string[] = []
+  readonly reads: { readonly dates: readonly string[]; readonly allowSniff: boolean }[] = []
+  signInCalls = 0
+  write: (date: string) => Promise<SheetWrite> = () => Promise.resolve({ ok: true })
+  read: (dates: readonly string[]) => Promise<SheetRead> = (dates) =>
+    Promise.resolve({ kind: 'read', cells: Object.fromEntries(dates.map((date) => [date, null])) })
+  session: { readonly signedIn: boolean } | SheetError = { signedIn: true }
+  signInResult: SheetWrite = { ok: true }
+
+  writeTickets(date: string, text: string): Promise<SheetWrite> {
+    this.writes.push({ date, text })
+    return this.write(date)
+  }
+
+  writeOff(date: string): Promise<SheetWrite> {
+    this.offWrites.push(date)
+    return this.write(date)
+  }
+
+  readTickets(
+    dates: readonly string[],
+    options: { readonly allowSniff: boolean },
+  ): Promise<SheetRead> {
+    this.reads.push({ dates, allowSniff: options.allowSniff })
+    return this.read(dates)
+  }
+
+  checkSession(): Promise<{ readonly signedIn: boolean } | SheetError> {
+    return Promise.resolve(this.session)
+  }
+
+  signIn(): Promise<SheetWrite> {
+    this.signInCalls += 1
+    return Promise.resolve(this.signInResult)
+  }
+}
+
+export class FakeHoursLog implements HoursLog {
+  readonly logs: { readonly date: string; readonly tickets: readonly string[] }[] = []
+  readonly offDateCalls: { readonly from: string; readonly to: string }[] = []
+  validateCalls = 0
+  log: (date: string) => Promise<HoursWrite> = () => Promise.resolve({ ok: true })
+  offDays: readonly string[] = []
+  hrmTasks: readonly HrmTask[] | null = []
+  hours: Readonly<Record<string, number | null>> = {}
+  validation:
+    { readonly ok: true } | { readonly ok: false; readonly reason: 'rejected' | 'unreachable' } = {
+    ok: true,
+  }
+
+  validate(): Promise<
+    { readonly ok: true } | { readonly ok: false; readonly reason: 'rejected' | 'unreachable' }
+  > {
+    this.validateCalls += 1
+    return Promise.resolve(this.validation)
+  }
+
+  logTickets(date: string, tickets: readonly string[]): Promise<HoursWrite> {
+    this.logs.push({ date, tickets })
+    return this.log(date)
+  }
+
+  dayHours(dates: readonly string[]): Promise<Readonly<Record<string, number | null>>> {
+    return Promise.resolve(
+      Object.fromEntries(dates.map((date) => [date, this.hours[date] ?? null])),
+    )
+  }
+
+  tasks(): Promise<readonly HrmTask[] | null> {
+    return Promise.resolve(this.hrmTasks)
+  }
+
+  offDates(from: string, to: string): Promise<readonly string[]> {
+    this.offDateCalls.push({ from, to })
+    return Promise.resolve(this.offDays.filter((date) => date >= from && date <= to))
   }
 }

@@ -38,7 +38,11 @@ commit it). `WORKDAY_JIRA_API_TOKEN` there wins over a token saved in Settings, 
 
 ```sh
 WORKDAY_JIRA_API_TOKEN=<your Jira API token>
+WORKDAY_HRM_API_KEY=<your HRM API key>
 ```
+
+On Windows, `scripts/env-from-tokens.ps1` writes `.env` from NOIS Workday's `tokens.env`, both values included.
+`WORKDAY_MS_GRAPH_TOKEN` (env only) replaces the TSC token sniff, for a machine without a display.
 
 ## Move the board from NOIS Workday (Windows)
 

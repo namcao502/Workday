@@ -1,12 +1,12 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { JiraConfig } from '@workday/core'
+import type { HrmConfig, JiraConfig } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import { createApp } from '../app.js'
 import { loadConfig } from '../config.js'
 import { createServices, type Services } from '../services.js'
-import { FakeTracker } from './fakes.js'
+import { FakeHoursLog, FakeSheetLog, FakeTracker } from './fakes.js'
 
 export const TEST_PORT = 4870
 export const LOOPBACK_HEADERS = { host: `127.0.0.1:${String(TEST_PORT)}` }
@@ -16,12 +16,21 @@ export interface TrackerCall {
   readonly token: string
 }
 
+export interface HoursLogCall {
+  readonly hrm: HrmConfig
+  readonly apiKey: string
+}
+
 export interface TestApp {
   readonly app: FastifyInstance
   readonly services: Services
   readonly dataDir: string
   readonly tracker: FakeTracker
   readonly trackerCalls: TrackerCall[]
+  readonly sheet: FakeSheetLog
+  readonly hours: FakeHoursLog
+  readonly hoursLogCalls: HoursLogCall[]
+  readonly logTimes: string[]
   readonly schedulerStarts: number[]
   readonly schedulerStops: { count: number }
 }
@@ -39,12 +48,30 @@ export async function buildTestApp(
   const trackerCalls: TrackerCall[] = []
   const schedulerStarts: number[] = []
   const schedulerStops = { count: 0 }
+  const sheet = new FakeSheetLog()
+  const hours = new FakeHoursLog()
+  const hoursLogCalls: HoursLogCall[] = []
+  const logTimes: string[] = []
   const services = createServices({
     dataDir,
     config: loadConfig(dataDir),
     createTracker: (jira, token) => {
       trackerCalls.push({ jira, token })
       return tracker
+    },
+    createHoursLog: (hrm, apiKey) => {
+      hoursLogCalls.push({ hrm, apiKey })
+      return hours
+    },
+    createSheetLog: () => sheet,
+    logScheduler: {
+      start: (logTime) => {
+        logTimes.push(logTime)
+      },
+      setLogTime: (logTime) => {
+        logTimes.push(logTime)
+      },
+      stop: () => undefined,
     },
     scheduler: {
       start: (pollMinutes) => {
@@ -65,5 +92,17 @@ export async function buildTestApp(
     ...services,
   })
   await app.ready()
-  return { app, services, dataDir, tracker, trackerCalls, schedulerStarts, schedulerStops }
+  return {
+    app,
+    services,
+    dataDir,
+    tracker,
+    trackerCalls,
+    sheet,
+    hours,
+    hoursLogCalls,
+    logTimes,
+    schedulerStarts,
+    schedulerStops,
+  }
 }

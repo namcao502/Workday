@@ -4,9 +4,10 @@ import { PAGE_IDS, pageLabel, type PageId } from './pages.js'
 interface TabBarProps {
   readonly current: PageId
   readonly onSelect: (page: PageId) => void
+  readonly attention?: boolean // dot on the Timesheet item
 }
 
-export function TabBar({ current, onSelect }: TabBarProps): React.JSX.Element {
+export function TabBar({ current, onSelect, attention = false }: TabBarProps): React.JSX.Element {
   return (
     <nav className="tab-bar" aria-label={t('Tabs', 'Thẻ')}>
       {PAGE_IDS.map((page) => (
@@ -20,6 +21,9 @@ export function TabBar({ current, onSelect }: TabBarProps): React.JSX.Element {
           }}
         >
           {pageLabel(page)}
+          {attention && page === 'timesheet' ? (
+            <span className="nav-dot" aria-hidden="true" />
+          ) : null}
         </button>
       ))}
     </nav>

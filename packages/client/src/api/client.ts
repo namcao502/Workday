@@ -1,17 +1,26 @@
 import type {
   AddTicketResult,
+  AppError,
   BoardAction,
   BoardView,
+  EntryOutcome,
   JiraCheckRequest,
   JiraCheckResult,
   SettingsUpdate,
+  RunSummary,
   SettingsView,
+  TicketCheck,
+  TimesheetView,
+  TscSessionResult,
+  TscSignInResult,
 } from '@workday/core'
 import { isRecord } from '../json.js'
 
 export const queryKeys = {
   board: ['board'],
   settings: ['settings'],
+  timesheet: ['timesheet'],
+  timesheetVisited: ['timesheet-visited'],
 } as const
 
 export class ApiError extends Error {
@@ -86,31 +95,55 @@ function expectFailure(
   raw: RawResponse,
   path: string,
 ): Extract<AddTicketResult | JiraCheckResult, { ok: false }> {
+  return { ok: false, error: readError(raw, path) }
+}
+
+function readError(raw: RawResponse, path: string): AppError {
   const error = isRecord(raw.body) ? raw.body['error'] : undefined
   if (!isRecord(error) || typeof error['code'] !== 'string') {
     throw new ApiError(raw.status, path)
   }
-  return { ok: false, error: toAppError(error, raw, path) }
+  return toAppError(error, raw, path)
 }
 
-function toAppError(
-  error: Record<string, unknown>,
-  raw: RawResponse,
-  path: string,
-): Extract<AddTicketResult, { ok: false }>['error'] {
+function readDetail(raw: RawResponse): string | null {
+  const detail = isRecord(raw.body) ? raw.body['detail'] : null
+  return typeof detail === 'string' ? detail : null
+}
+
+type KeyedCode = 'notFound' | 'alreadyOnBoard'
+type PlainCode = Exclude<AppError['code'], KeyedCode>
+
+const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
+  'invalidKey',
+  'notConnected',
+  'jiraRejected',
+  'jiraUnreachable',
+  'pollFailed',
+  'timesheetNotConfigured',
+  'invalidTicket',
+  'overEightHours',
+  'hrmClosedForToday',
+  'tscNoToken',
+  'tscDateMismatch',
+  'tscFailed',
+  'chromeMissing',
+  'browserBusy',
+  'hrmRejected',
+  'hrmUnreachable',
+])
+
+function isPlainCode(code: unknown): code is PlainCode {
+  return typeof code === 'string' && PLAIN_CODES.has(code)
+}
+
+function toAppError(error: Record<string, unknown>, raw: RawResponse, path: string): AppError {
   const { code, key } = error
-  switch (code) {
-    case 'invalidKey':
-    case 'notConnected':
-    case 'jiraRejected':
-    case 'jiraUnreachable':
-    case 'pollFailed':
-      return { code }
-    case 'notFound':
-    case 'alreadyOnBoard':
-      if (typeof key === 'string') {
-        return { code, key }
-      }
+  if (isPlainCode(code)) {
+    return { code }
+  }
+  if ((code === 'notFound' || code === 'alreadyOnBoard') && typeof key === 'string') {
+    return { code, key }
   }
   throw new ApiError(raw.status, path)
 }
@@ -140,4 +173,172 @@ export async function checkJira(request: JiraCheckRequest): Promise<JiraCheckRes
     return { ok: true, displayName: typeof displayName === 'string' ? displayName : '' }
   }
   return expectFailure(raw, path)
+}
+
+export type HrmCheckResult =
+  { readonly ok: true } | { readonly ok: false; readonly error: AppError }
+
+export interface HrmCheckRequest {
+  readonly mcpUrl: string
+  readonly hrmApiKey?: string
+}
+
+// Throws ApiError 400 when no key is saved for this MCP URL and none is sent.
+export async function checkHrm(request: HrmCheckRequest): Promise<HrmCheckResult> {
+  const path = '/api/settings/hrm/check'
+  const raw = await send('POST', path, request)
+  if (!raw.ok || !hasOkFlag(raw.body)) {
+    throw new ApiError(raw.status, path)
+  }
+  return raw.body.ok ? { ok: true } : expectFailure(raw, path)
+}
+
+export async function checkTscSession(): Promise<TscSessionResult> {
+  const path = '/api/settings/tsc/session'
+  const raw = await send('POST', path)
+  if (!raw.ok || !isRecord(raw.body)) {
+    throw new ApiError(raw.status, path)
+  }
+  if (typeof raw.body['signedIn'] === 'boolean') {
+    return { signedIn: raw.body['signedIn'] }
+  }
+  return { error: readError(raw, path), detail: readDetail(raw) }
+}
+
+// Can take minutes: the server waits for the user to sign in in the browser window.
+export async function signInTsc(): Promise<TscSignInResult> {
+  const path = '/api/settings/tsc/sign-in'
+  const raw = await send('POST', path)
+  if (!raw.ok || !hasOkFlag(raw.body)) {
+    throw new ApiError(raw.status, path)
+  }
+  return raw.body.ok ? { ok: true } : { ...expectFailure(raw, path), detail: readDetail(raw) }
+}
+
+export type QueueResult = { readonly ok: true } | { readonly ok: false; readonly error: AppError }
+export type LogResult =
+  | { readonly ok: true; readonly outcome: EntryOutcome }
+  | { readonly ok: false; readonly error: AppError }
+export type DrainResult =
+  | { readonly ok: true; readonly summary: RunSummary }
+  | { readonly ok: false; readonly error: AppError }
+export type LogTarget = 'both' | 'tsc' | 'hrm'
+
+export interface DayRequest {
+  readonly date: string
+  readonly tickets: readonly string[]
+  readonly minutes: readonly number[] | null
+}
+
+function isTimesheetView(value: unknown): value is TimesheetView {
+  return (
+    isRecord(value) && typeof value['tscConnected'] === 'boolean' && Array.isArray(value['queue'])
+  )
+}
+
+function isEntryOutcome(value: unknown): value is EntryOutcome {
+  return isRecord(value) && typeof value['date'] === 'string' && isRecord(value['tsc'])
+}
+
+function isRunSummary(value: unknown): value is RunSummary {
+  return isRecord(value) && typeof value['kind'] === 'string'
+}
+
+export async function getTimesheet(): Promise<TimesheetView> {
+  return expectView(await send('GET', '/api/timesheet'), '/api/timesheet', isTimesheetView)
+}
+
+// Refusals (over 8h, invalid ticket) come back as a 200 `{ ok: false, error }`.
+async function queueCall(method: string, path: string, payload: unknown): Promise<QueueResult> {
+  const raw = await send(method, path, payload)
+  if (!hasOkFlag(raw.body)) {
+    throw new ApiError(raw.status, path)
+  }
+  return raw.body.ok ? { ok: true } : { ok: false, error: readError(raw, path) }
+}
+
+export function addToQueue(request: DayRequest): Promise<QueueResult> {
+  return queueCall('POST', '/api/timesheet/queue', request)
+}
+
+export function setQueueMinutes(request: {
+  readonly date: string
+  readonly tickets: readonly string[]
+  readonly minutes: readonly number[]
+}): Promise<QueueResult> {
+  const { date, ...body } = request
+  return queueCall('PUT', `/api/timesheet/queue/${date}/minutes`, body)
+}
+
+export async function removeFromQueue(date: string, key: string): Promise<void> {
+  const path = `/api/timesheet/queue/${date}/${encodeURIComponent(key)}`
+  const raw = await send('DELETE', path)
+  if (!raw.ok) {
+    throw new ApiError(raw.status, path)
+  }
+}
+
+export async function clearQueue(): Promise<void> {
+  const raw = await send('DELETE', '/api/timesheet/queue')
+  if (!raw.ok) {
+    throw new ApiError(raw.status, '/api/timesheet/queue')
+  }
+}
+
+// A 409 `{ ok: false, error }` is a refusal the page shows, so it is returned, not thrown.
+export async function drainQueue(date?: string): Promise<DrainResult> {
+  const path = '/api/timesheet/drain'
+  const raw = await send('POST', path, date === undefined ? {} : { date })
+  if (isRunSummary(raw.body) && raw.ok) {
+    return { ok: true, summary: raw.body }
+  }
+  if (hasOkFlag(raw.body) && !raw.body.ok) {
+    return { ok: false, error: readError(raw, path) }
+  }
+  throw new ApiError(raw.status, path)
+}
+
+export async function logNow(
+  request: DayRequest & { readonly target: LogTarget },
+): Promise<LogResult> {
+  const path = '/api/timesheet/log'
+  const raw = await send('POST', path, request)
+  if (raw.ok && isEntryOutcome(raw.body)) {
+    return { ok: true, outcome: raw.body }
+  }
+  if (hasOkFlag(raw.body) && !raw.body.ok) {
+    return { ok: false, error: readError(raw, path) }
+  }
+  throw new ApiError(raw.status, path)
+}
+
+export async function logOff(date: string): Promise<EntryOutcome> {
+  const path = '/api/timesheet/off'
+  const raw = await send('POST', path, { date })
+  if (!raw.ok || !isEntryOutcome(raw.body)) {
+    throw new ApiError(raw.status, path)
+  }
+  return raw.body
+}
+
+// 202: the result arrives as a timesheet.changed event.
+export async function readWeek(monday: string, allowSniff: boolean): Promise<void> {
+  const path = '/api/timesheet/week'
+  const raw = await send('POST', path, { monday, allowSniff })
+  if (!raw.ok) {
+    throw new ApiError(raw.status, path)
+  }
+}
+
+function isTicketCheck(value: unknown): value is TicketCheck {
+  return isRecord(value) && typeof value['key'] === 'string' && typeof value['status'] === 'string'
+}
+
+export async function checkTickets(keys: readonly string[]): Promise<readonly TicketCheck[]> {
+  const path = '/api/timesheet/tickets/check'
+  const raw = await send('POST', path, { keys })
+  if (!raw.ok || !Array.isArray(raw.body)) {
+    throw new ApiError(raw.status, path)
+  }
+  return raw.body.filter(isTicketCheck)
 }

@@ -32,6 +32,28 @@ npx vitest run -t "health returns ok" --root packages/server
 `@workday/core` exports a `development` condition pointing at `src`, so dev and tests need no core build;
 `npm start` uses the built `dist`.
 
+Each package has two tsconfigs: `tsconfig.json` (noEmit, includes tests; used by typecheck and lint) and
+`tsconfig.build.json` (composite, no tests). `npm run dev` sets `WORKDAY_DEV=1` via `packages/server/dev.env`
+(adds Vite's port to the allowed hosts); both `dev` and `start` read a root `.env` if present.
+
+## How the pieces fit
+
+- `packages/server/src/services.ts` wires everything (`createServices`), shared by `main.ts` and the tests
+  (`src/testing/testApp.ts`, `src/testing/fakes.ts`). `main.ts` calls `settings.start()` after `listen`.
+- State-owning services (`BoardService`) run every mutation through one serial `Promise` chain, save to disk
+  first, then swap the in-memory state and broadcast. Core functions return the same object when nothing
+  changed, so the service compares with `!==` to decide whether to save.
+- WebSocket events (`/api/events`, `ServerEvent` in `core/src/api.ts`) carry no data: the client refetches
+  through `@tanstack/react-query`.
+- `SettingsService.apply` rebuilds the adapters (e.g. `JiraTracker`) and restarts the scheduler when config
+  or a secret changes. A saved secret is only ever sent to the URL it was saved with.
+- The server never sends display text: errors are `AppError` codes, translated in `packages/client/src/errors.ts`
+  with `t(en, vi)` (`i18n.ts`).
+- Per-user JSON files (`config.json`, `secrets.json`, `board.json`) go through `jsonFile.ts`: runtime-validated
+  parse, atomic write, a corrupt file renamed to `<file>.bad`. Data dir: `dataDir.ts` (`WORKDAY_DATA_DIR` overrides).
+- The C# app in `C:\Project\NoisWorkday` is the spec being ported phase by phase; its tests become Vitest tests.
+  Plans and impl notes per phase live in `docs/<slug>/` (`plan.md` has the phase roadmap in `docs/web-foundation/`).
+
 ## Rules
 
 - Core does no I/O: no fs, network, clock or env access; those arrive as arguments or port implementations.

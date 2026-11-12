@@ -1,13 +1,18 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createApp } from './app.js'
-import { loadConfig } from './config.js'
+import { loadConfig, loadGraphTokenOverride } from './config.js'
 import { resolveDataDir } from './dataDir.js'
+import { HrmHoursLog } from './hrm/hrmHoursLog.js'
 import { JiraTracker } from './jira/jiraTracker.js'
 import { isLoopbackHost } from './security/allowedHosts.js'
 import { createServices } from './services.js'
+import { BrowserLock } from './tsc/browserLock.js'
+import { GraphSheetLog } from './tsc/graphSheetLog.js'
+import { PlaywrightTokenSource } from './tsc/tokenSniffer.js'
 
 const LISTEN_HOST = '127.0.0.1'
+const TSC_BROWSER_FOLDER = 'tsc-browser'
 
 // WORKDAY_PORT (dev only) overrides the port in config.json.
 function readPort(configPort: number): number {
@@ -35,10 +40,20 @@ async function main(): Promise<void> {
   }
 
   const port = readPort(config.port)
+  // One lock for every rebuilt sheet adapter: the browser profile allows a single Chrome.
+  const browserLock = new BrowserLock()
+  const browserProfileDir = join(dataDir, TSC_BROWSER_FOLDER)
   const services = createServices({
     dataDir,
     config,
     createTracker: (jira, token) => new JiraTracker(jira, token),
+    createHoursLog: (hrm, apiKey) => new HrmHoursLog(hrm, apiKey),
+    createSheetLog: (tsc) =>
+      new GraphSheetLog(
+        tsc,
+        new PlaywrightTokenSource(tsc, browserProfileDir, browserLock),
+        loadGraphTokenOverride(),
+      ),
   })
   const app = await createApp({
     port,
@@ -49,9 +64,13 @@ async function main(): Promise<void> {
   })
   await app.listen({ host: LISTEN_HOST, port })
   services.settings.start()
+  services.timesheet.catchUp().catch((error: unknown) => {
+    console.error('Startup catch-up failed', error)
+  })
 
   const shutdown = (): void => {
     services.scheduler.stop()
+    services.logScheduler.stop()
     app.close().then(
       () => process.exit(0),
       (error: unknown) => {

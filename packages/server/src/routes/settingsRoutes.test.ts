@@ -12,16 +12,22 @@ const JIRA: JiraConfig = {
   email: 'me@example.com',
   projectKey: 'MDP',
   assignedJql: 'assignee = currentUser()',
+  mineJql: 'assignee = currentUser()',
   maxResults: 50,
   etaFieldId: null,
   devPriorityFieldId: null,
   statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
 }
 
+const SAVED_HRM_KEY = 'saved-hrm-key'
+const HRM_URL = 'https://hrm.example/mcp'
+const TIMESHEET = { logTime: '18:00', hrm: { mcpUrl: HRM_URL, projectId: 'P1' }, tsc: null }
+
 const openApps: FastifyInstance[] = []
 
 beforeEach(() => {
   vi.stubEnv('WORKDAY_JIRA_API_TOKEN', '')
+  vi.stubEnv('WORKDAY_HRM_API_KEY', '')
 })
 
 afterEach(async () => {
@@ -39,8 +45,25 @@ async function connectedApp(): Promise<TestApp> {
     theme: 'dark',
     language: 'en',
     jira: JIRA,
+    timesheet: { logTime: '18:00', hrm: null, tsc: null },
   })
-  await saveSecrets(dataDir, { jiraApiToken: SAVED_TOKEN })
+  await saveSecrets(dataDir, { jiraApiToken: SAVED_TOKEN, hrmApiKey: null })
+  return track(await buildTestApp({ dataDir }))
+}
+
+async function hrmApp(): Promise<TestApp> {
+  const dataDir = newDataDir()
+  await saveConfig(dataDir, {
+    host: '127.0.0.1',
+    port: 4870,
+    timeZone: 'Asia/Ho_Chi_Minh',
+    pollMinutes: 5,
+    theme: 'dark',
+    language: 'en',
+    jira: null,
+    timesheet: TIMESHEET,
+  })
+  await saveSecrets(dataDir, { jiraApiToken: null, hrmApiKey: SAVED_HRM_KEY })
   return track(await buildTestApp({ dataDir }))
 }
 
@@ -77,8 +100,10 @@ describe('settings routes', () => {
         theme: 'dark',
         language: 'en',
         jira: JIRA,
+        timesheet: { logTime: '18:00', hrm: null, tsc: null },
       },
       jiraTokenSource: 'file',
+      hrmKeySource: null,
     })
   })
 
@@ -93,7 +118,7 @@ describe('settings routes', () => {
     expect(testApp.trackerCalls).toEqual([{ jira: JIRA, token: 'new-token' }])
     expect(testApp.schedulerStarts).toEqual([5])
     const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
-    expect(secrets).toEqual({ jiraApiToken: 'new-token' })
+    expect(secrets).toEqual({ jiraApiToken: 'new-token', hrmApiKey: null })
     const board = await testApp.app.inject({ url: '/api/board', headers: LOOPBACK_HEADERS })
     expect(board.json()).toMatchObject({ connected: true })
   })
@@ -163,7 +188,7 @@ describe('settings routes', () => {
     const settings = await testApp.app.inject({ url: '/api/settings', headers: LOOPBACK_HEADERS })
     expect(settings.json()).toMatchObject({ config: { theme: 'dark' } })
     const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
-    expect(secrets).toEqual({ jiraApiToken: SAVED_TOKEN })
+    expect(secrets).toEqual({ jiraApiToken: SAVED_TOKEN, hrmApiKey: null })
     expect(broadcast).not.toHaveBeenCalled()
   })
 
@@ -206,5 +231,70 @@ describe('settings routes', () => {
 
     expect(response.statusCode).toBe(400)
     expect(testApp.trackerCalls.length).toBe(callsAtStart)
+  })
+
+  it('GET /api/settings never returns the HRM key', async () => {
+    const testApp = await hrmApp()
+
+    const response = await testApp.app.inject({ url: '/api/settings', headers: LOOPBACK_HEADERS })
+
+    expect(response.body).not.toContain(SAVED_HRM_KEY)
+    expect(response.json()).toMatchObject({
+      hrmKeySource: 'file',
+      config: { timesheet: TIMESHEET },
+    })
+    expect(testApp.hoursLogCalls).toEqual([{ hrm: TIMESHEET.hrm, apiKey: SAVED_HRM_KEY }])
+    const timesheet = await testApp.app.inject({ url: '/api/timesheet', headers: LOOPBACK_HEADERS })
+    expect(timesheet.json()).toMatchObject({ hrmConnected: true, tscConnected: false })
+  })
+
+  it('the saved HRM key is never sent to another MCP URL', async () => {
+    const testApp = await hrmApp()
+    const callsAtStart = testApp.hoursLogCalls.length
+    const check = (payload: Record<string, unknown>): Promise<LightMyRequestResponse> =>
+      testApp.app.inject({
+        method: 'POST',
+        url: '/api/settings/hrm/check',
+        headers: LOOPBACK_HEADERS,
+        payload,
+      })
+
+    const otherUrl = await check({ mcpUrl: 'https://evil.example/mcp' })
+    const sameUrl = await check({ mcpUrl: `${HRM_URL}/` })
+    const moved = await putSettings(testApp, {
+      timesheet: { ...TIMESHEET, hrm: { ...TIMESHEET.hrm, mcpUrl: 'https://evil.example/mcp' } },
+    })
+    const badLogTime = await putSettings(testApp, { timesheet: { ...TIMESHEET, logTime: '25:00' } })
+
+    expect(otherUrl.statusCode).toBe(400)
+    expect(sameUrl.json()).toEqual({ ok: true })
+    expect(moved.statusCode).toBe(400)
+    expect(badLogTime.statusCode).toBe(400)
+    expect(testApp.hoursLogCalls.slice(callsAtStart)).toEqual([
+      { hrm: { mcpUrl: `${HRM_URL}/`, projectId: 'P1' }, apiKey: SAVED_HRM_KEY },
+    ])
+  })
+
+  it('PUT /api/settings with an HRM key keeps the Jira token in secrets.json', async () => {
+    const testApp = await connectedApp()
+
+    const response = await putSettings(testApp, { timesheet: TIMESHEET, hrmApiKey: 'new-key' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).not.toContain('new-key')
+    const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
+    expect(secrets).toEqual({ jiraApiToken: SAVED_TOKEN, hrmApiKey: 'new-key' })
+    expect(testApp.hoursLogCalls.at(-1)).toEqual({ hrm: TIMESHEET.hrm, apiKey: 'new-key' })
+  })
+
+  it('saving an HRM key keeps the Jira token saved in the file while the env overrides it', async () => {
+    vi.stubEnv('WORKDAY_JIRA_API_TOKEN', 'env-token')
+    const testApp = await connectedApp()
+
+    const response = await putSettings(testApp, { timesheet: TIMESHEET, hrmApiKey: 'new-key' })
+
+    expect(response.statusCode).toBe(200)
+    const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
+    expect(secrets).toEqual({ jiraApiToken: SAVED_TOKEN, hrmApiKey: 'new-key' })
   })
 })

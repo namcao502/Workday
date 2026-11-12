@@ -50,6 +50,19 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
         }}
       />
       <TextField
+        id="jira-mine-jql"
+        label={t('Query for my tickets', 'Truy vấn ticket của tôi')}
+        hint={t(
+          'Which tickets count as yours when you log time. Empty: assigned to you now or before.',
+          'Những ticket được tính là của bạn khi log giờ. Để trống: được giao cho bạn hiện tại hoặc trước đây.',
+        )}
+        rows={2}
+        value={form.mineJql}
+        onChange={(value) => {
+          onChange({ mineJql: value })
+        }}
+      />
+      <TextField
         id="jira-pre-work-statuses"
         label={t('Statuses before work starts', 'Trạng thái trước khi bắt đầu làm')}
         hint={t(

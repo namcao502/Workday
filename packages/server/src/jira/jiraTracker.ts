@@ -1,4 +1,10 @@
-import type { JiraConfig, Ticket, TicketTracker, TrackerValidation } from '@workday/core'
+import {
+  isTicketKey,
+  type JiraConfig,
+  type Ticket,
+  type TicketTracker,
+  type TrackerValidation,
+} from '@workday/core'
 import { isRecord } from '../jsonFile.js'
 import { parseIssue, parseSearchResponse, type JiraFieldIds } from './parseJira.js'
 
@@ -85,6 +91,34 @@ export class JiraTracker implements TicketTracker {
     }
     const body: unknown = await response.json()
     return parseIssue(body, this.fieldIds)
+  }
+
+  // The keys of those among `keys` that match the configured "mine" JQL.
+  async filterMine(keys: readonly string[]): Promise<ReadonlySet<string>> {
+    // Only real keys go into the JQL, so no typed text can change the query.
+    const ticketKeys = keys.filter(isTicketKey)
+    if (ticketKeys.length === 0) {
+      return new Set()
+    }
+    const response = await this.send('POST', '/rest/api/3/search/jql', {
+      jql: `key in (${ticketKeys.join(',')}) AND (${this.config.mineJql})`,
+      maxResults: ticketKeys.length,
+      fields: ['summary'],
+    })
+    if (!response.ok) {
+      throw new Error(`Jira search failed with status ${String(response.status)}`)
+    }
+    const body: unknown = await response.json()
+    const issues =
+      isRecord(body) && Array.isArray(body['issues']) ? (body['issues'] as unknown[]) : []
+    const found = new Set<string>()
+    for (const issue of issues) {
+      const key = isRecord(issue) ? issue['key'] : undefined
+      if (typeof key === 'string') {
+        found.add(key)
+      }
+    }
+    return found
   }
 
   ticketUrl(key: string): string {

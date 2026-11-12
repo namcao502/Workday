@@ -19,8 +19,10 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
       theme: 'dark',
       language: 'en',
       jira: null,
+      timesheet: { logTime: '18:00', hrm: null, tsc: null },
     },
     jiraTokenSource: null,
+    hrmKeySource: null,
     ...overrides,
   }
 }

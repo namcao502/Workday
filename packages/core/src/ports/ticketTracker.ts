@@ -8,5 +8,6 @@ export interface TicketTracker {
   validate(): Promise<TrackerValidation>
   getAssignedTickets(): Promise<Readonly<Record<string, Ticket>>> // throws on failure
   getTicket(key: string): Promise<Ticket | null> // null = missing or not visible; other failures throw
+  filterMine(keys: readonly string[]): Promise<ReadonlySet<string>> // throws on failure
   ticketUrl(key: string): string
 }

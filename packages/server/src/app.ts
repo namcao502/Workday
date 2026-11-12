@@ -8,8 +8,10 @@ import type { EventHub } from './events.js'
 import { registerBoardRoutes } from './routes/boardRoutes.js'
 import { registerEventsRoute } from './routes/eventsRoute.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
+import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
 import { allowedHostHeaders, isAllowedHost } from './security/allowedHosts.js'
 import type { SettingsService } from './settings/settingsService.js'
+import type { TimesheetService } from './timesheet/timesheetService.js'
 
 export interface AppDeps {
   port: number
@@ -19,6 +21,7 @@ export interface AppDeps {
   clientDist?: string | undefined
   board: BoardService
   settings: SettingsService
+  timesheet: TimesheetService
   events: EventHub
 }
 
@@ -41,6 +44,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerEventsRoute(app, deps.events, allowedHosts)
   registerBoardRoutes(app, deps.board)
   registerSettingsRoutes(app, deps.settings)
+  registerTimesheetRoutes(app, deps.timesheet)
 
   const { clientDist } = deps
   const hasClient = clientDist !== undefined && existsSync(join(clientDist, 'index.html'))

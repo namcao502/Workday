@@ -2,7 +2,14 @@ import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { loadConfig, loadSecrets, saveConfig, saveSecrets } from './config.js'
+import {
+  loadConfig,
+  loadGraphTokenOverride,
+  loadHrmKey,
+  loadSecrets,
+  saveConfig,
+  saveSecrets,
+} from './config.js'
 
 let directory = ''
 
@@ -30,6 +37,7 @@ describe('loadConfig', () => {
       theme: 'dark',
       language: 'en',
       jira: null,
+      timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
   })
 
@@ -69,6 +77,7 @@ describe('loadConfig', () => {
       assignedJql: 'assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC',
       maxResults: 50,
       etaFieldId: null,
+      mineJql: 'assignee = currentUser() OR assignee WAS currentUser()',
       devPriorityFieldId: null,
       statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
     })
@@ -84,12 +93,13 @@ describe('loadConfig', () => {
 describe('secrets', () => {
   it('has no token by default', () => {
     vi.stubEnv('WORKDAY_JIRA_API_TOKEN', '')
-    expect(loadSecrets(directory)).toEqual({ jiraApiToken: null })
+    vi.stubEnv('WORKDAY_HRM_API_KEY', '')
+    expect(loadSecrets(directory)).toEqual({ jiraApiToken: null, hrmApiKey: null })
   })
 
   it('reads the token saved in secrets.json', async () => {
     vi.stubEnv('WORKDAY_JIRA_API_TOKEN', '')
-    await saveSecrets(directory, { jiraApiToken: 'from-file' })
+    await saveSecrets(directory, { jiraApiToken: 'from-file', hrmApiKey: null })
     expect(loadSecrets(directory).jiraApiToken).toBe('from-file')
   })
 
@@ -100,8 +110,110 @@ describe('secrets', () => {
   })
 
   it.skipIf(process.platform === 'win32')('writes secrets.json with mode 600', async () => {
-    await saveSecrets(directory, { jiraApiToken: 't' })
+    await saveSecrets(directory, { jiraApiToken: 't', hrmApiKey: null })
     expect(statSync(join(directory, 'secrets.json')).mode % 0o1000).toBe(0o600)
     expect(readFileSync(join(directory, 'secrets.json'), 'utf8')).toContain('"t"')
+  })
+})
+
+const HRM = { mcpUrl: 'https://hrm.example/mcp', projectId: 'P1' }
+const TSC = {
+  shareUrl: 'https://share.example/x',
+  worksheetPattern: 'Daily Reports - {year}',
+  columns: 'M, J',
+  tokenPages: ['https://tsc.example/a'],
+}
+
+describe('timesheet config', () => {
+  it('a timesheet config without columns loads with tsc null', () => {
+    writeConfig({ timesheet: { hrm: HRM, tsc: { ...TSC, columns: '' } } })
+    const { timesheet } = loadConfig(directory)
+    expect(timesheet.tsc).toBeNull()
+    expect(timesheet.hrm).toEqual(HRM)
+  })
+
+  it('tsc is null without a share URL, worksheet pattern or token pages', () => {
+    for (const missing of ['shareUrl', 'worksheetPattern', 'tokenPages']) {
+      writeConfig({ timesheet: { tsc: { ...TSC, [missing]: undefined } } })
+      expect(loadConfig(directory).timesheet.tsc).toBeNull()
+    }
+    writeConfig({ timesheet: { tsc: { ...TSC, tokenPages: [] } } })
+    expect(loadConfig(directory).timesheet.tsc).toBeNull()
+  })
+
+  it('hrm is null without an MCP URL or project id', () => {
+    writeConfig({ timesheet: { hrm: { mcpUrl: HRM.mcpUrl } } })
+    expect(loadConfig(directory).timesheet.hrm).toBeNull()
+    writeConfig({ timesheet: { hrm: { projectId: 'P1' } } })
+    expect(loadConfig(directory).timesheet.hrm).toBeNull()
+  })
+
+  it('parses tsc columns from a string or an array, with neutral defaults', () => {
+    writeConfig({ timesheet: { tsc: TSC } })
+    expect(loadConfig(directory).timesheet.tsc).toEqual({
+      shareUrl: TSC.shareUrl,
+      worksheetPattern: TSC.worksheetPattern,
+      columns: ['M', 'J'],
+      headerRows: 2,
+      offMarker: 'OFF',
+      offFillColor: '#FFFF00',
+      tokenPages: TSC.tokenPages,
+      driveId: null,
+      itemId: null,
+    })
+    writeConfig({ timesheet: { tsc: { ...TSC, columns: ['m', 'j'], headerRows: 0 } } })
+    const tsc = loadConfig(directory).timesheet.tsc
+    expect(tsc?.columns).toEqual(['M', 'J'])
+    expect(tsc?.headerRows).toBe(0)
+  })
+
+  it('headerRows that is not a whole number >= 0 falls back to 2', () => {
+    writeConfig({ timesheet: { tsc: { ...TSC, headerRows: -1 } } })
+    expect(loadConfig(directory).timesheet.tsc?.headerRows).toBe(2)
+    writeConfig({ timesheet: { tsc: { ...TSC, headerRows: 1.5 } } })
+    expect(loadConfig(directory).timesheet.tsc?.headerRows).toBe(2)
+  })
+
+  it('logTime 25:00 falls back to 18:00', () => {
+    writeConfig({ timesheet: { logTime: '25:00' } })
+    expect(loadConfig(directory).timesheet.logTime).toBe('18:00')
+    writeConfig({ timesheet: { logTime: '17:30' } })
+    expect(loadConfig(directory).timesheet.logTime).toBe('17:30')
+  })
+
+  it('reads mineJql from the Jira config', () => {
+    writeConfig({
+      jira: {
+        baseUrl: 'https://x',
+        email: 'a@b.c',
+        projectKey: 'MDP',
+        mineJql: 'cf[1] = currentUser()',
+      },
+    })
+    expect(loadConfig(directory).jira?.mineJql).toBe('cf[1] = currentUser()')
+  })
+})
+
+describe('HRM key', () => {
+  it('the HRM key from the environment wins over secrets.json', () => {
+    writeFileSync(join(directory, 'secrets.json'), JSON.stringify({ hrmApiKey: 'from-file' }))
+    vi.stubEnv('WORKDAY_HRM_API_KEY', '')
+    expect(loadHrmKey(directory)).toEqual({ key: 'from-file', source: 'file' })
+    vi.stubEnv('WORKDAY_HRM_API_KEY', 'from-env')
+    expect(loadHrmKey(directory)).toEqual({ key: 'from-env', source: 'env' })
+  })
+
+  it('has no key by default', () => {
+    vi.stubEnv('WORKDAY_HRM_API_KEY', '')
+    expect(loadHrmKey(directory)).toEqual({ key: null, source: null })
+  })
+})
+
+describe('Graph token override', () => {
+  it('comes only from WORKDAY_MS_GRAPH_TOKEN', () => {
+    vi.stubEnv('WORKDAY_MS_GRAPH_TOKEN', '')
+    expect(loadGraphTokenOverride()).toBeNull()
+    vi.stubEnv('WORKDAY_MS_GRAPH_TOKEN', 'graph')
+    expect(loadGraphTokenOverride()).toBe('graph')
   })
 })

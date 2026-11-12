@@ -1,0 +1,281 @@
+.page.timesheet-page {
+  max-width: 1300px;
+}
+
+.section-label {
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.log-input,
+.queued-block,
+.week-header,
+.week-totals-block {
+  padding: var(--card-gap) 0;
+  border-top: 1px solid var(--divider);
+}
+
+.log-input {
+  border-top: 0;
+}
+
+.log-input-row,
+.week-title-row,
+.week-totals,
+.ticket-line,
+.ticket-warning,
+.total-row,
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--button-gap);
+}
+
+.log-date {
+  width: 150px;
+}
+
+.log-tickets {
+  flex: 1;
+}
+
+.add-button {
+  min-width: var(--control-h);
+  padding: 0 10px;
+}
+
+.menu-trigger {
+  min-width: var(--control-h);
+  padding: 0 10px;
+}
+
+.not-added {
+  margin-top: var(--button-gap);
+}
+
+.ticket-rows {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ticket-row {
+  padding: 3px 0;
+}
+
+.ticket-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hours-input {
+  width: 64px;
+  min-height: var(--compact-h);
+  text-align: right;
+}
+
+.row-remove {
+  min-height: var(--compact-h);
+  padding: 0 8px;
+}
+
+.ticket-warning {
+  padding-left: 18px;
+  color: var(--warning);
+}
+
+.check-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.check-valid {
+  background: var(--success);
+}
+
+.check-notFound {
+  background: var(--danger);
+}
+
+.check-unknown {
+  background: var(--warning);
+}
+
+.check-warn {
+  flex: none;
+  width: 8px;
+  color: var(--warning);
+  font-weight: 700;
+  text-align: center;
+}
+
+.status {
+  margin: 6px 0;
+}
+
+.status.danger,
+.warning {
+  color: var(--warning);
+}
+
+.status.danger {
+  color: var(--danger);
+}
+
+.banner {
+  justify-content: space-between;
+  margin-bottom: var(--button-gap);
+  padding: 8px 12px;
+  border-radius: var(--radius-button);
+  background: var(--accent-tint);
+}
+
+.week-title-row {
+  flex-wrap: wrap;
+}
+
+.week-totals {
+  margin-top: 4px;
+  gap: var(--card-gap);
+}
+
+.week-status {
+  margin-left: auto;
+}
+
+.day-grid {
+  display: grid;
+  gap: var(--card-gap);
+  margin-bottom: var(--card-gap);
+}
+
+.day-grid.reading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.day-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-button);
+  background: var(--hover);
+  cursor: pointer;
+}
+
+.day-card.selected {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.day-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.day-title {
+  font-weight: 600;
+}
+
+.day-card.today .day-title {
+  color: var(--accent-text);
+}
+
+.day-state,
+.day-line {
+  margin: 4px 0;
+  font-size: var(--font-small);
+}
+
+.day-log {
+  margin: 4px 0;
+}
+
+.hours-bar {
+  position: relative;
+  height: 22px;
+  margin: 6px 0;
+  border-radius: 4px;
+  background: var(--segment-track);
+}
+
+.hours-segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: var(--accent-tint);
+}
+
+.hours-segment.tone-1,
+.hours-segment.tone-3 {
+  background: var(--segment-selected);
+}
+
+.hours-segment-label {
+  padding: 0 4px;
+  font-size: var(--font-caption);
+  line-height: 22px;
+  white-space: nowrap;
+}
+
+.hours-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--accent);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.total-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--segment-track);
+}
+
+.total-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 40%);
+}
+
+.dialog {
+  max-width: 420px;
+  padding: var(--card-pad);
+  border: 1px solid var(--dialog-border);
+  border-radius: var(--radius-dialog);
+  background: var(--window-bg);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--button-gap);
+}
+
+.nav-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}

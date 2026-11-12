@@ -1,5 +1,5 @@
-import type { JiraCheckRequest, JiraConfig, SettingsUpdate } from '@workday/core'
-import { parseJira } from '../config.js'
+import type { JiraCheckRequest, JiraConfig, SettingsUpdate, TimesheetConfig } from '@workday/core'
+import { isLogTime, parseJira, parseTimesheet } from '../config.js'
 import { isRecord } from '../jsonFile.js'
 
 const MIN_PORT = 1024
@@ -45,13 +45,27 @@ function parseJiraField(raw: unknown): JiraConfig | null | undefined {
   return jira !== null && isHttpUrl(jira.baseUrl) ? jira : undefined
 }
 
+export interface HrmCheckRequest {
+  readonly mcpUrl: string
+  readonly hrmApiKey?: string
+}
+
+// The whole block is replaced, so logTime is required; an incomplete hrm or tsc reads as not connected.
+function parseTimesheetField(raw: unknown): TimesheetConfig | undefined {
+  if (!isRecord(raw) || !isLogTime(raw['logTime'])) {
+    return undefined
+  }
+  const timesheet = parseTimesheet(raw)
+  return timesheet.hrm === null || isHttpUrl(timesheet.hrm.mcpUrl) ? timesheet : undefined
+}
+
 // Null when any field it carries is invalid; unknown fields (host included) are ignored.
 export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
   if (!isRecord(raw)) {
     return null
   }
   let update: SettingsUpdate = {}
-  const { port, timeZone, pollMinutes, theme, language, jiraApiToken } = raw
+  const { port, timeZone, pollMinutes, theme, language, jiraApiToken, hrmApiKey } = raw
   if (port !== undefined) {
     if (!isIntegerBetween(port, MIN_PORT, MAX_PORT)) {
       return null
@@ -95,7 +109,34 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
     }
     update = { ...update, jiraApiToken }
   }
+  if (raw['timesheet'] !== undefined) {
+    const timesheet = parseTimesheetField(raw['timesheet'])
+    if (timesheet === undefined) {
+      return null
+    }
+    update = { ...update, timesheet }
+  }
+  if (hrmApiKey !== undefined) {
+    if (!isNonEmptyText(hrmApiKey)) {
+      return null
+    }
+    update = { ...update, hrmApiKey }
+  }
   return update
+}
+
+export function parseHrmCheckRequest(raw: unknown): HrmCheckRequest | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const { mcpUrl, hrmApiKey } = raw
+  if (!isNonEmptyText(mcpUrl) || !isHttpUrl(mcpUrl)) {
+    return null
+  }
+  if (hrmApiKey === undefined) {
+    return { mcpUrl }
+  }
+  return isNonEmptyText(hrmApiKey) ? { mcpUrl, hrmApiKey } : null
 }
 
 export function parseJiraCheckRequest(raw: unknown): JiraCheckRequest | null {

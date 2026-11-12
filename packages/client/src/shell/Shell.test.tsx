@@ -1,6 +1,7 @@
-import { render, screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { Shell } from './Shell.js'
+import { connectedSettings, queued, timesheetView } from '../timesheet/timesheetTestSupport.js'
 import { jsonResponse, renderWithQuery, stubFetch, stubMatchMedia } from '../testSupport.js'
 
 afterEach(() => {
@@ -9,7 +10,8 @@ afterEach(() => {
 
 it('the sidebar shows the five pages and marks the current one', () => {
   stubMatchMedia(false)
-  render(<Shell page="timesheet" />)
+  stubFetch(() => jsonResponse({}, 500))
+  renderWithQuery(<Shell page="timesheet" />)
   const sidebar = screen.getByRole('navigation', { name: 'Pages' })
   const names = within(sidebar)
     .getAllByRole('button')
@@ -34,6 +36,18 @@ it('below 720px the tab bar replaces the sidebar', () => {
 
 it('an unbuilt page shows Coming soon', () => {
   stubMatchMedia(false)
-  render(<Shell page="insights" />)
+  stubFetch(() => jsonResponse({}, 500))
+  renderWithQuery(<Shell page="insights" />)
   expect(screen.getByText('Coming soon')).toBeInTheDocument()
+})
+
+it('the Timesheet item shows a dot when a queued day is past its run', async () => {
+  stubMatchMedia(false)
+  const view = timesheetView({ queue: [queued('2026-11-11')] })
+  stubFetch((url) => jsonResponse(url === '/api/timesheet' ? view : connectedSettings()))
+  renderWithQuery(<Shell page="insights" />)
+  const item = screen.getByRole('button', { name: 'Timesheet' })
+  await waitFor(() => {
+    expect(item.querySelector('.nav-dot')).not.toBeNull()
+  })
 })
