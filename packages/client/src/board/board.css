@@ -1,0 +1,141 @@
+.page.board-page {
+  max-width: 1100px;
+}
+
+.board-bar,
+.board-search,
+.board-card-head,
+.board-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--button-gap);
+}
+
+.board-bar {
+  flex-wrap: wrap;
+  margin-bottom: var(--card-gap);
+}
+
+.board-search {
+  margin-bottom: var(--button-gap);
+}
+
+.check-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--muted);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: board-spin 0.8s linear infinite;
+}
+
+@keyframes board-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.poll-status {
+  font-size: var(--font-small);
+}
+
+.poll-status.danger {
+  color: var(--danger);
+}
+
+.board-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.board-table th {
+  padding: 6px 8px;
+  color: var(--text-secondary);
+  font-size: var(--font-small);
+  font-weight: 400;
+  text-align: left;
+}
+
+.board-table td {
+  padding: 6px 8px;
+  border-top: 1px solid var(--divider);
+}
+
+.board-summary {
+  overflow-wrap: anywhere;
+}
+
+.key-pill {
+  border: 0;
+  font: inherit;
+  font-size: var(--font-caption);
+  cursor: pointer;
+}
+
+.due-overdue {
+  color: var(--danger);
+}
+
+.due-soon {
+  color: var(--warning);
+}
+
+.board-cards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-card {
+  padding: var(--button-gap) 0;
+  border-top: 1px solid var(--divider);
+}
+
+.board-card-head {
+  justify-content: space-between;
+}
+
+.board-card-meta {
+  flex-wrap: wrap;
+  font-size: var(--font-small);
+}
+
+.row-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  padding: 4px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-popup);
+  background: var(--input-bg);
+}
+
+.menu-item {
+  min-height: var(--compact-h);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: var(--hover);
+}

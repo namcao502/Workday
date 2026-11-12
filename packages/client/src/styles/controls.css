@@ -1,0 +1,125 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--window-bg);
+  color: var(--text-primary);
+  font: var(--font-body) / 1.4 var(--font-ui);
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+.button {
+  min-height: var(--control-h);
+  min-width: var(--button-min-width);
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-button);
+  font: inherit;
+  cursor: pointer;
+}
+
+.button:disabled {
+  background: var(--disabled-fill);
+  color: var(--muted);
+  cursor: default;
+}
+
+.button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.button.secondary {
+  background: var(--secondary-btn);
+  color: var(--secondary-btn-text);
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: var(--secondary-btn-hover);
+}
+
+.button.ghost {
+  min-width: 0;
+  background: transparent;
+  color: var(--accent-text);
+}
+
+.button.ghost:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.button.danger {
+  background: var(--danger);
+  color: var(--on-accent);
+}
+
+/* The only bordered controls: inputs, menus, popups, dialogs. */
+.input {
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 4px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-button);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.input:disabled {
+  background: var(--disabled-fill);
+  color: var(--muted);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: var(--segment-inset);
+  border-radius: var(--radius-button);
+  background: var(--segment-track);
+}
+
+.segment {
+  min-height: var(--compact-h);
+  padding: 0 14px;
+  border: 0;
+  border-radius: calc(var(--radius-button) - 2px);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.segment:hover {
+  background: var(--segment-hover);
+}
+
+.segment[aria-checked='true'] {
+  background: var(--segment-selected);
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-chip);
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  font-size: var(--font-caption);
+}
+
+.divider,
+.section + .section {
+  border-top: 1px solid var(--divider);
+}

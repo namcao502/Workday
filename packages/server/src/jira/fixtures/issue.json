@@ -1,0 +1,8 @@
+{
+  "key": "MDP-2",
+  "fields": {
+    "summary": "Single",
+    "duedate": null,
+    "status": { "name": "Backlog", "statusCategory": { "key": "new" } }
+  }
+}

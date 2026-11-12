@@ -1,0 +1,56 @@
+{
+  "issues": [
+    {
+      "key": "MDP-1",
+      "fields": {
+        "summary": "Summary",
+        "duedate": "2026-09-30",
+        "customfield_10735": "2026-09-29",
+        "customfield_11111": 3,
+        "status": {
+          "name": "PR & Code Review",
+          "statusCategory": { "key": "indeterminate", "name": "Dang lam" }
+        },
+        "timespent": 5400,
+        "updated": "2026-10-19T10:15:30.123+0700",
+        "issuetype": { "name": "New Feature", "subtask": false },
+        "parent": { "key": "MDP-9170" }
+      }
+    },
+    {
+      "key": "MDP-2",
+      "fields": {
+        "summary": "Part",
+        "issuetype": { "name": "Sub-task", "subtask": true },
+        "parent": { "key": "MDP-1" }
+      }
+    },
+    {
+      "key": "MDP-3",
+      "fields": {
+        "summary": "Nulls",
+        "duedate": null,
+        "customfield_10735": null,
+        "customfield_11111": null,
+        "status": null,
+        "timespent": null
+      }
+    },
+    { "key": "", "fields": { "summary": "A" } },
+    { "fields": { "summary": "B" } },
+    { "key": "MDP-8", "fields": null },
+    { "key": "MDP-9" },
+    { "key": "MDP-4", "fields": { "summary": "S", "status": "Backlog" } },
+    {
+      "key": "MDP-5",
+      "fields": { "summary": "S", "status": { "name": "Backlog", "statusCategory": "new" } }
+    },
+    {
+      "key": "MDP-6",
+      "fields": {
+        "summary": "Shipped",
+        "status": { "name": "Deployed", "statusCategory": { "key": "done" } }
+      }
+    }
+  ]
+}

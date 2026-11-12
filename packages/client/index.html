@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workday</title>
+    <script>
+      // Apply the last theme before the first paint; App.tsx stores it once the settings load.
+      try {
+        const theme = localStorage.getItem('workday.theme')
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme
+        }
+      } catch {
+        // Storage blocked: fall back to the default theme.
+      }
+    </script>
+    <style>
+      html {
+        background: rgb(28 28 30);
+      }
+      html[data-theme='light'] {
+        background: rgb(255 255 255);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

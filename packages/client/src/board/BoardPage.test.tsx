@@ -1,0 +1,168 @@
+import { fireEvent, screen, waitFor } from '@testing-library/react'
+import type { AppError, BoardRow, BoardView, SettingsView } from '@workday/core'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { BoardPage } from './BoardPage.js'
+import {
+  jsonResponse,
+  settingsView,
+  stubFetch,
+  stubMatchMedia,
+  renderWithQuery,
+  type FetchMock,
+} from '../testSupport.js'
+
+function row(
+  key: string,
+  section: BoardRow['section'],
+  summary: string,
+  overrides: Partial<BoardRow['ticket']> = {},
+  dueUrgency: BoardRow['dueUrgency'] = 'none',
+): BoardRow {
+  return {
+    ticket: {
+      key,
+      summary,
+      dueDate: null,
+      eta: null,
+      devPriority: null,
+      status: 'To Do',
+      statusCategory: null,
+      issueType: null,
+      timeSpentSeconds: null,
+      updated: null,
+      parentKey: null,
+      ...overrides,
+    },
+    section,
+    dueUrgency,
+    url: `https://example.atlassian.net/browse/${key}`,
+  }
+}
+
+function boardView(rows: readonly BoardRow[], overrides: Partial<BoardView> = {}): BoardView {
+  return { connected: true, lastPoll: null, today: '2026-11-12', rows, ...overrides }
+}
+
+function connectedSettings(): SettingsView {
+  const base = settingsView()
+  return {
+    ...base,
+    config: {
+      ...base.config,
+      jira: {
+        baseUrl: 'https://example.atlassian.net',
+        email: 'me@example.com',
+        projectKey: 'MDP',
+        assignedJql: 'assignee = currentUser()',
+        maxResults: 50,
+        etaFieldId: null,
+        devPriorityFieldId: null,
+        statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
+      },
+    },
+  }
+}
+
+interface Backend {
+  readonly board: BoardView
+  readonly addResponse?: Response
+}
+
+function stubBackend({ board, addResponse }: Backend): FetchMock {
+  return stubFetch((url) => {
+    if (url === '/api/settings') {
+      return jsonResponse(connectedSettings())
+    }
+    if (url === '/api/board/add') {
+      return addResponse ?? jsonResponse({ ok: true })
+    }
+    return jsonResponse(board)
+  })
+}
+
+function postedUrls(fetchMock: FetchMock): readonly string[] {
+  return fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST').map(([url]) => url)
+}
+
+beforeEach(() => {
+  stubMatchMedia(false)
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  window.location.hash = ''
+})
+
+const TWO_VIEWS = boardView([
+  row('MDP-1', 'new', 'Alpha work'),
+  row('MDP-2', 'done', 'Beta finished'),
+])
+
+it('the search switches to the view that has hits unless the user picked one', async () => {
+  stubBackend({ board: TWO_VIEWS })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'beta' } })
+  await waitFor(() => {
+    expect(screen.getByRole('radio', { name: 'Done (1)' })).toHaveAttribute('aria-checked', 'true')
+  })
+  expect(screen.getByRole('radio', { name: 'Working (0)' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('radio', { name: 'Working (0)' }))
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  expect(screen.getByRole('radio', { name: 'Working (0)' })).toHaveAttribute('aria-checked', 'true')
+})
+
+it('typing a key not on the board shows Add KEY and Enter adds it', async () => {
+  const fetchMock = stubBackend({ board: TWO_VIEWS })
+  renderWithQuery(<BoardPage />)
+  const searchBox = screen.getByRole('searchbox')
+  fireEvent.change(searchBox, { target: { value: 'mdp-9' } })
+  await screen.findByRole('button', { name: 'Add MDP-9' })
+  fireEvent.keyDown(searchBox, { key: 'Enter' })
+  await waitFor(() => {
+    expect(postedUrls(fetchMock)).toContain('/api/board/add')
+  })
+  await waitFor(() => {
+    expect(searchBox).toHaveValue('')
+  })
+})
+
+it('an add error shows under the search box', async () => {
+  const error: AppError = { code: 'notFound', key: 'MDP-9' }
+  stubBackend({ board: TWO_VIEWS, addResponse: jsonResponse({ ok: false, error }, 409) })
+  renderWithQuery(<BoardPage />)
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'MDP-9' } })
+  fireEvent.click(await screen.findByRole('button', { name: 'Add MDP-9' }))
+  expect(await screen.findByText('MDP-9 was not found')).toBeInTheDocument()
+})
+
+it('Dismiss in the row menu calls the dismiss action', async () => {
+  const fetchMock = stubBackend({ board: TWO_VIEWS })
+  renderWithQuery(<BoardPage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Actions for MDP-1' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Dismiss' }))
+  await waitFor(() => {
+    expect(postedUrls(fetchMock)).toContain('/api/board/MDP-1/dismiss')
+  })
+})
+
+it("an overdue ticket's due cell uses the overdue color, a done ticket's never does", async () => {
+  const board = boardView([
+    row('MDP-1', 'new', 'Late work', { dueDate: '2026-11-10' }, 'overdue'),
+    row('MDP-2', 'done', 'Finished late', { dueDate: '2026-11-11' }, 'overdue'),
+  ])
+  stubBackend({ board })
+  renderWithQuery(<BoardPage />)
+  expect(await screen.findByText('Nov 10')).toHaveClass('due-overdue')
+  fireEvent.click(screen.getByRole('radio', { name: 'Done (1)' }))
+  expect(screen.getByText('Nov 11')).not.toHaveClass('due-overdue')
+})
+
+it('without Jira the page links to Settings instead of a table', async () => {
+  stubBackend({ board: boardView([], { connected: false }) })
+  renderWithQuery(<BoardPage />)
+  expect(await screen.findByText('Jira is not connected - open Settings')).toBeInTheDocument()
+  expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Open Settings' }))
+  expect(window.location.hash).toBe('#/settings')
+})
