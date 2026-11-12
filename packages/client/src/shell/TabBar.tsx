@@ -5,12 +5,18 @@ interface TabBarProps {
   readonly current: PageId
   readonly onSelect: (page: PageId) => void
   readonly attention?: boolean // dot on the Timesheet item
+  readonly pages?: readonly PageId[]
 }
 
-export function TabBar({ current, onSelect, attention = false }: TabBarProps): React.JSX.Element {
+export function TabBar({
+  current,
+  onSelect,
+  attention = false,
+  pages = PAGE_IDS,
+}: TabBarProps): React.JSX.Element {
   return (
     <nav className="tab-bar" aria-label={t('Tabs', 'Thẻ')}>
-      {PAGE_IDS.map((page) => (
+      {pages.map((page) => (
         <button
           key={page}
           type="button"

@@ -4,6 +4,8 @@ import {
   isAllowedHost,
   isAllowedOrigin,
   isLoopbackHost,
+  remoteHostHeaders,
+  remoteOrigin,
 } from './allowedHosts.js'
 
 describe('allowedHosts', () => {
@@ -35,5 +37,14 @@ describe('allowedHosts', () => {
     expect(isAllowedOrigin('http://localhost:4870', allowed)).toBe(true)
     expect(isAllowedOrigin('http://evil.example', allowed)).toBe(false)
     expect(isAllowedOrigin('not a url', allowed)).toBe(false)
+  })
+
+  it('allows the public host only once remote access is configured', () => {
+    const allowed = remoteHostHeaders('workday.example.com')
+    expect(isAllowedHost('workday.example.com', allowed)).toBe(true)
+    expect(isAllowedHost('Workday.Example.com:443', allowed)).toBe(true)
+    expect(isAllowedHost('workday.example.com:8080', allowed)).toBe(false)
+    expect(isAllowedHost('workday.example.com', remoteHostHeaders(null))).toBe(false)
+    expect(remoteOrigin('workday.example.com')).toBe('https://workday.example.com')
   })
 })

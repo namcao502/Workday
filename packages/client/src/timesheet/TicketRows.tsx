@@ -2,6 +2,7 @@ import { describeSlots, slotsFor, type TicketCheck } from '@workday/core'
 import { useState } from 'react'
 import { KeyPill } from '../board/KeyPill.js'
 import { t } from '../i18n.js'
+import { formatMinutes } from './timesheetText.js'
 
 const MINUTES_PER_HOUR = 60
 
@@ -14,8 +15,8 @@ interface TicketRowsProps {
   readonly rows: readonly TicketRow[]
   readonly checks?: Readonly<Record<string, TicketCheck>>
   readonly urlFor: (key: string) => string
-  readonly onHours: (key: string, minutes: number) => void
-  readonly onRemove?: (key: string) => void
+  readonly onHours?: ((key: string, minutes: number) => void) | undefined // absent = read only
+  readonly onRemove?: ((key: string) => void) | undefined
   readonly onUseKey?: (from: string, to: string) => void
 }
 
@@ -106,12 +107,16 @@ export function TicketRows({
               {checks === undefined ? null : <CheckDot check={check} />}
               <KeyPill ticketKey={row.key} url={urlFor(row.key)} />
               <span className="ticket-summary muted">{check?.summary ?? ''}</span>
-              <HoursInput
-                ticketKey={row.key}
-                minutes={row.minutes}
-                tooltip={describeSlots(slotsFor(allMinutes, index))}
-                onHours={onHours}
-              />
+              {onHours === undefined ? (
+                <span className="hours-text">{formatMinutes(row.minutes)}</span>
+              ) : (
+                <HoursInput
+                  ticketKey={row.key}
+                  minutes={row.minutes}
+                  tooltip={describeSlots(slotsFor(allMinutes, index))}
+                  onHours={onHours}
+                />
+              )}
               {onRemove === undefined ? null : (
                 <button
                   type="button"

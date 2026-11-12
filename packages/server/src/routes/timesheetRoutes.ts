@@ -6,6 +6,8 @@ import type { TimesheetService } from '../timesheet/timesheetService.js'
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const MONDAY = 1
+const TIMESHEET_VIEW = { config: { access: { area: 'timesheet', level: 'view' } } } as const
+const TIMESHEET_ACT = { config: { access: { area: 'timesheet', level: 'act' } } } as const
 const LOG_TARGETS: ReadonlySet<string> = new Set(['both', 'tsc', 'hrm'])
 
 interface DayTickets {
@@ -56,9 +58,9 @@ function badRequest(reply: FastifyReply, shape: string): FastifyReply {
 }
 
 export function registerTimesheetRoutes(app: FastifyInstance, timesheet: TimesheetService): void {
-  app.get('/api/timesheet', () => timesheet.view())
+  app.get('/api/timesheet', TIMESHEET_VIEW, () => timesheet.view())
 
-  app.post('/api/timesheet/queue', async (request, reply) => {
+  app.post('/api/timesheet/queue', TIMESHEET_ACT, async (request, reply) => {
     const day = parseDayTickets(request.body)
     if (day === null) {
       return badRequest(reply, '{ date, tickets, minutes }')
@@ -68,6 +70,7 @@ export function registerTimesheetRoutes(app: FastifyInstance, timesheet: Timeshe
 
   app.put<{ Params: { date: string } }>(
     '/api/timesheet/queue/:date/minutes',
+    TIMESHEET_ACT,
     async (request, reply) => {
       const body: unknown = request.body
       const tickets = isRecord(body) ? body['tickets'] : undefined
@@ -85,18 +88,19 @@ export function registerTimesheetRoutes(app: FastifyInstance, timesheet: Timeshe
 
   app.delete<{ Params: { date: string; key: string } }>(
     '/api/timesheet/queue/:date/:key',
+    TIMESHEET_ACT,
     async (request, reply) => {
       await timesheet.removeFromQueue(request.params.date, request.params.key)
       return reply.code(204).send()
     },
   )
 
-  app.delete('/api/timesheet/queue', async (_request, reply) => {
+  app.delete('/api/timesheet/queue', TIMESHEET_ACT, async (_request, reply) => {
     await timesheet.clearQueue()
     return reply.code(204).send()
   })
 
-  app.post('/api/timesheet/drain', async (request, reply) => {
+  app.post('/api/timesheet/drain', TIMESHEET_ACT, async (request, reply) => {
     const body: unknown = request.body ?? {}
     const date = isRecord(body) ? body['date'] : undefined
     if (!isRecord(body) || (date !== undefined && !isDate(date))) {
@@ -106,7 +110,7 @@ export function registerTimesheetRoutes(app: FastifyInstance, timesheet: Timeshe
     return outcome.ok ? outcome.summary : reply.code(409).send(outcome)
   })
 
-  app.post('/api/timesheet/log', async (request, reply) => {
+  app.post('/api/timesheet/log', TIMESHEET_ACT, async (request, reply) => {
     const day = parseDayTickets(request.body)
     const target = isRecord(request.body) ? request.body['target'] : undefined
     if (day === null || !isLogTarget(target)) {
@@ -116,7 +120,7 @@ export function registerTimesheetRoutes(app: FastifyInstance, timesheet: Timeshe
     return outcome.ok ? outcome.outcome : reply.code(409).send(outcome)
   })
 
-  app.post('/api/timesheet/off', async (request, reply) => {
+  app.post('/api/timesheet/off', TIMESHEET_ACT, async (request, reply) => {
     const date = isRecord(request.body) ? request.body['date'] : undefined
     if (!isDate(date)) {
       return badRequest(reply, '{ date }')
@@ -124,21 +128,23 @@ export function registerTimesheetRoutes(app: FastifyInstance, timesheet: Timeshe
     return timesheet.logOff(date)
   })
 
-  app.post('/api/timesheet/week', async (request, reply) => {
+  app.post('/api/timesheet/week', TIMESHEET_VIEW, async (request, reply) => {
     const body: unknown = request.body
     const monday = isRecord(body) ? body['monday'] : undefined
     const allowSniff = isRecord(body) ? body['allowSniff'] : undefined
     if (!isDate(monday) || weekdayOf(monday) !== MONDAY || typeof allowSniff !== 'boolean') {
       return badRequest(reply, '{ monday, allowSniff }')
     }
+    // A remote read never opens Chrome on the PC, whatever the body asks.
+    const canSniff = request.isRemote ? false : allowSniff
     // The result arrives through timesheet.changed; the read can open a browser and take a while.
-    timesheet.readWeek(monday, allowSniff).catch((error: unknown) => {
+    timesheet.readWeek(monday, canSniff).catch((error: unknown) => {
       request.log.error(error, 'Reading the week failed')
     })
     return reply.code(202).send()
   })
 
-  app.post('/api/timesheet/tickets/check', async (request, reply) => {
+  app.post('/api/timesheet/tickets/check', TIMESHEET_VIEW, async (request, reply) => {
     const keys = isRecord(request.body) ? request.body['keys'] : undefined
     if (!isStringList(keys)) {
       return badRequest(reply, '{ keys }')

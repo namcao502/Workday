@@ -1,5 +1,11 @@
-import type { JiraCheckRequest, JiraConfig, SettingsUpdate, TimesheetConfig } from '@workday/core'
-import { isLogTime, parseJira, parseTimesheet } from '../config.js'
+import type {
+  JiraCheckRequest,
+  JiraConfig,
+  RemoteConfig,
+  SettingsUpdate,
+  TimesheetConfig,
+} from '@workday/core'
+import { isLogTime, parseJira, parseRemote, parseTimesheet } from '../config.js'
 import { isRecord } from '../jsonFile.js'
 
 const MIN_PORT = 1024
@@ -45,6 +51,22 @@ function parseJiraField(raw: unknown): JiraConfig | null | undefined {
   return jira !== null && isHttpUrl(jira.baseUrl) ? jira : undefined
 }
 
+// undefined = invalid; null = remote access not configured. A string field of the wrong type is invalid too.
+function parseRemoteField(raw: unknown): RemoteConfig | null | undefined {
+  if (raw === null) {
+    return null
+  }
+  if (!isRecord(raw)) {
+    return undefined
+  }
+  const { enabled, cloudflaredPath } = raw
+  const isEnabledValid = enabled === undefined || typeof enabled === 'boolean'
+  const isPathValid =
+    cloudflaredPath === undefined || cloudflaredPath === null || typeof cloudflaredPath === 'string'
+  const remote = parseRemote(raw)
+  return remote !== null && isEnabledValid && isPathValid ? remote : undefined
+}
+
 export interface HrmCheckRequest {
   readonly mcpUrl: string
   readonly hrmApiKey?: string
@@ -65,7 +87,7 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
     return null
   }
   let update: SettingsUpdate = {}
-  const { port, timeZone, pollMinutes, theme, language, jiraApiToken, hrmApiKey } = raw
+  const { port, timeZone, pollMinutes, theme, language, jiraApiToken, hrmApiKey, tunnelToken } = raw
   if (port !== undefined) {
     if (!isIntegerBetween(port, MIN_PORT, MAX_PORT)) {
       return null
@@ -121,6 +143,19 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
       return null
     }
     update = { ...update, hrmApiKey }
+  }
+  if (Object.hasOwn(raw, 'remote')) {
+    const remote = parseRemoteField(raw['remote'])
+    if (remote === undefined) {
+      return null
+    }
+    update = { ...update, remote }
+  }
+  if (tunnelToken !== undefined) {
+    if (!isNonEmptyText(tunnelToken)) {
+      return null
+    }
+    update = { ...update, tunnelToken }
   }
   return update
 }

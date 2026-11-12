@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type { JiraConfig } from '@workday/core'
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { saveConfig, saveSecrets } from '../config.js'
+import { NO_SECRETS, readFileSecrets, saveConfig, saveSecrets } from '../config.js'
 import { buildTestApp, LOOPBACK_HEADERS, newDataDir, type TestApp } from '../testing/testApp.js'
 
 const SAVED_TOKEN = 'saved-secret-token'
@@ -28,6 +28,7 @@ const openApps: FastifyInstance[] = []
 beforeEach(() => {
   vi.stubEnv('WORKDAY_JIRA_API_TOKEN', '')
   vi.stubEnv('WORKDAY_HRM_API_KEY', '')
+  vi.stubEnv('WORKDAY_TUNNEL_TOKEN', '')
 })
 
 afterEach(async () => {
@@ -46,8 +47,9 @@ async function connectedApp(): Promise<TestApp> {
     language: 'en',
     jira: JIRA,
     timesheet: { logTime: '18:00', hrm: null, tsc: null },
+    remote: null,
   })
-  await saveSecrets(dataDir, { jiraApiToken: SAVED_TOKEN, hrmApiKey: null })
+  await saveSecrets(dataDir, { ...NO_SECRETS, jiraApiToken: SAVED_TOKEN })
   return track(await buildTestApp({ dataDir }))
 }
 
@@ -62,8 +64,9 @@ async function hrmApp(): Promise<TestApp> {
     language: 'en',
     jira: null,
     timesheet: TIMESHEET,
+    remote: null,
   })
-  await saveSecrets(dataDir, { jiraApiToken: null, hrmApiKey: SAVED_HRM_KEY })
+  await saveSecrets(dataDir, { ...NO_SECRETS, hrmApiKey: SAVED_HRM_KEY })
   return track(await buildTestApp({ dataDir }))
 }
 
@@ -101,9 +104,11 @@ describe('settings routes', () => {
         language: 'en',
         jira: JIRA,
         timesheet: { logTime: '18:00', hrm: null, tsc: null },
+        remote: null,
       },
       jiraTokenSource: 'file',
       hrmKeySource: null,
+      tunnelTokenSource: null,
     })
   })
 
@@ -117,8 +122,8 @@ describe('settings routes', () => {
     expect(response.json()).toMatchObject({ config: { jira: JIRA }, jiraTokenSource: 'file' })
     expect(testApp.trackerCalls).toEqual([{ jira: JIRA, token: 'new-token' }])
     expect(testApp.schedulerStarts).toEqual([5])
-    const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
-    expect(secrets).toEqual({ jiraApiToken: 'new-token', hrmApiKey: null })
+    const secrets = readFileSecrets(testApp.dataDir)
+    expect(secrets).toEqual({ ...NO_SECRETS, jiraApiToken: 'new-token', hrmApiKey: null })
     const board = await testApp.app.inject({ url: '/api/board', headers: LOOPBACK_HEADERS })
     expect(board.json()).toMatchObject({ connected: true })
   })
@@ -187,8 +192,8 @@ describe('settings routes', () => {
     expect(response.statusCode).toBe(500)
     const settings = await testApp.app.inject({ url: '/api/settings', headers: LOOPBACK_HEADERS })
     expect(settings.json()).toMatchObject({ config: { theme: 'dark' } })
-    const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
-    expect(secrets).toEqual({ jiraApiToken: SAVED_TOKEN, hrmApiKey: null })
+    const secrets = readFileSecrets(testApp.dataDir)
+    expect(secrets).toEqual({ ...NO_SECRETS, jiraApiToken: SAVED_TOKEN, hrmApiKey: null })
     expect(broadcast).not.toHaveBeenCalled()
   })
 
@@ -282,8 +287,8 @@ describe('settings routes', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.body).not.toContain('new-key')
-    const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
-    expect(secrets).toEqual({ jiraApiToken: SAVED_TOKEN, hrmApiKey: 'new-key' })
+    const secrets = readFileSecrets(testApp.dataDir)
+    expect(secrets).toEqual({ ...NO_SECRETS, jiraApiToken: SAVED_TOKEN, hrmApiKey: 'new-key' })
     expect(testApp.hoursLogCalls.at(-1)).toEqual({ hrm: TIMESHEET.hrm, apiKey: 'new-key' })
   })
 
@@ -294,7 +299,45 @@ describe('settings routes', () => {
     const response = await putSettings(testApp, { timesheet: TIMESHEET, hrmApiKey: 'new-key' })
 
     expect(response.statusCode).toBe(200)
-    const secrets: unknown = JSON.parse(readFileSync(join(testApp.dataDir, 'secrets.json'), 'utf8'))
-    expect(secrets).toEqual({ jiraApiToken: SAVED_TOKEN, hrmApiKey: 'new-key' })
+    const secrets = readFileSecrets(testApp.dataDir)
+    expect(secrets).toEqual({ ...NO_SECRETS, jiraApiToken: SAVED_TOKEN, hrmApiKey: 'new-key' })
+  })
+
+  it('PUT /api/settings saves remote and the tunnel token beside the other secrets', async () => {
+    const testApp = await connectedApp()
+    const remote = {
+      enabled: true,
+      publicHost: 'https://Workday.Example.com/',
+      accessTeamDomain: 'team.cloudflareaccess.com',
+      accessAud: 'aud-123',
+      cloudflaredPath: null,
+    }
+
+    const response = await putSettings(testApp, { remote, tunnelToken: 'tunnel-secret' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).not.toContain('tunnel-secret')
+    expect(response.json()).toMatchObject({
+      config: { remote: { publicHost: 'workday.example.com' } },
+      tunnelTokenSource: 'file',
+    })
+    expect(readFileSecrets(testApp.dataDir)).toEqual({
+      ...NO_SECRETS,
+      jiraApiToken: SAVED_TOKEN,
+      tunnelToken: 'tunnel-secret',
+    })
+    expect(readFileSync(join(testApp.dataDir, 'config.json'), 'utf8')).not.toContain(
+      'tunnel-secret',
+    )
+    expect(testApp.services.remote.config?.publicHost).toBe('workday.example.com')
+  })
+
+  it('PUT /api/settings rejects an incomplete remote block', async () => {
+    const testApp = await connectedApp()
+
+    const response = await putSettings(testApp, { remote: { publicHost: 'workday.example.com' } })
+
+    expect(response.statusCode).toBe(400)
+    expect(testApp.services.remote.config).toBeNull()
   })
 })

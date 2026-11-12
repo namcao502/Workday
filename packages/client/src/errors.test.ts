@@ -31,6 +31,12 @@ const CODES: readonly AppError['code'][] = [
   'browserBusy',
   'hrmRejected',
   'hrmUnreachable',
+  'remoteDisabled',
+  'accessRequired',
+  'notPaired',
+  'forbidden',
+  'pairingClosed',
+  'wrongCode',
 ]
 
 it('errorText has English and Vietnamese text for every AppError code', () => {

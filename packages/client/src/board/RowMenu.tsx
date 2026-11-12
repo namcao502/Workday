@@ -1,5 +1,6 @@
 import type { BoardAction } from '@workday/core'
 import { useEffect, useRef, useState } from 'react'
+import { useAccess } from '../api/useMe.js'
 import { t } from '../i18n.js'
 import type { BoardViewId } from './boardView.js'
 
@@ -26,9 +27,10 @@ function itemsFor(view: BoardViewId): readonly MenuItem[] {
   }
 }
 
-export function RowMenu({ ticketKey, view, onAction }: RowMenuProps): React.JSX.Element {
+export function RowMenu({ ticketKey, view, onAction }: RowMenuProps): React.JSX.Element | null {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const canAct = useAccess().canAct('board')
 
   useEffect(() => {
     if (!open) {
@@ -45,6 +47,9 @@ export function RowMenu({ ticketKey, view, onAction }: RowMenuProps): React.JSX.
     }
   }, [open])
 
+  if (!canAct) {
+    return null
+  }
   return (
     <div className="row-menu" ref={containerRef}>
       <button

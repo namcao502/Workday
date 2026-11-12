@@ -9,6 +9,7 @@ import {
   type WeekReviewItem,
   type ZonedClock,
 } from '@workday/core'
+import { useAccess } from '../api/useMe.js'
 import { t, type Language } from '../i18n.js'
 import { HoursBar } from './HoursBar.js'
 import { TicketRows } from './TicketRows.js'
@@ -99,6 +100,7 @@ function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
 function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Element | null {
   const { day, clock, logTime, logTimeMinutes, language } = props
   const entry = day.queued
+  const canAct = useAccess().canAct('timesheet')
   if (entry === null) {
     return null
   }
@@ -121,37 +123,51 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
   return (
     <>
       <p className={state === 'due' ? 'day-line warning' : 'day-line muted'}>{status}</p>
-      <button
-        type="button"
-        className="button secondary day-log"
-        disabled={props.working || closed || !props.canLog}
-        onClick={() => {
-          props.onLogNow(entry.date)
-        }}
-      >
-        {label}
-      </button>
+      {canAct ? (
+        <button
+          type="button"
+          className="button secondary day-log"
+          disabled={props.working || closed || !props.canLog}
+          onClick={() => {
+            props.onLogNow(entry.date)
+          }}
+        >
+          {label}
+        </button>
+      ) : null}
       <HoursBar
         minutes={minutes}
         labels={entry.tickets}
-        onCommit={(next) => {
-          props.onSaveMinutes(entry.date, entry.tickets, next)
-        }}
+        onCommit={
+          canAct
+            ? (next) => {
+                props.onSaveMinutes(entry.date, entry.tickets, next)
+              }
+            : undefined
+        }
       />
       <TicketRows
         rows={entry.tickets.map((key, index) => ({ key, minutes: minutes[index] ?? 0 }))}
         urlFor={props.urlFor}
-        onHours={(key, ticketMinutes) => {
-          const next = minutesWith(entry, key, ticketMinutes)
-          if (next === null) {
-            props.onRejected()
-            return
-          }
-          props.onSaveMinutes(entry.date, entry.tickets, next)
-        }}
-        onRemove={(key) => {
-          props.onRemove(entry.date, key)
-        }}
+        onHours={
+          canAct
+            ? (key, ticketMinutes) => {
+                const next = minutesWith(entry, key, ticketMinutes)
+                if (next === null) {
+                  props.onRejected()
+                  return
+                }
+                props.onSaveMinutes(entry.date, entry.tickets, next)
+              }
+            : undefined
+        }
+        onRemove={
+          canAct
+            ? (key) => {
+                props.onRemove(entry.date, key)
+              }
+            : undefined
+        }
       />
     </>
   )

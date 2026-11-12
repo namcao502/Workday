@@ -161,3 +161,30 @@
   color: var(--text-secondary);
   font-size: var(--font-caption);
 }
+
+.device-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.device-row {
+  padding: var(--card-gap) 0;
+  border-top: 1px solid var(--border);
+}
+
+.pairing-code {
+  margin: var(--button-gap) 0 0;
+  font-family: monospace;
+  font-size: 2rem;
+  letter-spacing: 0.2em;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.activity-table td.danger {
+  color: var(--danger);
+}

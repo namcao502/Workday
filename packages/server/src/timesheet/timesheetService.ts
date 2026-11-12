@@ -42,6 +42,8 @@ export interface TimesheetServiceDeps {
   readonly board: BoardKeys
   readonly now: () => Date
   readonly settings: TimesheetSettings
+  // Called after each new lastRun, e.g. to push it to phones.
+  readonly onRun?: (summary: RunSummary) => void
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -191,6 +193,7 @@ export class TimesheetService {
     }
     this.lastRun = summary
     this.broadcast()
+    this.deps.onRun?.(summary)
     this.rereadWeek()
     if (this.redrainPending) {
       this.redrainPending = false
@@ -366,6 +369,7 @@ export class TimesheetService {
   ): void {
     this.lastRun = { at: this.now(), trigger, kind }
     this.broadcast()
+    this.deps.onRun?.(this.lastRun)
   }
 
   private now(): string {

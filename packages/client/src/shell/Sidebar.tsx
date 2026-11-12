@@ -5,10 +5,16 @@ interface NavProps {
   readonly current: PageId
   readonly onSelect: (page: PageId) => void
   readonly attention?: boolean // dot on the Timesheet item
+  readonly pages?: readonly PageId[]
 }
 
-export function Sidebar({ current, onSelect, attention = false }: NavProps): React.JSX.Element {
-  const mainPages = PAGE_IDS.filter((page) => page !== 'settings')
+export function Sidebar({
+  current,
+  onSelect,
+  attention = false,
+  pages = PAGE_IDS,
+}: NavProps): React.JSX.Element {
+  const mainPages = pages.filter((page) => page !== 'settings')
   return (
     <nav className="sidebar" aria-label={t('Pages', 'Trang')}>
       <div className="sidebar-title">Workday</div>

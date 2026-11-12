@@ -10,6 +10,9 @@ import { FakeHoursLog, FakeSheetLog, FakeTracker } from './fakes.js'
 
 export const TEST_PORT = 4870
 export const LOOPBACK_HEADERS = { host: `127.0.0.1:${String(TEST_PORT)}` }
+// The fake Access verifier accepts only this JWT.
+export const VALID_ACCESS_JWT = 'valid-access-jwt'
+export const ACCESS_EMAIL = 'me@example.com'
 
 export interface TrackerCall {
   readonly jira: JiraConfig
@@ -19,6 +22,11 @@ export interface TrackerCall {
 export interface HoursLogCall {
   readonly hrm: HrmConfig
   readonly apiKey: string
+}
+
+export interface PushCall {
+  readonly endpoint: string
+  readonly payload: string
 }
 
 export interface TestApp {
@@ -33,6 +41,7 @@ export interface TestApp {
   readonly logTimes: string[]
   readonly schedulerStarts: number[]
   readonly schedulerStops: { count: number }
+  readonly pushes: PushCall[]
 }
 
 export function newDataDir(): string {
@@ -52,6 +61,7 @@ export async function buildTestApp(
   const hours = new FakeHoursLog()
   const hoursLogCalls: HoursLogCall[] = []
   const logTimes: string[] = []
+  const pushes: PushCall[] = []
   const services = createServices({
     dataDir,
     config: loadConfig(dataDir),
@@ -81,6 +91,18 @@ export async function buildTestApp(
         schedulerStops.count += 1
       },
     },
+    createAccessVerifier: () => ({
+      verify: (token) =>
+        Promise.resolve(token === VALID_ACCESS_JWT ? { email: ACCESS_EMAIL } : null),
+    }),
+    // Never reaches a real push service or cloudflared.
+    sendPush: (subscription, payload) => {
+      pushes.push({ endpoint: subscription.endpoint, payload })
+      return Promise.resolve({ statusCode: 201 })
+    },
+    spawnTunnel: () => {
+      throw new Error('A test must not start cloudflared')
+    },
     logError: () => undefined,
   })
   services.settings.start()
@@ -104,5 +126,6 @@ export async function buildTestApp(
     logTimes,
     schedulerStarts,
     schedulerStops,
+    pushes,
   }
 }

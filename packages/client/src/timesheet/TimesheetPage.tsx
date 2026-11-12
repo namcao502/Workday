@@ -14,6 +14,7 @@ import {
 } from '@workday/core'
 import { useEffect, useRef, useState } from 'react'
 import { queryKeys, readWeek, type LogTarget } from '../api/client.js'
+import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
 import {
   useNow,
@@ -61,6 +62,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
   const clock = zonedClock(timeZone, useNow())
   const refresh = useRefreshTimesheet()
   const actions = useTimesheetActions(language)
+  const canAct = useAccess().canAct('timesheet')
   const thisMonday = mondayOf(view.today)
   const [monday, setMonday] = useState(thisMonday)
   const [date, setDate] = useState(clock.date)
@@ -168,37 +170,39 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
     <section className="page timesheet-page">
       <h1 className="page-title">{t('Timesheet', 'Bảng công')}</h1>
       <TimesheetBanners view={view} reminder={showReminder(view, clock, timeZone)} />
-      <LogInput
-        date={date}
-        text={text}
-        typed={typedKeys.map((key, index) => ({ key, minutes: typedMinutes[index] ?? 0 }))}
-        checks={checks}
-        problem={problem}
-        working={
-          working !== null && working.action !== 'drain' && working.action !== 'save'
-            ? working.action
-            : null
-        }
-        hrmClosed={isHrmClosed(date, clock)}
-        tscConnected={view.tscConnected}
-        hrmConnected={view.hrmConnected}
-        queueEmpty={view.queue.length === 0}
-        urlFor={urlFor}
-        onDate={setDate}
-        onText={(next) => {
-          setText(next)
-          setCustom(null)
-        }}
-        onTypedHours={(key, minutes) => {
-          setCustom(
-            typedMinutes.map((value, index) => (typedKeys[index] === key ? minutes : value)),
-          )
-        }}
-        onUseKey={(from, to) => {
-          setText(typedKeys.map((key) => (key === from ? to : key)).join(', '))
-        }}
-        onAction={onAction}
-      />
+      {canAct ? (
+        <LogInput
+          date={date}
+          text={text}
+          typed={typedKeys.map((key, index) => ({ key, minutes: typedMinutes[index] ?? 0 }))}
+          checks={checks}
+          problem={problem}
+          working={
+            working !== null && working.action !== 'drain' && working.action !== 'save'
+              ? working.action
+              : null
+          }
+          hrmClosed={isHrmClosed(date, clock)}
+          tscConnected={view.tscConnected}
+          hrmConnected={view.hrmConnected}
+          queueEmpty={view.queue.length === 0}
+          urlFor={urlFor}
+          onDate={setDate}
+          onText={(next) => {
+            setText(next)
+            setCustom(null)
+          }}
+          onTypedHours={(key, minutes) => {
+            setCustom(
+              typedMinutes.map((value, index) => (typedKeys[index] === key ? minutes : value)),
+            )
+          }}
+          onUseKey={(from, to) => {
+            setText(typedKeys.map((key) => (key === from ? to : key)).join(', '))
+          }}
+          onAction={onAction}
+        />
+      ) : null}
       {actions.status === null ? null : (
         <p
           className={actions.status.tone === 'ok' ? 'status' : 'status danger'}

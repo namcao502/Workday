@@ -60,5 +60,7 @@ Each package has two tsconfigs: `tsconfig.json` (noEmit, includes tests; used by
 - Every company-specific value (URLs, project keys, names) lives in config, never in code.
 - Each integration is an interface in `packages/core/src/ports`; adapters live in the server.
 - The server listens on 127.0.0.1 only and rejects a foreign `Host` or WebSocket `Origin`
-  (`packages/server/src/security/allowedHosts.ts`). Keep that until sign-in exists.
+  (`packages/server/src/security/allowedHosts.ts`).
+- A remote request (via the tunnel) must carry a valid Cloudflare Access JWT, come from a paired device,
+  and have the right the route declares in `config.access`. A route with no `config.access` is local-only.
 - No `any` (lint error). English, ASCII punctuation in code, comments and docs.

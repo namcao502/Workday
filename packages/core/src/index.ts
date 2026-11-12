@@ -1,5 +1,6 @@
 export type * from './api.js'
 export * from './board.js'
+export * from './remoteAccess.js'
 export * from './statusFlow.js'
 export * from './ticket.js'
 export * from './ticketKey.js'

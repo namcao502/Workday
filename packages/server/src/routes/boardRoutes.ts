@@ -3,6 +3,8 @@ import type { FastifyInstance } from 'fastify'
 import type { BoardService } from '../board/boardService.js'
 import { isRecord } from '../jsonFile.js'
 
+const BOARD_VIEW = { config: { access: { area: 'board', level: 'view' } } } as const
+const BOARD_ACT = { config: { access: { area: 'board', level: 'act' } } } as const
 const NOT_CONNECTED = { ok: false, error: { code: 'notConnected' } } as const
 
 function isBoardAction(value: string): value is BoardAction {
@@ -10,9 +12,9 @@ function isBoardAction(value: string): value is BoardAction {
 }
 
 export function registerBoardRoutes(app: FastifyInstance, board: BoardService): void {
-  app.get('/api/board', () => board.view())
+  app.get('/api/board', BOARD_VIEW, () => board.view())
 
-  app.post('/api/board/check', async (_request, reply) => {
+  app.post('/api/board/check', BOARD_ACT, async (_request, reply) => {
     if (!board.isConnected()) {
       return reply.code(409).send(NOT_CONNECTED)
     }
@@ -20,7 +22,7 @@ export function registerBoardRoutes(app: FastifyInstance, board: BoardService): 
     return board.view()
   })
 
-  app.post('/api/board/add', async (request, reply) => {
+  app.post('/api/board/add', BOARD_ACT, async (request, reply) => {
     const body: unknown = request.body
     const input = isRecord(body) ? body['input'] : undefined
     if (typeof input !== 'string') {
@@ -34,6 +36,7 @@ export function registerBoardRoutes(app: FastifyInstance, board: BoardService): 
 
   app.post<{ Params: { key: string; action: string } }>(
     '/api/board/:key/:action',
+    BOARD_ACT,
     async (request, reply) => {
       const { key, action } = request.params
       if (!isBoardAction(action)) {

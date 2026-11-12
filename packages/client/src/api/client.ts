@@ -18,28 +18,35 @@ import { isRecord } from '../json.js'
 
 export const queryKeys = {
   board: ['board'],
+  me: ['me'],
+  remote: ['remote'],
   settings: ['settings'],
   timesheet: ['timesheet'],
   timesheetVisited: ['timesheet-visited'],
 } as const
 
+const UNAUTHORIZED = 401
+
 export class ApiError extends Error {
   readonly status: number
+  readonly code: PlainCode | null // set when the server named the refusal
 
-  constructor(status: number, path: string) {
+  constructor(status: number, path: string, code: PlainCode | null = null) {
     super(`Request to ${path} failed with ${String(status)}`)
     this.name = 'ApiError'
     this.status = status
+    this.code = code
   }
 }
 
-interface RawResponse {
+export interface RawResponse {
   readonly status: number
   readonly ok: boolean
   readonly body: unknown
 }
 
-async function send(method: string, path: string, payload?: unknown): Promise<RawResponse> {
+// A 401 means the device is not (or no longer) paired; it is thrown so one handler can show the pair page.
+export async function send(method: string, path: string, payload?: unknown): Promise<RawResponse> {
   const init: RequestInit =
     payload === undefined
       ? { method }
@@ -50,6 +57,9 @@ async function send(method: string, path: string, payload?: unknown): Promise<Ra
         }
   const response = await fetch(path, init)
   const body: unknown = await response.json().catch(() => null)
+  if (response.status === UNAUTHORIZED) {
+    throw new ApiError(UNAUTHORIZED, path, 'notPaired')
+  }
   return { status: response.status, ok: response.ok, body }
 }
 
@@ -62,7 +72,9 @@ function isSettingsView(value: unknown): value is SettingsView {
 }
 
 // Both AddTicketResult and JiraCheckResult are `{ ok: boolean, ... }` bodies.
-function hasOkFlag(value: unknown): value is Record<string, unknown> & { readonly ok: boolean } {
+export function hasOkFlag(
+  value: unknown,
+): value is Record<string, unknown> & { readonly ok: boolean } {
   return isRecord(value) && typeof value['ok'] === 'boolean'
 }
 
@@ -112,7 +124,7 @@ function readDetail(raw: RawResponse): string | null {
 }
 
 type KeyedCode = 'notFound' | 'alreadyOnBoard'
-type PlainCode = Exclude<AppError['code'], KeyedCode>
+export type PlainCode = Exclude<AppError['code'], KeyedCode>
 
 const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'invalidKey',
@@ -131,9 +143,15 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'browserBusy',
   'hrmRejected',
   'hrmUnreachable',
+  'remoteDisabled',
+  'accessRequired',
+  'notPaired',
+  'forbidden',
+  'pairingClosed',
+  'wrongCode',
 ])
 
-function isPlainCode(code: unknown): code is PlainCode {
+export function isPlainCode(code: unknown): code is PlainCode {
   return typeof code === 'string' && PLAIN_CODES.has(code)
 }
 

@@ -14,10 +14,12 @@
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@workday/core": "*",
     "fastify": "^5.12.8",
-    "playwright-core": "^1.65.0"
+    "playwright-core": "^1.65.0",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "@types/web-push": "^3.6.4",
     "@types/ws": "^8.18.2",
     "tsx": "^4.23.15",
     "vitest": "^5.1.0"

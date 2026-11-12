@@ -6,7 +6,7 @@ import { formatMinutes } from './timesheetText.js'
 interface HoursBarProps {
   readonly minutes: readonly number[]
   readonly labels: readonly string[]
-  readonly onCommit?: (minutes: readonly number[]) => void // absent = read only
+  readonly onCommit?: ((minutes: readonly number[]) => void) | undefined // absent = read only
 }
 
 function sameMinutes(left: readonly number[], right: readonly number[]): boolean {

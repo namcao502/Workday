@@ -1,6 +1,6 @@
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { saveConfig, saveSecrets } from '../config.js'
+import { NO_SECRETS, saveConfig, saveSecrets } from '../config.js'
 import { buildTestApp, LOOPBACK_HEADERS, newDataDir, type TestApp } from '../testing/testApp.js'
 
 const openApps: FastifyInstance[] = []
@@ -26,13 +26,14 @@ async function timesheetApp(): Promise<TestApp> {
     theme: 'dark',
     language: 'en',
     jira: null,
+    remote: null,
     timesheet: {
       logTime: '18:00',
       hrm: { mcpUrl: 'https://hrm.example/mcp', projectId: 'P1' },
       tsc: null,
     },
   })
-  await saveSecrets(dataDir, { jiraApiToken: null, hrmApiKey: 'hrm-key' })
+  await saveSecrets(dataDir, { ...NO_SECRETS, hrmApiKey: 'hrm-key' })
   const testApp = await buildTestApp({ dataDir })
   openApps.push(testApp.app)
   return testApp

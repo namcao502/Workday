@@ -1,3 +1,4 @@
+import type { DeviceRights } from './remoteAccess.js'
 import type { StatusFlow } from './statusFlow.js'
 import type { BoardSection } from './board.js'
 import type { DueUrgency, Ticket } from './ticket.js'
@@ -40,6 +41,14 @@ export interface TimesheetConfig {
   readonly tsc: TscConfig | null
 }
 
+export interface RemoteConfig {
+  readonly enabled: boolean
+  readonly publicHost: string // "workday.example.com", no scheme
+  readonly accessTeamDomain: string // "myteam.cloudflareaccess.com"
+  readonly accessAud: string
+  readonly cloudflaredPath: string | null // null = the user runs cloudflared
+}
+
 export interface WorkdayConfig {
   readonly host: string
   readonly port: number
@@ -49,6 +58,7 @@ export interface WorkdayConfig {
   readonly language: 'en' | 'vi'
   readonly jira: JiraConfig | null
   readonly timesheet: TimesheetConfig
+  readonly remote: RemoteConfig | null // null until publicHost, accessTeamDomain and accessAud are all set
 }
 
 // Server never sends display text; the client translates the code with t().
@@ -71,6 +81,12 @@ export type AppError =
         | 'browserBusy'
         | 'hrmRejected'
         | 'hrmUnreachable'
+        | 'remoteDisabled'
+        | 'accessRequired'
+        | 'notPaired'
+        | 'forbidden'
+        | 'pairingClosed'
+        | 'wrongCode'
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
 
@@ -80,6 +96,7 @@ export interface SettingsView {
   readonly config: Omit<WorkdayConfig, 'host'>
   readonly jiraTokenSource: JiraTokenSource // never the token itself
   readonly hrmKeySource: 'env' | 'file' | null // never the key itself
+  readonly tunnelTokenSource: 'env' | 'file' | null // never the token itself
 }
 
 // Replaces each top-level field it carries; jira: null disconnects; jiraApiToken omitted keeps the saved token.
@@ -93,6 +110,8 @@ export interface SettingsUpdate {
   readonly jiraApiToken?: string
   readonly timesheet?: TimesheetConfig
   readonly hrmApiKey?: string
+  readonly remote?: RemoteConfig | null
+  readonly tunnelToken?: string
 }
 
 export interface JiraCheckRequest {
@@ -191,6 +210,57 @@ export type ServerEvent =
   | { readonly type: 'board.changed' }
   | { readonly type: 'settings.changed' }
   | { readonly type: 'timesheet.changed' }
+  | { readonly type: 'remote.changed' } // PC Settings refetches RemoteStatusView
+
+export interface PushSubscriptionJson {
+  readonly endpoint: string
+  readonly keys: { readonly p256dh: string; readonly auth: string }
+}
+
+export interface RemoteDevice {
+  readonly id: string
+  readonly name: string
+  readonly email: string | null // the Cloudflare Access identity that paired it
+  readonly rights: DeviceRights
+  readonly pushEnabled: boolean
+  readonly hasPushSubscription: boolean
+  readonly createdAt: string
+  readonly lastSeenAt: string | null
+}
+
+export type MeView =
+  | { readonly mode: 'local' }
+  | { readonly mode: 'remote'; readonly device: RemoteDevice }
+  | { readonly mode: 'unpaired' }
+
+export interface PairingView {
+  readonly code: string | null // shown on the PC only
+  readonly expiresAt: string | null
+  readonly pending: {
+    readonly name: string
+    readonly email: string | null
+    readonly ip: string | null
+    readonly at: string
+  } | null
+}
+
+export interface ActivityEntry {
+  readonly at: string
+  readonly deviceId: string
+  readonly deviceName: string
+  readonly method: string
+  readonly route: string // the route pattern, never the body
+  readonly status: number
+}
+
+export interface RemoteStatusView {
+  readonly tunnel: 'off' | 'starting' | 'running' | 'failed'
+  readonly tunnelDetail: string | null
+  readonly devices: readonly RemoteDevice[]
+  readonly pairing: PairingView
+  readonly activity: readonly ActivityEntry[] // newest first, at most 50
+  readonly vapidPublicKey: string | null
+}
 
 // detail: the upstream text, untranslated, for a tooltip.
 export type TscSessionResult =

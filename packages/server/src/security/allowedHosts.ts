@@ -30,3 +30,12 @@ export function isAllowedOrigin(origin: string, allowed: ReadonlySet<string>): b
     return false
   }
 }
+
+// Host headers the tunnel sends for the public host; none until remote access is configured.
+export function remoteHostHeaders(publicHost: string | null): ReadonlySet<string> {
+  return publicHost === null ? new Set() : new Set([publicHost, `${publicHost}:443`])
+}
+
+export function remoteOrigin(publicHost: string): string {
+  return `https://${publicHost}`
+}

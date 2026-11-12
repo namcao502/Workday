@@ -7,8 +7,8 @@ const CHECK_DEBOUNCE_MS = 400
 const MINUTE_MS = 60_000
 
 // The refetch on timesheet.changed is wired in useEvents.
-export function useTimesheetView(): UseQueryResult<TimesheetView> {
-  return useQuery({ queryKey: queryKeys.timesheet, queryFn: getTimesheet })
+export function useTimesheetView(enabled = true): UseQueryResult<TimesheetView> {
+  return useQuery({ queryKey: queryKeys.timesheet, queryFn: getTimesheet, enabled })
 }
 
 export function useRefreshTimesheet(): () => Promise<void> {

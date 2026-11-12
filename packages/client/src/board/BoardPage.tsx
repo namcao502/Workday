@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { parseTicketKey, type BoardAction, type BoardView } from '@workday/core'
 import { useEffect, useState } from 'react'
 import { addTicket, boardAction, checkBoard, getBoard, queryKeys } from '../api/client.js'
+import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
 import { errorText } from '../errors.js'
 import { formatClock, t, type Language } from '../i18n.js'
@@ -72,6 +73,7 @@ export function BoardPage(): React.JSX.Element {
   const narrow = useNarrow()
   const queryClient = useQueryClient()
   const settings = useSettings()
+  const canAct = useAccess().canAct('board')
   const board = useQuery({ queryKey: queryKeys.board, queryFn: getBoard })
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search)
@@ -103,7 +105,7 @@ export function BoardPage(): React.JSX.Element {
     typedKey !== null && !rows.some((row) => row.ticket.key === typedKey) ? typedKey : null
 
   async function addTypedTicket(): Promise<void> {
-    if (addableKey === null) {
+    if (addableKey === null || !canAct) {
       return
     }
     try {
@@ -141,17 +143,19 @@ export function BoardPage(): React.JSX.Element {
             setPickedForSearch(debouncedSearch)
           }}
         />
-        <button
-          type="button"
-          className="button secondary check-now"
-          disabled={check.isPending}
-          onClick={() => {
-            check.mutate()
-          }}
-        >
-          {check.isPending ? <span className="spinner" aria-hidden="true" /> : null}
-          {t('Check now', 'Kiểm tra ngay')}
-        </button>
+        {canAct ? (
+          <button
+            type="button"
+            className="button secondary check-now"
+            disabled={check.isPending}
+            onClick={() => {
+              check.mutate()
+            }}
+          >
+            {check.isPending ? <span className="spinner" aria-hidden="true" /> : null}
+            {t('Check now', 'Kiểm tra ngay')}
+          </button>
+        ) : null}
         {board.data === undefined ? null : (
           <PollStatus board={board.data} language={language} timeZone={timeZone} />
         )}
@@ -160,7 +164,11 @@ export function BoardPage(): React.JSX.Element {
         <input
           type="search"
           className="input"
-          placeholder={t('Search or add a ticket', 'Tìm hoặc thêm ticket')}
+          placeholder={
+            canAct
+              ? t('Search or add a ticket', 'Tìm hoặc thêm ticket')
+              : t('Search tickets', 'Tìm ticket')
+          }
           value={search}
           onChange={(event) => {
             setSearch(event.target.value)
@@ -172,7 +180,7 @@ export function BoardPage(): React.JSX.Element {
             }
           }}
         />
-        {addableKey === null ? null : (
+        {addableKey === null || !canAct ? null : (
           <button type="button" className="button primary" onClick={() => void addTypedTicket()}>
             {t(`Add ${addableKey}`, `Thêm ${addableKey}`)}
           </button>

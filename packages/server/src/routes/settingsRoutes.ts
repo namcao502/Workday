@@ -17,7 +17,8 @@ const HRM_KEY_REQUIRED = {
 }
 
 export function registerSettingsRoutes(app: FastifyInstance, settings: SettingsService): void {
-  app.get('/api/settings', () => settings.view())
+  // Theme, language and time zone are needed by every paired device; every other settings route is local-only.
+  app.get('/api/settings', { config: { access: { area: 'any' } } }, () => settings.view())
 
   app.put('/api/settings', async (request, reply) => {
     const update = parseSettingsUpdate(request.body)

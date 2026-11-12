@@ -5,6 +5,7 @@ import type {
   JiraCheckRequest,
   JiraCheckResult,
   JiraConfig,
+  RemoteConfig,
   SettingsUpdate,
   SettingsView,
   SheetLog,
@@ -19,6 +20,7 @@ import {
   DEFAULT_OFF_MARKER,
   loadHrmKey,
   loadJiraToken,
+  loadTunnelToken,
   readFileSecrets,
   saveConfig,
   saveSecrets,
@@ -47,6 +49,7 @@ export interface SettingsServiceDeps {
   readonly logScheduler: LogTimer
   readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
+  readonly remote: { configure(remote: RemoteConfig | null): void }
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -91,17 +94,26 @@ export class SettingsService {
     this.hrmKey = loadHrmKey(deps.dataDir)
   }
 
+  get language(): WorkdayConfig['language'] {
+    return this.config.language
+  }
+
+  get timeZone(): string {
+    return this.config.timeZone
+  }
+
   // Builds the tracker and starts polling from the loaded config; called once at startup.
   start(): void {
     this.apply(null)
   }
 
   view(): SettingsView {
-    const { port, timeZone, pollMinutes, theme, language, jira, timesheet } = this.config
+    const { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote } = this.config
     return {
-      config: { port, timeZone, pollMinutes, theme, language, jira, timesheet },
+      config: { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote },
       jiraTokenSource: this.jiraToken.source,
       hrmKeySource: this.hrmKey.source,
+      tunnelTokenSource: loadTunnelToken(this.deps.dataDir).source,
     }
   }
 
@@ -183,12 +195,13 @@ export class SettingsService {
       token: this.jiraToken.token,
       hrmKey: this.hrmKey.key,
     }
-    const { jiraApiToken, hrmApiKey, ...configFields } = update
+    // A token must never reach config.json.
+    const { jiraApiToken, hrmApiKey, tunnelToken, ...configFields } = update
     const nextConfig = { ...this.config, ...configFields }
     // Both files are written before memory changes, so a failed write leaves the running settings as they were.
     await saveConfig(this.deps.dataDir, nextConfig)
-    if (jiraApiToken !== undefined || hrmApiKey !== undefined) {
-      await this.saveSecretsOrRollBack({ jiraApiToken, hrmApiKey }, previous.config)
+    if (jiraApiToken !== undefined || hrmApiKey !== undefined || tunnelToken !== undefined) {
+      await this.saveSecretsOrRollBack({ jiraApiToken, hrmApiKey, tunnelToken }, previous.config)
     }
     this.jiraToken = loadJiraToken(this.deps.dataDir)
     this.hrmKey = loadHrmKey(this.deps.dataDir)
@@ -200,15 +213,21 @@ export class SettingsService {
 
   // A config naming the new host beside the old host's secret would send that secret there after a restart.
   private async saveSecretsOrRollBack(
-    changes: { readonly jiraApiToken: string | undefined; readonly hrmApiKey: string | undefined },
+    changes: {
+      readonly jiraApiToken: string | undefined
+      readonly hrmApiKey: string | undefined
+      readonly tunnelToken: string | undefined
+    },
     previousConfig: WorkdayConfig,
   ): Promise<void> {
     try {
       // The unchanged secret keeps the file's value, never an env override's.
       const saved = readFileSecrets(this.deps.dataDir)
       await saveSecrets(this.deps.dataDir, {
+        ...saved,
         jiraApiToken: changes.jiraApiToken ?? saved.jiraApiToken,
         hrmApiKey: changes.hrmApiKey ?? saved.hrmApiKey,
+        tunnelToken: changes.tunnelToken ?? saved.tunnelToken,
       })
     } catch (error: unknown) {
       try {
@@ -262,6 +281,7 @@ export class SettingsService {
       this.deps.scheduler.start(pollMinutes)
     }
     this.applyTimesheet(previous)
+    this.deps.remote.configure(this.config.remote)
   }
 
   private applyTimesheet(previous: AppliedState | null): void {

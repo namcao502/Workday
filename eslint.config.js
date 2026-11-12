@@ -20,6 +20,10 @@ export default tseslint.config(
     ...tseslint.configs.disableTypeChecked,
   },
   {
+    files: ['packages/client/public/sw.js'],
+    languageOptions: { globals: { self: 'readonly' } },
+  },
+  {
     files: ['scripts/**/*.mjs'],
     languageOptions: { globals: { process: 'readonly', console: 'readonly' } },
   },

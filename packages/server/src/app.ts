@@ -6,10 +6,14 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import type { BoardService } from './board/boardService.js'
 import type { EventHub } from './events.js'
 import { registerBoardRoutes } from './routes/boardRoutes.js'
+import { registerRemoteGate } from './remote/remoteGate.js'
+import type { RemoteService } from './remote/remoteService.js'
 import { registerEventsRoute } from './routes/eventsRoute.js'
+import { registerPushRoutes } from './routes/pushRoutes.js'
+import { registerRemoteRoutes } from './routes/remoteRoutes.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
 import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
-import { allowedHostHeaders, isAllowedHost } from './security/allowedHosts.js'
+import { allowedHostHeaders, isAllowedHost, remoteHostHeaders } from './security/allowedHosts.js'
 import type { SettingsService } from './settings/settingsService.js'
 import type { TimesheetService } from './timesheet/timesheetService.js'
 
@@ -23,6 +27,7 @@ export interface AppDeps {
   settings: SettingsService
   timesheet: TimesheetService
   events: EventHub
+  remote: RemoteService
 }
 
 export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
@@ -31,17 +36,26 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
 
   // Blocks DNS rebinding: a page on another domain pointed at 127.0.0.1 sends its own Host.
   app.addHook('onRequest', async (request, reply) => {
-    if (!isAllowedHost(request.headers.host, allowedHosts)) {
+    const { host } = request.headers
+    const publicHosts = remoteHostHeaders(deps.remote.config?.publicHost ?? null)
+    if (!isAllowedHost(host, allowedHosts) && !isAllowedHost(host, publicHosts)) {
       return reply.code(403).send({ error: 'Forbidden host' })
     }
     return undefined
   })
 
+  registerRemoteGate(app, deps.remote)
+
   await app.register(fastifyWebsocket)
 
-  app.get('/api/health', () => ({ ok: true, version: deps.version }))
+  app.get('/api/health', { config: { access: { area: 'unpaired' } } }, () => ({
+    ok: true,
+    version: deps.version,
+  }))
 
-  registerEventsRoute(app, deps.events, allowedHosts)
+  registerEventsRoute(app, deps.events, allowedHosts, deps.remote)
+  registerRemoteRoutes(app, deps.remote)
+  registerPushRoutes(app, deps.remote, deps.settings)
   registerBoardRoutes(app, deps.board)
   registerSettingsRoutes(app, deps.settings)
   registerTimesheetRoutes(app, deps.timesheet)

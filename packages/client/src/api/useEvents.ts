@@ -38,6 +38,8 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
         void queryClient.invalidateQueries({ queryKey: queryKeys.board })
       } else if (type === 'settings.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
+      } else if (type === 'remote.changed') {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.remote })
       } else if (type === 'timesheet.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.timesheet })
       }

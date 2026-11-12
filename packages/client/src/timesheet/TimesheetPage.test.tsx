@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { renderWithQuery, stubMatchMedia } from '../testSupport.js'
+import { renderRemote, renderWithQuery, stubMatchMedia } from '../testSupport.js'
 import { TimesheetPage } from './TimesheetPage.js'
 import { backend, bodyOf, callsTo, queued, timesheetView } from './timesheetTestSupport.js'
 
@@ -155,4 +155,26 @@ it('the reminder banner shows after the 6 PM reminder until today is queued', as
   renderWithQuery(<TimesheetPage />)
   await screen.findByRole('group', { name: /THU 12/ })
   expect(screen.queryByText(banner)).not.toBeInTheDocument()
+})
+
+it('a timesheet view device sees no input, no Log now and read-only hours', async () => {
+  backend(timesheetView({ queue: [queued('2026-11-11')] }))
+  renderRemote(<TimesheetPage />, { board: 'off', timesheet: 'view' })
+  const day = await screen.findByRole('group', { name: /WED 11/ })
+  expect(within(day).getByText('8h')).toBeInTheDocument()
+  expect(
+    within(day).queryByRole('button', { name: /Log now|Retry|Remove/ }),
+  ).not.toBeInTheDocument()
+  expect(within(day).queryByRole('textbox')).not.toBeInTheDocument()
+  expect(within(day).queryByRole('slider')).not.toBeInTheDocument()
+  expect(screen.queryByRole('textbox', { name: 'Tickets' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Add to queue' })).not.toBeInTheDocument()
+})
+
+it('a timesheet act device keeps the input and Retry', async () => {
+  backend(timesheetView({ queue: [queued('2026-11-11')] }))
+  renderRemote(<TimesheetPage />, { board: 'off', timesheet: 'act' })
+  const day = await screen.findByRole('group', { name: /WED 11/ })
+  expect(within(day).getByRole('button', { name: 'Retry' })).toBeEnabled()
+  expect(screen.getByRole('textbox', { name: 'Tickets' })).toBeInTheDocument()
 })

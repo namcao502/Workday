@@ -51,5 +51,23 @@ export function errorText(error: AppError): string {
       return t('HRM rejected the entry', 'HRM từ chối mục này')
     case 'hrmUnreachable':
       return t('HRM could not be reached', 'Không kết nối được tới HRM')
+    case 'remoteDisabled':
+      return t('Remote access is turned off', 'Truy cập từ xa đang tắt')
+    case 'accessRequired':
+      return t(
+        'Sign in through Cloudflare Access first',
+        'Hãy đăng nhập qua Cloudflare Access trước',
+      )
+    case 'notPaired':
+      return t('This device is not paired yet', 'Thiết bị này chưa được ghép nối')
+    case 'forbidden':
+      return t(
+        'This device is not allowed to do that',
+        'Thiết bị này không có quyền thực hiện việc đó',
+      )
+    case 'pairingClosed':
+      return t('Pairing is closed. Open it on the PC.', 'Ghép nối đã đóng. Hãy mở lại trên PC.')
+    case 'wrongCode':
+      return t('That code is not right', 'Mã không đúng')
   }
 }

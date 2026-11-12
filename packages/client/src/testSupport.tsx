@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, type RenderResult } from '@testing-library/react'
-import type { SettingsView } from '@workday/core'
+import type { DeviceRights, RemoteDevice, SettingsView } from '@workday/core'
 import type { ReactElement } from 'react'
 import { vi, type Mock } from 'vitest'
+import { AccessContext, accessFor } from './api/useMe.js'
 import { isRecord } from './json.js'
 
 export function renderWithQuery(element: ReactElement): RenderResult {
@@ -20,9 +21,11 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
       language: 'en',
       jira: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
+      remote: null,
     },
     jiraTokenSource: null,
     hrmKeySource: null,
+    tunnelTokenSource: null,
     ...overrides,
   }
 }
@@ -67,4 +70,27 @@ export function sentJson(fetchMock: FetchMock): Record<string, unknown> {
     }
   }
   throw new Error('No request carried a JSON body')
+}
+
+export function remoteDevice(
+  rights: DeviceRights,
+  overrides: Partial<RemoteDevice> = {},
+): RemoteDevice {
+  return {
+    id: 'd1',
+    name: 'iPhone',
+    email: 'me@example.com',
+    rights,
+    pushEnabled: false,
+    hasPushSubscription: false,
+    createdAt: '2026-11-01T00:00:00Z',
+    lastSeenAt: null,
+    ...overrides,
+  }
+}
+
+// Renders as a paired remote device with the given rights.
+export function renderRemote(element: ReactElement, rights: DeviceRights): RenderResult {
+  const access = accessFor({ mode: 'remote', device: remoteDevice(rights) })
+  return renderWithQuery(<AccessContext.Provider value={access}>{element}</AccessContext.Provider>)
 }

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,6 +7,9 @@ import {
   loadGraphTokenOverride,
   loadHrmKey,
   loadSecrets,
+  loadTunnelToken,
+  NO_SECRETS,
+  readFileSecrets,
   saveConfig,
   saveSecrets,
 } from './config.js'
@@ -15,6 +18,7 @@ let directory = ''
 
 beforeEach(() => {
   directory = mkdtempSync(join(tmpdir(), 'workday-config-'))
+  vi.stubEnv('WORKDAY_MASTER_KEY', '')
   vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 })
 
@@ -38,6 +42,7 @@ describe('loadConfig', () => {
       language: 'en',
       jira: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
+      remote: null,
     })
   })
 
@@ -94,12 +99,18 @@ describe('secrets', () => {
   it('has no token by default', () => {
     vi.stubEnv('WORKDAY_JIRA_API_TOKEN', '')
     vi.stubEnv('WORKDAY_HRM_API_KEY', '')
-    expect(loadSecrets(directory)).toEqual({ jiraApiToken: null, hrmApiKey: null })
+    vi.stubEnv('WORKDAY_TUNNEL_TOKEN', '')
+    expect(loadSecrets(directory)).toEqual({
+      jiraApiToken: null,
+      hrmApiKey: null,
+      tunnelToken: null,
+      vapidPrivateKey: null,
+    })
   })
 
   it('reads the token saved in secrets.json', async () => {
     vi.stubEnv('WORKDAY_JIRA_API_TOKEN', '')
-    await saveSecrets(directory, { jiraApiToken: 'from-file', hrmApiKey: null })
+    await saveSecrets(directory, { ...NO_SECRETS, jiraApiToken: 'from-file' })
     expect(loadSecrets(directory).jiraApiToken).toBe('from-file')
   })
 
@@ -110,9 +121,69 @@ describe('secrets', () => {
   })
 
   it.skipIf(process.platform === 'win32')('writes secrets.json with mode 600', async () => {
-    await saveSecrets(directory, { jiraApiToken: 't', hrmApiKey: null })
+    await saveSecrets(directory, { ...NO_SECRETS, jiraApiToken: 't' })
     expect(statSync(join(directory, 'secrets.json')).mode % 0o1000).toBe(0o600)
-    expect(readFileSync(join(directory, 'secrets.json'), 'utf8')).toContain('"t"')
+  })
+
+  it('saveSecrets never writes a plain value', async () => {
+    await saveSecrets(directory, { ...NO_SECRETS, jiraApiToken: 'visible', tunnelToken: 'tt' })
+    const text = readFileSync(join(directory, 'secrets.json'), 'utf8')
+    expect(text).not.toContain('visible')
+    expect(text).toContain('enc:v1:')
+    expect(readFileSecrets(directory).jiraApiToken).toBe('visible')
+    expect(readFileSecrets(directory).tunnelToken).toBe('tt')
+  })
+
+  it('a plain-text secrets.json is rewritten sealed on load', () => {
+    writeFileSync(join(directory, 'secrets.json'), JSON.stringify({ hrmApiKey: 'plain-key' }))
+    expect(readFileSecrets(directory).hrmApiKey).toBe('plain-key')
+    const text = readFileSync(join(directory, 'secrets.json'), 'utf8')
+    expect(text).not.toContain('plain-key')
+    expect(text).toContain('enc:v1:')
+    expect(readFileSecrets(directory).hrmApiKey).toBe('plain-key')
+  })
+
+  it('a value sealed with a lost key loads as null without throwing', async () => {
+    await saveSecrets(directory, { ...NO_SECRETS, hrmApiKey: 'gone' })
+    rmSync(join(directory, 'master.key'))
+    expect(readFileSecrets(directory).hrmApiKey).toBeNull()
+  })
+
+  it('the tunnel token from the environment wins over secrets.json', async () => {
+    await saveSecrets(directory, { ...NO_SECRETS, tunnelToken: 'from-file' })
+    vi.stubEnv('WORKDAY_TUNNEL_TOKEN', '')
+    expect(loadTunnelToken(directory)).toEqual({ token: 'from-file', source: 'file' })
+    vi.stubEnv('WORKDAY_TUNNEL_TOKEN', 'from-env')
+    expect(loadTunnelToken(directory)).toEqual({ token: 'from-env', source: 'env' })
+  })
+})
+
+describe('remote config', () => {
+  const REMOTE = {
+    enabled: true,
+    publicHost: 'workday.example.com',
+    accessTeamDomain: 'team.cloudflareaccess.com',
+    accessAud: 'aud123',
+  }
+
+  it('a remote config without accessAud loads as null', () => {
+    writeConfig({ remote: { ...REMOTE, accessAud: '' } })
+    expect(loadConfig(directory).remote).toBeNull()
+  })
+
+  it('publicHost drops the scheme and trailing slash', () => {
+    writeConfig({ remote: { ...REMOTE, publicHost: 'https://Workday.Example.com/' } })
+    expect(loadConfig(directory).remote).toEqual({
+      ...REMOTE,
+      cloudflaredPath: null,
+    })
+  })
+
+  it('enabled defaults to false', () => {
+    writeConfig({ remote: { ...REMOTE, enabled: undefined, cloudflaredPath: 'C:\\cf.exe' } })
+    const remote = loadConfig(directory).remote
+    expect(remote?.enabled).toBe(false)
+    expect(remote?.cloudflaredPath).toBe('C:\\cf.exe')
   })
 })
 
