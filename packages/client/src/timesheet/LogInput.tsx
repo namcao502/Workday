@@ -38,7 +38,7 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
       <div className="log-input-row">
         <input
           type="date"
-          className="input log-date"
+          className="wd-input log-date"
           aria-label={t('Date', 'Ngày')}
           value={props.date}
           onChange={(event) => {
@@ -48,7 +48,7 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
           }}
         />
         <input
-          className="input log-tickets"
+          className="wd-input log-tickets"
           aria-label={t('Tickets', 'Ticket')}
           placeholder={t('MDP-123, 456 ...', 'MDP-123, 456 ...')}
           value={props.text}
@@ -65,7 +65,7 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
         />
         <button
           type="button"
-          className="button primary add-button"
+          className="wd-button primary add-button"
           aria-label={t('Add to queue', 'Thêm vào hàng đợi')}
           disabled={!ready}
           onClick={() => {
@@ -76,7 +76,7 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
         </button>
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={!ready || hrmClosed || !tscConnected || !hrmConnected}
           onClick={() => {
             props.onAction('now')

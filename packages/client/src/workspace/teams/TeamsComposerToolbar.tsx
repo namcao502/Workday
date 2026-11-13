@@ -57,7 +57,7 @@ export function TeamsComposerToolbar({
         <button
           key={button.command}
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           aria-label={button.label}
           title={button.label}
           disabled={disabled}
@@ -73,7 +73,7 @@ export function TeamsComposerToolbar({
       ))}
       <button
         type="button"
-        className="button ghost"
+        className="wd-button ghost"
         aria-label={t('Link', 'Liên kết')}
         title={t('Link', 'Liên kết')}
         disabled={disabled}
@@ -89,7 +89,7 @@ export function TeamsComposerToolbar({
       </button>
       <button
         type="button"
-        className="button ghost"
+        className="wd-button ghost"
         aria-label={t('Mention', 'Nhắc tên')}
         title={t('Mention', 'Nhắc tên')}
         disabled={disabled}
@@ -103,7 +103,7 @@ export function TeamsComposerToolbar({
       {linking ? (
         <span className="teams-link-prompt">
           <input
-            className="input"
+            className="wd-input"
             aria-label={t('Link address', 'Địa chỉ liên kết')}
             placeholder="https://"
             value={url}
@@ -118,12 +118,12 @@ export function TeamsComposerToolbar({
               }
             }}
           />
-          <button type="button" className="button secondary" onClick={confirmLink}>
+          <button type="button" className="wd-button secondary" onClick={confirmLink}>
             {t('Add link', 'Thêm liên kết')}
           </button>
           <button
             type="button"
-            className="button ghost"
+            className="wd-button ghost"
             onClick={() => {
               setLinking(false)
               setInvalid(false)

@@ -140,7 +140,7 @@ export function PairPage({
           <label className="field">
             <span>{t('Code', 'Mã')}</span>
             <input
-              className="input"
+              className="wd-input"
               value={code}
               maxLength={CODE_LENGTH}
               autoCapitalize="characters"
@@ -153,7 +153,7 @@ export function PairPage({
           <label className="field">
             <span>{t('Device name', 'Tên thiết bị')}</span>
             <input
-              className="input"
+              className="wd-input"
               value={name}
               onChange={(event) => {
                 setName(event.target.value)
@@ -163,7 +163,7 @@ export function PairPage({
           {phase.notice === null ? null : <p className="status danger">{phase.notice}</p>}
           <button
             type="submit"
-            className="button primary"
+            className="wd-button primary"
             disabled={sending || code.length !== CODE_LENGTH || name.trim() === ''}
           >
             {t('Pair', 'Ghép nối')}

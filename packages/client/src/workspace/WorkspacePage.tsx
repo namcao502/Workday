@@ -98,7 +98,7 @@ export function WorkspacePage(): React.JSX.Element {
         </p>
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           onClick={() => {
             navigateTo('settings')
           }}
@@ -137,7 +137,7 @@ export function WorkspacePage(): React.JSX.Element {
           {warning}{' '}
           <button
             type="button"
-            className="button ghost"
+            className="wd-button ghost"
             onClick={() => {
               setWarning(null)
             }}
@@ -166,7 +166,7 @@ export function WorkspacePage(): React.JSX.Element {
           {leftHidden ? (
             <button
               type="button"
-              className="button ghost workspace-show-left"
+              className="wd-button ghost workspace-show-left"
               onClick={() => {
                 setLeftHidden(false)
               }}

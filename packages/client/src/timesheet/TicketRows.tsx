@@ -70,7 +70,7 @@ function HoursInput({ ticketKey, minutes, tooltip, onHours }: HoursInputProps): 
 
   return (
     <input
-      className="input hours-input"
+      className="wd-input hours-input"
       inputMode="decimal"
       aria-label={t(`Hours for ${ticketKey}`, `Số giờ cho ${ticketKey}`)}
       title={tooltip}
@@ -120,7 +120,7 @@ export function TicketRows({
               {onRemove === undefined ? null : (
                 <button
                   type="button"
-                  className="button ghost row-remove"
+                  className="wd-button ghost row-remove"
                   aria-label={t(`Remove ${row.key}`, `Bỏ ${row.key}`)}
                   onClick={() => {
                     onRemove(row.key)
@@ -136,7 +136,7 @@ export function TicketRows({
                 {check.suggestedKey === null || onUseKey === undefined ? null : (
                   <button
                     type="button"
-                    className="button ghost"
+                    className="wd-button ghost"
                     onClick={() => {
                       if (check.suggestedKey !== null) {
                         onUseKey(row.key, check.suggestedKey)

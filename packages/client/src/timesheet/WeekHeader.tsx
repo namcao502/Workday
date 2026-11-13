@@ -52,7 +52,7 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
         <span className="muted">{range}</span>
         <button
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           disabled={props.reading}
           onClick={() => {
             props.onShift(-1)
@@ -62,7 +62,7 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
         </button>
         <button
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           disabled={props.reading}
           onClick={() => {
             props.onShift(1)
@@ -72,7 +72,7 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
         </button>
         <button
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           disabled={props.reading}
           onClick={props.onReread}
         >

@@ -95,7 +95,7 @@ export function ClaudePane({
         ) : null}
         <button
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           aria-label={t('New Claude session', 'Phiên Claude mới')}
           onClick={onAdd}
         >

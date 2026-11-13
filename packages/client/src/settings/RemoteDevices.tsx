@@ -41,7 +41,7 @@ function DeviceName({
     return (
       <button
         type="button"
-        className="button ghost"
+        className="wd-button ghost"
         title={t('Click to rename', 'Bấm để đổi tên')}
         onClick={() => {
           setDraft(device.name)
@@ -54,7 +54,7 @@ function DeviceName({
   }
   return (
     <input
-      className="input"
+      className="wd-input"
       aria-label={t('Device name', 'Tên thiết bị')}
       value={draft}
       autoFocus
@@ -142,7 +142,7 @@ function DeviceRow({
         </label>
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={!device.hasPushSubscription}
           onClick={() => {
             run(testPush)
@@ -152,7 +152,7 @@ function DeviceRow({
         </button>
         <button
           type="button"
-          className="button danger"
+          className="wd-button danger"
           onClick={() => {
             setConfirming(true)
           }}

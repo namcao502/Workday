@@ -48,9 +48,11 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
 
   if (settings.data === undefined) {
     return settings.isError ? (
-      <p className="boot-error">
-        {t('Cannot reach the Workday server', 'Không kết nối được tới máy chủ Workday')}
-      </p>
+      <div className="legacy-page">
+        <p className="boot-error">
+          {t('Cannot reach the Workday server', 'Không kết nối được tới máy chủ Workday')}
+        </p>
+      </div>
     ) : null
   }
   setLanguage(settings.data.config.language)
@@ -60,11 +62,13 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
 function BootError({ error }: { readonly error: unknown }): React.JSX.Element {
   const refusal = error instanceof ApiError ? error.code : null
   return (
-    <p className="boot-error">
-      {refusal === 'accessRequired' || refusal === 'remoteDisabled'
-        ? errorText({ code: refusal })
-        : t('Cannot reach the Workday server', 'Không kết nối được tới máy chủ Workday')}
-    </p>
+    <div className="legacy-page">
+      <p className="boot-error">
+        {refusal === 'accessRequired' || refusal === 'remoteDisabled'
+          ? errorText({ code: refusal })
+          : t('Cannot reach the Workday server', 'Không kết nối được tới máy chủ Workday')}
+      </p>
+    </div>
   )
 }
 
@@ -82,7 +86,11 @@ function AppGate({ socketFactory }: AppProps): React.JSX.Element | null {
   }
   if (me.data.mode === 'unpaired') {
     setBrowserLanguage()
-    return <PairPage />
+    return (
+      <div className="legacy-page">
+        <PairPage />
+      </div>
+    )
   }
   return (
     <AccessContext.Provider value={accessFor(me.data)}>

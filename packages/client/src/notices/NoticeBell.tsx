@@ -1,11 +1,12 @@
 import { noticeText, type Notice } from '@workday/core'
+import { Badge, Button, Popover } from '@heroui/react'
+import { Bell } from '@gravity-ui/icons'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
 import { formatShortDate, getLanguage, t } from '../i18n.js'
 import { openNoticeTarget } from './noticeTarget.js'
 import { useNoticeActions, useNoticesView } from './useNotices.js'
-import './notices.css'
 
 const MAX_BADGE = 99
 
@@ -16,6 +17,12 @@ export function badgeText(unread: number): string {
 // The settings may be unreadable on a remote device, so the browser's own zone is the fallback.
 function useTimeZone(): string {
   return useSettings().data?.config.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
+const TONE_TEXT: Readonly<Record<Notice['tone'], string>> = {
+  info: '',
+  success: 'text-success',
+  error: 'text-danger',
 }
 
 function NoticeItem({
@@ -31,15 +38,18 @@ function NoticeItem({
     <li>
       <button
         type="button"
-        className={`notice-item notice-tone-${notice.tone}`}
+        className={`flex w-full cursor-pointer gap-2 rounded-lg p-2 text-left hover:bg-default ${TONE_TEXT[notice.tone]}`}
         onClick={() => {
           onOpen(notice)
         }}
       >
-        <span className={notice.read ? 'notice-dot' : 'notice-dot unread'} aria-hidden="true" />
-        <span className="notice-item-body">
-          <span className="notice-item-text">{noticeText(notice.event, getLanguage())}</span>
-          <span className="notice-item-time muted">
+        <span
+          className={`mt-1.5 size-2 flex-none rounded-full ${notice.read ? '' : 'bg-accent'}`}
+          aria-hidden="true"
+        />
+        <span className="flex flex-col">
+          <span className="text-sm">{noticeText(notice.event, getLanguage())}</span>
+          <span className="text-xs text-muted">
             {formatShortDate(new Date(notice.at), getLanguage(), timeZone)}
           </span>
         </span>
@@ -67,41 +77,38 @@ export function NoticeBell(): React.JSX.Element | null {
   }
 
   return (
-    <div className="notice-bell">
-      <button
-        type="button"
-        className="button ghost notice-bell-button"
-        aria-expanded={open}
-        onClick={() => {
-          setOpen((current) => !current)
-        }}
-      >
-        {t('Notices', 'Thông báo')}
+    <Popover isOpen={open} onOpenChange={setOpen}>
+      <Badge.Anchor>
+        <Button isIconOnly variant="ghost" aria-label={t('Notices', 'Thông báo')}>
+          <Bell width={20} height={20} aria-hidden="true" />
+        </Button>
         {view.unread === 0 ? null : (
-          <span className="nav-badge" data-testid="notice-unread">
+          <Badge color="danger" size="sm" placement="top-right" data-testid="notice-unread">
             {badgeText(view.unread)}
-          </span>
+          </Badge>
         )}
-      </button>
-      {open ? (
-        <div className="notice-panel" role="dialog" aria-label={t('Notifications', 'Thông báo')}>
-          <div className="notice-panel-head">
-            <strong>{t('Notifications', 'Thông báo')}</strong>
-            <button
-              type="button"
-              className="button ghost"
-              disabled={view.unread === 0}
-              onClick={() => {
+      </Badge.Anchor>
+      <Popover.Content placement="bottom end">
+        <Popover.Dialog className="w-[360px] max-w-[92vw]">
+          <div className="flex items-center justify-between pb-2">
+            <Popover.Heading className="font-semibold">
+              {t('Notifications', 'Thông báo')}
+            </Popover.Heading>
+            <Button
+              size="sm"
+              variant="ghost"
+              isDisabled={view.unread === 0}
+              onPress={() => {
                 void actions.readAll()
               }}
             >
               {t('Mark all read', 'Đánh dấu đã đọc tất cả')}
-            </button>
+            </Button>
           </div>
           {newestFirst.length === 0 ? (
-            <p className="muted">{t('No notifications yet', 'Chưa có thông báo')}</p>
+            <p className="text-sm text-muted">{t('No notifications yet', 'Chưa có thông báo')}</p>
           ) : (
-            <ul className="notice-list">
+            <ul className="m-0 max-h-[420px] list-none overflow-auto p-0">
               {newestFirst.map((notice) => (
                 <NoticeItem
                   key={notice.id}
@@ -112,8 +119,8 @@ export function NoticeBell(): React.JSX.Element | null {
               ))}
             </ul>
           )}
-        </div>
-      ) : null}
-    </div>
+        </Popover.Dialog>
+      </Popover.Content>
+    </Popover>
   )
 }

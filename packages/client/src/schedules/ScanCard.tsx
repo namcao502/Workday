@@ -52,7 +52,7 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
         <div className="button-row">
           <button
             type="button"
-            className="button primary"
+            className="wd-button primary"
             disabled={scan.config === null || running}
             onClick={() => {
               setAsking(true)
@@ -60,7 +60,7 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
           >
             {t('Run now', 'Chạy ngay')}
           </button>
-          <button type="button" className="button secondary" onClick={onRefresh}>
+          <button type="button" className="wd-button secondary" onClick={onRefresh}>
             {t('Refresh', 'Làm mới')}
           </button>
         </div>

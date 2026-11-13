@@ -13,8 +13,7 @@ function loadSeen(): readonly string[] {
   }
 }
 
-// The Available view's dot: an urgent suggestion not looked at yet. Opening the view marks the
-// current urgent keys seen; only those still suggested are kept, so the stored list stays small.
+// Dot on Available while an urgent suggestion is unseen; opening the view marks the current ones seen.
 export function useAvailableDot(urgentKeys: readonly string[], isOpen: boolean): boolean {
   const [seen, setSeen] = useState<readonly string[]>(loadSeen)
   const joinedKeys = urgentKeys.join(',')

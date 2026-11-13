@@ -31,10 +31,10 @@ export function ConfirmDialog({
       <div className="dialog" role="dialog" aria-modal="true" aria-label={confirmLabel}>
         <p className="dialog-message">{message}</p>
         <div className="dialog-actions">
-          <button type="button" className="button secondary" onClick={onCancel}>
+          <button type="button" className="wd-button secondary" onClick={onCancel}>
             {t('Cancel', 'Hủy')}
           </button>
-          <button type="button" className="button danger" onClick={onConfirm}>
+          <button type="button" className="wd-button danger" onClick={onConfirm}>
             {confirmLabel}
           </button>
         </div>

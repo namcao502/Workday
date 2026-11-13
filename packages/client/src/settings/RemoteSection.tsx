@@ -148,7 +148,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
       <div className="button-row">
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={busy}
           onClick={() => {
             void runSave()

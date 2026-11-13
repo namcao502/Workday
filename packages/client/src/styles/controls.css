@@ -2,8 +2,9 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
+.legacy-page {
+  height: 100%;
+  min-height: 0;
   background: var(--window-bg);
   color: var(--text-primary);
   font: var(--font-body) / 1.4 var(--font-ui);
@@ -13,7 +14,7 @@ body {
   color: var(--text-secondary);
 }
 
-.button {
+.wd-button {
   min-height: var(--control-h);
   min-width: var(--button-min-width);
   padding: 0 14px;
@@ -23,47 +24,47 @@ body {
   cursor: pointer;
 }
 
-.button:disabled {
+.wd-button:disabled {
   background: var(--disabled-fill);
-  color: var(--muted);
+  color: var(--wd-muted);
   cursor: default;
 }
 
-.button.primary {
-  background: var(--accent);
+.wd-button.primary {
+  background: var(--wd-accent);
   color: var(--on-accent);
 }
 
-.button.primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+.wd-button.primary:hover:not(:disabled) {
+  background: var(--wd-accent-hover);
 }
 
-.button.secondary {
+.wd-button.secondary {
   background: var(--secondary-btn);
   color: var(--secondary-btn-text);
 }
 
-.button.secondary:hover:not(:disabled) {
+.wd-button.secondary:hover:not(:disabled) {
   background: var(--secondary-btn-hover);
 }
 
-.button.ghost {
+.wd-button.ghost {
   min-width: 0;
   background: transparent;
   color: var(--accent-text);
 }
 
-.button.ghost:hover:not(:disabled) {
+.wd-button.ghost:hover:not(:disabled) {
   background: var(--hover);
 }
 
-.button.danger {
-  background: var(--danger);
+.wd-button.danger {
+  background: var(--wd-danger);
   color: var(--on-accent);
 }
 
 /* The only bordered controls: inputs, menus, popups, dialogs. */
-.input {
+.wd-input {
   width: 100%;
   min-height: var(--control-h);
   padding: 4px 8px;
@@ -74,13 +75,13 @@ body {
   font: inherit;
 }
 
-.input:disabled {
+.wd-input:disabled {
   background: var(--disabled-fill);
-  color: var(--muted);
+  color: var(--wd-muted);
 }
 
-.input:focus-visible {
-  outline: 2px solid var(--accent);
+.wd-input:focus-visible {
+  outline: 2px solid var(--wd-accent);
   outline-offset: -1px;
 }
 
@@ -116,7 +117,7 @@ body {
   height: 7px;
   margin-left: 5px;
   border-radius: 50%;
-  background: var(--danger);
+  background: var(--wd-danger);
   vertical-align: middle;
 }
 

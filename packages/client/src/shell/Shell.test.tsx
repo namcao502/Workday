@@ -47,7 +47,7 @@ it('the Timesheet item shows a dot when a queued day is past its run', async () 
   renderWithQuery(<Shell page="insights" />)
   const item = screen.getByRole('button', { name: 'Timesheet' })
   await waitFor(() => {
-    expect(item.querySelector('.nav-dot')).not.toBeNull()
+    expect(item.querySelector('[data-testid="nav-dot"]')).not.toBeNull()
   })
 })
 
@@ -88,6 +88,16 @@ it('locally every page and action stays available', async () => {
   expect(await screen.findByRole('button', { name: /Check now/ })).toBeInTheDocument()
 })
 
+it('the page content renders inside .legacy-page', async () => {
+  stubMatchMedia(false)
+  stubFetch(() => jsonResponse({}, 500))
+  renderWithQuery(<Shell page="tickets" />)
+  const checkNow = await screen.findByRole('button', { name: /Check now/ })
+  expect(checkNow.closest('.legacy-page')).not.toBeNull()
+  const sidebar = screen.getByRole('navigation', { name: 'Pages' })
+  expect(sidebar.closest('.legacy-page')).toBeNull()
+})
+
 it('the Workspace item shows how many sessions are waiting', async () => {
   stubMatchMedia(false)
   const sessions = [
@@ -100,7 +110,7 @@ it('the Workspace item shows how many sessions are waiting', async () => {
   renderWithQuery(<Shell page="insights" />)
   const item = screen.getByRole('button', { name: /Workspace/ })
   await waitFor(() => {
-    expect(item.querySelector('.nav-badge')).toHaveTextContent('2')
+    expect(within(item).getByTestId('nav-badge')).toHaveTextContent('2')
   })
 })
 
@@ -119,6 +129,17 @@ it('sidebar shows the attention count on Board', async () => {
   renderWithQuery(<Shell page="insights" />)
   const item = screen.getByRole('button', { name: /Tickets/ })
   await waitFor(() => {
-    expect(item.querySelector('.nav-badge')).toHaveTextContent('3')
+    expect(within(item).getByTestId('nav-badge')).toHaveTextContent('3')
   })
+})
+
+it('the selected sidebar item has aria-current and an accent background', () => {
+  stubMatchMedia(false)
+  stubFetch(() => jsonResponse({}, 500))
+  renderWithQuery(<Shell page="timesheet" />)
+  const item = within(screen.getByRole('navigation', { name: 'Pages' })).getByRole('button', {
+    name: 'Timesheet',
+  })
+  expect(item).toHaveAttribute('aria-current', 'page')
+  expect(item).toHaveClass('bg-accent-soft')
 })

@@ -38,7 +38,7 @@ export function TodoRow({ icon, tone, title, detail, buttons }: TodoRowProps): R
           'href' in button ? (
             <a
               key={button.id}
-              className="button secondary"
+              className="wd-button secondary"
               href={button.href}
               target="_blank"
               rel="noopener noreferrer"
@@ -50,7 +50,7 @@ export function TodoRow({ icon, tone, title, detail, buttons }: TodoRowProps): R
             <button
               key={button.id}
               type="button"
-              className="button secondary"
+              className="wd-button secondary"
               disabled={button.disabled === true}
               onClick={button.onClick}
             >

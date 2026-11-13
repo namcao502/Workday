@@ -106,7 +106,7 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
       <div className="button-row">
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={busy}
           onClick={() => {
             void runSave()
@@ -116,7 +116,7 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
         </button>
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={busy}
           onClick={() => {
             void runSignIn()

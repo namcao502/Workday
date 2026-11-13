@@ -194,7 +194,7 @@ export function TimesheetSection({
       <div className="button-row">
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={busy || form.mcpUrl.trim() === ''}
           onClick={() => {
             void runCheckHrm()
@@ -252,7 +252,7 @@ export function TimesheetSection({
       />
       <button
         type="button"
-        className="button ghost"
+        className="wd-button ghost"
         aria-expanded={showAdvanced}
         onClick={() => {
           setShowAdvanced((current) => !current)
@@ -264,7 +264,7 @@ export function TimesheetSection({
       <div className="button-row">
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={busy || signingIn}
           onClick={() => {
             void runCheckTsc()
@@ -274,7 +274,7 @@ export function TimesheetSection({
         </button>
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={busy || signingIn}
           onClick={() => {
             void runSignIn()
@@ -282,13 +282,13 @@ export function TimesheetSection({
         >
           {t('Sign in to TSC', 'Đăng nhập TSC')}
         </button>
-        {signingIn ? <span className="spinner" aria-hidden="true" /> : null}
+        {signingIn ? <span className="wd-spinner" aria-hidden="true" /> : null}
       </div>
       <StatusText status={tscStatus} />
       <div className="button-row">
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={busy || signingIn}
           onClick={() => {
             void runSave()

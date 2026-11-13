@@ -26,10 +26,10 @@
   gap: 6px;
 }
 
-.spinner {
+.wd-spinner {
   width: 12px;
   height: 12px;
-  border: 2px solid var(--muted);
+  border: 2px solid var(--wd-muted);
   border-top-color: transparent;
   border-radius: 50%;
   animation: board-spin 0.8s linear infinite;
@@ -46,7 +46,7 @@
 }
 
 .poll-status.danger {
-  color: var(--danger);
+  color: var(--wd-danger);
 }
 
 .board-table {
@@ -79,11 +79,11 @@
 }
 
 .due-overdue {
-  color: var(--danger);
+  color: var(--wd-danger);
 }
 
 .due-soon {
-  color: var(--warning);
+  color: var(--wd-warning);
 }
 
 .board-cards {
@@ -111,7 +111,7 @@
   display: inline-block;
 }
 
-.menu {
+.wd-menu {
   position: absolute;
   right: 0;
   z-index: 10;
@@ -124,7 +124,7 @@
   background: var(--input-bg);
 }
 
-.menu-item {
+.wd-menu-item {
   min-height: var(--compact-h);
   padding: 0 10px;
   border: 0;
@@ -136,7 +136,7 @@
   cursor: pointer;
 }
 
-.menu-item:hover {
+.wd-menu-item:hover {
   background: var(--hover);
 }
 
@@ -160,7 +160,7 @@
 }
 
 .todo-group-now {
-  border-left-color: var(--accent);
+  border-left-color: var(--wd-accent);
 }
 
 .todo-group-head {
@@ -215,7 +215,7 @@
   gap: 6px;
 }
 
-.todo-buttons .button {
+.todo-buttons .wd-button {
   margin-top: 0;
   text-decoration: none;
 }
@@ -228,18 +228,18 @@
 .todo-tone-ready,
 .todo-tone-success {
   background: var(--accent-tint);
-  color: var(--success);
+  color: var(--wd-success);
 }
 
 .todo-tone-danger {
   background: var(--accent-tint);
-  color: var(--danger);
+  color: var(--wd-danger);
 }
 
 .todo-tone-warning,
 .todo-tone-orange {
   background: var(--accent-tint);
-  color: var(--warning);
+  color: var(--wd-warning);
 }
 
 .todo-tone-muted {

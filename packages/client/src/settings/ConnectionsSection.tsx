@@ -135,7 +135,7 @@ export function ConnectionsSection({
       />
       <button
         type="button"
-        className="button ghost"
+        className="wd-button ghost"
         aria-expanded={showAdvanced}
         onClick={() => {
           setShowAdvanced((current) => !current)
@@ -147,7 +147,7 @@ export function ConnectionsSection({
       <div className="button-row">
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={busy || !hasRequiredFields(form)}
           onClick={() => {
             void runCheck()
@@ -157,7 +157,7 @@ export function ConnectionsSection({
         </button>
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={busy || !hasRequiredFields(form)}
           onClick={() => {
             void runSave()

@@ -144,7 +144,7 @@ export function FileViewer(props: FileViewerProps): React.JSX.Element {
               ? t('This file is too large to show.', 'Tệp quá lớn để hiển thị.')
               : t('This is a binary file.', 'Đây là tệp nhị phân.')}
           </p>
-          <button type="button" className="button" onClick={onOpenInEditor}>
+          <button type="button" className="wd-button" onClick={onOpenInEditor}>
             {t('Open in VS Code', 'Mở trong VS Code')}
           </button>
         </div>

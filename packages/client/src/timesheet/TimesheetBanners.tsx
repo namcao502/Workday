@@ -11,7 +11,7 @@ function SettingsButton(): React.JSX.Element {
   return (
     <button
       type="button"
-      className="button ghost"
+      className="wd-button ghost"
       onClick={() => {
         navigateTo('settings')
       }}

@@ -82,7 +82,7 @@ export function StatePanel({
       return (
         <div className="teams-panel">
           <p>{t('You are signed out of Teams.', 'Bạn chưa đăng nhập Teams.')}</p>
-          <button type="button" className="button primary" disabled={writing} onClick={onSignIn}>
+          <button type="button" className="wd-button primary" disabled={writing} onClick={onSignIn}>
             {t('Sign in to Teams', 'Đăng nhập Teams')}
           </button>
         </div>
@@ -93,7 +93,7 @@ export function StatePanel({
           <p>{t('Teams is not set up.', 'Chưa cấu hình Teams.')}</p>
           <button
             type="button"
-            className="button primary"
+            className="wd-button primary"
             onClick={() => {
               navigateTo('settings')
             }}

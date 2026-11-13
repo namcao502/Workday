@@ -63,7 +63,7 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
       <div className="pane-toolbar">
         <button
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           disabled={isFetching}
           onClick={() => {
             void refetch()

@@ -39,7 +39,14 @@ export function TokenField({
         <label className="field-label" htmlFor={id}>
           {label}
         </label>
-        <input id={id} className="input" value={MASK} aria-describedby={hintId} disabled readOnly />
+        <input
+          id={id}
+          className="wd-input"
+          value={MASK}
+          aria-describedby={hintId}
+          disabled
+          readOnly
+        />
         <span id={hintId} className="field-hint">
           {envText}
         </span>
@@ -55,7 +62,7 @@ export function TokenField({
       <div className="inline-row">
         <input
           id={id}
-          className="input"
+          className="wd-input"
           type={showMask ? 'text' : 'password'}
           autoComplete="off"
           aria-describedby={hintId}
@@ -66,7 +73,7 @@ export function TokenField({
           }}
         />
         {showMask ? (
-          <button type="button" className="button secondary" onClick={onReplace}>
+          <button type="button" className="wd-button secondary" onClick={onReplace}>
             {t('Replace', 'Thay thế')}
           </button>
         ) : null}

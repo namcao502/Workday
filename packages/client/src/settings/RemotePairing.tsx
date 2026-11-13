@@ -53,7 +53,7 @@ export function RemotePairing({
       <div className="button-row">
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={!ready}
           onClick={() => {
             run(actions.openPairing)
@@ -80,7 +80,7 @@ export function RemotePairing({
           </p>
           <button
             type="button"
-            className="button ghost"
+            className="wd-button ghost"
             title={t('Click to copy', 'Bấm để sao chép')}
             onClick={() => {
               void navigator.clipboard.writeText(link)
@@ -100,7 +100,7 @@ export function RemotePairing({
           <div className="button-row">
             <button
               type="button"
-              className="button primary"
+              className="wd-button primary"
               onClick={() => {
                 run(() => actions.decidePairing('approve'))
               }}
@@ -109,7 +109,7 @@ export function RemotePairing({
             </button>
             <button
               type="button"
-              className="button secondary"
+              className="wd-button secondary"
               onClick={() => {
                 run(() => actions.decidePairing('reject'))
               }}

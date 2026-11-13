@@ -51,7 +51,7 @@ function DateField({ id, label, value, onChange }: DateFieldProps): React.JSX.El
       <input
         id={id}
         type="date"
-        className="input"
+        className="wd-input"
         value={value}
         onChange={(event) => {
           // A cleared field is not a range; keep the last date.
@@ -99,7 +99,7 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
         ) : null}
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={reading}
           onClick={props.onRefresh}
         >
@@ -107,7 +107,7 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
         </button>
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={!props.hasReport}
           onClick={props.onCopy}
         >
@@ -115,7 +115,7 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
         </button>
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={!props.hasReport}
           onClick={props.onExport}
         >

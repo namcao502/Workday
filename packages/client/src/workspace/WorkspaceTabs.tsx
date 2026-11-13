@@ -52,7 +52,7 @@ function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Elem
     <div className="row-menu" ref={containerRef}>
       <button
         type="button"
-        className="button ghost"
+        className="wd-button ghost"
         aria-label={t('New terminal', 'Terminal mới')}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -63,11 +63,11 @@ function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Elem
         +
       </button>
       {open ? (
-        <div className="menu" role="menu">
+        <div className="wd-menu" role="menu">
           <button
             type="button"
             role="menuitem"
-            className="menu-item"
+            className="wd-menu-item"
             onClick={() => {
               pick(null)
             }}
@@ -79,7 +79,7 @@ function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Elem
               key={folder}
               type="button"
               role="menuitem"
-              className="menu-item"
+              className="wd-menu-item"
               title={folder}
               onClick={() => {
                 pick(folder)
@@ -99,7 +99,7 @@ function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Elem
               }}
             >
               <input
-                className="input"
+                className="wd-input"
                 autoFocus
                 aria-label={t('Folder path', 'Đường dẫn thư mục')}
                 value={path}
@@ -112,7 +112,7 @@ function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Elem
             <button
               type="button"
               role="menuitem"
-              className="menu-item"
+              className="wd-menu-item"
               onClick={() => {
                 setTyping(true)
               }}

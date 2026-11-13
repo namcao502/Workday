@@ -74,7 +74,7 @@ export function TeamsPostCard({
       />
       <button
         type="button"
-        className="button ghost"
+        className="wd-button ghost"
         onClick={() => {
           setFrozen(null)
           setWarned(false)

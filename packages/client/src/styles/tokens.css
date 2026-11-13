@@ -25,8 +25,8 @@
   --radius-chip: 10px;
   --radius-dialog: 12px;
 
-  --accent: rgb(0 122 255);
-  --accent-hover: rgb(20 132 255);
+  --wd-accent: rgb(0 122 255);
+  --wd-accent-hover: rgb(20 132 255);
   --on-accent: #fff;
 }
 
@@ -46,10 +46,10 @@
   --segment-track: rgb(50 50 54);
   --segment-hover: rgb(62 62 68);
   --segment-selected: rgb(86 86 92);
-  --danger: rgb(230 76 76);
-  --warning: rgb(255 140 50);
-  --success: rgb(46 160 80);
-  --muted: rgb(150 150 156);
+  --wd-danger: rgb(230 76 76);
+  --wd-warning: rgb(255 140 50);
+  --wd-success: rgb(46 160 80);
+  --wd-muted: rgb(150 150 156);
   --disabled-fill: rgb(58 58 62);
   --accent-tint: rgb(20 56 98);
   --accent-text: rgb(89 169 255);
@@ -70,10 +70,10 @@
   --segment-track: rgb(232 232 236);
   --segment-hover: rgb(222 222 227);
   --segment-selected: rgb(255 255 255);
-  --danger: rgb(200 40 40);
-  --warning: rgb(184 84 0);
-  --success: rgb(28 128 60);
-  --muted: rgb(110 110 118);
+  --wd-danger: rgb(200 40 40);
+  --wd-warning: rgb(184 84 0);
+  --wd-success: rgb(28 128 60);
+  --wd-muted: rgb(110 110 118);
   --disabled-fill: rgb(232 232 234);
   --accent-tint: rgb(211 228 248);
   --accent-text: rgb(0 91 191);

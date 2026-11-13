@@ -151,7 +151,7 @@
   height: 8px;
   margin-left: 4px;
   border-radius: 50%;
-  background: var(--danger, #d33);
+  background: var(--wd-danger, #d33);
 }
 
 .teams-composer {
@@ -163,7 +163,7 @@
 
 .teams-compose-label {
   font-size: 12px;
-  color: var(--muted, #888);
+  color: var(--wd-muted, #888);
 }
 
 .teams-toolbar {
@@ -190,7 +190,7 @@
 }
 
 .teams-editor:focus {
-  outline: 2px solid var(--accent, #4a8bf5);
+  outline: 2px solid var(--wd-accent, #4a8bf5);
 }
 
 .teams-mention {

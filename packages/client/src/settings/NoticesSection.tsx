@@ -123,7 +123,7 @@ function ClosedWindowToggle(): React.JSX.Element {
     <>
       <button
         type="button"
-        className="button secondary"
+        className="wd-button secondary"
         aria-pressed={state === 'on'}
         onClick={() => {
           void toggle()
@@ -222,7 +222,7 @@ export function NoticesSection({
       <div className="button-row">
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           onClick={() => {
             void apply(channelsFromPrefs({}), {})
           }}
@@ -230,7 +230,7 @@ export function NoticesSection({
           {t('Restore defaults', 'Khôi phục mặc định')}
         </button>
         {askPermission ? (
-          <button type="button" className="button secondary" onClick={requestNoticePermission}>
+          <button type="button" className="wd-button secondary" onClick={requestNoticePermission}>
             {t('Allow desktop notifications', 'Cho phép thông báo desktop')}
           </button>
         ) : null}

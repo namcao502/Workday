@@ -126,7 +126,7 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
       {canAct ? (
         <button
           type="button"
-          className="button secondary day-log"
+          className="wd-button secondary day-log"
           disabled={props.working || closed || !props.canLog}
           onClick={() => {
             props.onLogNow(entry.date)

@@ -34,7 +34,7 @@ export function ActionMenu({
     <div className="row-menu" ref={containerRef}>
       <button
         type="button"
-        className="button secondary menu-trigger"
+        className="wd-button secondary menu-trigger"
         aria-label={t('More actions', 'Thêm thao tác')}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -45,13 +45,13 @@ export function ActionMenu({
         ...
       </button>
       {open ? (
-        <div className="menu" role="menu">
+        <div className="wd-menu" role="menu">
           {actions.map((action) => (
             <button
               key={action.label}
               type="button"
               role="menuitem"
-              className="menu-item"
+              className="wd-menu-item"
               disabled={action.disabled}
               onClick={() => {
                 setOpen(false)

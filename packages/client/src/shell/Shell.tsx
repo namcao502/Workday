@@ -11,12 +11,12 @@ import { useSchedulesView } from '../schedules/useSchedules.js'
 import { SettingsPage } from '../settings/SettingsPage.js'
 import { TimesheetPage } from '../timesheet/TimesheetPage.js'
 import { needsAttention } from '../timesheet/timesheetState.js'
-import { NoticeBell } from '../notices/NoticeBell.js'
 import { NoticeToasts } from '../notices/NoticeToasts.js'
 import { useNotices } from '../notices/useNotices.js'
 import { WorkspacePage } from '../workspace/WorkspacePage.js'
 import { Sidebar } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
+import { TopBar } from './TopBar.js'
 import { navigateTo, visiblePages, type PageId } from './pages.js'
 import { useNarrow } from './useNarrow.js'
 import { zonedClock } from '@workday/core'
@@ -72,7 +72,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
   const alerts = useNotices(page)
   const schedulesDot = useSchedulesView(useAccess().mode !== 'remote').data?.scan.unseenBad === true
   return (
-    <div className={narrow ? 'shell shell-narrow' : 'shell'}>
+    <div className="flex h-dvh bg-background text-foreground">
       {narrow ? null : (
         <Sidebar
           current={page}
@@ -84,12 +84,14 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
           boardBadge={todoAttention}
         />
       )}
-      <main className="shell-content">
-        <div className="shell-topbar">
-          <NoticeBell />
-        </div>
-        <PageContent page={page} />
-      </main>
+      <div className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-14' : ''}`}>
+        <TopBar />
+        <main className="min-h-0 flex-1 overflow-auto">
+          <div className="legacy-page">
+            <PageContent page={page} />
+          </div>
+        </main>
+      </div>
       {narrow ? (
         <TabBar
           current={page}

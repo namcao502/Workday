@@ -152,7 +152,7 @@ export function AzureDevOpsSection({
       <div className="button-row">
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           disabled={busy || !hasAdoTarget(form)}
           onClick={() => {
             void runCheck()
@@ -162,7 +162,7 @@ export function AzureDevOpsSection({
         </button>
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={busy}
           onClick={() => {
             void runSave()

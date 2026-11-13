@@ -29,7 +29,7 @@ export function TextField({
       {rows === undefined ? (
         <input
           id={id}
-          className="input"
+          className="wd-input"
           type={type}
           value={value}
           placeholder={placeholder}
@@ -41,7 +41,7 @@ export function TextField({
       ) : (
         <textarea
           id={id}
-          className="input"
+          className="wd-input"
           rows={rows}
           value={value}
           placeholder={placeholder}

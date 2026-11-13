@@ -202,7 +202,7 @@ export function TeamsComposer({
       <span className="teams-compose-label">{label}</span>
       {withSubject ? (
         <input
-          className="input teams-subject-input"
+          className="wd-input teams-subject-input"
           aria-label={t('Subject', 'Tiêu đề')}
           value={subject}
           onChange={(event) => {
@@ -275,7 +275,7 @@ export function TeamsComposer({
       <div className="button-row">
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={sending || locked}
           onClick={() => {
             void submit()
@@ -284,7 +284,7 @@ export function TeamsComposer({
           {submitLabel}
         </button>
         {onCancel === undefined ? null : (
-          <button type="button" className="button ghost" onClick={onCancel}>
+          <button type="button" className="wd-button ghost" onClick={onCancel}>
             {t('Cancel', 'Hủy')}
           </button>
         )}

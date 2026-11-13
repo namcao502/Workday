@@ -76,7 +76,7 @@ export function TeamsMessageRow({
               <button
                 key={file.url}
                 type="button"
-                className="button ghost"
+                className="wd-button ghost"
                 onClick={() => {
                   window.open(file.url, '_blank', 'noopener')
                 }}
@@ -121,18 +121,18 @@ export function TeamsMessageRow({
             <TeamsEmoji reaction={key} />
           </button>
         ))}
-        <button type="button" className="button ghost" onClick={onAskClaude}>
+        <button type="button" className="wd-button ghost" onClick={onAskClaude}>
           {t('Ask Claude', 'Hỏi Claude')}
         </button>
         {own && isEditable(message) ? (
-          <button type="button" className="button ghost" onClick={onEdit}>
+          <button type="button" className="wd-button ghost" onClick={onEdit}>
             {t('Edit', 'Sửa')}
           </button>
         ) : null}
         {own ? (
           <button
             type="button"
-            className="button ghost"
+            className="wd-button ghost"
             onClick={() => {
               setConfirming(true)
             }}

@@ -168,7 +168,7 @@ export function SuggestionsCard({
                 <div className="todo-buttons">
                   <button
                     type="button"
-                    className="button secondary"
+                    className="wd-button secondary"
                     onClick={() => {
                       setTaking(ticket.key)
                     }}
@@ -177,7 +177,7 @@ export function SuggestionsCard({
                   </button>
                   <button
                     type="button"
-                    className="button secondary"
+                    className="wd-button secondary"
                     onClick={() => {
                       void hide(ticket.key)
                     }}
@@ -193,7 +193,7 @@ export function SuggestionsCard({
       {left <= 0 ? null : (
         <button
           type="button"
-          className="button secondary"
+          className="wd-button secondary"
           onClick={() => {
             setShown(shown + SHOW_MORE_STEP)
           }}

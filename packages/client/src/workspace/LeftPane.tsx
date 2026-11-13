@@ -98,14 +98,14 @@ export function LeftPane({
         </div>
         <button
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           onClick={() => {
             void openInVsCode(tabId)
           }}
         >
           VS Code
         </button>
-        <button type="button" className="button ghost" onClick={onHide}>
+        <button type="button" className="wd-button ghost" onClick={onHide}>
           {t('Hide', 'Ẩn')}
         </button>
       </div>

@@ -118,7 +118,7 @@ export function TeamsView({
         {view.state === 'thread' ? (
           <button
             type="button"
-            className="button ghost"
+            className="wd-button ghost"
             onClick={() => {
               window.open(view.deepLink, '_blank', 'noopener')
             }}
@@ -128,7 +128,7 @@ export function TeamsView({
         ) : null}
         <button
           type="button"
-          className="button ghost"
+          className="wd-button ghost"
           onClick={() => {
             void queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
           }}

@@ -213,13 +213,13 @@ export function BoardPage(): React.JSX.Element {
         {canAct ? (
           <button
             type="button"
-            className="button secondary check-now"
+            className="wd-button secondary check-now"
             disabled={check.isPending}
             onClick={() => {
               check.mutate()
             }}
           >
-            {check.isPending ? <span className="spinner" aria-hidden="true" /> : null}
+            {check.isPending ? <span className="wd-spinner" aria-hidden="true" /> : null}
             {t('Check now', 'Kiểm tra ngay')}
           </button>
         ) : null}
@@ -230,7 +230,7 @@ export function BoardPage(): React.JSX.Element {
       <div className="board-search">
         <input
           type="search"
-          className="input"
+          className="wd-input"
           placeholder={
             canAct
               ? t('Search or add a ticket', 'Tìm hoặc thêm ticket')
@@ -248,7 +248,7 @@ export function BoardPage(): React.JSX.Element {
           }}
         />
         {addableKey === null || !canAct ? null : (
-          <button type="button" className="button primary" onClick={() => void addTypedTicket()}>
+          <button type="button" className="wd-button primary" onClick={() => void addTypedTicket()}>
             {t(`Add ${addableKey}`, `Thêm ${addableKey}`)}
           </button>
         )}
@@ -282,7 +282,7 @@ export function BoardPage(): React.JSX.Element {
           </p>
           <button
             type="button"
-            className="button primary"
+            className="wd-button primary"
             onClick={() => {
               navigateTo('settings')
             }}

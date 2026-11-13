@@ -64,7 +64,7 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
         <>
           <button
             type="button"
-            className="button secondary"
+            className="wd-button secondary"
             disabled={busy}
             onClick={() => void run(turnOff)}
           >
@@ -72,7 +72,7 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
           </button>
           <button
             type="button"
-            className="button secondary"
+            className="wd-button secondary"
             disabled={busy}
             onClick={() =>
               void run(async () =>
@@ -88,7 +88,7 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
       ) : (
         <button
           type="button"
-          className="button primary"
+          className="wd-button primary"
           disabled={busy}
           onClick={() =>
             void run(async () =>

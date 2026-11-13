@@ -83,7 +83,7 @@ export function ChatView({ session, wait, onOpenTerminal }: ChatViewProps): Reac
         <ChatRows messages={messages ?? []} />
         {working ? (
           <div className="chat-working">
-            <span className="spinner" aria-hidden="true" />
+            <span className="wd-spinner" aria-hidden="true" />
             {t('Claude is working...', 'Claude đang làm việc...')}
           </div>
         ) : null}
@@ -95,7 +95,7 @@ export function ChatView({ session, wait, onOpenTerminal }: ChatViewProps): Reac
                 'Claude cần bạn trả lời trong terminal',
               )}
             </span>
-            <button type="button" className="button" onClick={onOpenTerminal}>
+            <button type="button" className="wd-button" onClick={onOpenTerminal}>
               {t('Open terminal', 'Mở terminal')}
             </button>
           </div>

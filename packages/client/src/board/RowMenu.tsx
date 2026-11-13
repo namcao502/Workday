@@ -107,7 +107,7 @@ export function RowMenu(props: RowMenuProps): React.JSX.Element | null {
     <div className="row-menu" ref={containerRef}>
       <button
         type="button"
-        className="button ghost row-menu-trigger"
+        className="wd-button ghost row-menu-trigger"
         aria-label={t(`Actions for ${ticketKey}`, `Thao tác cho ${ticketKey}`)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -118,13 +118,13 @@ export function RowMenu(props: RowMenuProps): React.JSX.Element | null {
         ...
       </button>
       {open ? (
-        <div className="menu" role="menu">
+        <div className="wd-menu" role="menu">
           {itemsFor(props).map((item) => (
             <button
               key={item.id}
               type="button"
               role="menuitem"
-              className="menu-item"
+              className="wd-menu-item"
               disabled={item.disabled === true}
               onClick={() => {
                 setOpen(false)

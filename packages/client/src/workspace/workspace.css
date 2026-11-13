@@ -80,7 +80,7 @@
   min-width: 18px;
   padding: 0 5px;
   border-radius: var(--radius-chip);
-  background: var(--accent);
+  background: var(--wd-accent);
   color: var(--on-accent);
   font-size: var(--font-caption);
   text-align: center;
@@ -160,15 +160,15 @@
 }
 
 .change-status[data-status='A'] {
-  color: var(--success);
+  color: var(--wd-success);
 }
 
 .change-status[data-status='M'] {
-  color: var(--warning);
+  color: var(--wd-warning);
 }
 
 .change-status[data-status='D'] {
-  color: var(--danger);
+  color: var(--wd-danger);
 }
 
 .diff-view {
@@ -191,11 +191,11 @@
 }
 
 .diff-added {
-  background: color-mix(in srgb, var(--success) 18%, transparent);
+  background: color-mix(in srgb, var(--wd-success) 18%, transparent);
 }
 
 .diff-removed {
-  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  background: color-mix(in srgb, var(--wd-danger) 18%, transparent);
 }
 
 .diff-gap td {
@@ -257,7 +257,7 @@
   max-width: 80%;
   padding: 6px 10px;
   border-radius: var(--radius-chip);
-  background: var(--accent, #0a84ff);
+  background: var(--wd-accent, #0a84ff);
   color: #fff;
   white-space: pre-wrap;
 }

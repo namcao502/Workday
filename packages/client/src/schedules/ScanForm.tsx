@@ -78,7 +78,7 @@ export function ScanForm({
         <span className="field-label">{t('Command', 'Lệnh')}</span>
         <input
           id="scan-command"
-          className="input"
+          className="wd-input"
           value={command}
           onChange={(event) => {
             setCommand(event.target.value)
@@ -92,7 +92,7 @@ export function ScanForm({
         </span>
         <textarea
           id="scan-args"
-          className="input scan-args"
+          className="wd-input scan-args"
           rows={3}
           value={argsText}
           onChange={(event) => {
@@ -105,7 +105,7 @@ export function ScanForm({
         <span className="field-label">{t('Log file', 'File log')}</span>
         <input
           id="scan-log-file"
-          className="input"
+          className="wd-input"
           value={logFile}
           placeholder={t('Optional: the script writes its own log', 'Tùy chọn: script tự ghi log')}
           onChange={(event) => {
@@ -136,7 +136,7 @@ export function ScanForm({
           }}
         />
         <select
-          className="input scan-time"
+          className="wd-input scan-time"
           aria-label={t('Start time', 'Giờ bắt đầu')}
           value={current.time}
           onChange={(event) => {

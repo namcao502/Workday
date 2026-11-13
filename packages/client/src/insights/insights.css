@@ -20,13 +20,13 @@
   margin: var(--button-gap) 0;
 }
 
-.insights-date .input {
+.insights-date .wd-input {
   width: 150px;
 }
 
 .insights-error {
   margin: 0 0 var(--card-gap);
-  color: var(--danger);
+  color: var(--wd-danger);
 }
 
 .report-body {
@@ -72,7 +72,7 @@
 }
 
 .bar {
-  fill: var(--accent);
+  fill: var(--wd-accent);
 }
 
 .bar-label,

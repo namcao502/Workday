@@ -102,24 +102,24 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--muted);
+  background: var(--wd-muted);
 }
 
 .run-running {
-  background: var(--accent);
+  background: var(--wd-accent);
 }
 
 .run-ok {
-  background: var(--success);
+  background: var(--wd-success);
 }
 
 .run-withProblems {
-  background: var(--warning);
+  background: var(--wd-warning);
 }
 
 .run-stopped,
 .run-failed {
-  background: var(--danger);
+  background: var(--wd-danger);
 }
 
 .run-log {
