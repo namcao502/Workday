@@ -14,6 +14,7 @@ import type {
   TscSessionResult,
   TscSignInResult,
   WorkdayConfig,
+  WorkspaceConfig,
 } from '@workday/core'
 import type { BoardService } from '../board/boardService.js'
 import {
@@ -50,6 +51,7 @@ export interface SettingsServiceDeps {
   readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
   readonly remote: { configure(remote: RemoteConfig | null): void }
+  readonly workspace: { configure(workspace: WorkspaceConfig, dataDir: string): void }
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -108,9 +110,10 @@ export class SettingsService {
   }
 
   view(): SettingsView {
-    const { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote } = this.config
+    const { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote, workspace } =
+      this.config
     return {
-      config: { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote },
+      config: { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote, workspace },
       jiraTokenSource: this.jiraToken.source,
       hrmKeySource: this.hrmKey.source,
       tunnelTokenSource: loadTunnelToken(this.deps.dataDir).source,
@@ -282,6 +285,7 @@ export class SettingsService {
     }
     this.applyTimesheet(previous)
     this.deps.remote.configure(this.config.remote)
+    this.deps.workspace.configure(this.config.workspace, this.deps.dataDir)
   }
 
   private applyTimesheet(previous: AppliedState | null): void {

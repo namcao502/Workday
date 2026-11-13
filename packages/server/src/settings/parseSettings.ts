@@ -5,7 +5,7 @@ import type {
   SettingsUpdate,
   TimesheetConfig,
 } from '@workday/core'
-import { isLogTime, parseJira, parseRemote, parseTimesheet } from '../config.js'
+import { isLogTime, parseJira, parseRemote, parseTimesheet, parseWorkspace } from '../config.js'
 import { isRecord } from '../jsonFile.js'
 
 const MIN_PORT = 1024
@@ -156,6 +156,12 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
       return null
     }
     update = { ...update, tunnelToken }
+  }
+  if (raw['workspace'] !== undefined) {
+    if (!isRecord(raw['workspace'])) {
+      return null
+    }
+    update = { ...update, workspace: parseWorkspace(raw['workspace']) }
   }
   return update
 }

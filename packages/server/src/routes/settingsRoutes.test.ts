@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type { JiraConfig } from '@workday/core'
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { NO_SECRETS, readFileSecrets, saveConfig, saveSecrets } from '../config.js'
+import { DEFAULT_WORKSPACE, NO_SECRETS, readFileSecrets, saveConfig, saveSecrets } from '../config.js'
 import { buildTestApp, LOOPBACK_HEADERS, newDataDir, type TestApp } from '../testing/testApp.js'
 
 const SAVED_TOKEN = 'saved-secret-token'
@@ -43,6 +43,7 @@ async function connectedApp(): Promise<TestApp> {
     port: 4870,
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
+    workspace: DEFAULT_WORKSPACE,
     theme: 'dark',
     language: 'en',
     jira: JIRA,
@@ -60,6 +61,7 @@ async function hrmApp(): Promise<TestApp> {
     port: 4870,
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
+    workspace: DEFAULT_WORKSPACE,
     theme: 'dark',
     language: 'en',
     jira: null,
@@ -100,6 +102,7 @@ describe('settings routes', () => {
         port: 4870,
         timeZone: 'Asia/Ho_Chi_Minh',
         pollMinutes: 5,
+        workspace: DEFAULT_WORKSPACE,
         theme: 'dark',
         language: 'en',
         jira: JIRA,

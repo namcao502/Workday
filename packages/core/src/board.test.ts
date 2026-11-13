@@ -8,6 +8,7 @@ import {
   offPollKeys,
   reopen,
   restore,
+  startTicket,
   type BoardSection,
   type BoardState,
 } from './board.js'
@@ -359,5 +360,22 @@ describe('dismiss and restore', () => {
 
     expect(dismiss(state, 'MDP-404')).toBe(state)
     expect(restore(state, 'MDP-1')).toBe(state)
+  })
+})
+
+describe('startTicket', () => {
+  it('moves a ticket from new to inProgress', () => {
+    const ticket = makeTicket('MDP-1')
+    const next = startTicket(boardWithSection('new', ticket), 'MDP-1')
+    expect(next.new).toEqual({})
+    expect(next.inProgress).toEqual(byKey(ticket))
+  })
+
+  it('returns the same object for a ticket already in progress, done, or unknown', () => {
+    const inProgress = boardWithSection('inProgress', makeTicket('MDP-1'))
+    const done = boardWithSection('done', makeTicket('MDP-2'))
+    expect(startTicket(inProgress, 'MDP-1')).toBe(inProgress)
+    expect(startTicket(done, 'MDP-2')).toBe(done)
+    expect(startTicket(inProgress, 'MDP-404')).toBe(inProgress)
   })
 })

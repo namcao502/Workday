@@ -1,6 +1,6 @@
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { NO_SECRETS, saveConfig, saveSecrets } from '../config.js'
+import { DEFAULT_WORKSPACE, NO_SECRETS, saveConfig, saveSecrets } from '../config.js'
 import { buildTestApp, LOOPBACK_HEADERS, newDataDir, type TestApp } from '../testing/testApp.js'
 
 const openApps: FastifyInstance[] = []
@@ -23,6 +23,7 @@ async function timesheetApp(): Promise<TestApp> {
     port: 4870,
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
+    workspace: DEFAULT_WORKSPACE,
     theme: 'dark',
     language: 'en',
     jira: null,

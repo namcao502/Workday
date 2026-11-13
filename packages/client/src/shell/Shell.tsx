@@ -2,11 +2,14 @@ import { BoardPage } from '../board/BoardPage.js'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
 import { useNow, useTimesheetView } from '../api/useTimesheet.js'
+import { useWorkspace } from '../api/useWorkspace.js'
 import { DevicePage } from '../remote/DevicePage.js'
 import { SettingsPage } from '../settings/SettingsPage.js'
 import { t } from '../i18n.js'
 import { TimesheetPage } from '../timesheet/TimesheetPage.js'
 import { needsAttention } from '../timesheet/timesheetState.js'
+import { useClaudeNotices } from '../workspace/useClaudeNotices.js'
+import { WorkspacePage } from '../workspace/WorkspacePage.js'
 import { Sidebar } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
 import { navigateTo, pageLabel, visiblePages, type PageId } from './pages.js'
@@ -28,6 +31,9 @@ function PageContent({ page }: ShellProps): React.JSX.Element {
   if (page === 'timesheet') {
     return <TimesheetPage />
   }
+  if (page === 'workspace') {
+    return <WorkspacePage />
+  }
   return (
     <section className="page">
       <h1 className="page-title">{pageLabel(page)}</h1>
@@ -47,22 +53,41 @@ function useTimesheetAttention(): boolean {
   return needsAttention(view, zonedClock(timeZone, now), timeZone)
 }
 
+function useWaitingSessions(): number {
+  const sessions = useWorkspace().data?.sessions ?? []
+  return sessions.filter((session) => session.wait !== null).length
+}
+
 export function Shell({ page: requested }: ShellProps): React.JSX.Element {
   const narrow = useNarrow()
   const pages = visiblePages(useAccess())
   // A hash to a hidden page shows the first visible one.
   const page = pages.includes(requested) ? requested : (pages[0] ?? 'settings')
   const attention = useTimesheetAttention()
+  const waiting = useWaitingSessions()
+  useClaudeNotices()
   return (
     <div className={narrow ? 'shell shell-narrow' : 'shell'}>
       {narrow ? null : (
-        <Sidebar current={page} onSelect={navigateTo} attention={attention} pages={pages} />
+        <Sidebar
+          current={page}
+          onSelect={navigateTo}
+          attention={attention}
+          pages={pages}
+          workspaceBadge={waiting}
+        />
       )}
       <main className="shell-content">
         <PageContent page={page} />
       </main>
       {narrow ? (
-        <TabBar current={page} onSelect={navigateTo} attention={attention} pages={pages} />
+        <TabBar
+          current={page}
+          onSelect={navigateTo}
+          attention={attention}
+          pages={pages}
+          workspaceBadge={waiting}
+        />
       ) : null}
     </div>
   )

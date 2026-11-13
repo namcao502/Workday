@@ -63,6 +63,7 @@ async function main(): Promise<void> {
     ...services,
   })
   await app.listen({ host: LISTEN_HOST, port })
+  services.workspace.setHookBase(`http://${LISTEN_HOST}:${String(port)}`)
   services.settings.start()
   services.timesheet.catchUp().catch((error: unknown) => {
     console.error('Startup catch-up failed', error)
@@ -71,6 +72,7 @@ async function main(): Promise<void> {
   const shutdown = (): void => {
     services.scheduler.stop()
     services.logScheduler.stop()
+    services.workspace.shutdown()
     Promise.all([app.close(), services.remote.shutdown()]).then(
       () => process.exit(0),
       (error: unknown) => {

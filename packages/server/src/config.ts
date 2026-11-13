@@ -10,6 +10,7 @@ import {
   type TimesheetConfig,
   type TscConfig,
   type WorkdayConfig,
+  type WorkspaceConfig,
 } from '@workday/core'
 import { isRecord, readJson, writeJsonAtomic } from './jsonFile.js'
 import { loadMasterKey, openSecret, sealSecret, SEALED_PREFIX } from './security/secretBox.js'
@@ -202,6 +203,22 @@ function parseConfig(raw: unknown): WorkdayConfig | null {
     jira: parseJira(raw['jira']),
     timesheet: parseTimesheet(raw['timesheet']),
     remote: parseRemote(raw['remote']),
+    workspace: parseWorkspace(raw['workspace']),
+  }
+}
+
+// A missing or wrong-typed field takes its default; never null.
+export function parseWorkspace(raw: unknown): WorkspaceConfig {
+  if (!isRecord(raw)) {
+    return DEFAULT_WORKSPACE
+  }
+  return {
+    devRepoPath: textOrNull(raw['devRepoPath']),
+    siblingRepoGlob: textOrNull(raw['siblingRepoGlob']),
+    startPrompt: textOrNull(raw['startPrompt']),
+    claudeExecutable: textOrNull(raw['claudeExecutable']),
+    localOnlyPaths: stringList(raw['localOnlyPaths']).filter((path) => path !== ''),
+    chatView: raw['chatView'] === true,
   }
 }
 
@@ -233,6 +250,15 @@ export function parseRemote(raw: unknown): RemoteConfig | null {
   }
 }
 
+export const DEFAULT_WORKSPACE: WorkspaceConfig = {
+  devRepoPath: null,
+  siblingRepoGlob: null,
+  startPrompt: null,
+  claudeExecutable: null,
+  localOnlyPaths: [],
+  chatView: false,
+}
+
 const DEFAULT_CONFIG: WorkdayConfig = {
   host: '127.0.0.1',
   port: 4870,
@@ -243,6 +269,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   jira: null,
   timesheet: { logTime: DEFAULT_LOG_TIME, hrm: null, tsc: null },
   remote: null,
+  workspace: DEFAULT_WORKSPACE,
 }
 
 export function loadConfig(dataDir: string): WorkdayConfig {

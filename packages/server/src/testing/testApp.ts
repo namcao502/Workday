@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs'
+import { mkdirSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { HrmConfig, JiraConfig } from '@workday/core'
@@ -6,7 +6,10 @@ import type { FastifyInstance } from 'fastify'
 import { createApp } from '../app.js'
 import { loadConfig } from '../config.js'
 import { createServices, type Services } from '../services.js'
+import type { WorktreeOptions } from '../workspace/worktreeService.js'
 import { FakeHoursLog, FakeSheetLog, FakeTracker } from './fakes.js'
+import type { EditorCommand } from '../workspace/openInEditor.js'
+import { FakePtyFactory } from './fakePty.js'
 
 export const TEST_PORT = 4870
 export const LOOPBACK_HEADERS = { host: `127.0.0.1:${String(TEST_PORT)}` }
@@ -42,6 +45,10 @@ export interface TestApp {
   readonly schedulerStarts: number[]
   readonly schedulerStops: { count: number }
   readonly pushes: PushCall[]
+  readonly ptys: FakePtyFactory
+  readonly homeDir: string
+  readonly editorCommands: EditorCommand[] // what the fake VS Code spawner was asked to run
+  readonly worktrees: WorktreeOptions[] // what Start asked the fake worktree service to create
 }
 
 export function newDataDir(): string {
@@ -62,6 +69,10 @@ export async function buildTestApp(
   const hoursLogCalls: HoursLogCall[] = []
   const logTimes: string[] = []
   const pushes: PushCall[] = []
+  const ptys = new FakePtyFactory()
+  const worktrees: WorktreeOptions[] = []
+  const editorCommands: EditorCommand[] = []
+  const homeDir = mkdtempSync(join(tmpdir(), 'workday-home-'))
   const services = createServices({
     dataDir,
     config: loadConfig(dataDir),
@@ -103,6 +114,17 @@ export async function buildTestApp(
     spawnTunnel: () => {
       throw new Error('A test must not start cloudflared')
     },
+    spawnPty: ptys.spawn,
+    spawnEditor: (command) => {
+      editorCommands.push(command)
+      return Promise.resolve()
+    },
+    homeDir,
+    createWorktree: (worktree) => {
+      worktrees.push(worktree)
+      mkdirSync(worktree.worktreePath, { recursive: true })
+      return Promise.resolve('created')
+    },
     logError: () => undefined,
   })
   services.settings.start()
@@ -127,5 +149,9 @@ export async function buildTestApp(
     schedulerStarts,
     schedulerStops,
     pushes,
+    ptys,
+    homeDir,
+    worktrees,
+    editorCommands,
   }
 }

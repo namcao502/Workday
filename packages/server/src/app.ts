@@ -9,13 +9,21 @@ import { registerBoardRoutes } from './routes/boardRoutes.js'
 import { registerRemoteGate } from './remote/remoteGate.js'
 import type { RemoteService } from './remote/remoteService.js'
 import { registerEventsRoute } from './routes/eventsRoute.js'
+import { registerHookRoute } from './routes/hookRoute.js'
 import { registerPushRoutes } from './routes/pushRoutes.js'
 import { registerRemoteRoutes } from './routes/remoteRoutes.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
+import { registerTerminalRoute } from './routes/terminalRoute.js'
 import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
+import { registerChatRoutes } from './routes/chatRoute.js'
+import { registerWorkspaceFilesRoutes } from './routes/workspaceFilesRoutes.js'
+import { registerWorkspaceRoutes } from './routes/workspaceRoutes.js'
 import { allowedHostHeaders, isAllowedHost, remoteHostHeaders } from './security/allowedHosts.js'
 import type { SettingsService } from './settings/settingsService.js'
 import type { TimesheetService } from './timesheet/timesheetService.js'
+import type { WorkspaceService } from './workspace/workspaceService.js'
+
+const TERMINAL_MAX_PAYLOAD = 1024 * 1024
 
 export interface AppDeps {
   port: number
@@ -28,6 +36,7 @@ export interface AppDeps {
   timesheet: TimesheetService
   events: EventHub
   remote: RemoteService
+  workspace: WorkspaceService
 }
 
 export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
@@ -46,7 +55,8 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
 
   registerRemoteGate(app, deps.remote)
 
-  await app.register(fastifyWebsocket)
+  // Applies to every socket; terminal input is the largest client message.
+  await app.register(fastifyWebsocket, { options: { maxPayload: TERMINAL_MAX_PAYLOAD } })
 
   app.get('/api/health', { config: { access: { area: 'unpaired' } } }, () => ({
     ok: true,
@@ -59,6 +69,11 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerBoardRoutes(app, deps.board)
   registerSettingsRoutes(app, deps.settings)
   registerTimesheetRoutes(app, deps.timesheet)
+  registerWorkspaceRoutes(app, deps.workspace)
+  registerWorkspaceFilesRoutes(app, deps.workspace)
+  registerChatRoutes(app, deps.workspace)
+  registerTerminalRoute(app, deps.workspace, allowedHosts)
+  await registerHookRoute(app, deps.workspace)
 
   const { clientDist } = deps
   const hasClient = clientDist !== undefined && existsSync(join(clientDist, 'index.html'))

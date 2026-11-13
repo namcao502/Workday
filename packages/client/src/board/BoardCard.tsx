@@ -4,7 +4,13 @@ import { dueClassName } from './boardView.js'
 import { KeyPill } from './KeyPill.js'
 import { RowMenu } from './RowMenu.js'
 
-export function BoardCards({ rows, view, language, onAction }: BoardListProps): React.JSX.Element {
+export function BoardCards({
+  rows,
+  view,
+  language,
+  onAction,
+  workspace,
+}: BoardListProps): React.JSX.Element {
   return (
     <ul className="board-cards">
       {rows.map((row) => (
@@ -14,6 +20,7 @@ export function BoardCards({ rows, view, language, onAction }: BoardListProps): 
             <RowMenu
               ticketKey={row.ticket.key}
               view={view}
+              workspace={workspace}
               onAction={(action) => {
                 onAction(row.ticket.key, action)
               }}

@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import type {
   HoursLog,
   HrmConfig,
@@ -22,6 +23,16 @@ import { runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
 import { TimesheetService } from './timesheet/timesheetService.js'
+import { spawnNodePty } from './workspace/nodePty.js'
+import type { SpawnEditor } from './workspace/openInEditor.js'
+import type { SpawnPty } from './workspace/pty.js'
+import { WorkspaceService } from './workspace/workspaceService.js'
+import { loadWorkspace, saveWorkspace } from './workspace/workspaceStore.js'
+import {
+  createWorktree,
+  type WorktreeOptions,
+  type WorktreeResult,
+} from './workspace/worktreeService.js'
 
 export interface ServicesOptions {
   readonly dataDir: string
@@ -38,6 +49,12 @@ export interface ServicesOptions {
   // Tests pass their own; by default web-push and a real cloudflared process.
   readonly sendPush?: SendPush
   readonly spawnTunnel?: SpawnTunnel
+  // Tests pass a fake PTY and a temp home, so no real shell or ~/.claude is touched.
+  readonly spawnPty?: SpawnPty
+  readonly homeDir?: string
+  readonly spawnEditor?: SpawnEditor
+  // Tests pass a fake, so Start never runs git against a real repo.
+  readonly createWorktree?: (options: WorktreeOptions) => Promise<WorktreeResult>
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -47,6 +64,7 @@ export interface Services {
   readonly timesheet: TimesheetService
   readonly events: EventHub
   readonly remote: RemoteService
+  readonly workspace: WorkspaceService
   readonly scheduler: Scheduler
   readonly logScheduler: LogTimer
 }
@@ -100,6 +118,25 @@ export function createServices(options: ServicesOptions): Services {
     },
     ...logError,
   })
+  const workspace = new WorkspaceService({
+    dataDir,
+    config: config.workspace,
+    initialState: loadWorkspace(dataDir),
+    save: (state) => saveWorkspace(dataDir, state),
+    events,
+    spawn: options.spawnPty ?? spawnNodePty,
+    ...(options.spawnEditor === undefined ? {} : { spawnEditor: options.spawnEditor }),
+    homeDir: options.homeDir ?? homedir(),
+    board,
+    timesheet,
+    createWorktree:
+      options.createWorktree ??
+      ((worktree) =>
+        createWorktree(worktree, (message) => {
+          reportError(message, null)
+        })),
+    ...logError,
+  })
   const scheduler = options.scheduler ?? new PollScheduler(() => board.poll())
   const logScheduler = options.logScheduler ?? new LogScheduler(() => timesheet.runSchedule())
   const settings = new SettingsService({
@@ -114,7 +151,8 @@ export function createServices(options: ServicesOptions): Services {
     createHoursLog: options.createHoursLog,
     createSheetLog: options.createSheetLog,
     remote,
+    workspace,
     ...logError,
   })
-  return { board, settings, timesheet, events, remote, scheduler, logScheduler }
+  return { board, settings, timesheet, events, remote, workspace, scheduler, logScheduler }
 }

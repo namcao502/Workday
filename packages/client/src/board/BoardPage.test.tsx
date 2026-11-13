@@ -186,3 +186,89 @@ it('a board act device keeps Check now and the row menu', async () => {
   expect(await screen.findByRole('button', { name: 'Actions for MDP-1' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /Check now/ })).toBeInTheDocument()
 })
+
+interface WorkspaceBackend {
+  readonly configured: boolean
+  readonly openKeys?: readonly string[]
+  readonly open?: Response
+}
+
+function stubWorkspaceBackend({ configured, openKeys = [], open }: WorkspaceBackend): FetchMock {
+  const workspace = {
+    configured,
+    tabs: openKeys.map((id) => ({ id, kind: 'ticket', folder: null, sessions: [id] })),
+    sessions: [],
+    starting: [],
+    recentFolders: [],
+  }
+  return stubFetch((url) => {
+    if (url === '/api/settings') {
+      return jsonResponse(connectedSettings())
+    }
+    if (url === '/api/workspace') {
+      return jsonResponse(workspace)
+    }
+    if (url.startsWith('/api/workspace/open/')) {
+      return open ?? jsonResponse({ ok: true, warning: null })
+    }
+    if (url.startsWith('/api/workspace/start/')) {
+      return jsonResponse({ ok: true, warning: null })
+    }
+    return jsonResponse(TWO_VIEWS)
+  })
+}
+
+async function openRowMenu(): Promise<void> {
+  fireEvent.click(await screen.findByRole('button', { name: 'Actions for MDP-1' }))
+}
+
+it('Start and Open show in the Working menu once the workspace is configured', async () => {
+  stubWorkspaceBackend({ configured: true })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  await openRowMenu()
+  await screen.findByRole('menuitem', { name: 'Start' })
+  expect(screen.getByRole('menuitem', { name: 'Open' })).toBeInTheDocument()
+})
+
+it('Start and Open are hidden while the workspace is not configured', async () => {
+  const fetchMock = stubWorkspaceBackend({ configured: false })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledWith('/api/workspace', { method: 'GET' })
+  })
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  await openRowMenu()
+  expect(screen.queryByRole('menuitem', { name: 'Start' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Open' })).not.toBeInTheDocument()
+})
+
+it('Start is hidden for a ticket that already has an open tab', async () => {
+  stubWorkspaceBackend({ configured: true, openKeys: ['MDP-1'] })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  await openRowMenu()
+  await screen.findByRole('menuitem', { name: 'Open' })
+  expect(screen.queryByRole('menuitem', { name: 'Start' })).not.toBeInTheDocument()
+})
+
+it('Open asks before recreating a missing worktree, then sends recreate', async () => {
+  const fetchMock = stubWorkspaceBackend({
+    configured: true,
+    open: jsonResponse({ ok: false, confirmRecreate: true }, 409),
+  })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  await openRowMenu()
+  await screen.findByRole('menuitem', { name: 'Open' })
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Open' }))
+  expect(await screen.findByText('Recreate the MDP-1 worktree?')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Recreate' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/workspace/open/MDP-1',
+      expect.objectContaining({ body: JSON.stringify({ recreate: true }) }),
+    )
+  })
+})

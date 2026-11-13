@@ -4,30 +4,77 @@ import { useAccess } from '../api/useMe.js'
 import { t } from '../i18n.js'
 import type { BoardViewId } from './boardView.js'
 
+// Start / Open need a configured workspace on the local PC; the Board passes it only then.
+export interface RowWorkspace {
+  readonly openKeys: ReadonlySet<string>
+  readonly starting: ReadonlySet<string>
+  readonly onStart: (ticketKey: string) => void
+  readonly onOpen: (ticketKey: string) => void
+}
+
 interface RowMenuProps {
   readonly ticketKey: string
   readonly view: BoardViewId
   readonly onAction: (action: BoardAction) => void
+  readonly workspace?: RowWorkspace | undefined
 }
 
 interface MenuItem {
-  readonly action: BoardAction
+  readonly id: string
   readonly label: string
+  readonly disabled?: boolean
+  readonly run: () => void
 }
 
-function itemsFor(view: BoardViewId): readonly MenuItem[] {
-  const dismiss: MenuItem = { action: 'dismiss', label: t('Dismiss', 'Bỏ qua') }
+function workspaceItems(ticketKey: string, workspace: RowWorkspace): readonly MenuItem[] {
+  const starting = workspace.starting.has(ticketKey)
+  const open: MenuItem = {
+    id: 'open',
+    label: t('Open', 'Mở'),
+    run: () => {
+      workspace.onOpen(ticketKey)
+    },
+  }
+  if (workspace.openKeys.has(ticketKey)) {
+    return [open]
+  }
+  const start: MenuItem = {
+    id: 'start',
+    label: starting ? t('Starting...', 'Đang bắt đầu...') : t('Start', 'Bắt đầu'),
+    disabled: starting,
+    run: () => {
+      workspace.onStart(ticketKey)
+    },
+  }
+  return [start, open]
+}
+
+function itemsFor(props: RowMenuProps): readonly MenuItem[] {
+  const { view, ticketKey, onAction, workspace } = props
+  const action = (id: BoardAction, label: string): MenuItem => ({
+    id,
+    label,
+    run: () => {
+      onAction(id)
+    },
+  })
+  const dismiss = action('dismiss', t('Dismiss', 'Bỏ qua'))
   switch (view) {
     case 'working':
-      return [{ action: 'done', label: t('Done', 'Hoàn thành') }, dismiss]
+      return [
+        ...(workspace === undefined ? [] : workspaceItems(ticketKey, workspace)),
+        action('done', t('Done', 'Hoàn thành')),
+        dismiss,
+      ]
     case 'done':
-      return [{ action: 'reopen', label: t('Reopen', 'Mở lại') }, dismiss]
+      return [action('reopen', t('Reopen', 'Mở lại')), dismiss]
     case 'dismissed':
-      return [{ action: 'restore', label: t('Restore', 'Khôi phục') }]
+      return [action('restore', t('Restore', 'Khôi phục'))]
   }
 }
 
-export function RowMenu({ ticketKey, view, onAction }: RowMenuProps): React.JSX.Element | null {
+export function RowMenu(props: RowMenuProps): React.JSX.Element | null {
+  const { ticketKey } = props
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const canAct = useAccess().canAct('board')
@@ -66,15 +113,16 @@ export function RowMenu({ ticketKey, view, onAction }: RowMenuProps): React.JSX.
       </button>
       {open ? (
         <div className="menu" role="menu">
-          {itemsFor(view).map((item) => (
+          {itemsFor(props).map((item) => (
             <button
-              key={item.action}
+              key={item.id}
               type="button"
               role="menuitem"
               className="menu-item"
+              disabled={item.disabled === true}
               onClick={() => {
                 setOpen(false)
-                onAction(item.action)
+                item.run()
               }}
             >
               {item.label}

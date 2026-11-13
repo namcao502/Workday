@@ -1,6 +1,6 @@
 import type { RemoteConfig, WorkdayConfig } from '@workday/core'
 import { expect } from 'vitest'
-import { saveConfig } from '../config.js'
+import { DEFAULT_WORKSPACE, saveConfig } from '../config.js'
 import {
   buildTestApp,
   LOOPBACK_HEADERS,
@@ -43,6 +43,7 @@ export async function buildRemoteApp(
     port: TEST_PORT,
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
+    workspace: DEFAULT_WORKSPACE,
     theme: 'dark',
     language: 'en',
     jira: null,

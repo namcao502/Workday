@@ -94,3 +94,19 @@ it('locally every page and action stays available', async () => {
   ).toHaveLength(5)
   expect(await screen.findByRole('button', { name: /Check now/ })).toBeInTheDocument()
 })
+
+it('the Workspace item shows how many sessions are waiting', async () => {
+  stubMatchMedia(false)
+  const sessions = [
+    { name: 'MDP-1', running: true, wait: 'finished', working: false },
+    { name: 'MDP-2', running: true, wait: null, working: true },
+    { name: 'MDP-3', running: true, wait: 'permission', working: false },
+  ]
+  const workspace = { configured: true, tabs: [], sessions, starting: [], recentFolders: [] }
+  stubFetch((url) => jsonResponse(url === '/api/workspace' ? workspace : {}))
+  renderWithQuery(<Shell page="insights" />)
+  const item = screen.getByRole('button', { name: /Workspace/ })
+  await waitFor(() => {
+    expect(item.querySelector('.nav-badge')).toHaveTextContent('2')
+  })
+})

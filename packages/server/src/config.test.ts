@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  DEFAULT_WORKSPACE,
   loadConfig,
   loadGraphTokenOverride,
   loadHrmKey,
@@ -41,9 +42,29 @@ describe('loadConfig', () => {
       theme: 'dark',
       language: 'en',
       jira: null,
-      timesheet: { logTime: '18:00', hrm: null, tsc: null },
       remote: null,
+      workspace: DEFAULT_WORKSPACE,
+      timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
+  })
+
+  it('reads the workspace block; a missing or wrong-typed field takes its default', () => {
+    writeConfig({
+      workspace: {
+        devRepoPath: 'C:\\repo',
+        startPrompt: 5,
+        localOnlyPaths: ['a', 2],
+        chatView: true,
+      },
+    })
+    expect(loadConfig(directory).workspace).toEqual({
+      ...DEFAULT_WORKSPACE,
+      devRepoPath: 'C:\\repo',
+      localOnlyPaths: ['a'],
+      chatView: true,
+    })
+    writeConfig({ workspace: 'junk' })
+    expect(loadConfig(directory).workspace).toEqual(DEFAULT_WORKSPACE)
   })
 
   it('takes the default of a field that is missing or of the wrong type', () => {

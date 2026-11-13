@@ -69,5 +69,24 @@ export function errorText(error: AppError): string {
       return t('Pairing is closed. Open it on the PC.', 'Ghép nối đã đóng. Hãy mở lại trên PC.')
     case 'wrongCode':
       return t('That code is not right', 'Mã không đúng')
+    case 'workspaceNotConfigured':
+      return t(
+        'Set the dev repo folder in Settings first',
+        'Hãy đặt thư mục dev repo trong Cài đặt trước',
+      )
+    case 'worktreeMissing':
+      return t('The ticket has no worktree yet', 'Ticket chưa có worktree')
+    case 'worktreeFailed':
+      return t('The worktree could not be created', 'Không tạo được worktree')
+    case 'parentBranchMissing':
+      return t('The parent ticket branch was not found', 'Không tìm thấy nhánh của ticket cha')
+    case 'mainNotMerged':
+      return t('Main is not merged into the branch yet', 'Nhánh chưa được merge main')
+    case 'sessionNotFound':
+      return t('That session no longer exists', 'Phiên này không còn nữa')
+    case 'pathOutside':
+      return t('That path is outside the worktree', 'Đường dẫn nằm ngoài worktree')
+    case 'gitFailed':
+      return t('A git command failed', 'Lệnh git thất bại')
   }
 }

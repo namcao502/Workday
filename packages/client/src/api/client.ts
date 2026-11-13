@@ -23,6 +23,8 @@ export const queryKeys = {
   settings: ['settings'],
   timesheet: ['timesheet'],
   timesheetVisited: ['timesheet-visited'],
+  workspace: ['workspace'],
+  workspaceWarning: ['workspace-warning'],
 } as const
 
 const UNAUTHORIZED = 401
@@ -110,7 +112,7 @@ function expectFailure(
   return { ok: false, error: readError(raw, path) }
 }
 
-function readError(raw: RawResponse, path: string): AppError {
+export function readError(raw: RawResponse, path: string): AppError {
   const error = isRecord(raw.body) ? raw.body['error'] : undefined
   if (!isRecord(error) || typeof error['code'] !== 'string') {
     throw new ApiError(raw.status, path)
@@ -149,6 +151,14 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'forbidden',
   'pairingClosed',
   'wrongCode',
+  'workspaceNotConfigured',
+  'worktreeMissing',
+  'worktreeFailed',
+  'parentBranchMissing',
+  'mainNotMerged',
+  'sessionNotFound',
+  'pathOutside',
+  'gitFailed',
 ])
 
 export function isPlainCode(code: unknown): code is PlainCode {

@@ -1,7 +1,9 @@
 import type { DeviceRights } from './remoteAccess.js'
 import type { StatusFlow } from './statusFlow.js'
 import type { BoardSection } from './board.js'
+import type { WaitReason } from './claudeAttention.js'
 import type { DueUrgency, Ticket } from './ticket.js'
+import type { WorkspaceTab } from './workspaceTabs.js'
 import type { QueueEntry } from './timesheetQueue.js'
 import type { DayCoverage, HrmTask } from './timesheetWeek.js'
 import type { WeekReviewItem } from './weekReview.js'
@@ -49,6 +51,15 @@ export interface RemoteConfig {
   readonly cloudflaredPath: string | null // null = the user runs cloudflared
 }
 
+export interface WorkspaceConfig {
+  readonly devRepoPath: string | null
+  readonly siblingRepoGlob: string | null // "*-Angular"; null = only the dev repo
+  readonly startPrompt: string | null // "ship {key}"; null = plain claude
+  readonly claudeExecutable: string | null // null = ~/.local/bin/claude(.exe), else PATH
+  readonly localOnlyPaths: readonly string[] // never listed in Changes
+  readonly chatView: boolean
+}
+
 export interface WorkdayConfig {
   readonly host: string
   readonly port: number
@@ -59,6 +70,7 @@ export interface WorkdayConfig {
   readonly jira: JiraConfig | null
   readonly timesheet: TimesheetConfig
   readonly remote: RemoteConfig | null // null until publicHost, accessTeamDomain and accessAud are all set
+  readonly workspace: WorkspaceConfig
 }
 
 // Server never sends display text; the client translates the code with t().
@@ -87,6 +99,14 @@ export type AppError =
         | 'forbidden'
         | 'pairingClosed'
         | 'wrongCode'
+        | 'workspaceNotConfigured'
+        | 'worktreeMissing'
+        | 'worktreeFailed'
+        | 'parentBranchMissing'
+        | 'mainNotMerged' // a warning: the worktree is still used
+        | 'sessionNotFound'
+        | 'pathOutside'
+        | 'gitFailed'
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
 
@@ -112,6 +132,7 @@ export interface SettingsUpdate {
   readonly hrmApiKey?: string
   readonly remote?: RemoteConfig | null
   readonly tunnelToken?: string
+  readonly workspace?: WorkspaceConfig
 }
 
 export interface JiraCheckRequest {
@@ -211,6 +232,31 @@ export type ServerEvent =
   | { readonly type: 'settings.changed' }
   | { readonly type: 'timesheet.changed' }
   | { readonly type: 'remote.changed' } // PC Settings refetches RemoteStatusView
+  | { readonly type: 'workspace.changed' }
+
+export interface SessionView {
+  readonly name: string
+  readonly running: boolean
+  readonly wait: WaitReason | null
+  readonly working: boolean
+}
+
+export interface WorkspaceView {
+  readonly configured: boolean // devRepoPath set and the folder exists
+  readonly tabs: readonly WorkspaceTab[]
+  readonly sessions: readonly SessionView[]
+  readonly starting: readonly string[] // keys whose worktree is being created
+  readonly recentFolders: readonly string[]
+}
+
+// warning: mainNotMerged, the tab opens anyway.
+export type StartOutcome =
+  | { readonly ok: true; readonly warning: AppError | null }
+  | { readonly ok: false; readonly error: AppError }
+
+export type OpenOutcome =
+  | StartOutcome
+  | { readonly ok: false; readonly confirmRecreate: true } // worktree missing and recreate not set
 
 export interface PushSubscriptionJson {
   readonly endpoint: string
@@ -268,3 +314,36 @@ export type TscSessionResult =
 export type TscSignInResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly error: AppError; readonly detail: string | null }
+
+export type ChangeStatus = 'A' | 'M' | 'D'
+
+export interface ChangeGroupView {
+  readonly id: string
+  readonly label: string // "BE - Backend-DotNet", "FE - Portal-Angular", "(MDP-2)" suffix for a bug branch
+  readonly files: readonly { readonly path: string; readonly status: ChangeStatus }[]
+  readonly error: AppError | null
+}
+
+export type DiffView =
+  | { readonly kind: 'full'; readonly original: string; readonly modified: string }
+  | {
+      readonly kind: 'excerpt'
+      readonly original: string
+      readonly modified: string
+      readonly originalLines: readonly number[]
+      readonly modifiedLines: readonly number[]
+      readonly truncated: boolean
+    }
+  | { readonly kind: 'binary' }
+
+export interface FilesGroupView {
+  readonly id: string
+  readonly label: string
+  readonly paths: readonly string[]
+  readonly error: AppError | null
+}
+
+export type FileContentView =
+  | { readonly kind: 'text' | 'markdown'; readonly text: string }
+  | { readonly kind: 'image' } // the client loads .../files/raw
+  | { readonly kind: 'binary' | 'tooLarge' }

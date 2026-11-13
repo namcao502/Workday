@@ -4,6 +4,7 @@ import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
 import { RemoteSection } from './RemoteSection.js'
 import { TimesheetSection } from './TimesheetSection.js'
+import { WorkspaceSection } from './WorkspaceSection.js'
 
 export function SettingsPage(): React.JSX.Element {
   const settings = useSettings()
@@ -17,6 +18,7 @@ export function SettingsPage(): React.JSX.Element {
           <GeneralSection settings={settings.data} />
           <ConnectionsSection settings={settings.data} />
           <TimesheetSection settings={settings.data} />
+          <WorkspaceSection settings={settings.data} />
           <RemoteSection settings={settings.data} />
         </>
       )}

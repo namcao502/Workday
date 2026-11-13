@@ -2,16 +2,23 @@ import type { BoardAction, BoardRow } from '@workday/core'
 import { formatDateOnly, t, type Language } from '../i18n.js'
 import { dueClassName, type BoardViewId } from './boardView.js'
 import { KeyPill } from './KeyPill.js'
-import { RowMenu } from './RowMenu.js'
+import { RowMenu, type RowWorkspace } from './RowMenu.js'
 
 export interface BoardListProps {
   readonly rows: readonly BoardRow[]
   readonly view: BoardViewId
   readonly language: Language
   readonly onAction: (ticketKey: string, action: BoardAction) => void
+  readonly workspace?: RowWorkspace | undefined
 }
 
-export function BoardTable({ rows, view, language, onAction }: BoardListProps): React.JSX.Element {
+export function BoardTable({
+  rows,
+  view,
+  language,
+  onAction,
+  workspace,
+}: BoardListProps): React.JSX.Element {
   return (
     <table className="board-table">
       <thead>
@@ -46,6 +53,7 @@ export function BoardTable({ rows, view, language, onAction }: BoardListProps): 
               <RowMenu
                 ticketKey={row.ticket.key}
                 view={view}
+                workspace={workspace}
                 onAction={(action) => {
                   onAction(row.ticket.key, action)
                 }}

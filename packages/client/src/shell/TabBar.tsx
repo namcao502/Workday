@@ -6,6 +6,7 @@ interface TabBarProps {
   readonly onSelect: (page: PageId) => void
   readonly attention?: boolean // dot on the Timesheet item
   readonly pages?: readonly PageId[]
+  readonly workspaceBadge?: number // sessions waiting for the user
 }
 
 export function TabBar({
@@ -13,6 +14,7 @@ export function TabBar({
   onSelect,
   attention = false,
   pages = PAGE_IDS,
+  workspaceBadge = 0,
 }: TabBarProps): React.JSX.Element {
   return (
     <nav className="tab-bar" aria-label={t('Tabs', 'Thẻ')}>
@@ -29,6 +31,9 @@ export function TabBar({
           {pageLabel(page)}
           {attention && page === 'timesheet' ? (
             <span className="nav-dot" aria-hidden="true" />
+          ) : null}
+          {page === 'workspace' && workspaceBadge !== 0 ? (
+            <span className="nav-badge">{workspaceBadge}</span>
           ) : null}
         </button>
       ))}

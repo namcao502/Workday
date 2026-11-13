@@ -188,6 +188,19 @@ export function markDone(state: BoardState, key: string): BoardState {
   }
 }
 
+// Start moves only a new ticket; one already in progress, done or dismissed stays where it is.
+export function startTicket(state: BoardState, key: string): BoardState {
+  const ticket = state.new[key]
+  if (ticket === undefined) {
+    return state
+  }
+  return {
+    ...state,
+    new: without(state.new, key),
+    inProgress: { ...state.inProgress, [key]: ticket },
+  }
+}
+
 export function reopen(state: BoardState, key: string): BoardState {
   const ticket = state.done[key]
   if (ticket === undefined) {

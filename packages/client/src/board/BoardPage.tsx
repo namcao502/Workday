@@ -4,14 +4,18 @@ import { useEffect, useState } from 'react'
 import { addTicket, boardAction, checkBoard, getBoard, queryKeys } from '../api/client.js'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
+import { useWorkspace } from '../api/useWorkspace.js'
 import { errorText } from '../errors.js'
 import { formatClock, t, type Language } from '../i18n.js'
 import { Segmented } from '../settings/Segmented.js'
 import { navigateTo } from '../shell/pages.js'
 import { useNarrow } from '../shell/useNarrow.js'
+import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
 import './board.css'
 import { BoardCards } from './BoardCard.js'
 import { BoardTable } from './BoardTable.js'
+import type { RowWorkspace } from './RowMenu.js'
+import { useTicketLauncher } from './useTicketLauncher.js'
 import {
   countViews,
   pickViewWithHits,
@@ -73,7 +77,10 @@ export function BoardPage(): React.JSX.Element {
   const narrow = useNarrow()
   const queryClient = useQueryClient()
   const settings = useSettings()
-  const canAct = useAccess().canAct('board')
+  const access = useAccess()
+  const canAct = access.canAct('board')
+  const workspace = useWorkspace().data
+  const launcher = useTicketLauncher()
   const board = useQuery({ queryKey: queryKeys.board, queryFn: getBoard })
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search)
@@ -121,7 +128,18 @@ export function BoardPage(): React.JSX.Element {
     }
   }
 
+  const rowWorkspace: RowWorkspace | undefined =
+    workspace?.configured === true && access.mode === 'local'
+      ? {
+          openKeys: new Set(workspace.tabs.map((tab) => tab.id)),
+          starting: new Set(workspace.starting),
+          onStart: launcher.start,
+          onOpen: launcher.open,
+        }
+      : undefined
+
   const listProps = {
+    workspace: rowWorkspace,
     rows: rowsForView(rows, activeView, debouncedSearch),
     view: activeView,
     language,
@@ -188,6 +206,18 @@ export function BoardPage(): React.JSX.Element {
       </div>
       {check.isError ? <p className="status danger">{errorText({ code: 'pollFailed' })}</p> : null}
       {addError === null ? null : <p className="status danger">{addError}</p>}
+      {launcher.error === null ? null : <p className="status danger">{launcher.error}</p>}
+      {launcher.recreateKey === null ? null : (
+        <ConfirmDialog
+          message={t(
+            `Recreate the ${launcher.recreateKey} worktree?`,
+            `Tạo lại worktree của ${launcher.recreateKey}?`,
+          )}
+          confirmLabel={t('Recreate', 'Tạo lại')}
+          onConfirm={launcher.confirmRecreate}
+          onCancel={launcher.cancelRecreate}
+        />
+      )}
       {board.data === undefined ? (
         <p className="muted">{t('Loading...', 'Đang tải...')}</p>
       ) : !board.data.connected ? (

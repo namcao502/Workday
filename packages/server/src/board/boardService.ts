@@ -9,6 +9,7 @@ import {
   parseTicketKey,
   reopen,
   restore,
+  startTicket,
   todayIn,
   type AddTicketResult,
   type BoardAction,
@@ -186,6 +187,21 @@ export class BoardService {
 
   async act(key: string, action: BoardAction): Promise<void> {
     await this.enqueue(() => this.commit(ACTIONS[action](this.state, key)))
+  }
+
+  async start(key: string): Promise<void> {
+    await this.enqueue(() => this.commit(startTicket(this.state, key)))
+  }
+
+  // The parent a sub-task's worktree is cut from; null for a ticket without one or off the board.
+  parentKeyOf(key: string): string | null {
+    for (const section of SECTIONS) {
+      const ticket = this.state[section][key]
+      if (ticket !== undefined) {
+        return ticket.parentKey
+      }
+    }
+    return this.state.dismissed[key]?.ticket.parentKey ?? null
   }
 
   // Each step re-checks the tracker: a result from a Jira replaced mid-poll is dropped.

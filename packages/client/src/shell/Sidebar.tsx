@@ -6,6 +6,7 @@ interface NavProps {
   readonly onSelect: (page: PageId) => void
   readonly attention?: boolean // dot on the Timesheet item
   readonly pages?: readonly PageId[]
+  readonly workspaceBadge?: number // sessions waiting for the user
 }
 
 export function Sidebar({
@@ -13,6 +14,7 @@ export function Sidebar({
   onSelect,
   attention = false,
   pages = PAGE_IDS,
+  workspaceBadge = 0,
 }: NavProps): React.JSX.Element {
   const mainPages = pages.filter((page) => page !== 'settings')
   return (
@@ -26,6 +28,7 @@ export function Sidebar({
             current={current}
             onSelect={onSelect}
             attention={page === 'timesheet' && attention}
+            workspaceBadge={page === 'workspace' ? workspaceBadge : 0}
           />
         ))}
       </div>
@@ -41,6 +44,7 @@ function SidebarItem({
   current,
   onSelect,
   attention = false,
+  workspaceBadge = 0,
 }: NavProps & { readonly page: PageId }): React.JSX.Element {
   return (
     <button
@@ -53,6 +57,7 @@ function SidebarItem({
     >
       {pageLabel(page)}
       {attention ? <span className="nav-dot" aria-hidden="true" /> : null}
+      {workspaceBadge === 0 ? null : <span className="nav-badge">{workspaceBadge}</span>}
     </button>
   )
 }

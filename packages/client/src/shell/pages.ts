@@ -31,7 +31,7 @@ export function pageLabel(page: PageId): string {
 
 // "#/settings" -> "settings"; anything unknown falls back to the default page.
 export function pageFromHash(hash: string): PageId {
-  const name = hash.replace(/^#\/?/, '')
+  const name = hash.replace(/^#\/?/, '').split('/')[0]
   return PAGE_IDS.find((page) => page === name) ?? DEFAULT_PAGE
 }
 
@@ -52,4 +52,23 @@ export function pageVisible(page: PageId, access: Access): boolean {
 
 export function visiblePages(access: Access): readonly PageId[] {
   return PAGE_IDS.filter((page) => pageVisible(page, access))
+}
+
+export interface WorkspaceSelection {
+  readonly tab: string | null
+  readonly session: string | null
+}
+
+// "#/workspace/MDP-1/MDP-1~2" -> { tab: "MDP-1", session: "MDP-1~2" }; the selection lives only in the URL.
+export function workspaceSelectionFromHash(hash: string): WorkspaceSelection {
+  const [, tab, session] = hash.replace(/^#\/?/, '').split('/')
+  return {
+    tab: tab === undefined || tab === '' ? null : decodeURIComponent(tab),
+    session: session === undefined || session === '' ? null : decodeURIComponent(session),
+  }
+}
+
+export function navigateToWorkspace(tab: string | null, session: string | null = null): void {
+  const parts = [tab, tab === null ? null : session].filter((part) => part !== null)
+  window.location.hash = `#/workspace${parts.map((part) => `/${encodeURIComponent(part)}`).join('')}`
 }

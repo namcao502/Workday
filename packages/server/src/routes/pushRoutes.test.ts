@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { NO_SECRETS, saveConfig, saveSecrets } from '../config.js'
+import { DEFAULT_WORKSPACE, NO_SECRETS, saveConfig, saveSecrets } from '../config.js'
 import {
   ENABLED_REMOTE,
   pairDevice,
@@ -46,6 +46,7 @@ async function timesheetApp(language: 'en' | 'vi'): Promise<TestApp> {
     port: 4870,
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
+    workspace: DEFAULT_WORKSPACE,
     theme: 'dark',
     language,
     jira: null,

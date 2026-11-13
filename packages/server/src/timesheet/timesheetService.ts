@@ -137,6 +137,11 @@ export class TimesheetService {
     })
   }
 
+  // Start queues the ticket for today in the configured time zone; the minutes split evenly.
+  queueToday(tickets: readonly string[]): Promise<QueueChange> {
+    return this.addToQueue(this.clock().date, tickets, null)
+  }
+
   setQueueMinutes(
     date: string,
     tickets: readonly string[],
