@@ -1,0 +1,14 @@
+[Unit]
+Description=Workday local web app
+After=network-online.target
+
+[Service]
+# install.sh rewrites WorkingDirectory to the real repo path.
+WorkingDirectory=%h/workday
+ExecStart=/usr/bin/env node --env-file-if-exists=.env packages/server/dist/main.js
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+
+[Install]
+WantedBy=default.target

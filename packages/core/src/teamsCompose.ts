@@ -25,6 +25,8 @@ export interface TeamsPerson {
   readonly displayName: string
 }
 
+export const MAX_PEOPLE = 300
+
 const MENTION_ITEM_TYPE = 'http://schema.skype.com/Mention'
 const PERSON_MRI = /^8:orgid:[0-9a-f-]{36}$/
 const URL_PATTERN = /https?:\/\/[^\s<>"']+/g

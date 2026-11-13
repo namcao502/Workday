@@ -34,7 +34,7 @@ function parseEntry(raw: unknown): QueueEntry | null {
   return { date, tickets: clean, minutes: parseMinutes(raw['minutes'], clean.length) }
 }
 
-function parseQueue(raw: unknown): readonly QueueEntry[] | null {
+export function parseQueue(raw: unknown): readonly QueueEntry[] | null {
   if (!isRecord(raw)) {
     return null
   }

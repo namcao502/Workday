@@ -50,7 +50,7 @@ function isSuggestion(raw: unknown): raw is Suggestion {
   )
 }
 
-function parseSuggestionState(raw: unknown): SuggestionState | null {
+export function parseSuggestionState(raw: unknown): SuggestionState | null {
   if (
     !isRecord(raw) ||
     !(raw['epic'] === null || isEpicTicket(raw['epic'])) ||

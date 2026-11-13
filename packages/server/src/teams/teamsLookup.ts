@@ -3,6 +3,7 @@ import {
   findTicketChats,
   fullSizeImageUrl,
   isAmsImageUrl,
+  MAX_PEOPLE,
   parseWatchList,
   people,
   postedKey,
@@ -23,7 +24,6 @@ import type { TeamsState } from './teamsStore.js'
 
 const FULL_SIZE_VIEW = /imgpsh_fullsize_anim$/
 const CACHE_LIFETIME_MS = 10 * 60 * 1000
-const MAX_PEOPLE = 300
 const POSTED_KEEP_MS = 180 * 24 * 60 * 60 * 1000
 
 export interface TeamsLookupDeps {

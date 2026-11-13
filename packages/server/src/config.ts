@@ -1,4 +1,4 @@
-import { renameSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   parseColumns,
@@ -23,7 +23,13 @@ import {
   type WorkspaceConfig,
 } from '@workday/core'
 import { isRecord, readJson, writeJsonAtomic } from './jsonFile.js'
-import { loadMasterKey, openSecret, sealSecret, SEALED_PREFIX } from './security/secretBox.js'
+import {
+  findMasterKey,
+  loadMasterKey,
+  openSecret,
+  sealSecret,
+  SEALED_PREFIX,
+} from './security/secretBox.js'
 
 export interface Secrets {
   readonly jiraApiToken: string | null
@@ -65,10 +71,10 @@ export interface HrmKey {
   readonly source: 'env' | 'file' | null
 }
 
-const TOKEN_ENVIRONMENT_VARIABLE = 'WORKDAY_JIRA_API_TOKEN'
-const HRM_KEY_ENVIRONMENT_VARIABLE = 'WORKDAY_HRM_API_KEY'
+export const TOKEN_ENVIRONMENT_VARIABLE = 'WORKDAY_JIRA_API_TOKEN'
+export const HRM_KEY_ENVIRONMENT_VARIABLE = 'WORKDAY_HRM_API_KEY'
 const TUNNEL_TOKEN_ENVIRONMENT_VARIABLE = 'WORKDAY_TUNNEL_TOKEN'
-const ADO_PAT_ENVIRONMENT_VARIABLE = 'WORKDAY_ADO_PAT'
+export const ADO_PAT_ENVIRONMENT_VARIABLE = 'WORKDAY_ADO_PAT'
 const GRAPH_TOKEN_ENVIRONMENT_VARIABLE = 'WORKDAY_MS_GRAPH_TOKEN'
 const DEFAULT_POLL_MINUTES = 5
 const MIN_POLL_MINUTES = 1
@@ -340,7 +346,7 @@ function parsePollMinutes(value: unknown): number {
   return isInRange ? value : DEFAULT_POLL_MINUTES
 }
 
-function parseConfig(raw: unknown): WorkdayConfig | null {
+export function parseConfig(raw: unknown): WorkdayConfig | null {
   if (!isRecord(raw)) {
     return null
   }
@@ -435,6 +441,17 @@ export function loadConfig(dataDir: string): WorkdayConfig {
   return readJson(join(dataDir, CONFIG_FILE), parseConfig, DEFAULT_CONFIG)
 }
 
+// WORKDAY_PORT (dev only) overrides the port in config.json.
+export function readPort(configPort: number, environment: NodeJS.ProcessEnv = process.env): number {
+  const raw = environment['WORKDAY_PORT']
+  if (raw === undefined || raw === '') return configPort
+  const port = Number(raw)
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`WORKDAY_PORT must be a port number, got "${raw}"`)
+  }
+  return port
+}
+
 export async function saveConfig(dataDir: string, config: WorkdayConfig): Promise<void> {
   await writeJsonAtomic(join(dataDir, CONFIG_FILE), config)
 }
@@ -455,43 +472,85 @@ function sealSecrets(key: Buffer, secrets: Secrets): Record<SecretName, string |
   }
 }
 
+export interface FileSecretsRead {
+  readonly secrets: Secrets
+  readonly undecryptable: readonly SecretName[]
+  readonly plainValue: boolean
+}
+
+const SECRET_NAMES: readonly SecretName[] = [
+  'jiraApiToken',
+  'hrmApiKey',
+  'tunnelToken',
+  'vapidPrivateKey',
+  'adoPat',
+]
+
+function openFileSecrets(raw: unknown, key: Buffer): FileSecretsRead | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const undecryptable: SecretName[] = []
+  const read = (name: SecretName): string | null => {
+    const stored = textOrNull(raw[name])
+    if (stored === null || !stored.startsWith(SEALED_PREFIX)) {
+      return stored
+    }
+    const opened = openSecret(key, stored)
+    if (opened === null) {
+      undecryptable.push(name)
+    }
+    return opened
+  }
+  const secrets: Secrets = {
+    jiraApiToken: read('jiraApiToken'),
+    hrmApiKey: read('hrmApiKey'),
+    tunnelToken: read('tunnelToken'),
+    vapidPrivateKey: read('vapidPrivateKey'),
+    adoPat: read('adoPat'),
+  }
+  const plainValue = SECRET_NAMES.some((name) => {
+    const stored = textOrNull(raw[name])
+    return stored !== null && !stored.startsWith(SEALED_PREFIX)
+  })
+  return { secrets, undecryptable, plainValue }
+}
+
 // The file's own values, ignoring the environment overrides. A plain-text file is sealed once.
 export function readFileSecrets(dataDir: string): Secrets {
   const key = loadMasterKey(dataDir)
-  const found = { plainValue: false }
-  const parse = (raw: unknown): Secrets | null => {
-    if (!isRecord(raw)) {
-      return null
-    }
-    const read = (name: SecretName): string | null => {
-      const stored = textOrNull(raw[name])
-      if (stored === null) {
-        return null
-      }
-      if (stored.startsWith(SEALED_PREFIX)) {
-        const opened = openSecret(key, stored)
-        if (opened === null) {
-          console.warn(`Ignoring ${name} in ${SECRETS_FILE}: it cannot be decrypted`)
-        }
-        return opened
-      }
-      found.plainValue = true
-      return stored
-    }
-    return {
-      jiraApiToken: read('jiraApiToken'),
-      hrmApiKey: read('hrmApiKey'),
-      tunnelToken: read('tunnelToken'),
-      vapidPrivateKey: read('vapidPrivateKey'),
-      adoPat: read('adoPat'),
-    }
-  }
   const path = join(dataDir, SECRETS_FILE)
-  const secrets = readJson(path, parse, NO_SECRETS)
-  if (found.plainValue) {
-    rewriteSealed(path, key, secrets)
+  const read = readJson<FileSecretsRead | null>(path, (raw) => openFileSecrets(raw, key), null)
+  if (read === null) {
+    return NO_SECRETS
   }
-  return secrets
+  for (const name of read.undecryptable) {
+    console.warn(`Ignoring ${name} in ${SECRETS_FILE}: it cannot be decrypted`)
+  }
+  if (read.plainValue) {
+    rewriteSealed(path, key, read.secrets)
+  }
+  return read.secrets
+}
+
+// Read-only twin of readFileSecrets: never creates master.key or reseals. A missing file reads empty.
+export function peekFileSecrets(
+  dataDir: string,
+  environment: NodeJS.ProcessEnv = process.env,
+): FileSecretsRead | 'noKey' | 'invalid' {
+  const path = join(dataDir, SECRETS_FILE)
+  if (!existsSync(path)) {
+    return { secrets: NO_SECRETS, undecryptable: [], plainValue: false }
+  }
+  const key = findMasterKey(dataDir, environment)
+  if (key === null) {
+    return 'noKey'
+  }
+  try {
+    return openFileSecrets(JSON.parse(readFileSync(path, 'utf8')), key) ?? 'invalid'
+  } catch {
+    return 'invalid'
+  }
 }
 
 function rewriteSealed(path: string, key: Buffer, secrets: Secrets): void {

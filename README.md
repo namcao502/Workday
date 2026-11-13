@@ -44,16 +44,16 @@ WORKDAY_HRM_API_KEY=<your HRM API key>
 On Windows, `scripts/env-from-tokens.ps1` writes `.env` from NOIS Workday's `tokens.env`, both values included.
 `WORKDAY_MS_GRAPH_TOKEN` (env only) replaces the TSC token sniff, for a machine without a display.
 
-## Move the board from NOIS Workday (Windows)
+## Move from NOIS Workday
 
-The first Jira poll only takes a baseline, so a new board starts empty. To carry over the NOIS Workday Tasks board
-(Working, Done, dismissed and the seen keys), stop the server and run:
+With the Workday server stopped, `npm run import-wpf -- --from "%APPDATA%\NoisWorkday" [--cred <file.nwcred>] [--dry-run]`
+fills in the board, queue, Teams marks, workspace tabs and secrets. Steps and details: `docs/cutover/retire-wpf.md`.
 
-```sh
-node scripts/import-noisworkday-board.mjs
-```
+## Run as a service
 
-It keeps the old file as `board.json.before-import`.
+- Linux (systemd user unit) and moving data from Windows: `docs/cutover/deploy.md`, installer `deploy/linux/install.sh`.
+- Windows (Scheduled Task at logon): `deploy/windows/install-task.ps1` (`-Remove` to uninstall).
+- Retiring the NOIS Workday WPF app and importing its data: `docs/cutover/retire-wpf.md`.
 
 ## Data directory
 

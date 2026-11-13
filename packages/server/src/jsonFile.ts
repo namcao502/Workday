@@ -38,6 +38,18 @@ export function readJson<Value>(
   return defaultValue
 }
 
+// Side-effect free check: true when the file is missing or parses to a value `parse` accepts.
+export function isValidJsonFile(path: string, parse: (raw: unknown) => unknown): boolean {
+  if (!existsSync(path)) {
+    return true
+  }
+  try {
+    return parse(JSON.parse(readFileSync(path, 'utf8'))) !== null
+  } catch {
+    return false
+  }
+}
+
 export async function writeJsonAtomic(path: string, value: unknown, mode?: number): Promise<void> {
   await mkdir(dirname(path), { recursive: true })
   const temporaryPath = `${path}.tmp`

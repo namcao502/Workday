@@ -13,6 +13,8 @@ export interface WorkspaceTabsState {
   readonly tabs: readonly WorkspaceTab[]
 }
 
+export const MAX_RECENT_FOLDERS = 5
+
 const TERMINAL_NAME = /^claude\d*$/
 const FIRST_TERMINAL = 'claude'
 
@@ -60,7 +62,9 @@ export function addSession(state: WorkspaceTabsState, tabId: string): WorkspaceT
     return state
   }
   const sessions = [...tab.sessions, nextSessionName(tab.id, tab.sessions)]
-  return { tabs: state.tabs.map((candidate) => (candidate === tab ? { ...tab, sessions } : candidate)) }
+  return {
+    tabs: state.tabs.map((candidate) => (candidate === tab ? { ...tab, sessions } : candidate)),
+  }
 }
 
 // The main session closes with its tab, never alone.
@@ -74,7 +78,9 @@ export function closeSession(
     return state
   }
   const sessions = tab.sessions.filter((name) => name !== sessionName)
-  return { tabs: state.tabs.map((candidate) => (candidate === tab ? { ...tab, sessions } : candidate)) }
+  return {
+    tabs: state.tabs.map((candidate) => (candidate === tab ? { ...tab, sessions } : candidate)),
+  }
 }
 
 export function closeTab(state: WorkspaceTabsState, tabId: string): WorkspaceTabsState {

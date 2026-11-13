@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createApp } from './app.js'
-import { loadConfig, loadGraphTokenOverride } from './config.js'
+import { loadConfig, loadGraphTokenOverride, readPort } from './config.js'
 import { resolveDataDir } from './dataDir.js'
 import { HrmHoursLog } from './hrm/hrmHoursLog.js'
 import { JiraTracker } from './jira/jiraTracker.js'
@@ -13,17 +13,6 @@ import { PlaywrightTokenSource } from './tsc/tokenSniffer.js'
 
 const LISTEN_HOST = '127.0.0.1'
 const TSC_BROWSER_FOLDER = 'tsc-browser'
-
-// WORKDAY_PORT (dev only) overrides the port in config.json.
-function readPort(configPort: number): number {
-  const raw = process.env['WORKDAY_PORT']
-  if (raw === undefined || raw === '') return configPort
-  const port = Number(raw)
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error(`WORKDAY_PORT must be a port number, got "${raw}"`)
-  }
-  return port
-}
 
 function readVersion(): string {
   const packageJson = readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf8')

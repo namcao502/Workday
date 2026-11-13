@@ -10,9 +10,12 @@ const TAG_BYTES = 16
 const OWNER_ONLY_MODE = 0o600
 export const SEALED_PREFIX = 'enc:v1:'
 
-// WORKDAY_MASTER_KEY (base64) wins over the file; the file is created on first use.
-export function loadMasterKey(dataDir: string): Buffer {
-  const fromEnvironment = process.env[MASTER_KEY_ENVIRONMENT_VARIABLE]
+// WORKDAY_MASTER_KEY (base64) wins over the file; null when neither exists. Never writes.
+export function findMasterKey(
+  dataDir: string,
+  environment: NodeJS.ProcessEnv = process.env,
+): Buffer | null {
+  const fromEnvironment = environment[MASTER_KEY_ENVIRONMENT_VARIABLE]
   if (fromEnvironment !== undefined && fromEnvironment !== '') {
     const key = Buffer.from(fromEnvironment, 'base64')
     if (key.length !== KEY_BYTES) {
@@ -21,13 +24,19 @@ export function loadMasterKey(dataDir: string): Buffer {
     return key
   }
   const path = join(dataDir, MASTER_KEY_FILE)
-  if (existsSync(path)) {
-    return readFileSync(path)
+  return existsSync(path) ? readFileSync(path) : null
+}
+
+// The file is created on first use.
+export function loadMasterKey(dataDir: string): Buffer {
+  const found = findMasterKey(dataDir)
+  if (found !== null) {
+    return found
   }
   const created = randomBytes(KEY_BYTES)
   mkdirSync(dataDir, { recursive: true })
   const mode = process.platform === 'win32' ? undefined : OWNER_ONLY_MODE
-  writeFileSync(path, created, { mode })
+  writeFileSync(join(dataDir, MASTER_KEY_FILE), created, { mode })
   return created
 }
 

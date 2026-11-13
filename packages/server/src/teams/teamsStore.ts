@@ -56,7 +56,7 @@ function isPostIndex(raw: unknown): raw is TeamsPostIndex {
   return isRecord(raw) && Object.values(raw).every(isChannelIndex)
 }
 
-function parsePostIndex(raw: unknown): TeamsPostIndex | null {
+export function parsePostIndex(raw: unknown): TeamsPostIndex | null {
   return isPostIndex(raw) ? raw : null
 }
 
@@ -68,7 +68,7 @@ function isPerson(raw: unknown): raw is TeamsPerson {
   return isRecord(raw) && typeof raw['mri'] === 'string' && typeof raw['displayName'] === 'string'
 }
 
-function parseState(raw: unknown): TeamsState | null {
+export function parseTeamsState(raw: unknown): TeamsState | null {
   if (!isRecord(raw)) {
     return null
   }
@@ -95,7 +95,7 @@ export function savePostIndex(dataDir: string, index: TeamsPostIndex): Promise<v
 }
 
 export function loadTeamsState(dataDir: string): TeamsState {
-  return readJson(join(dataDir, STATE_FILE), parseState, EMPTY_TEAMS_STATE)
+  return readJson(join(dataDir, STATE_FILE), parseTeamsState, EMPTY_TEAMS_STATE)
 }
 
 export function saveTeamsState(dataDir: string, state: TeamsState): Promise<void> {

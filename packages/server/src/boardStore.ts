@@ -99,7 +99,7 @@ function parseSeenKeys(raw: unknown): readonly string[] | null | undefined {
   return undefined
 }
 
-function parseBoard(raw: unknown): BoardState | null {
+export function parseBoard(raw: unknown): BoardState | null {
   if (!isRecord(raw)) {
     return null
   }

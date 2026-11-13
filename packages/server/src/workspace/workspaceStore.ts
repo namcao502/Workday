@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { isTerminalName, isTicketKey, type WorkspaceTab } from '@workday/core'
+import { isTerminalName, isTicketKey, MAX_RECENT_FOLDERS, type WorkspaceTab } from '@workday/core'
 import { isRecord, readJson, writeJsonAtomic } from '../jsonFile.js'
 import { isGuid } from './launchEnvironment.js'
 
@@ -10,7 +10,7 @@ export interface WorkspaceState {
 }
 
 export const EMPTY_WORKSPACE: WorkspaceState = { tabs: [], sessionIds: {}, recentFolders: [] }
-export const MAX_RECENT_FOLDERS = 5
+export { MAX_RECENT_FOLDERS }
 const WORKSPACE_FILE = 'workspace.json'
 const EXTRA_SESSION_SUFFIX = /^~\d+$/
 
@@ -44,7 +44,7 @@ function parseTab(raw: unknown): WorkspaceTab | null {
   }
 }
 
-function parseWorkspaceFile(raw: unknown): WorkspaceState | null {
+export function parseWorkspaceFile(raw: unknown): WorkspaceState | null {
   if (!isRecord(raw)) {
     return null
   }

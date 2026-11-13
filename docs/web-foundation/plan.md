@@ -54,7 +54,7 @@
 | 5   | **Board đầy đủ + thông báo**: to-do, PR (Azure DevOps), Ready to Test, Available to take, chuông thông báo                                   | `DashboardTodos`, `PrTracker`, `TicketSuggestions`, `NoticeCenter`                                                                       |
 | 5b  | **Teams**: đọc / trả lời thread, bài đăng PR, to-do Teams                                                                                    | `TeamsThreadService`, `TeamsChat`, `TeamsAttention`                                                                                      |
 | 6   | **Insights**, Schedules, knowledge scan                                                                                                      | `TicketReports`, `TicketReportReader`, `KnowledgeScanService`                                                                            |
-| 7   | **Chuyển hẳn**: systemd service trên Linux, xuất / nhập dữ liệu từ app WPF, quyết định bỏ WPF                                                | --                                                                                                                                       |
+| 7   | **Chuyển hẳn**: systemd service trên Linux, xuất / nhập dữ liệu từ app WPF, quyết định bỏ WPF (xem `docs/cutover/`)                          | --                                                                                                                                       |
 
 Mỗi tích hợp có interface riêng trong `core/src/ports/` khi giai đoạn của nó tới: `TicketTracker` (GĐ 1), `TimeLog` (GĐ 2), `PullRequests` (GĐ 5) và `TeamChat` (GĐ 5b, Teams). Không khai báo trước interface chưa dùng.
 
