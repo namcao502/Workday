@@ -18,15 +18,17 @@ const modes = new Map<string, Mode>()
 
 interface ClaudePaneProps {
   readonly tab: WorkspaceTab
+  readonly active: boolean // false: another ticket tab is open; stay mounted but hidden
   readonly selected: string
   readonly onSelect: (session: string) => void
   readonly onAdd: () => void
   readonly onClose: (session: string) => void
 }
 
-// Every session of the open tab stays mounted (hidden) so its screen survives a switch.
+// Every session stays mounted (hidden) so its screen survives a switch, within a tab and between tabs.
 export function ClaudePane({
   tab,
+  active,
   selected,
   onSelect,
   onAdd,
@@ -43,7 +45,7 @@ export function ClaudePane({
   const waitOf = (name: string): 'finished' | 'permission' | 'question' | null =>
     workspace.data?.sessions.find((view) => view.name === name)?.wait ?? null
   return (
-    <div className="claude-pane">
+    <div className="claude-pane" hidden={!active}>
       <div
         className="claude-sessions"
         role="tablist"
@@ -104,10 +106,10 @@ export function ClaudePane({
         <div key={name} className="claude-stage" hidden={name !== selected}>
           <TerminalView
             session={name}
-            visible={name === selected}
+            visible={active && name === selected}
             concealed={modeOf(name) === 'chat'}
           />
-          {name === selected && modeOf(name) === 'chat' ? (
+          {active && name === selected && modeOf(name) === 'chat' ? (
             <ChatView
               session={name}
               wait={waitOf(name)}

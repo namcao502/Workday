@@ -110,6 +110,16 @@ body {
   background: var(--segment-selected);
 }
 
+.view-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--danger);
+  vertical-align: middle;
+}
+
 .pill {
   display: inline-block;
   padding: 2px 8px;

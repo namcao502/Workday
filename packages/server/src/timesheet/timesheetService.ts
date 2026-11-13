@@ -350,7 +350,7 @@ export class TimesheetService {
   private async runWeekRead(monday: string, allowSniff: boolean): Promise<void> {
     const { sheet, hours, tracker, projectKey, offMarker } = this.settings
     const today = this.clock().date
-    const coverage = await readCoverage(sheet, hours, monday, today, allowSniff)
+    const coverage = await readCoverage(sheet, hours, monday, today, allowSniff, this.logError)
     if (this.week === null || this.week.monday !== monday) {
       return
     }

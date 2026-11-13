@@ -19,10 +19,12 @@ import type { RowWorkspace } from './RowMenu.js'
 import { SuggestionsCard } from './SuggestionsCard.js'
 import { TodoView } from './TodoView.js'
 import { useReadyToTest } from './useReadyToTest.js'
+import { useAvailableDot } from './useAvailableDot.js'
 import { useTicketLauncher } from './useTicketLauncher.js'
 import {
   countViews,
   filterGroups,
+  filterSuggestions,
   pickViewWithHits,
   rowsForView,
   VIEW_IDS,
@@ -37,6 +39,8 @@ function viewLabel(view: BoardViewId, count: number): string {
       return t(`To do (${String(count)})`, `Việc cần làm (${String(count)})`)
     case 'working':
       return t(`Working (${String(count)})`, `Đang làm (${String(count)})`)
+    case 'available':
+      return t(`Available (${String(count)})`, `Có thể nhận (${String(count)})`)
     case 'done':
       return t(`Done (${String(count)})`, `Xong (${String(count)})`)
     case 'dismissed':
@@ -113,10 +117,26 @@ export function BoardPage(): React.JSX.Element {
   const projectKey = settings.data?.config.jira?.projectKey
   const rows = board.data?.rows ?? []
   const todoGroups = filterGroups(work?.groups ?? [], rows, debouncedSearch)
-  const counts = { ...countViews(rows, debouncedSearch), todo: todoGroups.length }
+  const suggestions = work?.suggestions ?? null
+  const availableItems =
+    suggestions === null ? [] : filterSuggestions(suggestions.items, debouncedSearch)
+  const counts = {
+    ...countViews(rows, debouncedSearch),
+    todo: todoGroups.length,
+    available: availableItems.length,
+  }
+  // No suggestions config: no Available view at all.
+  const viewIds = suggestions === null ? VIEW_IDS.filter((id) => id !== 'available') : VIEW_IDS
+  const shownView = viewIds.includes(view) ? view : 'working'
   const searching = debouncedSearch.trim() !== ''
   const activeView =
-    searching && pickedForSearch !== debouncedSearch ? pickViewWithHits(counts, view) : view
+    searching && pickedForSearch !== debouncedSearch
+      ? pickViewWithHits(counts, shownView)
+      : shownView
+  const availableDot = useAvailableDot(
+    (suggestions?.items ?? []).filter((item) => item.urgent).map((item) => item.ticket.key),
+    activeView === 'available',
+  )
 
   const typedKey = projectKey === undefined ? null : parseTicketKey(search, projectKey)
   const addableKey =
@@ -162,8 +182,11 @@ export function BoardPage(): React.JSX.Element {
   const listProps = {
     workspace: rowWorkspace,
     work: rowWork,
-    rows: activeView === 'todo' ? [] : rowsForView(rows, activeView, debouncedSearch),
-    view: activeView === 'todo' ? 'working' : activeView,
+    rows:
+      activeView === 'todo' || activeView === 'available'
+        ? []
+        : rowsForView(rows, activeView, debouncedSearch),
+    view: activeView === 'todo' || activeView === 'available' ? 'working' : activeView,
     language,
     onAction: (key: string, action: BoardAction) => {
       act.mutate({ key, action })
@@ -177,7 +200,11 @@ export function BoardPage(): React.JSX.Element {
         <Segmented
           label={t('Board view', 'Chế độ xem')}
           value={activeView}
-          options={VIEW_IDS.map((id) => ({ value: id, label: viewLabel(id, counts[id]) }))}
+          options={viewIds.map((id) => ({
+            value: id,
+            label: viewLabel(id, counts[id]),
+            dot: id === 'available' && availableDot,
+          }))}
           onChange={(picked) => {
             setView(picked)
             setPickedForSearch(debouncedSearch)
@@ -246,13 +273,6 @@ export function BoardPage(): React.JSX.Element {
           {readyToTest.message}
         </p>
       )}
-      {activeView === 'working' && work?.suggestions != null ? (
-        <SuggestionsCard
-          suggestions={work.suggestions}
-          today={board.data?.today ?? ''}
-          language={language}
-        />
-      ) : null}
       {board.data === undefined ? (
         <p className="muted">{t('Loading...', 'Đang tải...')}</p>
       ) : !board.data.connected ? (
@@ -270,6 +290,16 @@ export function BoardPage(): React.JSX.Element {
             {t('Open Settings', 'Mở Cài đặt')}
           </button>
         </div>
+      ) : activeView === 'available' && suggestions !== null ? (
+        availableItems.length === 0 ? (
+          <p className="muted">{t('Nothing to take', 'Không có ticket để nhận')}</p>
+        ) : (
+          <SuggestionsCard
+            suggestions={{ ...suggestions, items: availableItems }}
+            today={board.data.today}
+            language={language}
+          />
+        )
       ) : activeView === 'todo' ? (
         todoGroups.length === 0 ? (
           <p className="muted">{t('Nothing to do', 'Không có việc cần làm')}</p>

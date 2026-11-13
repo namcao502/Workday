@@ -311,6 +311,25 @@ describe('GraphSheetLog token', () => {
     expect(tokens.sniff).toHaveBeenCalledTimes(2)
   })
 
+  it('a token Graph refuses is dropped so the next read sniffs again', async () => {
+    const tokens = fakeTokens()
+    const graph = fakeGraph({ B7: '1/5/2026' })
+    let refuse = true
+    const fetchFn: typeof fetch = (input, init) =>
+      refuse
+        ? Promise.resolve(new Response('{"error":{"code":"accessDenied"}}', { status: 403 }))
+        : graph.fetchFn(input, init)
+    const log = new GraphSheetLog(CONFIG, tokens.source, null, fetchFn)
+
+    expect((await log.readTickets([DATE], { allowSniff: true })).kind).toBe('failed')
+    refuse = false
+    expect(await log.readTickets([DATE], { allowSniff: true })).toEqual({
+      kind: 'read',
+      cells: { [DATE]: null },
+    })
+    expect(tokens.sniff).toHaveBeenCalledTimes(2)
+  })
+
   it('a sniff error comes back as the write failure', async () => {
     const tokens = fakeTokens()
     tokens.sniff.mockResolvedValue({ failure: 'chromeMissing', detail: 'no chrome' })

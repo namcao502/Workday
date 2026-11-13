@@ -51,6 +51,8 @@ Each package has two tsconfigs: `tsconfig.json` (noEmit, includes tests; used by
   with `t(en, vi)` (`i18n.ts`).
 - Per-user JSON files (`config.json`, `secrets.json`, `board.json`) go through `jsonFile.ts`: runtime-validated
   parse, atomic write, a corrupt file renamed to `<file>.bad`. Data dir: `dataDir.ts` (`WORKDAY_DATA_DIR` overrides).
+  Everything the server writes lives in the data dir (browser profiles, hook files, scan logs, `tmp/` for Teams
+  hand-offs); secrets belong in the encrypted `secrets.json`, the `WORKDAY_*` env variables are only overrides.
 - The C# app in `C:\Project\NoisWorkday` is the spec being ported phase by phase; its tests become Vitest tests.
   Plans and impl notes per phase live in `docs/<slug>/` (`plan.md` has the phase roadmap in `docs/web-foundation/`).
 

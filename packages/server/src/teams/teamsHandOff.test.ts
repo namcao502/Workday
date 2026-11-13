@@ -50,7 +50,7 @@ describe('teams hand-off', () => {
     })
 
     expect(result).toEqual({ ok: true })
-    const taskFolder = join(folder, 'workday', 'teams-tasks')
+    const taskFolder = join(folder, 'teams-tasks')
     const [file] = readdirSync(taskFolder)
     const written = readFileSync(join(taskFolder, file ?? ''), 'utf8')
     expect(file).toBe('MDP-1-20261110-050000-000.md')
@@ -87,7 +87,7 @@ describe('teams hand-off', () => {
 
   it('keeps the newest task files only', async () => {
     const folder = mkdtempSync(join(tmpdir(), 'workday-handoff-'))
-    const taskFolder = join(folder, 'workday', 'teams-tasks')
+    const taskFolder = join(folder, 'teams-tasks')
     mkdirSync(taskFolder, { recursive: true })
     for (let index = 0; index < KEPT_TASK_FILES + 5; index++) {
       writeFileSync(join(taskFolder, `MDP-2-${String(index)}.md`), 'old')

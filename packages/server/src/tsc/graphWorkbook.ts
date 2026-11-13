@@ -10,7 +10,14 @@ export interface DriveItemRef {
 }
 
 // Message is "<what> -> <status>: <body start>"; it never carries the token.
-export class GraphError extends Error {}
+export class GraphError extends Error {
+  constructor(
+    message: string,
+    readonly status: number | null = null,
+  ) {
+    super(message)
+  }
+}
 
 // Graph shares id: base64url of the URL, no padding, "u!" prefix.
 export function encodeShareId(url: string): string {
@@ -212,6 +219,7 @@ async function sendJson(
   if (!response.ok) {
     throw new GraphError(
       `${what} -> ${String(response.status)}: ${text.slice(0, ERROR_BODY_LENGTH)}`,
+      response.status,
     )
   }
   if (text === '') {

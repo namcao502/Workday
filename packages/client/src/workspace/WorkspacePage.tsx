@@ -174,8 +174,9 @@ export function WorkspacePage(): React.JSX.Element {
               {t('Show files', 'Hiện tệp')}
             </button>
           ) : (
+            // Distinct keys per sibling: a key shared with ClaudePane left old panes mounted on tab switch.
             <LeftPane
-              key={tab.id}
+              key={`left-${tab.id}`}
               tab={tab}
               teamsConversation={teamsConversation}
               onHide={() => {
@@ -183,21 +184,29 @@ export function WorkspacePage(): React.JSX.Element {
               }}
             />
           )}
-          <ClaudePane
-            key={tab.id}
-            tab={tab}
-            selected={session}
-            onSelect={(name) => {
-              navigateToWorkspace(tab.id, name)
-            }}
-            onAdd={() => {
-              void actions.addSession(tab.id)
-            }}
-            onClose={(name) => {
-              void actions.closeSession(name)
-              navigateToWorkspace(tab.id)
-            }}
-          />
+          {view.tabs.map((paneTab) => {
+            const active = paneTab.id === tab.id
+            // A hidden pane shows nothing, so any of its sessions will do; every one stays mounted.
+            const shown = active ? session : (paneTab.sessions[0] ?? '')
+            return (
+              <ClaudePane
+                key={`claude-${paneTab.id}`}
+                tab={paneTab}
+                active={active}
+                selected={shown}
+                onSelect={(name) => {
+                  navigateToWorkspace(paneTab.id, name)
+                }}
+                onAdd={() => {
+                  void actions.addSession(paneTab.id)
+                }}
+                onClose={(name) => {
+                  void actions.closeSession(name)
+                  navigateToWorkspace(paneTab.id)
+                }}
+              />
+            )
+          })}
         </div>
       )}
       {closing === null ? null : (

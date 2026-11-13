@@ -1,7 +1,11 @@
 interface SegmentedProps<Value extends string> {
   readonly label: string
   readonly value: Value
-  readonly options: readonly { readonly value: Value; readonly label: string }[]
+  readonly options: readonly {
+    readonly value: Value
+    readonly label: string
+    readonly dot?: boolean // a small badge after the label, e.g. something new in that view
+  }[]
   readonly onChange: (value: Value) => void
 }
 
@@ -25,6 +29,7 @@ export function Segmented<Value extends string>({
           }}
         >
           {option.label}
+          {option.dot === true ? <span className="view-dot" aria-hidden="true" /> : null}
         </button>
       ))}
     </div>

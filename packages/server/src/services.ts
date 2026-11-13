@@ -1,4 +1,4 @@
-import { homedir, tmpdir } from 'node:os'
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type {
   AzureDevOpsConfig,
@@ -58,6 +58,7 @@ import {
   type WorktreeResult,
 } from './workspace/worktreeService.js'
 
+const TMP_FOLDER = 'tmp'
 const TEAMS_BROWSER_FOLDER = 'teams-browser'
 const TEAMS_FIRST_CHECK_MINUTES = 1
 
@@ -86,7 +87,7 @@ export interface ServicesOptions {
   // Tests pass a fake PTY and a temp home, so no real shell or ~/.claude is touched.
   readonly spawnPty?: SpawnPty
   readonly homeDir?: string
-  readonly tmpDir?: string // Teams hand-off task files go under it
+  readonly tmpDir?: string // Teams hand-off task files go under it; default <dataDir>/tmp
   readonly spawnEditor?: SpawnEditor
   // Tests pass a fake process, so the knowledge scan never starts pwsh.
   readonly spawnScan?: SpawnScan
@@ -253,7 +254,7 @@ export function createServices(options: ServicesOptions): Services {
     board,
     prs,
     workspace,
-    tmpDir: options.tmpDir ?? tmpdir(),
+    tmpDir: options.tmpDir ?? join(dataDir, TMP_FOLDER),
   })
   const teamsScheduler: Scheduler =
     options.teamsScheduler ??

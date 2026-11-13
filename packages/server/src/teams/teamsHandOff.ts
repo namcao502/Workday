@@ -5,7 +5,7 @@ import { toPlainText, type AppError, type TeamsThread } from '@workday/core'
 
 export const TASK_CONTEXT_MESSAGES = 3
 export const KEPT_TASK_FILES = 20
-const TASKS_FOLDER = join('workday', 'teams-tasks')
+const TASKS_FOLDER = 'teams-tasks'
 
 // What WorkspaceService.prompt answers; only 'sent' typed the line.
 export type PromptOutcome = 'sent' | 'notFound' | 'notRunning' | 'waiting'

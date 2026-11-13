@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node ../../scripts/wait-for-server.mjs && vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"

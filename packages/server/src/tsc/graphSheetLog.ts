@@ -10,7 +10,7 @@ import {
   type SheetWrite,
   type TscConfig,
 } from '@workday/core'
-import { GraphWorkbook } from './graphWorkbook.js'
+import { GraphError, GraphWorkbook } from './graphWorkbook.js'
 import { jwtExpiry } from './jwt.js'
 
 const SAFETY_BUFFER_MILLISECONDS = 2 * 60_000
@@ -103,6 +103,7 @@ export class GraphSheetLog implements SheetLog {
       })
       return { kind: 'read', cells }
     } catch (error: unknown) {
+      this.forgetRefusedToken(error)
       return { kind: 'failed', detail: messageOf(error) }
     }
   }
@@ -140,6 +141,7 @@ export class GraphSheetLog implements SheetLog {
         return { ok: true } as const
       })
     } catch (error: unknown) {
+      this.forgetRefusedToken(error)
       return { ok: false, failure: 'failed', detail: messageOf(error) }
     }
   }
@@ -213,6 +215,13 @@ export class GraphSheetLog implements SheetLog {
       this.sniffing = null
     })
     return this.sniffing
+  }
+
+  // A sniff can pick a fallback token without the .All scope; keeping it would 403 until it expires.
+  private forgetRefusedToken(error: unknown): void {
+    if (error instanceof GraphError && (error.status === 401 || error.status === 403)) {
+      this.cached = null
+    }
   }
 
   private cachedToken(): string | null {

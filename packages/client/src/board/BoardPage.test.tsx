@@ -1,7 +1,8 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import type { AppError, BoardRow, BoardView, SettingsView } from '@workday/core'
+import type { AppError, BoardRow, BoardView, SettingsView, WorkView } from '@workday/core'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { BoardPage } from './BoardPage.js'
+import { suggestion, workView } from './workTestSupport.js'
 import {
   jsonResponse,
   settingsView,
@@ -74,12 +75,16 @@ function connectedSettings(): SettingsView {
 interface Backend {
   readonly board: BoardView
   readonly addResponse?: Response
+  readonly work?: WorkView
 }
 
-function stubBackend({ board, addResponse }: Backend): FetchMock {
+function stubBackend({ board, addResponse, work }: Backend): FetchMock {
   return stubFetch((url) => {
     if (url === '/api/settings') {
       return jsonResponse(connectedSettings())
+    }
+    if (url === '/api/work') {
+      return jsonResponse(work ?? workView())
     }
     if (url === '/api/board/add') {
       return addResponse ?? jsonResponse({ ok: true })
@@ -99,6 +104,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   window.location.hash = ''
+  localStorage.clear()
 })
 
 const TWO_VIEWS = boardView([
@@ -277,4 +283,51 @@ it('Open asks before recreating a missing worktree, then sends recreate', async 
       expect.objectContaining({ body: JSON.stringify({ recreate: true }) }),
     )
   })
+})
+
+const WITH_SUGGESTIONS = workView({
+  suggestions: {
+    epicKey: 'MDP-100',
+    items: [
+      { ...suggestion('MDP-50'), urgent: true },
+      suggestion('MDP-51', { summary: 'Gamma task' }),
+    ],
+  },
+})
+
+it('Available to take is its own view between Working and Done, not part of Working', async () => {
+  stubBackend({ board: TWO_VIEWS, work: WITH_SUGGESTIONS })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  const names = screen.getAllByRole('radio').map((radio) => radio.textContent)
+  expect(names).toEqual(['To do (0)', 'Working (1)', 'Available (2)', 'Done (1)', 'Dismissed (0)'])
+  expect(screen.queryByText('Gamma task')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('radio', { name: /^Available/ }))
+  expect(await screen.findByText('Gamma task')).toBeInTheDocument()
+  expect(screen.queryByText('Alpha work')).not.toBeInTheDocument()
+})
+
+it('an unseen urgent suggestion puts a dot on Available until the view is opened', async () => {
+  stubBackend({ board: TWO_VIEWS, work: WITH_SUGGESTIONS })
+  const first = renderWithQuery(<BoardPage />)
+  const available = await screen.findByRole('radio', { name: /^Available/ })
+  await waitFor(() => {
+    expect(available.querySelector('.view-dot')).not.toBeNull()
+  })
+  fireEvent.click(available)
+  await waitFor(() => {
+    expect(available.querySelector('.view-dot')).toBeNull()
+  })
+  first.unmount()
+  renderWithQuery(<BoardPage />)
+  const again = await screen.findByRole('radio', { name: /^Available/ })
+  await screen.findByText('Alpha work')
+  expect(again.querySelector('.view-dot')).toBeNull()
+})
+
+it('without suggestions configured there is no Available view', async () => {
+  stubBackend({ board: TWO_VIEWS })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  expect(screen.queryByRole('radio', { name: /^Available/ })).not.toBeInTheDocument()
 })

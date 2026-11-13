@@ -1,13 +1,23 @@
-import { matchesTicket, type BoardRow, type TodoGroup } from '@workday/core'
+import { matchesTicket, type BoardRow, type Suggestion, type TodoGroup } from '@workday/core'
 
-// The views that list board rows; 'todo' lists WorkView groups instead.
+// The views that list board rows; 'todo' lists WorkView groups, 'available' the epic's suggestions.
 export type RowViewId = 'working' | 'done' | 'dismissed'
-export type BoardViewId = 'todo' | RowViewId
+export type BoardViewId = 'todo' | 'available' | RowViewId
 
-export const VIEW_IDS: readonly BoardViewId[] = ['todo', 'working', 'done', 'dismissed']
+// Available sits between Working and Done, as in the WPF board.
+export const VIEW_IDS: readonly BoardViewId[] = [
+  'todo',
+  'working',
+  'available',
+  'done',
+  'dismissed',
+]
 
-// The todo count is the group count, which only the page knows.
-export type ViewCounts = Readonly<Record<RowViewId, number>> & { readonly todo?: number }
+// The todo and available counts come from the work view, which only the page knows.
+export type ViewCounts = Readonly<Record<RowViewId, number>> & {
+  readonly todo?: number
+  readonly available?: number
+}
 
 export function viewOfRow(row: BoardRow): RowViewId {
   switch (row.section) {
@@ -34,6 +44,21 @@ export function countViews(
     counts[viewOfRow(row)] += 1
   }
   return counts
+}
+
+// Same words rule as the board rows: every word in the key or summary.
+export function filterSuggestions(
+  items: readonly Suggestion[],
+  search: string,
+): readonly Suggestion[] {
+  const words = search
+    .split(/\s+/)
+    .filter((word) => word.length !== 0)
+    .map((word) => word.toLowerCase())
+  return items.filter((item) => {
+    const text = `${item.ticket.key} ${item.ticket.summary}`.toLowerCase()
+    return words.every((word) => text.includes(word))
+  })
 }
 
 function compareKeys(left: BoardRow, right: BoardRow): number {

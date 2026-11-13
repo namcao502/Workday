@@ -4,11 +4,19 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
 import { WorkspacePage } from './WorkspacePage.js'
 
-vi.mock('./TerminalView.js', () => ({
-  TerminalView: ({ session, visible }: { session: string; visible: boolean }) => (
-    <div data-testid={`terminal-${session}`} hidden={!visible} />
-  ),
-}))
+const terminalMounts: string[] = []
+
+vi.mock('./TerminalView.js', async () => {
+  const { useEffect } = await import('react')
+  return {
+    TerminalView: ({ session, visible }: { session: string; visible: boolean }) => {
+      useEffect(() => {
+        terminalMounts.push(session)
+      }, [session])
+      return <div data-testid={`terminal-${session}`} hidden={!visible} />
+    },
+  }
+})
 
 function ticketTab(id: string, extra: readonly string[] = []): WorkspaceTab {
   return { id, kind: 'ticket', folder: null, sessions: [id, ...extra] }
@@ -92,5 +100,34 @@ it('keeps every session of the open tab mounted and hides the unselected one', a
     expect(screen.getByTestId('terminal-MDP-2')).toHaveAttribute('hidden')
   })
   expect(screen.getByTestId('terminal-MDP-2~2')).not.toHaveAttribute('hidden')
-  expect(screen.queryByTestId('terminal-MDP-1')).not.toBeInTheDocument()
+  expect(screen.getByTestId('terminal-MDP-1')).toHaveAttribute('hidden')
+})
+
+it('switching tabs back and forth leaves exactly one file pane', async () => {
+  stubWorkspace(view({ tabs: [ticketTab('MDP-1'), ticketTab('MDP-2'), ticketTab('MDP-3')] }))
+  renderWithQuery(<WorkspacePage />)
+  await screen.findByTestId('workspace-left')
+  for (const id of ['MDP-2', 'MDP-3', 'MDP-1', 'MDP-3', 'MDP-2']) {
+    fireEvent.click(screen.getByRole('tab', { name: id }))
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: id })).toHaveAttribute('aria-selected', 'true')
+    })
+  }
+  expect(screen.getAllByTestId('workspace-left')).toHaveLength(1)
+})
+
+it('switching tickets keeps each terminal mounted instead of reconnecting it', async () => {
+  terminalMounts.length = 0
+  stubWorkspace(view())
+  renderWithQuery(<WorkspacePage />)
+  await screen.findByTestId('terminal-MDP-1')
+  for (const id of ['MDP-2', 'MDP-1', 'MDP-2']) {
+    fireEvent.click(screen.getByRole('tab', { name: id }))
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: id })).toHaveAttribute('aria-selected', 'true')
+    })
+  }
+  expect([...terminalMounts].sort()).toEqual(['MDP-1', 'MDP-2', 'MDP-2~2'])
+  expect(screen.getByTestId('terminal-MDP-1')).toHaveAttribute('hidden')
+  expect(screen.getByTestId('terminal-MDP-2')).not.toHaveAttribute('hidden')
 })

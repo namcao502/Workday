@@ -13,8 +13,30 @@ SDK, không phải tự nói giao thức control như bên C#. Chưa làm; ghi c
 - Hook trong settings vẫn chạy (`hook_started` / `hook_response`); có `rate_limit_event`; `result` có usage, cost.
 - `--permission-prompts host`: câu hỏi xin quyền chuyển về host (SDK: callback `canUseTool`).
 
-**Chưa xác minh trên SDK:** `canUseTool` cho AskUserQuestion và ExitPlanMode (đáp án, duyệt / phản hồi plan),
-`interrupt()`, `setPermissionMode()`, `setModel()`, streaming input, file checkpoint / rewind. Spike trước khi lên plan.
+**Đã có trong tài liệu SDK (2026-11-13, `@anthropic-ai/claude-agent-sdk` 0.3.323, chưa chạy thử):**
+- `canUseTool(toolName, input, { signal, suggestions, toolUseID, requestId, ... })` chạy khi tool cần duyệt và khi Claude
+  gọi `AskUserQuestion`; trả `{ behavior: 'allow', updatedInput: { questions, answers } }` (có `response` cho câu trả lời
+  tự gõ). `suggestions` trả lại trong `updatedPermissions` = "always allow" (ghi `.claude/settings.local.json`).
+- Ở streaming input (prompt là async generator): `interrupt()`, `setPermissionMode()` (có `plan`, `acceptEdits`, `auto`),
+  `setModel()`, `initializationResult()` (lệnh, model, tài khoản).
+- `reinitialize()`: gắn lại sau khi mất kết nối, các yêu cầu quyền đang chờ được gửi lại cho `canUseTool`.
+- `enableFileCheckpointing` + `rewindFiles(userMessageId, { dryRun })`; `resume: <session id>`.
+
+**Spike (2026-11-13, SDK 0.3.323, `Backend-DotNet`, streaming input, một session 4 lượt): đạt.**
+- AskUserQuestion: `canUseTool` nhận `questions`, trả `answers` -> Claude dùng đáp án ("Red").
+- Plan mode: `setPermissionMode('plan')`; Claude ghi plan vào `~/.claude/plans/*.md` (Write / Edit không qua
+  `canUseTool`, chỉ file plan), gọi `ExitPlanMode` với `input.plan`. Từ chối kèm `message` -> Claude sửa plan rồi gọi
+  lại; duyệt -> mode tự về `default` (có message `system/status`), Write sau đó lại qua `canUseTool`.
+- `interrupt()` giữa lúc chạy tool: lượt kết thúc `error_during_execution`, session vẫn sống, lượt sau trả lời bình thường.
+- Hook chạy đủ (`SessionStart`, `PreToolUse`, `PostToolUse`, `Stop`; thấy qua `includeHookEvents`); 54 skill, 87
+  lệnh (có `ship`), MCP `context7` connected; đăng nhập subscription (`apiKeySource: none`).
+
+**Phải làm trong plan:**
+- CLI đóng gói trong SDK cũ hơn mức API nhận (`426 Outdated Claude Code version`): truyền
+  `pathToClaudeCodeExecutable` = claude đã cài (`workspace.claudeExecutable` hoặc `~/.local/bin/claude(.exe)`).
+- `~/.claude/settings.json` của người dùng đặt `defaultMode: bypassPermissions`: app luôn truyền `permissionMode` rõ ràng.
+- Bash có thể tự chạy nền (`background_tasks_changed`, `task_started`): chat cần hiện task nền.
+- Bỏ biến môi trường `CLAUDE*` / `ANTHROPIC*` của server khi spawn (như GĐ 4).
 
 ## Được gì
 

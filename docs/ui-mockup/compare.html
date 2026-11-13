@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>Workday UI: Fluent 2 vs HeroUI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #e9e9ee; color: #222; }
+  .top { display: flex; align-items: center; gap: 16px; padding: 12px 20px; }
+  .top h1 { font-size: 18px; margin: 0; }
+  .top button { padding: 6px 14px; border-radius: 6px; border: 1px solid #bbb; background: #fff; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 0 20px 20px; }
+  .grid.side-by-side { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .label { font: 600 13px system-ui; margin: 0 0 6px 4px; color: #555; }
+  .frame { height: 600px; overflow: hidden; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
+  .app { display: flex; height: 100%; position: relative; }
+  .side { display: flex; flex-direction: column; gap: 2px; }
+  .nav { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .bar { display: flex; align-items: center; justify-content: space-between; }
+  .content { flex: 1; overflow: auto; }
+  .row-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .seg { display: inline-flex; }
+  .seg button { border: 0; background: transparent; cursor: pointer; font: inherit; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 5px; vertical-align: middle; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  col.c-key { width: 104px; } col.c-status { width: 150px; } col.c-due { width: 70px; } col.c-prs { width: 96px; } col.c-menu { width: 56px; }
+  td, th { text-align: left; white-space: nowrap; }
+  td.sum { white-space: normal; }
+  .pills { display: flex; gap: 4px; flex-wrap: wrap; }
+  .toast { position: absolute; right: 16px; bottom: 16px; width: 290px; display: flex; gap: 10px; }
+  .modal-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .modal-wrap[hidden] { display: none; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  .ico { width: 18px; height: 18px; flex: none; }
+
+  /* ---------- Fluent 2 (Windows 11 / Teams): Segoe UI, 4px radius, flat, thin strokes ---------- */
+  .fluent { --bg: #fafafa; --panel: #fff; --side: #f0f0f0; --text: #242424; --sub: #616161; --stroke: #e0e0e0;
+    --brand: #0f6cbd; --brand-hover: #115ea3; --brand-tint: #ebf3fc; --hover: #f5f5f5; --sel: #e6e6e6;
+    --danger: #c50f1f; --danger-tint: #fdf3f4; --warn: #bc4b09; --warn-tint: #fdf6f3; --ok: #0e700e; --ok-tint: #f1faf1;
+    font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); }
+  .fluent.dark { --bg: #1f1f1f; --panel: #292929; --side: #141414; --text: #fff; --sub: #adadad; --stroke: #3d3d3d;
+    --brand: #479ef5; --brand-hover: #62abf5; --brand-tint: #082338; --hover: #333; --sel: #3d3d3d;
+    --danger-tint: #3b0509; --warn-tint: #411200; --ok-tint: #052505; --danger: #f1707b; --warn: #faa06b; --ok: #54b054; }
+  .fluent .side { width: 200px; background: var(--side); padding: 12px 6px; }
+  .fluent .brand-name { font-weight: 600; padding: 4px 10px 14px; }
+  .fluent .nav { padding: 7px 10px; border-radius: 4px; color: var(--text); position: relative; }
+  .fluent .nav:hover { background: var(--hover); }
+  .fluent .nav.on { background: var(--sel); font-weight: 600; }
+  .fluent .nav.on::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--brand); }
+  .fluent .badge { margin-left: auto; background: var(--brand); color: #fff; border-radius: 9px; font-size: 11px; padding: 0 6px; line-height: 18px; }
+  .fluent .bar { height: 48px; padding: 0 20px; border-bottom: 1px solid var(--stroke); background: var(--panel); }
+  .fluent .title { font-size: 20px; font-weight: 600; }
+  .fluent .content { padding: 16px 20px; }
+  .fluent .seg { gap: 2px; }
+  .fluent .seg button { padding: 6px 10px; color: var(--sub); border-bottom: 2px solid transparent; }
+  .fluent .seg button.on { color: var(--text); font-weight: 600; border-bottom-color: var(--brand); }
+  .fluent .btn { padding: 5px 12px; border-radius: 4px; border: 1px solid var(--stroke); background: var(--panel); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+  .fluent .btn:hover { background: var(--hover); }
+  .fluent .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .fluent .btn.primary:hover { background: var(--brand-hover); }
+  .fluent .search { padding: 5px 10px; border: 1px solid var(--stroke); border-bottom: 1px solid var(--sub); border-radius: 4px; background: var(--panel); color: var(--text); font: inherit; width: 200px; }
+  .fluent .card { background: var(--panel); border: 1px solid var(--stroke); border-radius: 8px; margin-top: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .fluent th { font-weight: 600; color: var(--sub); font-size: 12px; padding: 8px 12px; border-bottom: 1px solid var(--stroke); }
+  .fluent td { padding: 9px 12px; border-bottom: 1px solid var(--stroke); }
+  .fluent tr:hover td { background: var(--hover); }
+  .fluent .key { color: var(--brand); font-weight: 600; text-decoration: none; }
+  .fluent .pill { font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--stroke); }
+  .fluent .pill.ok { background: var(--ok-tint); color: var(--ok); border-color: transparent; }
+  .fluent .pill.warn { background: var(--warn-tint); color: var(--warn); border-color: transparent; }
+  .fluent .pill.bad { background: var(--danger-tint); color: var(--danger); border-color: transparent; }
+  .fluent .due-bad { color: var(--danger); font-weight: 600; }
+  .fluent .dot { background: var(--danger); }
+  .fluent .toast { background: var(--panel); border: 1px solid var(--stroke); border-radius: 4px; padding: 12px; box-shadow: 0 8px 16px rgba(0,0,0,.14); }
+  .fluent .modal-wrap { background: rgba(0,0,0,.4); }
+  .fluent .modal { width: 360px; background: var(--panel); border-radius: 8px; padding: 22px; box-shadow: 0 32px 64px rgba(0,0,0,.24); }
+  .fluent .modal h3 { margin: 0 0 8px; font-size: 18px; font-weight: 600; }
+  .fluent .muted { color: var(--sub); }
+</style>
+<style>
+  /* ---------- HeroUI (NextUI): Inter, large radius, soft shadows, tinted surfaces ---------- */
+  .hero { --bg: #f4f4f5; --panel: #fff; --side: #fff; --text: #11181c; --sub: #71717a; --stroke: #e4e4e7;
+    --brand: #006fee; --brand-tint: #e6f1fe; --hover: #f4f4f5; --sel: #e6f1fe;
+    --danger: #f31260; --danger-tint: #fee7ef; --warn: #c4841d; --warn-tint: #fefce8; --ok: #12a150; --ok-tint: #e8faf0;
+    font-family: Inter, system-ui, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); }
+  .hero.dark { --bg: #000; --panel: #18181b; --side: #18181b; --text: #ecedee; --sub: #a1a1aa; --stroke: #27272a;
+    --brand: #338ef7; --brand-tint: #001731; --hover: #27272a; --sel: #002e62;
+    --danger-tint: #310413; --warn-tint: #312107; --ok-tint: #052814; }
+  .hero .side { width: 210px; background: var(--side); padding: 16px 12px; margin: 10px 0 10px 10px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+  .hero .brand-name { font-weight: 700; font-size: 16px; padding: 4px 10px 16px; }
+  .hero .nav { padding: 9px 12px; border-radius: 12px; color: var(--sub); font-weight: 500; }
+  .hero .nav:hover { background: var(--hover); color: var(--text); }
+  .hero .nav.on { background: var(--sel); color: var(--brand); font-weight: 600; }
+  .hero .badge { margin-left: auto; background: var(--danger); color: #fff; border-radius: 999px; font-size: 11px; padding: 0 7px; line-height: 20px; }
+  .hero .bar { height: 60px; padding: 0 22px; }
+  .hero .title { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+  .hero .content { padding: 4px 22px 18px; }
+  .hero .seg { background: var(--stroke); padding: 4px; border-radius: 12px; }
+  .hero .seg button { padding: 6px 12px; border-radius: 9px; color: var(--sub); font-weight: 500; }
+  .hero .seg button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .hero .btn { padding: 8px 16px; border-radius: 12px; border: 0; background: var(--hover); color: var(--text); font: inherit; font-weight: 500; cursor: pointer; transition: transform .1s; }
+  .hero .btn:active { transform: scale(.97); }
+  .hero .btn.primary { background: var(--brand); color: #fff; box-shadow: 0 4px 14px rgba(0,111,238,.35); }
+  .hero .search { padding: 9px 14px; border: 0; border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; width: 210px; box-shadow: inset 0 0 0 1px var(--stroke); }
+  .hero .card { background: var(--panel); border-radius: 16px; margin-top: 16px; padding: 6px; box-shadow: 0 2px 16px rgba(0,0,0,.06); }
+  .hero th { font-weight: 600; color: var(--sub); font-size: 11px; text-transform: uppercase; padding: 10px 12px; background: var(--hover); }
+  .hero th:first-child { border-radius: 10px 0 0 10px; } .hero th:last-child { border-radius: 0 10px 10px 0; }
+  .hero td { padding: 11px 12px; }
+  .hero tr:hover td { background: var(--hover); }
+  .hero tr:hover td:first-child { border-radius: 10px 0 0 10px; } .hero tr:hover td:last-child { border-radius: 0 10px 10px 0; }
+  .hero .key { color: var(--brand); font-weight: 600; text-decoration: none; background: var(--brand-tint); padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+  .hero .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--hover); font-weight: 500; }
+  .hero .pill.ok { background: var(--ok-tint); color: var(--ok); }
+  .hero .pill.warn { background: var(--warn-tint); color: var(--warn); }
+  .hero .pill.bad { background: var(--danger-tint); color: var(--danger); }
+  .hero .due-bad { color: var(--danger); font-weight: 600; }
+  .hero .dot { background: var(--danger); }
+  .hero .toast { background: var(--panel); border-radius: 14px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
+  .hero .modal-wrap { background: rgba(0,0,0,.3); backdrop-filter: blur(6px); }
+  .hero .modal { width: 360px; background: var(--panel); border-radius: 20px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+  .hero .modal h3 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
+  .hero .muted { color: var(--sub); }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Workday: Fluent 2 vs HeroUI (mockup)</h1>
+  <button id="theme">Sáng / Tối</button>
+  <button id="dialog">Hiện / ẩn hộp thoại</button>
+  <button id="layout">Trên dưới / Cạnh nhau</button>
+  <span style="color:#666;font-size:13px">Vẽ theo token màu, font, bo góc, bóng của từng bộ; không phải component thật.</span>
+</div>
+<div class="grid">
+  <div><p class="label">Fluent UI v9 (Windows 11, Teams, Outlook)</p><div class="frame"><div class="app fluent" data-skin></div></div></div>
+  <div><p class="label">HeroUI (gần iOS / macOS)</p><div class="frame"><div class="app hero" data-skin></div></div></div>
+</div>
+<script>
+const icon = (d) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+const ICONS = {
+  tickets: icon('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>'),
+  workspace: icon('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10l3 2-3 2M12 15h5"/>'),
+  timesheet: icon('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>'),
+  insights: icon('<path d="M5 19V11M12 19V5M19 19v-6"/>'),
+  schedules: icon('<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>'),
+  settings: icon('<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>'),
+  bell: icon('<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/>'),
+}
+const NAV = [['tickets', 'Tickets', '2'], ['workspace', 'Workspace', ''], ['timesheet', 'Timesheet', ''], ['insights', 'Insights', ''], ['schedules', 'Schedules', ''], ['settings', 'Settings', '']]
+const ROWS = [
+  ['MDP-8325', 'Add additional logging to identify who initiated API Log requests and who changed shipping', 'PR & Code Review', 'Nov 18', '', [['BE main', 'ok'], ['BE dev', 'ok'], ['FE Portal', 'warn']]],
+  ['MDP-7342', 'Shortages Report Update', 'PR & Code Review', 'Sep 14', 'bad', [['BE main', 'ok'], ['BE dev', 'bad']]],
+  ['MDP-9787', 'Pallet Counts tab sync bug and Edit mode', 'Ready To Test', 'Nov 13', '', [['BE dev', 'ok']]],
+  ['MDP-8057', 'Alert on missing DTF labels at merge completion', 'In Progress', 'Nov 20', '', []],
+  ['MDP-9763', 'Custom Ink Invoice - Add JIT Order Reason column', 'Deployed to Dev', '', '', [['BE main', '']]],
+]
+function render(root) {
+  const nav = NAV.map(([id, name, badge], i) => `<div class="nav${i === 0 ? ' on' : ''}">${ICONS[id]}<span>${name}</span>${badge ? `<span class="badge">${badge}</span>` : ''}</div>`).join('')
+  const views = [['To do (1)', false], ['Working (5)', true], ['Available (12)', false, true], ['Done (31)', false], ['Dismissed (5)', false]]
+    .map(([label, on, dot]) => `<button class="${on ? 'on' : ''}">${label}${dot ? '<span class="dot"></span>' : ''}</button>`).join('')
+  const rows = ROWS.map(([key, sum, status, due, dueTone, prs]) => `<tr>
+      <td><a class="key" href="#">${key}</a></td><td class="sum">${sum}</td>
+      <td><span class="pill">${status}</span></td>
+      <td class="${dueTone === 'bad' ? 'due-bad' : 'muted'}">${due || '-'}</td>
+      <td><div class="pills">${prs.map(([n, tone]) => `<span class="pill ${tone}">${n}</span>`).join('')}</div></td>
+      <td><button class="btn">...</button></td></tr>`).join('')
+  root.innerHTML = `
+    <div class="side"><div class="brand-name">Workday</div>${nav}</div>
+    <div class="main">
+      <div class="bar"><span class="title">Tickets</span><span style="display:flex;gap:8px;align-items:center"><button class="btn">${ICONS.bell}</button><button class="btn primary">Check now</button></span></div>
+      <div class="content">
+        <div class="row-tools"><div class="seg">${views}</div><input class="search" placeholder="Search or paste a Jira key" /></div>
+        <div class="card"><table><colgroup><col class="c-key"/><col/><col class="c-status"/><col class="c-due"/><col class="c-prs"/><col class="c-menu"/></colgroup><thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Due</th><th>PRs</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      </div>
+    </div>
+    <div class="toast">${ICONS.bell}<div><b>PR merged</b><div class="muted" style="font-size:13px;margin-top:2px">MDP-8325 BE dev was merged into development.</div></div></div>
+    <div class="modal-wrap" hidden><div class="modal"><h3>Ready to Test?</h3>
+      <div class="muted">MDP-8325 moves PR &amp; Code Review &rarr; Deployed to Dev &rarr; Ready to Test on Jira. The whole team sees it.</div>
+      <div class="modal-actions"><button class="btn">Cancel</button><button class="btn primary">Move</button></div></div></div>`
+}
+document.querySelectorAll('[data-skin]').forEach(render)
+document.getElementById('theme').onclick = () => document.querySelectorAll('[data-skin]').forEach((el) => el.classList.toggle('dark'))
+document.getElementById('layout').onclick = () => document.querySelector('.grid').classList.toggle('side-by-side')
+document.getElementById('dialog').onclick = () => document.querySelectorAll('.modal-wrap').forEach((el) => { el.hidden = !el.hidden })
+document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return
+  seg.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b))
+}))
+</script>
+</body>
+</html>

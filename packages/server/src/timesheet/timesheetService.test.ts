@@ -30,6 +30,7 @@ function setup(
     now?: string
     boardKeys?: readonly string[]
     settings?: Partial<TimesheetSettings>
+    logError?: (message: string, error: unknown) => void
   } = {},
 ): Setup {
   const sheet = new FakeSheetLog()
@@ -55,7 +56,7 @@ function setup(
       summaryOf: (key) => (boardKeys.has(key) ? `Board ${key}` : null),
     },
     now: () => clock.now,
-    logError: () => undefined,
+    logError: options.logError ?? (() => undefined),
     settings: {
       sheet,
       hours,
@@ -287,6 +288,19 @@ describe('TimesheetService week', () => {
       'notDue',
       'notDue',
     ])
+  })
+
+  it('a failed sheet read logs why', async () => {
+    const logged: { message: string; error: unknown }[] = []
+    const { service, sheet } = setup({
+      logError: (message, error) => logged.push({ message, error }),
+    })
+    sheet.read = () => Promise.resolve({ kind: 'failed', detail: 'Graph said 403' })
+
+    await service.readWeek(MONDAY, true)
+
+    expect(service.view().week?.coverage?.[0]?.tscState).toBe('failed')
+    expect(logged).toEqual([{ message: 'Reading TSC failed', error: 'Graph said 403' }])
   })
 
   it('a stale week read does not overwrite the newer week', async () => {

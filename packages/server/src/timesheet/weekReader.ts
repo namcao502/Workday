@@ -45,6 +45,7 @@ export async function readCoverage(
   monday: string,
   today: string,
   allowSniff: boolean,
+  logError: (message: string, error: unknown) => void,
 ): Promise<readonly DayCoverage[]> {
   const weekdays = weekdaysOf(monday)
   const readable = weekdays.filter((date) => date <= today)
@@ -53,6 +54,10 @@ export async function readCoverage(
     hours === null ? NO_HOURS : hours.dayHours(readable),
     hours === null ? [] : hours.offDates(monday, addDays(monday, WORKDAYS - 1)),
   ])
+  // The day cards only show "failed", so the reason goes to the log.
+  if (tscRead.kind === 'failed') {
+    logError('Reading TSC failed', tscRead.detail)
+  }
   const cells = tscRead.kind === 'read' ? tscRead.cells : null
   const hadToken = tscRead.kind !== 'noToken'
   const off = new Set(offDates)
