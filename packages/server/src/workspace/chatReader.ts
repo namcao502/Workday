@@ -3,7 +3,15 @@ import { readTranscriptLines } from './transcriptReader.js'
 
 export const CHAT_PAGE_SIZE = 150
 
-const EMPTY: ChatView = { messages: [], hasMore: false, working: false }
+const EMPTY: ChatView = {
+  messages: [],
+  hasMore: false,
+  working: false,
+  requests: [],
+  running: false,
+  mode: 'default',
+  model: null,
+}
 
 // The page counts prompts and replies only: a busy turn's tool rows must not push earlier prompts off it.
 function pageStart(messages: readonly ChatMessage[]): number {
@@ -37,5 +45,5 @@ export function readChat(path: string | null, cwd: string | null, working: boole
         message.status === 'running' ? { ...message, status: null } : message,
       )
   const start = pageStart(messages)
-  return { messages: messages.slice(start), hasMore: start !== 0, working }
+  return { ...EMPTY, messages: messages.slice(start), hasMore: start !== 0, working }
 }

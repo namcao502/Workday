@@ -2,7 +2,7 @@ import { isAbsolute } from 'node:path'
 import type { OpenOutcome, StartOutcome } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { isRecord } from '../jsonFile.js'
-import { isDirectory } from '../workspace/sessionHost.js'
+import { isDirectory } from '../workspace/agentSession.js'
 import type { WorkspaceOutcome, WorkspaceService } from '../workspace/workspaceService.js'
 
 const SESSION_NOT_FOUND = { ok: false, error: { code: 'sessionNotFound' } } as const

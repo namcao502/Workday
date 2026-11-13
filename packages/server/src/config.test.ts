@@ -60,16 +60,27 @@ describe('loadConfig', () => {
         startPrompt: 5,
         localOnlyPaths: ['a', 2],
         chatView: true,
+        permissionMode: 'plan',
       },
     })
     expect(loadConfig(directory).workspace).toEqual({
       ...DEFAULT_WORKSPACE,
       devRepoPath: 'C:\\repo',
       localOnlyPaths: ['a'],
-      chatView: true,
+      permissionMode: 'plan',
     })
     writeConfig({ workspace: 'junk' })
     expect(loadConfig(directory).workspace).toEqual(DEFAULT_WORKSPACE)
+  })
+
+  it('a config file with chatView and no permissionMode loads with permissionMode default', () => {
+    writeConfig({ workspace: { devRepoPath: 'C:\repo', chatView: true } })
+    expect(loadConfig(directory).workspace).toEqual({
+      ...DEFAULT_WORKSPACE,
+      devRepoPath: 'C:\repo',
+    })
+    writeConfig({ workspace: { permissionMode: 'bogus' } })
+    expect(loadConfig(directory).workspace.permissionMode).toBe('default')
   })
 
   it('takes the default of a field that is missing or of the wrong type', () => {

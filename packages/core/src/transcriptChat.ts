@@ -1,5 +1,8 @@
 // Turns a Claude Code transcript (JSONL lines) into chat rows. Pure: the server reads the file.
 
+import type { ChatRequest } from './agentRequests.js'
+import type { AgentMode } from './ports/claudeAgent.js'
+
 export interface ChatMessage {
   readonly id: number // line byte offset * 100 + block index, stable while the file grows
   readonly role: 'user' | 'assistant' | 'tool' | 'notice'
@@ -15,6 +18,10 @@ export interface ChatView {
   readonly messages: readonly ChatMessage[]
   readonly hasMore: boolean
   readonly working: boolean
+  readonly requests: readonly ChatRequest[]
+  readonly running: boolean
+  readonly mode: AgentMode
+  readonly model: string | null
 }
 
 type Json = Readonly<Record<string, unknown>>
@@ -36,6 +43,7 @@ const HIDDEN_TEXT_PREFIXES = [
   '<local-command-stdout>',
   '<local-command-caveat>',
 ]
+const INTERRUPT_MARKER = '[Request interrupted'
 const COMMAND_NAME = /<command-name>(.*?)<\/command-name>/s
 const COMMAND_ARGS = /<command-args>(.*?)<\/command-args>/s
 const SUMMARY = /<summary>(.*?)<\/summary>/s
@@ -219,7 +227,9 @@ export function parseTranscript(
   function addUserText(text: string | null, id: number, at: string | null): void {
     const shown = text === null ? null : userText(text)
     if (shown !== null) {
-      messages.push(make(id, 'user', at, { text: shown }))
+      // Claude writes the Stop marker as a user line; it is not something the person typed.
+      const role = shown.startsWith(INTERRUPT_MARKER) ? 'notice' : 'user'
+      messages.push(make(id, role, at, { text: shown }))
     }
   }
 

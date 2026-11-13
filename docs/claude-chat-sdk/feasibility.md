@@ -1,5 +1,7 @@
 # Claude chat qua Agent SDK: khả thi
 
+> Đã làm (2026-11-13): `docs/claude-sdk-chat/`. Terminal bị bỏ hẳn, không có chế độ Chat / Terminal song song.
+
 **Kết luận (2026-11-13):** Làm chat Claude bằng `@anthropic-ai/claude-agent-sdk` (TS, SDK chính thức) là **khả thi** và
 gọn hơn cách GĐ 4 đang làm (Claude trong `node-pty` + đọc transcript + gửi phím). Workday là Node/TS nên dùng thẳng
 SDK, không phải tự nói giao thức control như bên C#. Chưa làm; ghi chú cho lúc lên kế hoạch GĐ 5.

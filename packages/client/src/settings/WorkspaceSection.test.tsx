@@ -14,12 +14,16 @@ function saved(): SettingsView {
     ...base,
     config: {
       ...base.config,
-      workspace: { ...base.config.workspace, devRepoPath: 'C:\\Repos\\Dev', chatView: false },
+      workspace: {
+        ...base.config.workspace,
+        devRepoPath: 'C:\\Repos\\Dev',
+        permissionMode: 'default',
+      },
     },
   }
 }
 
-it('Save sends the workspace block with trimmed values, lines and the toggle', async () => {
+it('Save sends the workspace block with trimmed values and lines', async () => {
   const fetchMock = stubFetch(() => jsonResponse(saved()))
   renderWithQuery(<WorkspaceSection settings={saved()} />)
   fireEvent.change(screen.getByLabelText('Sibling repo pattern'), {
@@ -29,7 +33,6 @@ it('Save sends the workspace block with trimmed values, lines and the toggle', a
   fireEvent.change(screen.getByLabelText('Local-only paths'), {
     target: { value: '.claude/\n\n .env.local ' },
   })
-  fireEvent.click(screen.getByRole('switch', { name: 'Chat view' }))
   fireEvent.click(screen.getByRole('button', { name: 'Save' }))
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalled()
@@ -40,7 +43,19 @@ it('Save sends the workspace block with trimmed values, lines and the toggle', a
     startPrompt: 'ship {key}',
     claudeExecutable: null,
     localOnlyPaths: ['.claude/', '.env.local'],
-    chatView: true,
+    permissionMode: 'default',
   })
   expect(await screen.findByText('Saved')).toBeInTheDocument()
+})
+
+it('the workspace settings save the default permission mode', async () => {
+  const fetchMock = stubFetch(() => jsonResponse(saved()))
+  renderWithQuery(<WorkspaceSection settings={saved()} />)
+  fireEvent.click(screen.getByRole('button', { name: /Default permission mode/ }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Accept edits' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalled()
+  })
+  expect(sentJson(fetchMock)['workspace']).toMatchObject({ permissionMode: 'acceptEdits' })
 })

@@ -28,7 +28,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
         startPrompt: null,
         claudeExecutable: null,
         localOnlyPaths: [],
-        chatView: false,
+        permissionMode: 'default',
       },
       azureDevOps: null,
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null },

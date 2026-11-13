@@ -36,14 +36,15 @@ Thứ tự đề xuất: 1, 2, 4, 5, 5b, 6, Desktop PWA, 3, 7 (GĐ 3 cần Cloud
 ## GĐ 4: Workspace
 
 - [ ] Settings > Workspace: `devRepoPath` = `C:\Project\Backend-DotNet`, glob `*-Angular`, prompt `ship {key}`; Save.
-- [ ] "+" > dev repo: terminal chạy claude; Claude xong -> chấm tab + số ở sidebar + thông báo trình duyệt (khi ở tab khác).
+- [ ] "+" > dev repo: gõ prompt đầu tiên thì Claude khởi động; Claude xong -> chấm tab + số ở sidebar + thông báo trình duyệt (khi ở tab khác).
 - [ ] Board > **Open** ticket đã có worktree -> Claude tiếp tục hội thoại cũ.
 - [ ] Board > **Start** ticket mới (bấm 2 lần chỉ tạo 1 worktree); ticket vào queue timesheet hôm nay.
-- [ ] Reload trình duyệt: terminal còn nguyên, Claude không khởi động lại; đổi cỡ cửa sổ thì PTY đổi theo.
-- [ ] `/exit` về shell, gõ `claude` vẫn có hook; đóng tab đang chạy thì hỏi trước.
+- [ ] **Chat SDK**: prompt thường; Claude xin quyền -> thẻ Allow / Always allow / Deny; câu hỏi -> chọn đáp án hoặc tự gõ; mode Plan -> thẻ plan, Keep planning (kèm góp ý) rồi Approve.
+- [ ] Stop giữa lượt (nút hoặc Esc): dừng ngay, prompt sau vẫn trả lời; đổi mode ở đầu chat áp ngay.
+- [ ] Reload trình duyệt / restart server: lịch sử còn, prompt tiếp theo resume đúng hội thoại; đóng tab thì process claude tắt.
+- [ ] Settings > Workspace: chọn mode mặc định (Bypass nếu muốn như CLI); Teams hand-off vẫn gửi vào chat.
 - [ ] **Changes**: cây file A / M / D, diff inline có số dòng.
 - [ ] **Files**: mặc định mở `plan.md`; markdown, ảnh xem được; nút VS Code.
-- [ ] Bật **Chat**: đọc hội thoại, gửi prompt, nút Esc; Claude chờ quyền thì có dòng nhắc sang Terminal.
 
 ## GĐ 5: Board đầy đủ + thông báo
 

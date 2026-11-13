@@ -1,10 +1,11 @@
 import type { SettingsView } from '@workday/core'
-import { Button, Switch } from '@heroui/react'
+import { Button, Label } from '@heroui/react'
 import { useState } from 'react'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
 import { Section } from '../ui/Section.js'
 import { TextField } from '../ui/TextField.js'
+import { ModeSelect } from '../workspace/ModeSelect.js'
 import { formFromWorkspace, workspaceFromForm, type WorkspaceForm } from './workspaceForm.js'
 
 export function WorkspaceSection({
@@ -104,19 +105,22 @@ export function WorkspaceSection({
           change({ localOnlyPaths: value })
         }}
       />
-      <Switch
-        isSelected={form.chatView}
-        onChange={(selected) => {
-          change({ chatView: selected })
-        }}
-      >
-        <Switch.Content>
-          <Switch.Control>
-            <Switch.Thumb />
-          </Switch.Control>
-          {t('Chat view', 'Chat view')}
-        </Switch.Content>
-      </Switch>
+      <div className="flex flex-col gap-1">
+        <Label>{t('Default permission mode', 'Chế độ quyền mặc định')}</Label>
+        <ModeSelect
+          label={t('Default permission mode', 'Chế độ quyền mặc định')}
+          value={form.permissionMode}
+          onChange={(permissionMode) => {
+            change({ permissionMode })
+          }}
+        />
+        <p className="text-sm text-muted">
+          {t(
+            'The mode a new Claude chat session starts in',
+            'Chế độ một phiên chat Claude mới bắt đầu',
+          )}
+        </p>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="primary"

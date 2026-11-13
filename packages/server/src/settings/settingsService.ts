@@ -68,7 +68,7 @@ export interface SettingsServiceDeps {
   readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
   readonly remote: { configure(remote: RemoteConfig | null): void }
-  readonly workspace: { configure(workspace: WorkspaceConfig, dataDir: string): void }
+  readonly workspace: { configure(workspace: WorkspaceConfig): void }
   readonly teams: TeamsGateway
   readonly teamsService: { configure(settings: TeamsSettings): boolean }
   readonly teamsWatcher: { configure(active: boolean, changed: boolean): void }
@@ -435,7 +435,7 @@ export class SettingsService {
     this.applyAzureDevOps(previous)
     this.applyTimesheet(previous)
     this.deps.remote.configure(this.config.remote)
-    this.deps.workspace.configure(this.config.workspace, this.deps.dataDir)
+    this.deps.workspace.configure(this.config.workspace)
     const teamsChanged = this.deps.teamsService.configure({
       chat: this.teams,
       config: this.config.teams,

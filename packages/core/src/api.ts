@@ -2,6 +2,7 @@ import type { DeviceRights } from './remoteAccess.js'
 import type { StatusFlow } from './statusFlow.js'
 import type { BoardSection } from './board.js'
 import type { WaitReason } from './claudeAttention.js'
+import type { AgentMode } from './ports/claudeAgent.js'
 import type { DueUrgency, Ticket } from './ticket.js'
 import type { WorkspaceTab } from './workspaceTabs.js'
 import type { QueueEntry } from './timesheetQueue.js'
@@ -80,7 +81,7 @@ export interface WorkspaceConfig {
   readonly startPrompt: string | null // "ship {key}"; null = plain claude
   readonly claudeExecutable: string | null // null = ~/.local/bin/claude(.exe), else PATH
   readonly localOnlyPaths: readonly string[] // never listed in Changes
-  readonly chatView: boolean
+  readonly permissionMode: AgentMode // mode a new chat session starts in
 }
 
 export interface TeamsConfig {
@@ -308,6 +309,7 @@ export type ServerEvent =
   | { readonly type: 'work.changed' }
   | { readonly type: 'notices.changed' }
   | { readonly type: 'schedules.changed' }
+  | { readonly type: 'chat.changed' }
 
 export interface SessionView {
   readonly name: string

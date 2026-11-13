@@ -14,14 +14,12 @@ import { registerRemoteGate } from './remote/remoteGate.js'
 import type { RemoteService } from './remote/remoteService.js'
 import { registerEventsRoute } from './routes/eventsRoute.js'
 import { registerInsightsRoutes } from './routes/insightsRoutes.js'
-import { registerHookRoute } from './routes/hookRoute.js'
 import { registerPushRoutes } from './routes/pushRoutes.js'
 import { registerRemoteRoutes } from './routes/remoteRoutes.js'
 import { registerSchedulesRoutes } from './routes/schedulesRoutes.js'
 import type { SchedulesSource } from './schedules/schedulesView.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
 import { registerTeamsRoutes } from './routes/teamsRoutes.js'
-import { registerTerminalRoute } from './routes/terminalRoute.js'
 import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
 import { registerChatRoutes } from './routes/chatRoute.js'
 import { registerWorkRoutes } from './routes/workRoutes.js'
@@ -35,7 +33,7 @@ import type { TeamsWatcher } from './teams/teamsWatcher.js'
 import type { TimesheetService } from './timesheet/timesheetService.js'
 import type { WorkspaceService } from './workspace/workspaceService.js'
 
-const TERMINAL_MAX_PAYLOAD = 1024 * 1024
+const SOCKET_MAX_PAYLOAD = 1024 * 1024
 
 export interface AppDeps {
   port: number
@@ -74,8 +72,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
 
   registerRemoteGate(app, deps.remote)
 
-  // Applies to every socket; terminal input is the largest client message.
-  await app.register(fastifyWebsocket, { options: { maxPayload: TERMINAL_MAX_PAYLOAD } })
+  await app.register(fastifyWebsocket, { options: { maxPayload: SOCKET_MAX_PAYLOAD } })
 
   app.get('/api/health', { config: { access: { area: 'unpaired' } } }, () => ({
     ok: true,
@@ -96,8 +93,6 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerTeamsRoutes(app, deps.teams, deps.teamsWatcher)
   registerInsightsRoutes(app, deps.insights, () => deps.settings.timeZone)
   registerSchedulesRoutes(app, deps.schedules)
-  registerTerminalRoute(app, deps.workspace, allowedHosts)
-  await registerHookRoute(app, deps.workspace)
 
   const { clientDist } = deps
   const hasClient = clientDist !== undefined && existsSync(join(clientDist, 'index.html'))

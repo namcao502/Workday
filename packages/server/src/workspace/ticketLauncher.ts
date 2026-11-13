@@ -5,7 +5,7 @@ import {
   type StartOutcome,
   type WorkspaceConfig,
 } from '@workday/core'
-import { isDirectory } from './sessionHost.js'
+import { isDirectory } from './agentSession.js'
 import { worktreePathOf } from './ticketWorktrees.js'
 import type { WorktreeOptions, WorktreeResult } from './worktreeService.js'
 
@@ -48,7 +48,7 @@ export class TicketLauncher {
     return [...this.starting]
   }
 
-  // Null once the session had its first hook, or when the worktree was not created by Start.
+  // Null once the start prompt was sent, or when the worktree was not created by Start.
   pendingPrompt(key: string): string | null {
     const prompt = this.deps.config().startPrompt
     return this.shipPending.has(key) && prompt !== null ? prompt.replaceAll('{key}', key) : null

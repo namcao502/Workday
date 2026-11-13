@@ -1,4 +1,4 @@
-@layer theme, base, legacy, components, utilities;
+@layer theme, base, components, utilities;
 
 @import 'tailwindcss';
 @import '@heroui/styles';
@@ -11,43 +11,4 @@
 
 body {
   @apply bg-background text-foreground font-sans antialiased;
-}
-
-@layer legacy {
-  /* Old pages were drawn on browser defaults; undo Tailwind's preflight inside them. */
-  .legacy-page
-    :where(
-      h1,
-      h2,
-      h3,
-      h4,
-      h5,
-      h6,
-      p,
-      ul,
-      ol,
-      li,
-      dl,
-      dd,
-      blockquote,
-      figure,
-      pre,
-      code,
-      kbd,
-      table,
-      th,
-      td,
-      hr,
-      img,
-      a,
-      button,
-      input,
-      select,
-      textarea,
-      fieldset,
-      legend,
-      summary
-    ) {
-    all: revert;
-  }
 }

@@ -1,61 +1,48 @@
-import { randomBytes, timingSafeEqual } from 'node:crypto'
-import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   addSession,
   addTerminal,
-  afterEscape,
-  bashRcText,
-  buildShellLaunch,
-  clearsWhenSeen,
   closeSession,
-  isAcceptedPath,
-  type ChatView,
   closeTab,
-  nextWait,
+  isAcceptedPath,
   openTicket,
-  parseHookEvent,
-  sessionArgument,
-  workingAfter,
+  waitOfRequests,
+  type AgentMode,
+  type ChatAnswer,
+  type ChatView,
+  type ClaudeAgent,
   type OpenOutcome,
   type SessionView,
   type StartOutcome,
-  type ShellLaunch,
   type WaitReason,
   type WorkspaceConfig,
   type WorkspaceTab,
   type WorkspaceView,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
+import type { PromptOutcome } from '../teams/teamsHandOff.js'
+import { AgentSession, isDirectory, type SessionDirectory } from './agentSession.js'
 import { readChat } from './chatReader.js'
 import { buildFileGroups, type FileGroup } from './fileGroups.js'
-import { HOOKS_FOLDER, writeHookSettings } from './hookSettings.js'
 import {
-  defaultClaudeExecutable,
-  findPowerShell7,
   folderHasTranscripts,
   isGuid,
-  isTranscriptOfFolder,
   projectFolder,
-  sessionEnvironment,
   transcriptExists,
 } from './launchEnvironment.js'
 import { openInVsCode, spawnEditor, type SpawnEditor } from './openInEditor.js'
-import { WorkspaceStartError, type SpawnPty } from './pty.js'
-import { isDirectory, SessionHost, type SessionDirectory } from './sessionHost.js'
 import { TicketLauncher, type TicketLauncherDeps } from './ticketLauncher.js'
+import { WorkspaceStartError, type WorkspaceStartCode } from './workspaceStartError.js'
 import { MAX_RECENT_FOLDERS, type WorkspaceState } from './workspaceStore.js'
-import type { PromptOutcome } from '../teams/teamsHandOff.js'
 
 export interface WorkspaceServiceDeps {
-  readonly dataDir: string
   readonly config: WorkspaceConfig
   readonly initialState: WorkspaceState
   readonly save: (state: WorkspaceState) => Promise<void>
   readonly events: EventSink
-  readonly spawn: SpawnPty
+  readonly agent: ClaudeAgent
   readonly spawnEditor?: SpawnEditor // tests pass a fake; VS Code is never launched there
-  readonly homeDir: string // ~/.claude/projects and ~/.local/bin live under it
+  readonly homeDir: string // ~/.claude/projects lives under it
   readonly platform?: 'win32' | 'other'
   readonly environment?: Readonly<Record<string, string | undefined>>
   readonly logError?: (message: string, error: unknown) => void
@@ -70,16 +57,8 @@ export interface WorkspaceServiceDeps {
 // mainSession: the first session of a tab closes only with its tab.
 export type WorkspaceOutcome = 'ok' | 'notFound' | 'mainSession'
 
-interface Attention {
-  readonly wait: WaitReason | null
-  readonly working: boolean
-}
-
-const PROMPT_SUBMIT_DELAY_MS = 150
-const PASTE_START = '\x1b[200~'
-const PASTE_END = '\x1b[201~'
-const IDLE: Attention = { wait: null, working: false }
-const PLAIN_BASH: ShellLaunch = { file: 'bash', args: ['-i'] }
+// sessionNotFound: the tab closed while the prompt was on its way.
+export type SendOutcome = 'sent' | 'notFound' | 'waiting' | WorkspaceStartCode
 
 function sessionKey(name: string, cwd: string): string {
   return `${name}|${cwd}`
@@ -103,17 +82,11 @@ function recentWith(recent: readonly string[], folder: string | null): readonly 
 }
 
 export class WorkspaceService {
-  // New every server run; the hook URL carries it, so only our claude sessions can post hooks.
-  readonly hookToken = randomBytes(32).toString('hex')
   private state: WorkspaceState
   private config: WorkspaceConfig
-  private dataDir: string
-  private hookBase: string | null = null
   private queue: Promise<unknown> = Promise.resolve()
-  private readonly hosts = new Map<string, SessionHost>()
-  private readonly attention = new Map<string, Attention>()
-  private readonly endedInShell = new Set<string>() // sessions whose claude exited to the shell
-  private readonly transcripts = new Map<string, string>() // newest accepted transcript path per session
+  private readonly sessions = new Map<string, AgentSession>()
+  private readonly waits = new Map<string, WaitReason>() // last wait per session, for onWait
   private readonly platform: 'win32' | 'other'
   private readonly environment: Readonly<Record<string, string | undefined>>
   private readonly logError: (message: string, error: unknown) => void
@@ -132,7 +105,6 @@ export class WorkspaceService {
     })
     this.state = deps.initialState
     this.config = deps.config
-    this.dataDir = deps.dataDir
     this.platform = deps.platform ?? (process.platform === 'win32' ? 'win32' : 'other')
     this.environment = deps.environment ?? process.env
     this.logError = deps.logError ?? console.error
@@ -172,15 +144,11 @@ export class WorkspaceService {
   }
 
   // Running sessions keep their folder; the next start uses the new dev repo.
-  configure(config: WorkspaceConfig, dataDir: string): void {
+  configure(config: WorkspaceConfig): void {
     this.config = config
-    this.dataDir = dataDir
   }
 
-  setHookBase(url: string): void {
-    this.hookBase = url.replace(/\/+$/, '')
-  }
-
+  // Opens a folder tab; the name stays from the terminal days because the client calls it.
   addTerminal(folder: string | null): Promise<void> {
     return this.enqueue(() => {
       const { tabs } = addTerminal(this.state, folder)
@@ -190,8 +158,9 @@ export class WorkspaceService {
   }
 
   // For the ticket Start / Open flow: a no-op when the tab is already open.
-  openTicketTab(key: string): Promise<void> {
-    return this.enqueue(() => this.commit({ ...this.state, ...openTicket(this.state, key) }, true))
+  async openTicketTab(key: string): Promise<void> {
+    await this.enqueue(() => this.commit({ ...this.state, ...openTicket(this.state, key) }, true))
+    this.sendStartPrompt(key)
   }
 
   start(key: string): Promise<StartOutcome> {
@@ -224,7 +193,7 @@ export class WorkspaceService {
       const { tabs } = closeSession(this.state, tab.id, name)
       const sessionIds = withoutSessionIds(this.state.sessionIds, [name])
       await this.commit({ ...this.state, tabs, sessionIds }, true)
-      this.dropHosts([name])
+      this.disposeSessions([name])
       return 'ok'
     })
   }
@@ -238,184 +207,244 @@ export class WorkspaceService {
       const { tabs } = closeTab(this.state, id)
       const sessionIds = withoutSessionIds(this.state.sessionIds, tab.sessions)
       await this.commit({ ...this.state, tabs, sessionIds }, true)
-      this.dropHosts(tab.sessions)
+      this.disposeSessions(tab.sessions)
       return 'ok'
     })
   }
 
   seen(name: string): void {
-    const current = this.attention.get(name) ?? IDLE
-    if (current.wait !== null && clearsWhenSeen(current.wait)) {
-      this.setAttention(name, { ...current, wait: null })
-    }
+    this.sessions.get(name)?.seen()
     this.deps.onSeen?.(name)
-  }
-
-  // Esc closes a permission or question dialog, and claude sends no hook for that.
-  escape(name: string): void {
-    const current = this.attention.get(name) ?? IDLE
-    this.setAttention(name, { ...current, wait: afterEscape(current.wait) })
-  }
-
-  // False only for a wrong token; a payload that is not a hook, or a closed session, is ignored.
-  async onHook(session: string, token: string, payload: unknown): Promise<boolean> {
-    const given = Buffer.from(token)
-    const expected = Buffer.from(this.hookToken)
-    if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
-      return false
-    }
-    const event = parseHookEvent(payload)
-    const tab = this.tabOf(session)
-    if (event === null || tab === undefined) {
-      return true
-    }
-    this.launcher.shipDone(session)
-    this.trackClaudeInShell(session, event.eventName, event.reason)
-    const current = this.attention.get(session) ?? IDLE
-    const wait = nextWait(current.wait, event)
-    this.setAttention(session, {
-      wait,
-      working: workingAfter(event.eventName, current.working),
-    })
-    if (wait !== null && wait !== current.wait) {
-      this.deps.onWait?.(session, tab, wait)
-    }
-    if (isAcceptedPath(event.transcriptPath, this.projectsRoot(), this.platform)) {
-      this.transcripts.set(session, event.transcriptPath ?? '')
-    }
-    const cwd = this.hosts.get(session)?.currentDirectory ?? null
-    const sessionId = event.sessionId
-    if (
-      cwd !== null &&
-      sessionId !== null &&
-      isGuid(sessionId) &&
-      isTranscriptOfFolder(event.transcriptPath, cwd)
-    ) {
-      try {
-        await this.rememberSessionId(session, cwd, sessionId.toLowerCase())
-      } catch (error: unknown) {
-        // Never the payload: a failed save only loses the resume id; claude must still get 200.
-        this.logError(`Saving the session id of ${session} failed`, error)
-      }
-    }
-    return true
-  }
-
-  // Null for an unknown session; empty until a hook or a saved id names a transcript.
-  chat(name: string): ChatView | null {
-    if (this.tabOf(name) === undefined) {
-      return null
-    }
-    const cwd = this.hosts.get(name)?.currentDirectory ?? null
-    const working = (this.attention.get(name) ?? IDLE).working
-    return readChat(this.transcriptPath(name, cwd), cwd, working)
   }
 
   hasSession(name: string): boolean {
     return this.tabOf(name) !== undefined
   }
 
-  // Null for a name that is no session of an open tab.
-  host(name: string): SessionHost | null {
+  shutdown(): void {
+    this.disposeSessions([...this.sessions.keys()])
+  }
+
+  // Null for an unknown session; no messages until a session id (from init or saved) names a transcript.
+  chat(name: string): ChatView | null {
     if (this.tabOf(name) === undefined) {
       return null
     }
-    const existing = this.hosts.get(name)
-    if (existing !== undefined) {
-      return existing
+    const session = this.sessions.get(name)
+    const cwd = session?.state.cwd ?? this.idleDirectory(name)
+    const sessionId = session?.state.sessionId ?? null
+    const view = readChat(
+      this.transcriptPath(name, cwd, sessionId),
+      cwd,
+      session?.state.working === true,
+    )
+    if (session === undefined) {
+      return { ...view, mode: this.config.permissionMode }
     }
-    const host = new SessionHost({
-      name,
-      spawn: this.deps.spawn,
-      directory: () => this.directoryOf(name),
-      launch: (cwd) => this.launchFor(name, cwd),
-      env: () => sessionEnvironment(this.environment),
-      onStarted: () => {
-        this.endedInShell.delete(name)
-        this.deps.events.broadcast({ type: 'workspace.changed' })
-      },
-      onEnded: () => {
-        this.attention.delete(name)
-        this.deps.events.broadcast({ type: 'workspace.changed' })
-      },
-    })
-    this.hosts.set(name, host)
-    return host
+    const { requests, running, mode, model } = session.state
+    return { ...view, requests, running, mode, model }
   }
 
-  // 'sent' when a line may be typed now: the Enter after it would answer an open permission or question.
+  // An open request blocks a new prompt: the user answers it first.
+  send(name: string, text: string): SendOutcome {
+    const session = this.session(name)
+    if (session === null) {
+      return 'notFound'
+    }
+    if (session.state.requests.length !== 0) {
+      return 'waiting'
+    }
+    try {
+      session.send(text)
+      return 'sent'
+    } catch (error: unknown) {
+      if (error instanceof WorkspaceStartError) {
+        return error.code
+      }
+      throw error
+    }
+  }
+
+  // 'sent' when a prompt may be sent now; a stopped session starts with it.
   promptState(name: string): PromptOutcome {
     if (this.tabOf(name) === undefined) {
       return 'notFound'
     }
-    if (this.hosts.get(name)?.running !== true || this.endedInShell.has(name)) {
-      return 'notRunning'
-    }
-    const { wait } = this.attention.get(name) ?? IDLE
-    return wait === 'permission' || wait === 'question' ? 'waiting' : 'sent'
+    const requests = this.sessions.get(name)?.state.requests ?? []
+    return requests.length === 0 ? 'sent' : 'waiting'
   }
 
-  // Pasted as one block, then Enter after a pause, only if nothing started waiting meanwhile.
+  // For the Teams hand-off: a session that cannot start is notRunning.
   prompt(name: string, text: string): PromptOutcome {
-    const state = this.promptState(name)
-    const host = this.hosts.get(name)
-    if (state !== 'sent' || host === undefined) {
-      return state
+    const outcome = this.send(name, text)
+    if (outcome === 'sent' || outcome === 'notFound' || outcome === 'waiting') {
+      return outcome
     }
-    host.write(`${PASTE_START}${text}${PASTE_END}`)
-    setTimeout(() => {
-      if (this.promptState(name) === 'sent') {
-        host.write('\r')
+    this.logError(`Starting session ${name} failed: ${outcome}`, null)
+    return 'notRunning'
+  }
+
+  answer(name: string, requestId: string, answer: ChatAnswer): 'ok' | 'notFound' | 'invalid' {
+    if (this.tabOf(name) === undefined) {
+      return 'notFound'
+    }
+    return this.sessions.get(name)?.answer(requestId, answer) ?? 'notFound'
+  }
+
+  // False for an unknown session; a stopped one has nothing to interrupt.
+  async interrupt(name: string): Promise<boolean> {
+    if (this.tabOf(name) === undefined) {
+      return false
+    }
+    await this.sessions.get(name)?.interrupt()
+    return true
+  }
+
+  // False for an unknown session; a stopped one keeps the mode for its next start.
+  async setMode(name: string, mode: AgentMode): Promise<boolean> {
+    const session = this.session(name)
+    if (session === null) {
+      return false
+    }
+    await session.setMode(mode)
+    return true
+  }
+
+  // Null for a name that is no session of an open tab.
+  private session(name: string): AgentSession | null {
+    if (this.tabOf(name) === undefined) {
+      return null
+    }
+    const existing = this.sessions.get(name)
+    if (existing !== undefined) {
+      return existing
+    }
+    const session = new AgentSession({
+      name,
+      agent: this.deps.agent,
+      directory: () => this.directoryOf(name),
+      resumeId: (cwd) => this.resumeId(name, cwd),
+      continueLatest: (cwd) => this.continueLatest(name, cwd),
+      mode: () => this.config.permissionMode,
+      onChange: () => {
+        this.deps.events.broadcast({ type: 'chat.changed' })
+      },
+      onAttention: () => {
+        this.onAttention(name)
+      },
+      onSessionId: (cwd, sessionId) => {
+        this.onSessionId(name, cwd, sessionId)
+      },
+    })
+    this.sessions.set(name, session)
+    return session
+  }
+
+  // Runs once, right after Start opened the tab of a worktree it created.
+  private sendStartPrompt(key: string): void {
+    const prompt = this.launcher.pendingPrompt(key)
+    if (prompt === null) {
+      return
+    }
+    const outcome = this.send(key, prompt)
+    this.launcher.shipDone(key)
+    if (outcome !== 'sent') {
+      this.logError(`The start prompt of ${key} was not sent: ${outcome}`, null)
+    }
+  }
+
+  private onAttention(name: string): void {
+    const session = this.sessions.get(name)
+    const tab = this.tabOf(name)
+    if (session !== undefined && tab !== undefined) {
+      const wait = this.waitOf(session)
+      const previous = this.waits.get(name) ?? null
+      if (wait === null) {
+        this.waits.delete(name)
+      } else {
+        this.waits.set(name, wait)
       }
-    }, PROMPT_SUBMIT_DELAY_MS)
-    return 'sent'
-  }
-
-  // Port of TeamsHandOff.EndsClaude: SessionEnd other than /clear leaves the shell prompt, not Claude's.
-  private trackClaudeInShell(name: string, eventName: string, reason: string | null): void {
-    if (eventName === 'SessionEnd' && reason !== null && reason !== 'clear') {
-      this.endedInShell.add(name)
-    } else if (eventName === 'SessionStart' || eventName === 'UserPromptSubmit') {
-      this.endedInShell.delete(name)
+      if (wait !== null && wait !== previous) {
+        this.deps.onWait?.(name, tab, wait)
+      }
     }
+    this.deps.events.broadcast({ type: 'workspace.changed' })
   }
 
-  shutdown(): void {
-    this.dropHosts([...this.hosts.keys()])
+  private onSessionId(name: string, cwd: string, sessionId: string): void {
+    if (!isGuid(sessionId)) {
+      return
+    }
+    this.rememberSessionId(name, cwd, sessionId.toLowerCase()).catch((error: unknown) => {
+      this.logError(`Saving the session id of ${name} failed`, error)
+    })
+  }
+
+  private waitOf(session: AgentSession): WaitReason | null {
+    const { requests, finished } = session.state
+    return waitOfRequests(requests) ?? (finished ? 'finished' : null)
+  }
+
+  private sessionView(name: string): SessionView {
+    const session = this.sessions.get(name)
+    if (session === undefined) {
+      return { name, running: false, working: false, wait: null }
+    }
+    const { running, working } = session.state
+    return { name, running, working, wait: this.waitOf(session) }
   }
 
   private projectsRoot(): string {
     return join(this.deps.homeDir, '.claude', 'projects')
   }
 
-  private transcriptPath(name: string, cwd: string | null): string | null {
-    const fromHook = this.transcripts.get(name)
-    if (fromHook !== undefined) {
-      return fromHook
-    }
-    const savedId = cwd === null ? undefined : this.state.sessionIds[sessionKey(name, cwd)]
-    if (cwd === null || savedId === undefined) {
+  private savedSessionId(name: string, cwd: string): string | null {
+    return this.state.sessionIds[sessionKey(name, cwd)] ?? null
+  }
+
+  private resumeId(name: string, cwd: string): string | null {
+    const saved = this.savedSessionId(name, cwd)
+    return saved !== null && transcriptExists(this.projectsRoot(), cwd, saved) ? saved : null
+  }
+
+  // Only the main session of a ticket picks up the latest transcript of its worktree.
+  private continueLatest(name: string, cwd: string): boolean {
+    const tab = this.tabOf(name)
+    return (
+      tab?.kind === 'ticket' && tab.id === name && folderHasTranscripts(this.projectsRoot(), cwd)
+    )
+  }
+
+  private transcriptPath(
+    name: string,
+    cwd: string | null,
+    sessionId: string | null,
+  ): string | null {
+    if (cwd === null) {
       return null
     }
-    const saved = join(projectFolder(this.projectsRoot(), cwd), `${savedId.toLowerCase()}.jsonl`)
-    return isAcceptedPath(saved, this.projectsRoot(), this.platform) ? saved : null
-  }
-
-  private sessionView(name: string): SessionView {
-    const attention = this.attention.get(name) ?? IDLE
-    return { name, running: this.hosts.get(name)?.running ?? false, ...attention }
-  }
-
-  private setAttention(name: string, next: Attention): void {
-    const current = this.attention.get(name) ?? IDLE
-    if (current.wait === next.wait && current.working === next.working) {
-      return
+    const id = sessionId ?? this.savedSessionId(name, cwd)
+    if (id === null || !isGuid(id)) {
+      return null
     }
-    this.attention.set(name, next)
-    this.deps.events.broadcast({ type: 'workspace.changed' })
+    const path = join(projectFolder(this.projectsRoot(), cwd), `${id.toLowerCase()}.jsonl`)
+    return isAcceptedPath(path, this.projectsRoot(), this.platform) ? path : null
   }
 
-  // /clear starts a new claude session id, which the next hook brings in.
+  // The folder a stopped session would start in; null when it cannot start.
+  private idleDirectory(name: string): string | null {
+    try {
+      const { path, fallback } = this.directoryOf(name)
+      return isDirectory(path) || fallback === null ? path : fallback
+    } catch (error: unknown) {
+      if (error instanceof WorkspaceStartError) {
+        return null
+      }
+      throw error
+    }
+  }
+
+  // /clear starts a new claude session id, which the next init brings in.
   private rememberSessionId(name: string, cwd: string, sessionId: string): Promise<void> {
     return this.enqueue(() => {
       const key = sessionKey(name, cwd)
@@ -447,71 +476,13 @@ export class WorkspaceService {
     return { path, fallback }
   }
 
-  private launchFor(name: string, cwd: string): ShellLaunch {
-    const tab = this.tabOf(name)
-    const isWindows = this.platform === 'win32'
-    const projectsRoot = join(this.deps.homeDir, '.claude', 'projects')
-    const savedSessionId = this.state.sessionIds[sessionKey(name, cwd)] ?? null
-    const startPrompt = this.launcher.pendingPrompt(name)
-    // Without hook settings no first hook ever arrives, so the prompt runs this once only.
-    if (this.hookBase === null) {
-      this.launcher.shipDone(name)
+  private disposeSessions(names: readonly string[]): void {
+    for (const name of names) {
+      const session = this.sessions.get(name)
+      this.sessions.delete(name)
+      this.waits.delete(name)
+      session?.dispose()
     }
-    const argument = sessionArgument({
-      savedSessionId,
-      transcriptExists:
-        savedSessionId !== null && transcriptExists(projectsRoot, cwd, savedSessionId),
-      folderHasTranscripts: folderHasTranscripts(projectsRoot, cwd),
-      isMain: tab?.kind === 'ticket' && tab.id === name,
-      startPrompt,
-    })
-    const settingsFile =
-      this.hookBase === null
-        ? null
-        : writeHookSettings(this.dataDir, name, this.hookUrl(name), this.logError)
-    const claudeExecutable =
-      this.config.claudeExecutable ?? defaultClaudeExecutable(this.deps.homeDir, isWindows)
-    if (isWindows) {
-      const path = this.environment['PATH'] ?? this.environment['Path']
-      return buildShellLaunch({
-        platform: 'win32',
-        powerShell7Path: findPowerShell7(path),
-        claudeExecutable,
-        settingsFile,
-        argument,
-        rcFile: null,
-      })
-    }
-    const rcFile = this.writeRcFile(name, bashRcText(claudeExecutable, settingsFile, argument))
-    if (rcFile === null) {
-      return PLAIN_BASH
-    }
-    return buildShellLaunch({
-      platform: 'other',
-      powerShell7Path: null,
-      claudeExecutable,
-      settingsFile,
-      argument,
-      rcFile,
-    })
-  }
-
-  // Null (logged) when it cannot be written; the session then opens a plain shell.
-  private writeRcFile(name: string, text: string): string | null {
-    try {
-      const folder = join(this.dataDir, HOOKS_FOLDER)
-      mkdirSync(folder, { recursive: true })
-      const rcFile = join(folder, `${name}.rc`)
-      writeFileSync(rcFile, text)
-      return rcFile
-    } catch (error: unknown) {
-      this.logError(`Could not write the shell rc of ${name}`, error)
-      return null
-    }
-  }
-
-  private hookUrl(name: string): string {
-    return `${this.hookBase ?? ''}/api/hooks/${this.hookToken}/${encodeURIComponent(name)}`
   }
 
   private findTab(id: string): WorkspaceTab | undefined {
@@ -520,16 +491,6 @@ export class WorkspaceService {
 
   private tabOf(name: string): WorkspaceTab | undefined {
     return this.state.tabs.find((tab) => tab.sessions.includes(name))
-  }
-
-  private dropHosts(names: readonly string[]): void {
-    for (const name of names) {
-      this.hosts.get(name)?.dispose()
-      this.hosts.delete(name)
-      this.attention.delete(name)
-      this.transcripts.delete(name)
-      this.endedInShell.delete(name)
-    }
   }
 
   private enqueue<Result>(work: () => Promise<Result>): Promise<Result> {

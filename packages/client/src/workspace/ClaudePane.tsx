@@ -1,20 +1,14 @@
+import { Button, CloseButton } from '@heroui/react'
+import { Plus } from '@gravity-ui/icons'
 import type { WorkspaceTab } from '@workday/core'
-import { useState } from 'react'
-import { useChatViewEnabled, useWorkspace } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
 import { ChatView } from './ChatView.js'
-import { TerminalView } from './TerminalView.js'
 
 // "MDP-1" / "claude2" -> "Claude"; "MDP-1~3" -> "Claude 3".
 export function sessionLabel(name: string): string {
   const [, number] = name.split('~')
   return number === undefined ? 'Claude' : `Claude ${number}`
 }
-
-type Mode = 'chat' | 'terminal'
-
-// The Chat / Terminal choice per session, kept for the life of the page.
-const modes = new Map<string, Mode>()
 
 interface ClaudePaneProps {
   readonly tab: WorkspaceTab
@@ -25,7 +19,7 @@ interface ClaudePaneProps {
   readonly onClose: (session: string) => void
 }
 
-// Every session stays mounted (hidden) so its screen survives a switch, within a tab and between tabs.
+// Every session stays mounted (hidden) so its scroll position and draft survive a switch, within a tab and between tabs.
 export function ClaudePane({
   tab,
   active,
@@ -34,96 +28,61 @@ export function ClaudePane({
   onAdd,
   onClose,
 }: ClaudePaneProps): React.JSX.Element {
-  const chatEnabled = useChatViewEnabled()
-  const workspace = useWorkspace()
-  const [, setRevision] = useState(0)
-  const modeOf = (name: string): Mode => (chatEnabled ? (modes.get(name) ?? 'chat') : 'terminal')
-  const chooseMode = (name: string, mode: Mode): void => {
-    modes.set(name, mode)
-    setRevision((revision) => revision + 1)
-  }
-  const waitOf = (name: string): 'finished' | 'permission' | 'question' | null =>
-    workspace.data?.sessions.find((view) => view.name === name)?.wait ?? null
   return (
-    <div
-      className={`legacy-page h-full min-h-0 min-w-0 flex-[1_1_50%] flex-col ${active ? 'flex' : 'hidden'}`}
-    >
-      <div className="claude-pane" hidden={!active}>
-        <div
-          className="claude-sessions"
-          role="tablist"
-          aria-label={t('Claude sessions', 'Phiên Claude')}
-        >
-          {tab.sessions.map((name, index) => (
-            <div key={name} className="claude-session" data-selected={name === selected}>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={name === selected}
-                onClick={() => {
-                  onSelect(name)
-                }}
-              >
-                {sessionLabel(name)}
-              </button>
-              {index === 0 ? null : (
-                <button
-                  type="button"
-                  className="workspace-tab-close"
-                  aria-label={t(`Close ${sessionLabel(name)}`, `Đóng ${sessionLabel(name)}`)}
-                  onClick={() => {
-                    onClose(name)
-                  }}
-                >
-                  x
-                </button>
-              )}
-            </div>
-          ))}
-          {chatEnabled ? (
-            <div className="segmented" role="group">
-              {(['chat', 'terminal'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  aria-pressed={modeOf(selected) === mode}
-                  onClick={() => {
-                    chooseMode(selected, mode)
-                  }}
-                >
-                  {mode === 'chat' ? 'Chat' : 'Terminal'}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <button
-            type="button"
-            className="wd-button ghost"
-            aria-label={t('New Claude session', 'Phiên Claude mới')}
-            onClick={onAdd}
+    <div className={`h-full min-h-0 min-w-0 flex-[1_1_50%] flex-col ${active ? 'flex' : 'hidden'}`}>
+      <div
+        className="flex flex-wrap items-center gap-1 border-b border-separator pb-2"
+        role="tablist"
+        aria-label={t('Claude sessions', 'Phiên Claude')}
+      >
+        {tab.sessions.map((name, index) => (
+          <div
+            key={name}
+            className={`flex h-8 items-center rounded-lg pl-3 text-sm ${
+              index === 0 ? 'pr-3' : 'pr-1'
+            }${name === selected ? ' bg-surface shadow-sm' : ''}`}
           >
-            +
-          </button>
-        </div>
-        {tab.sessions.map((name) => (
-          <div key={name} className="claude-stage" hidden={name !== selected}>
-            <TerminalView
-              session={name}
-              visible={active && name === selected}
-              concealed={modeOf(name) === 'chat'}
-            />
-            {active && name === selected && modeOf(name) === 'chat' ? (
-              <ChatView
-                session={name}
-                wait={waitOf(name)}
-                onOpenTerminal={() => {
-                  chooseMode(name, 'terminal')
+            <button
+              type="button"
+              role="tab"
+              aria-selected={name === selected}
+              onClick={() => {
+                onSelect(name)
+              }}
+            >
+              {sessionLabel(name)}
+            </button>
+            {index === 0 ? null : (
+              <CloseButton
+                className="ml-1 size-6"
+                aria-label={t(`Close ${sessionLabel(name)}`, `Đóng ${sessionLabel(name)}`)}
+                onPress={() => {
+                  onClose(name)
                 }}
               />
-            ) : null}
+            )}
           </div>
         ))}
+        <Button
+          isIconOnly
+          variant="ghost"
+          size="sm"
+          aria-label={t('New Claude session', 'Phiên Claude mới')}
+          onPress={onAdd}
+        >
+          <Plus />
+        </Button>
       </div>
+      {tab.sessions.map((name) => (
+        <div
+          key={name}
+          data-testid={`claude-session-${name}`}
+          className="flex min-h-0 flex-1"
+          hidden={!active || name !== selected}
+        >
+          <ChatView session={name} shown={active && name === selected} />
+        </div>
+      ))}
     </div>
   )
 }

@@ -1,5 +1,7 @@
 import type {
+  AgentMode,
   ChangeGroupView,
+  ChatAnswer,
   ChatView,
   DiffView,
   FileContentView,
@@ -9,7 +11,7 @@ import type {
   WorkspaceView,
 } from '@workday/core'
 import { isRecord } from '../json.js'
-import { ApiError, hasOkFlag, readError, send, type RawResponse } from './client.js'
+import { ApiError, hasOkFlag, isPlainCode, readError, send, type RawResponse } from './client.js'
 
 function isWorkspaceView(value: unknown): value is WorkspaceView {
   return (
@@ -149,10 +151,33 @@ export async function getChat(session: string): Promise<ChatView> {
   return body as ChatView
 }
 
-export function sendPrompt(session: string, text: string): Promise<void> {
-  return expectOk('POST', `/api/workspace/sessions/${encodeURIComponent(session)}/prompt`, { text })
+// A refusal names itself in `error.code`; it rides on the ApiError so the composer can show its text.
+async function expectOkWithCode(path: string, payload: unknown): Promise<void> {
+  const raw = await send('POST', path, payload)
+  if (raw.ok) {
+    return
+  }
+  const error = isRecord(raw.body) ? raw.body['error'] : undefined
+  const code = isRecord(error) && isPlainCode(error['code']) ? error['code'] : null
+  throw new ApiError(raw.status, path, code)
 }
 
-export function sendKey(session: string, key: 'escape' | 'shiftTab'): Promise<void> {
-  return expectOk('POST', `/api/workspace/sessions/${encodeURIComponent(session)}/key`, { key })
+function sessionPath(session: string, suffix: string): string {
+  return `/api/workspace/sessions/${encodeURIComponent(session)}/${suffix}`
+}
+
+export function sendPrompt(session: string, text: string): Promise<void> {
+  return expectOkWithCode(sessionPath(session, 'prompt'), { text })
+}
+
+export function interruptSession(session: string): Promise<void> {
+  return expectOk('POST', sessionPath(session, 'interrupt'))
+}
+
+export function setSessionMode(session: string, mode: AgentMode): Promise<void> {
+  return expectOk('POST', sessionPath(session, 'mode'), { mode })
+}
+
+export function answerRequest(session: string, id: string, answer: ChatAnswer): Promise<void> {
+  return expectOk('POST', sessionPath(session, `requests/${encodeURIComponent(id)}`), answer)
 }

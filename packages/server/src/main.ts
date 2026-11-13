@@ -52,7 +52,6 @@ async function main(): Promise<void> {
     ...services,
   })
   await app.listen({ host: LISTEN_HOST, port })
-  services.workspace.setHookBase(`http://${LISTEN_HOST}:${String(port)}`)
   services.settings.start()
   services.timesheet.catchUp().catch((error: unknown) => {
     console.error('Startup catch-up failed', error)

@@ -35,6 +35,13 @@ describe('parseTranscript', () => {
     ])
   })
 
+  it('shows an interrupt marker as a notice, not a prompt', () => {
+    const rows = parse([user([{ type: 'text', text: '[Request interrupted by user]' }])])
+    expect(rows.map((row) => [row.role, row.text])).toEqual([
+      ['notice', '[Request interrupted by user]'],
+    ])
+  })
+
   it('turns a command into /cmd args and hides reminders', () => {
     const rows = parse([
       user('<command-name>/review</command-name><command-args> now </command-args>'),

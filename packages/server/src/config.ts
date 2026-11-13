@@ -5,6 +5,7 @@ import {
   parseTime,
   SCAN_DAYS,
   SCAN_LIMIT_HOURS,
+  type AgentMode,
   type KnowledgeScanConfig,
   type AzureDevOpsConfig,
   type HrmConfig,
@@ -368,6 +369,17 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
   }
 }
 
+const AGENT_MODES: ReadonlySet<string> = new Set([
+  'default',
+  'acceptEdits',
+  'plan',
+  'bypassPermissions',
+])
+
+function agentModeOf(value: unknown): AgentMode {
+  return typeof value === 'string' && AGENT_MODES.has(value) ? (value as AgentMode) : 'default'
+}
+
 // A missing or wrong-typed field takes its default; never null.
 export function parseWorkspace(raw: unknown): WorkspaceConfig {
   if (!isRecord(raw)) {
@@ -379,7 +391,7 @@ export function parseWorkspace(raw: unknown): WorkspaceConfig {
     startPrompt: textOrNull(raw['startPrompt']),
     claudeExecutable: textOrNull(raw['claudeExecutable']),
     localOnlyPaths: stringList(raw['localOnlyPaths']).filter((path) => path !== ''),
-    chatView: raw['chatView'] === true,
+    permissionMode: agentModeOf(raw['permissionMode']),
   }
 }
 
@@ -417,7 +429,7 @@ export const DEFAULT_WORKSPACE: WorkspaceConfig = {
   startPrompt: null,
   claudeExecutable: null,
   localOnlyPaths: [],
-  chatView: false,
+  permissionMode: 'default',
 }
 
 const DEFAULT_CONFIG: WorkdayConfig = {

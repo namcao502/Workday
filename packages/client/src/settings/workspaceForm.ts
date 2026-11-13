@@ -1,4 +1,4 @@
-import type { WorkspaceConfig } from '@workday/core'
+import type { AgentMode, WorkspaceConfig } from '@workday/core'
 
 export interface WorkspaceForm {
   readonly devRepoPath: string
@@ -6,7 +6,7 @@ export interface WorkspaceForm {
   readonly startPrompt: string
   readonly claudeExecutable: string
   readonly localOnlyPaths: string // one path per line
-  readonly chatView: boolean
+  readonly permissionMode: AgentMode // the mode a new chat session starts in
 }
 
 export function formFromWorkspace(workspace: WorkspaceConfig): WorkspaceForm {
@@ -16,7 +16,7 @@ export function formFromWorkspace(workspace: WorkspaceConfig): WorkspaceForm {
     startPrompt: workspace.startPrompt ?? '',
     claudeExecutable: workspace.claudeExecutable ?? '',
     localOnlyPaths: workspace.localOnlyPaths.join('\n'),
-    chatView: workspace.chatView,
+    permissionMode: workspace.permissionMode,
   }
 }
 
@@ -35,6 +35,6 @@ export function workspaceFromForm(form: WorkspaceForm): WorkspaceConfig {
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line !== ''),
-    chatView: form.chatView,
+    permissionMode: form.permissionMode,
   }
 }

@@ -1,3 +1,4 @@
+import { Chip, Disclosure, Spinner } from '@heroui/react'
 import type { ChatMessage } from '@workday/core'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -42,18 +43,30 @@ const COMPONENTS: Components = {
   ),
 }
 
-function ToolLine({ message }: { readonly message: ChatMessage }): React.JSX.Element {
-  const suffix =
-    message.status === 'running'
-      ? t('running', 'đang chạy')
-      : message.status === 'background'
-        ? t('background', 'nền')
-        : null
+export function ChatMarkdown({ text }: { readonly text: string }): React.JSX.Element {
   return (
-    <div className="chat-tool" data-error={message.isError}>
-      <span className="chat-tool-name">{message.toolName ?? ''}</span>
-      {message.toolDetail === null ? null : <span> {message.toolDetail}</span>}
-      {suffix === null ? null : <span className="chat-tool-status"> {suffix}</span>}
+    <div className="markdown-view break-words text-sm">
+      <Markdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
+        {text}
+      </Markdown>
+    </div>
+  )
+}
+
+function ToolLine({ message }: { readonly message: ChatMessage }): React.JSX.Element {
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-1 font-mono text-xs whitespace-pre-wrap ${message.isError ? 'text-danger' : 'text-muted'}`}
+      data-error={message.isError}
+    >
+      <span className="font-semibold">{message.toolName ?? ''}</span>
+      {message.toolDetail === null ? null : <span>{message.toolDetail}</span>}
+      {message.status === 'running' ? (
+        <Spinner size="sm" aria-label={t('running', 'đang chạy')} />
+      ) : null}
+      {message.status === 'background' ? (
+        <Chip size="sm">{t('Background', 'Chạy nền')}</Chip>
+      ) : null}
     </div>
   )
 }
@@ -63,16 +76,19 @@ function MessageRow({ message }: { readonly message: ChatMessage }): React.JSX.E
     return <ToolLine message={message} />
   }
   if (message.role === 'assistant') {
+    return <ChatMarkdown text={message.text ?? ''} />
+  }
+  if (message.role === 'user') {
     return (
-      <div className="chat-assistant markdown-view">
-        <Markdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
-          {message.text ?? ''}
-        </Markdown>
+      <div className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap">
+        {message.text}
       </div>
     )
   }
   return (
-    <div className={`chat-${message.role}`} data-error={message.isError}>
+    <div
+      className={`self-center text-center text-xs whitespace-pre-wrap ${message.isError ? 'text-danger' : 'text-muted'}`}
+    >
       {message.text}
     </div>
   )
@@ -87,14 +103,21 @@ export function ChatRows({
     <>
       {groupRows(messages).map((row) =>
         row.kind === 'steps' ? (
-          <details key={row.tools[0]?.id} className="chat-steps">
-            <summary>
-              {t(`${String(row.tools.length)} steps`, `${String(row.tools.length)} bước`)}
-            </summary>
-            {row.tools.map((tool) => (
-              <ToolLine key={tool.id} message={tool} />
-            ))}
-          </details>
+          <Disclosure key={row.tools[0]?.id}>
+            <Disclosure.Heading>
+              <Disclosure.Trigger className="flex items-center gap-1 text-xs text-muted">
+                {t(`${String(row.tools.length)} steps`, `${String(row.tools.length)} bước`)}
+                <Disclosure.Indicator />
+              </Disclosure.Trigger>
+            </Disclosure.Heading>
+            <Disclosure.Content>
+              <Disclosure.Body className="flex flex-col gap-1 pt-1">
+                {row.tools.map((tool) => (
+                  <ToolLine key={tool.id} message={tool} />
+                ))}
+              </Disclosure.Body>
+            </Disclosure.Content>
+          </Disclosure>
         ) : (
           <MessageRow key={row.message.id} message={row.message} />
         ),

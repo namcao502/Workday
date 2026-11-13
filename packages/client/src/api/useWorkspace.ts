@@ -9,7 +9,6 @@ import type {
 } from '@workday/core'
 import { useMemo } from 'react'
 import { queryKeys } from './client.js'
-import { useSettings } from './useSettings.js'
 import { useAccess } from './useMe.js'
 import {
   addSession,
@@ -116,17 +115,7 @@ export function chatKey(session: string): readonly string[] {
   return ['workspace', 'chat', session]
 }
 
-// Polled once a second, and only while the Chat is showing.
+// Refetched by the chat.changed event, not polled; only the shown session asks.
 export function useChat(session: string, active: boolean): UseQueryResult<ChatView> {
-  return useQuery({
-    queryKey: chatKey(session),
-    queryFn: () => getChat(session),
-    enabled: active,
-    refetchInterval: active ? 1000 : false,
-  })
-}
-
-export function useChatViewEnabled(): boolean {
-  const config = useSettings().data?.config
-  return config?.workspace.chatView === true
+  return useQuery({ queryKey: chatKey(session), queryFn: () => getChat(session), enabled: active })
 }

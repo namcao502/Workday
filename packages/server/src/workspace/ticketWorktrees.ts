@@ -1,6 +1,6 @@
 import { readdir } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
-import { isDirectory } from './sessionHost.js'
+import { isDirectory } from './agentSession.js'
 
 export interface TicketWorktree {
   readonly repository: string

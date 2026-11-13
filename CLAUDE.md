@@ -27,7 +27,7 @@ npx vitest run -t "health returns ok" --root packages/server
 
 - `packages/core` (`@workday/core`): domain logic and the port interfaces. No I/O.
 - `packages/server` (`@workday/server`): Fastify app (`createApp(deps)`), REST + WebSocket, adapters for the ports.
-- `packages/client` (`@workday/client`): Vite + React UI built on HeroUI + Tailwind; `src/ui/` holds the shared components, hand-written CSS remains only for the Claude pane and rendered content.
+- `packages/client` (`@workday/client`): Vite + React UI built on HeroUI + Tailwind; `src/ui/` holds the shared components, hand-written CSS remains only for rendered content (markdown, code, diff, Teams HTML).
 
 `@workday/core` exports a `development` condition pointing at `src`, so dev and tests need no core build;
 `npm start` uses the built `dist`.
@@ -51,8 +51,12 @@ Each package has two tsconfigs: `tsconfig.json` (noEmit, includes tests; used by
   with `t(en, vi)` (`i18n.ts`).
 - Per-user JSON files (`config.json`, `secrets.json`, `board.json`) go through `jsonFile.ts`: runtime-validated
   parse, atomic write, a corrupt file renamed to `<file>.bad`. Data dir: `dataDir.ts` (`WORKDAY_DATA_DIR` overrides).
-  Everything the server writes lives in the data dir (browser profiles, hook files, scan logs, `tmp/` for Teams
+  Everything the server writes lives in the data dir (browser profiles, scan logs, `tmp/` for Teams
   hand-offs); secrets belong in the encrypted `secrets.json`, the `WORKDAY_*` env variables are only overrides.
+- Claude in the Workspace runs through `@anthropic-ai/claude-agent-sdk`: one `AgentSession` per session
+  (`server/src/workspace/agentSession.ts`, port `ClaudeAgent` in core), started by the first prompt. Permission,
+  question and plan prompts arrive through `canUseTool` and wait as `ChatRequest`s; chat history is read from the
+  transcript. No PTY, no hooks.
 - The C# app in `C:\Project\NoisWorkday` is the spec being ported phase by phase; its tests become Vitest tests.
   Plans and impl notes per phase live in `docs/<slug>/` (`plan.md` has the phase roadmap in `docs/web-foundation/`).
 

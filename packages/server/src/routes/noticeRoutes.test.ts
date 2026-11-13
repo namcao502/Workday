@@ -65,10 +65,17 @@ describe('notice routes', () => {
   it('a new finished wait adds one claude notice and seeing the session reads it', async () => {
     const testApp = await localApp()
     const { workspace, notices } = testApp.services
+    await testApp.app.inject({
+      method: 'PUT',
+      url: '/api/settings',
+      headers: LOOPBACK_HEADERS,
+      payload: { workspace: { devRepoPath: testApp.homeDir } },
+    })
     await workspace.addTerminal(null)
 
-    await workspace.onHook('claude', workspace.hookToken, { hook_event_name: 'Stop' })
-    await workspace.onHook('claude', workspace.hookToken, { hook_event_name: 'Stop' })
+    workspace.prompt('claude', 'one')
+    testApp.agent.last().emit({ type: 'turnEnded', ok: true })
+    testApp.agent.last().emit({ type: 'turnEnded', ok: true })
 
     await expect.poll(() => notices.view().notices.length).toBe(1)
     const { notices: added, unread } = notices.view()

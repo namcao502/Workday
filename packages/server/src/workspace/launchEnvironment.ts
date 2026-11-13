@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs'
-import { basename, delimiter, dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { claudeProjectDirName, isClaudeSessionVariable } from '@workday/core'
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -8,17 +8,7 @@ export function isGuid(value: string): boolean {
   return GUID.test(value)
 }
 
-export function findPowerShell7(pathValue: string | undefined): string | null {
-  for (const folder of (pathValue ?? '').split(delimiter)) {
-    const candidate = folder.trim() === '' ? '' : join(folder.trim(), 'pwsh.exe')
-    if (candidate !== '' && existsSync(candidate)) {
-      return candidate
-    }
-  }
-  return null
-}
-
-// On Windows the fallback is claude.exe: a bare `claude` inside the shell's claude function would call itself.
+// The installed native binary, else the bare name looked up on PATH.
 export function defaultClaudeExecutable(homeDir: string, isWindows: boolean): string {
   const fileName = isWindows ? 'claude.exe' : 'claude'
   const installed = join(homeDir, '.local', 'bin', fileName)
@@ -50,14 +40,4 @@ export function folderHasTranscripts(projectsRoot: string, cwd: string): boolean
   } catch {
     return false
   }
-}
-
-// Tells a claude started in this folder from one the user started elsewhere after a cd.
-export function isTranscriptOfFolder(transcriptPath: string | null, cwd: string): boolean {
-  if (transcriptPath === null || transcriptPath === '') {
-    return false
-  }
-  const normalized = transcriptPath.replaceAll('\\', '/')
-  const folderName = basename(dirname(normalized))
-  return folderName.toLowerCase() === claudeProjectDirName(cwd).toLowerCase()
 }

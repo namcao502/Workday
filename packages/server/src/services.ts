@@ -2,6 +2,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type {
   AzureDevOpsConfig,
+  ClaudeAgent,
   HoursLog,
   HrmConfig,
   JiraConfig,
@@ -47,9 +48,9 @@ import { runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
 import { TimesheetService } from './timesheet/timesheetService.js'
-import { spawnNodePty } from './workspace/nodePty.js'
+import { defaultClaudeExecutable, sessionEnvironment } from './workspace/launchEnvironment.js'
 import type { SpawnEditor } from './workspace/openInEditor.js'
-import type { SpawnPty } from './workspace/pty.js'
+import { createSdkAgent } from './workspace/sdkAgent.js'
 import { WorkspaceService } from './workspace/workspaceService.js'
 import { loadWorkspace, saveWorkspace } from './workspace/workspaceStore.js'
 import {
@@ -84,8 +85,8 @@ export interface ServicesOptions {
   // Tests pass their own; by default web-push and a real cloudflared process.
   readonly sendPush?: SendPush
   readonly spawnTunnel?: SpawnTunnel
-  // Tests pass a fake PTY and a temp home, so no real shell or ~/.claude is touched.
-  readonly spawnPty?: SpawnPty
+  // Tests pass a fake agent and a temp home, so no real claude or ~/.claude is touched.
+  readonly agent?: ClaudeAgent
   readonly homeDir?: string
   readonly tmpDir?: string // Teams hand-off task files go under it; default <dataDir>/tmp
   readonly spawnEditor?: SpawnEditor
@@ -192,8 +193,17 @@ export function createServices(options: ServicesOptions): Services {
     environment: process.env,
     logError: reportError,
   })
+  const homeDir = options.homeDir ?? homedir()
+  const agent =
+    options.agent ??
+    createSdkAgent({
+      executable: () =>
+        settings.view().config.workspace.claudeExecutable ??
+        defaultClaudeExecutable(homeDir, process.platform === 'win32'),
+      env: () => sessionEnvironment(process.env),
+      logError: reportError,
+    })
   const workspace = new WorkspaceService({
-    dataDir,
     config: config.workspace,
     initialState: loadWorkspace(dataDir),
     save: (state) => saveWorkspace(dataDir, state),
@@ -208,9 +218,9 @@ export function createServices(options: ServicesOptions): Services {
         reportError('Reading a Claude notice failed', error)
       })
     },
-    spawn: options.spawnPty ?? spawnNodePty,
+    agent,
     ...(options.spawnEditor === undefined ? {} : { spawnEditor: options.spawnEditor }),
-    homeDir: options.homeDir ?? homedir(),
+    homeDir,
     board,
     timesheet,
     createWorktree:
@@ -313,7 +323,7 @@ export function createServices(options: ServicesOptions): Services {
   })
   const insights = createInsights({
     dataDir,
-    homeDir: options.homeDir ?? homedir(),
+    homeDir,
     config: () => settings.view().config,
     board: () => board.snapshot(),
     hrmTasks: (from, to) => timesheet.hrmTasks(from, to),

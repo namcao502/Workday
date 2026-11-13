@@ -9,7 +9,7 @@ import { createServices, type Services } from '../services.js'
 import type { WorktreeOptions } from '../workspace/worktreeService.js'
 import { FakeHoursLog, FakePullRequests, FakeSheetLog, FakeTracker } from './fakes.js'
 import type { EditorCommand } from '../workspace/openInEditor.js'
-import { FakePtyFactory } from './fakePty.js'
+import { FakeClaudeAgent } from './fakeAgent.js'
 import { FakeScanProcess } from './fakeScan.js'
 import { FakeTeams } from './fakeTeams.js'
 
@@ -57,7 +57,7 @@ export interface TestApp {
   readonly prSchedulerStops: { count: number }
   readonly teamsSchedulerStarts: number[]
   readonly pushes: PushCall[]
-  readonly ptys: FakePtyFactory
+  readonly agent: FakeClaudeAgent // every Claude session the workspace started
   readonly homeDir: string
   readonly editorCommands: EditorCommand[] // what the fake VS Code spawner was asked to run
   readonly worktrees: WorktreeOptions[] // what Start asked the fake worktree service to create
@@ -88,7 +88,7 @@ export async function buildTestApp(
   const pullRequestsCalls: PullRequestsCall[] = []
   const logTimes: string[] = []
   const pushes: PushCall[] = []
-  const ptys = new FakePtyFactory()
+  const agent = new FakeClaudeAgent()
   const worktrees: WorktreeOptions[] = []
   const editorCommands: EditorCommand[] = []
   const homeDir = mkdtempSync(join(tmpdir(), 'workday-home-'))
@@ -155,7 +155,7 @@ export async function buildTestApp(
     spawnTunnel: () => {
       throw new Error('A test must not start cloudflared')
     },
-    spawnPty: ptys.spawn,
+    agent,
     spawnScan: () => {
       const scan = new FakeScanProcess()
       scans.push(scan)
@@ -202,7 +202,7 @@ export async function buildTestApp(
     prSchedulerStops,
     teamsSchedulerStarts,
     pushes,
-    ptys,
+    agent,
     homeDir,
     worktrees,
     editorCommands,

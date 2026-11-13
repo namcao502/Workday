@@ -4,20 +4,6 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
 import { WorkspacePage } from './WorkspacePage.js'
 
-const terminalMounts: string[] = []
-
-vi.mock('./TerminalView.js', async () => {
-  const { useEffect } = await import('react')
-  return {
-    TerminalView: ({ session, visible }: { session: string; visible: boolean }) => {
-      useEffect(() => {
-        terminalMounts.push(session)
-      }, [session])
-      return <div data-testid={`terminal-${session}`} hidden={!visible} />
-    },
-  }
-})
-
 function ticketTab(id: string, extra: readonly string[] = []): WorkspaceTab {
   return { id, kind: 'ticket', folder: null, sessions: [id, ...extra] }
 }
@@ -91,29 +77,25 @@ it('the + menu adds a terminal for the dev repo', async () => {
   })
 })
 
-it('the workspace page is not wrapped in .legacy-page but the Claude pane is', async () => {
+it('the workspace page renders no terminal and no .legacy-page', async () => {
   stubWorkspace(view())
   const { container } = renderWithQuery(<WorkspacePage />)
-  const left = await screen.findByTestId('workspace-left')
-  expect(left.closest('.legacy-page')).toBeNull()
-  expect(screen.getByRole('tablist', { name: 'Workspace tabs' }).closest('.legacy-page')).toBeNull()
-  const panes = container.querySelectorAll('.claude-pane')
-  expect(panes.length).toBeGreaterThan(0)
-  for (const pane of panes) {
-    expect(pane.closest('.legacy-page')).not.toBeNull()
-  }
+  await screen.findByTestId('workspace-left')
+  expect(container.querySelector('.legacy-page')).toBeNull()
+  expect(container.querySelector('.xterm, .terminal-host')).toBeNull()
+  expect(screen.getAllByTestId(/^claude-session-/).length).toBeGreaterThan(0)
 })
 
 it('keeps every session of the open tab mounted and hides the unselected one', async () => {
   stubWorkspace(view())
   window.location.hash = '#/workspace/MDP-2/MDP-2~2'
   renderWithQuery(<WorkspacePage />)
-  await screen.findByTestId('terminal-MDP-2~2')
+  await screen.findByTestId('claude-session-MDP-2~2')
   await waitFor(() => {
-    expect(screen.getByTestId('terminal-MDP-2')).toHaveAttribute('hidden')
+    expect(screen.getByTestId('claude-session-MDP-2')).toHaveAttribute('hidden')
   })
-  expect(screen.getByTestId('terminal-MDP-2~2')).not.toHaveAttribute('hidden')
-  expect(screen.getByTestId('terminal-MDP-1')).toHaveAttribute('hidden')
+  expect(screen.getByTestId('claude-session-MDP-2~2')).not.toHaveAttribute('hidden')
+  expect(screen.getByTestId('claude-session-MDP-1')).toHaveAttribute('hidden')
 })
 
 it('switching tabs back and forth leaves exactly one file pane', async () => {
@@ -129,18 +111,17 @@ it('switching tabs back and forth leaves exactly one file pane', async () => {
   expect(screen.getAllByTestId('workspace-left')).toHaveLength(1)
 })
 
-it('switching tickets keeps each terminal mounted instead of reconnecting it', async () => {
-  terminalMounts.length = 0
+it('switching tickets keeps each Claude session mounted instead of remounting it', async () => {
   stubWorkspace(view())
   renderWithQuery(<WorkspacePage />)
-  await screen.findByTestId('terminal-MDP-1')
+  const first = await screen.findByTestId('claude-session-MDP-1')
   for (const id of ['MDP-2', 'MDP-1', 'MDP-2']) {
     fireEvent.click(screen.getByRole('tab', { name: id }))
     await waitFor(() => {
       expect(screen.getByRole('tab', { name: id })).toHaveAttribute('aria-selected', 'true')
     })
   }
-  expect([...terminalMounts].sort()).toEqual(['MDP-1', 'MDP-2', 'MDP-2~2'])
-  expect(screen.getByTestId('terminal-MDP-1')).toHaveAttribute('hidden')
-  expect(screen.getByTestId('terminal-MDP-2')).not.toHaveAttribute('hidden')
+  expect(screen.getByTestId('claude-session-MDP-1')).toBe(first)
+  expect(screen.getByTestId('claude-session-MDP-1')).toHaveAttribute('hidden')
+  expect(screen.getByTestId('claude-session-MDP-2')).not.toHaveAttribute('hidden')
 })
