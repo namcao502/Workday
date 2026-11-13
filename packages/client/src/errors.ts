@@ -88,5 +88,11 @@ export function errorText(error: AppError): string {
       return t('That path is outside the worktree', 'Đường dẫn nằm ngoài worktree')
     case 'gitFailed':
       return t('A git command failed', 'Lệnh git thất bại')
+    case 'adoRejected':
+      return t('Azure DevOps rejected the token', 'Azure DevOps từ chối token')
+    case 'adoUnreachable':
+      return t('Azure DevOps could not be reached', 'Không kết nối được tới Azure DevOps')
+    case 'adoNotConfigured':
+      return t('Azure DevOps is not set up', 'Chưa cấu hình Azure DevOps')
   }
 }

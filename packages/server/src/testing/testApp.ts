@@ -1,13 +1,13 @@
 import { mkdirSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { HrmConfig, JiraConfig } from '@workday/core'
+import type { AzureDevOpsConfig, HrmConfig, JiraConfig } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import { createApp } from '../app.js'
 import { loadConfig } from '../config.js'
 import { createServices, type Services } from '../services.js'
 import type { WorktreeOptions } from '../workspace/worktreeService.js'
-import { FakeHoursLog, FakeSheetLog, FakeTracker } from './fakes.js'
+import { FakeHoursLog, FakePullRequests, FakeSheetLog, FakeTracker } from './fakes.js'
 import type { EditorCommand } from '../workspace/openInEditor.js'
 import { FakePtyFactory } from './fakePty.js'
 
@@ -27,6 +27,11 @@ export interface HoursLogCall {
   readonly apiKey: string
 }
 
+export interface PullRequestsCall {
+  readonly config: AzureDevOpsConfig
+  readonly pat: string
+}
+
 export interface PushCall {
   readonly endpoint: string
   readonly payload: string
@@ -41,9 +46,13 @@ export interface TestApp {
   readonly sheet: FakeSheetLog
   readonly hours: FakeHoursLog
   readonly hoursLogCalls: HoursLogCall[]
+  readonly pullRequests: FakePullRequests
+  readonly pullRequestsCalls: PullRequestsCall[]
   readonly logTimes: string[]
   readonly schedulerStarts: number[]
   readonly schedulerStops: { count: number }
+  readonly prSchedulerStarts: number[]
+  readonly prSchedulerStops: { count: number }
   readonly pushes: PushCall[]
   readonly ptys: FakePtyFactory
   readonly homeDir: string
@@ -64,9 +73,13 @@ export async function buildTestApp(
   const trackerCalls: TrackerCall[] = []
   const schedulerStarts: number[] = []
   const schedulerStops = { count: 0 }
+  const prSchedulerStarts: number[] = []
+  const prSchedulerStops = { count: 0 }
   const sheet = new FakeSheetLog()
   const hours = new FakeHoursLog()
   const hoursLogCalls: HoursLogCall[] = []
+  const pullRequests = new FakePullRequests()
+  const pullRequestsCalls: PullRequestsCall[] = []
   const logTimes: string[] = []
   const pushes: PushCall[] = []
   const ptys = new FakePtyFactory()
@@ -84,6 +97,10 @@ export async function buildTestApp(
       hoursLogCalls.push({ hrm, apiKey })
       return hours
     },
+    createPullRequests: (config, pat) => {
+      pullRequestsCalls.push({ config, pat })
+      return pullRequests
+    },
     createSheetLog: () => sheet,
     logScheduler: {
       start: (logTime) => {
@@ -93,6 +110,15 @@ export async function buildTestApp(
         logTimes.push(logTime)
       },
       stop: () => undefined,
+    },
+    // Recorded only: the PR check runs when a test asks for it.
+    prScheduler: {
+      start: (minutes) => {
+        prSchedulerStarts.push(minutes)
+      },
+      stop: () => {
+        prSchedulerStops.count += 1
+      },
     },
     scheduler: {
       start: (pollMinutes) => {
@@ -145,9 +171,13 @@ export async function buildTestApp(
     sheet,
     hours,
     hoursLogCalls,
+    pullRequests,
+    pullRequestsCalls,
     logTimes,
     schedulerStarts,
     schedulerStops,
+    prSchedulerStarts,
+    prSchedulerStops,
     pushes,
     ptys,
     homeDir,

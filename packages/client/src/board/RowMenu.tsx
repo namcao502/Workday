@@ -2,7 +2,7 @@ import type { BoardAction } from '@workday/core'
 import { useEffect, useRef, useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { t } from '../i18n.js'
-import type { BoardViewId } from './boardView.js'
+import type { RowViewId } from './boardView.js'
 
 // Start / Open need a configured workspace on the local PC; the Board passes it only then.
 export interface RowWorkspace {
@@ -14,9 +14,10 @@ export interface RowWorkspace {
 
 interface RowMenuProps {
   readonly ticketKey: string
-  readonly view: BoardViewId
+  readonly view: RowViewId
   readonly onAction: (action: BoardAction) => void
   readonly workspace?: RowWorkspace | undefined
+  readonly onReadyToTest?: (() => void) | undefined // set when the ticket has steps left
 }
 
 interface MenuItem {
@@ -50,7 +51,7 @@ function workspaceItems(ticketKey: string, workspace: RowWorkspace): readonly Me
 }
 
 function itemsFor(props: RowMenuProps): readonly MenuItem[] {
-  const { view, ticketKey, onAction, workspace } = props
+  const { view, ticketKey, onAction, workspace, onReadyToTest } = props
   const action = (id: BoardAction, label: string): MenuItem => ({
     id,
     label,
@@ -59,15 +60,20 @@ function itemsFor(props: RowMenuProps): readonly MenuItem[] {
     },
   })
   const dismiss = action('dismiss', t('Dismiss', 'Bỏ qua'))
+  const readyToTest: readonly MenuItem[] =
+    onReadyToTest === undefined
+      ? []
+      : [{ id: 'readyToTest', label: t('Ready to Test', 'Ready to Test'), run: onReadyToTest }]
   switch (view) {
     case 'working':
       return [
         ...(workspace === undefined ? [] : workspaceItems(ticketKey, workspace)),
+        ...readyToTest,
         action('done', t('Done', 'Hoàn thành')),
         dismiss,
       ]
     case 'done':
-      return [action('reopen', t('Reopen', 'Mở lại')), dismiss]
+      return [...readyToTest, action('reopen', t('Reopen', 'Mở lại')), dismiss]
     case 'dismissed':
       return [action('restore', t('Restore', 'Khôi phục'))]
   }

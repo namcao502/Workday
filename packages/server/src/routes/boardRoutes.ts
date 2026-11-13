@@ -2,6 +2,7 @@ import type { BoardAction } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import type { BoardService } from '../board/boardService.js'
 import { isRecord } from '../jsonFile.js'
+import type { PrService } from '../prs/prService.js'
 
 const BOARD_VIEW = { config: { access: { area: 'board', level: 'view' } } } as const
 const BOARD_ACT = { config: { access: { area: 'board', level: 'act' } } } as const
@@ -11,7 +12,11 @@ function isBoardAction(value: string): value is BoardAction {
   return value === 'done' || value === 'reopen' || value === 'dismiss' || value === 'restore'
 }
 
-export function registerBoardRoutes(app: FastifyInstance, board: BoardService): void {
+export function registerBoardRoutes(
+  app: FastifyInstance,
+  board: BoardService,
+  prs: PrService,
+): void {
   app.get('/api/board', BOARD_VIEW, () => board.view())
 
   app.post('/api/board/check', BOARD_ACT, async (_request, reply) => {
@@ -19,6 +24,7 @@ export function registerBoardRoutes(app: FastifyInstance, board: BoardService): 
       return reply.code(409).send(NOT_CONNECTED)
     }
     await board.poll()
+    await prs.check()
     return board.view()
   })
 

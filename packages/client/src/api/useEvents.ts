@@ -36,14 +36,20 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
       const type = isRecord(parsed) ? parsed['type'] : undefined
       if (type === 'board.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.board })
+        void queryClient.invalidateQueries({ queryKey: queryKeys.work })
       } else if (type === 'settings.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
       } else if (type === 'remote.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.remote })
       } else if (type === 'timesheet.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.timesheet })
+      } else if (type === 'notices.changed') {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.notices })
+      } else if (type === 'work.changed') {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.work })
       } else if (type === 'workspace.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.workspace })
+        void queryClient.invalidateQueries({ queryKey: queryKeys.work })
       }
     }
 

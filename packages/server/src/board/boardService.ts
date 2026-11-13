@@ -193,6 +193,31 @@ export class BoardService {
     await this.enqueue(() => this.commit(startTicket(this.state, key)))
   }
 
+  snapshot(): BoardState {
+    return this.state
+  }
+
+  // Re-reads one ticket after a Jira move; a key off the board changes nothing. Never throws.
+  async refreshTicket(key: string): Promise<void> {
+    const { tracker } = this.settings
+    if (tracker === null) {
+      return
+    }
+    try {
+      const ticket = await tracker.getTicket(key)
+      if (ticket === null) {
+        return
+      }
+      await this.enqueue(async () => {
+        if (this.settings.tracker === tracker && this.isOnBoard(key)) {
+          await this.commit(applyLiveTickets(this.state, { [key]: ticket }))
+        }
+      })
+    } catch (error: unknown) {
+      this.logError(`Refreshing ${key} failed`, error)
+    }
+  }
+
   // The parent a sub-task's worktree is cut from; null for a ticket without one or off the board.
   parentKeyOf(key: string): string | null {
     for (const section of SECTIONS) {

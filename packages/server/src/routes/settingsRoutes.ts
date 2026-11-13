@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import {
+  parseAdoCheckRequest,
   parseHrmCheckRequest,
   parseJiraCheckRequest,
   parseSettingsUpdate,
@@ -10,7 +11,10 @@ const TOKEN_REQUIRED = {
   error: 'jiraApiToken is required for a Jira base URL without a saved token',
 }
 const SECRET_REQUIRED = {
-  error: 'jiraApiToken or hrmApiKey is required for a host without a saved one',
+  error: 'jiraApiToken, hrmApiKey or adoPat is required for a host without a saved one',
+}
+const ADO_PAT_REQUIRED = {
+  error: 'adoPat is required for an organization without a saved PAT',
 }
 const HRM_KEY_REQUIRED = {
   error: 'hrmApiKey is required for an MCP URL without a saved key',
@@ -52,6 +56,18 @@ export function registerSettingsRoutes(app: FastifyInstance, settings: SettingsS
     const result = await settings.checkHrm(checkRequest)
     if (result === 'tokenRequired') {
       return reply.code(400).send(HRM_KEY_REQUIRED)
+    }
+    return result
+  })
+
+  app.post('/api/settings/ado/check', async (request, reply) => {
+    const checkRequest = parseAdoCheckRequest(request.body)
+    if (checkRequest === null) {
+      return reply.code(400).send({ error: 'Body must be { organization, project, adoPat? }' })
+    }
+    const result = await settings.checkAdo(checkRequest)
+    if (result === 'tokenRequired') {
+      return reply.code(400).send(ADO_PAT_REQUIRED)
     }
     return result
   })

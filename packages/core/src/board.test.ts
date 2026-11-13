@@ -19,6 +19,8 @@ import { makeTicket } from './testing/ticketFixture.js'
 const mdpFlow: StatusFlow = {
   preWorkStatuses: ['Backlog', 'Selected for Development', 'In Progress', 'Hold'],
   reworkStatuses: ['In Progress', 'QA Failed', 'Reopened'],
+  readyToTestPath: [],
+  developerStatuses: [],
 }
 
 function byKey(...tickets: Ticket[]): Record<string, Ticket> {

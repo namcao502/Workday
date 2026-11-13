@@ -14,7 +14,8 @@ const CONFIG: JiraConfig = {
   maxResults: 50,
   etaFieldId: 'customfield_10735',
   devPriorityFieldId: 'customfield_11111',
-  statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
+  statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+  suggestions: null,
 }
 
 function fixture(name: string): string {
@@ -256,5 +257,116 @@ describe('ticketUrl', () => {
   it('links to the browse page without a doubled slash', () => {
     const { tracker } = trackerReturning(200, '{}')
     expect(tracker.ticketUrl('MDP-1')).toBe(`${BASE_URL}/browse/MDP-1`)
+  })
+})
+
+function queued(...responses: Response[]): { tracker: JiraTracker; fetchMock: FetchMock } {
+  const fetchMock = vi.fn<typeof fetch>()
+  for (const response of responses) {
+    fetchMock.mockResolvedValueOnce(response)
+  }
+  return { tracker: new JiraTracker(CONFIG, 'secret-token', fetchMock), fetchMock }
+}
+
+function callOf(fetchMock: FetchMock, index: number): { method: string; url: string; body: string } {
+  const call = fetchMock.mock.calls[index]
+  const body = call?.[1]?.body
+  return {
+    method: call?.[1]?.method ?? '',
+    url: typeof call?.[0] === 'string' ? call[0] : '',
+    body: typeof body === 'string' ? body : '',
+  }
+}
+
+describe('transition', () => {
+  const TRANSITIONS =
+    '{"transitions":[{"id":"9","to":{"name":"PR & Code Review"}},{"id":"11","to":{"name":"Ready To Test"}}]}'
+
+  it('posts the id of the transition to the target status', async () => {
+    const { tracker, fetchMock } = queued(respond(200, TRANSITIONS), new Response(null, { status: 204 }))
+
+    expect(await tracker.transition('MDP-1', 'Ready to Test')).toBe(true)
+
+    expect(callOf(fetchMock, 0)).toMatchObject({
+      method: 'GET',
+      url: `${BASE_URL}/rest/api/3/issue/MDP-1/transitions`,
+    })
+    expect(callOf(fetchMock, 1)).toEqual({
+      method: 'POST',
+      url: `${BASE_URL}/rest/api/3/issue/MDP-1/transitions`,
+      body: '{"transition":{"id":"11"}}',
+    })
+  })
+
+  it('returns false when no transition leads there', async () => {
+    const { tracker, fetchMock } = queued(respond(200, TRANSITIONS))
+
+    expect(await tracker.transition('MDP-1', 'Deployed to Dev')).toBe(false)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('throws on an HTTP failure of the POST and does not re-send it', async () => {
+    const { tracker, fetchMock } = queued(respond(200, TRANSITIONS), respond(400, '{}'))
+
+    await expect(tracker.transition('MDP-1', 'Ready to Test')).rejects.toThrow()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('assignToMe', () => {
+  const me = (): Response => respond(200, '{"accountId":"me-id"}')
+
+  it('returns the holder when someone else has the ticket', async () => {
+    const issue = respond(200, '{"fields":{"assignee":{"accountId":"other","displayName":"Lan"}}}')
+    const { tracker, fetchMock } = queued(me(), issue)
+
+    expect(await tracker.assignToMe('MDP-1')).toBe('Lan')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('puts my account id on an unassigned ticket', async () => {
+    const { tracker, fetchMock } = queued(me(), respond(200, '{"fields":{"assignee":null}}'), new Response(null, { status: 204 }))
+
+    expect(await tracker.assignToMe('MDP-1')).toBeNull()
+    expect(callOf(fetchMock, 2)).toEqual({
+      method: 'PUT',
+      url: `${BASE_URL}/rest/api/3/issue/MDP-1/assignee`,
+      body: '{"accountId":"me-id"}',
+    })
+  })
+
+  it('returns null without a write when the ticket is already mine', async () => {
+    const issue = respond(200, '{"fields":{"assignee":{"accountId":"me-id"}}}')
+    const { tracker, fetchMock } = queued(me(), issue)
+
+    expect(await tracker.assignToMe('MDP-1')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('searchEpicTickets', () => {
+  it('searches with the epic fields plus the dev priority field and parses in order', async () => {
+    const body =
+      '{"issues":[{"key":"MDP-2","fields":{"summary":"S","status":{"name":"Backlog"},"issuetype":{"name":"Bug"},"priority":{"name":"High"},"customfield_11111":1,"duedate":"2026-10-19"}},{"fields":{}}]}'
+    const { tracker, fetchMock } = queued(respond(200, body))
+
+    const tickets = await tracker.searchEpicTickets('parent = X', 25)
+
+    expect(JSON.parse(callOf(fetchMock, 0).body)).toEqual({
+      jql: 'parent = X',
+      maxResults: 25,
+      fields: ['summary', 'status', 'issuetype', 'priority', 'duedate', 'customfield_11111'],
+    })
+    expect(tickets).toEqual([
+      {
+        key: 'MDP-2',
+        summary: 'S',
+        status: 'Backlog',
+        issueType: 'Bug',
+        priority: 'High',
+        devPriority: 1,
+        dueDate: '2026-10-19',
+      },
+    ])
   })
 })

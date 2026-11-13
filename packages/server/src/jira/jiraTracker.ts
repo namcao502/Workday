@@ -1,14 +1,24 @@
 import {
   isTicketKey,
+  type EpicTicket,
   type JiraConfig,
   type Ticket,
   type TicketTracker,
   type TrackerValidation,
 } from '@workday/core'
 import { isRecord } from '../jsonFile.js'
-import { parseIssue, parseSearchResponse, type JiraFieldIds } from './parseJira.js'
+import { retryTransient } from '../retry.js'
+import {
+  findTransitionId,
+  parseAssignee,
+  parseEpicTickets,
+  parseIssue,
+  parseSearchResponse,
+  type JiraFieldIds,
+} from './parseJira.js'
 
 const REQUEST_TIMEOUT_MILLISECONDS = 30_000
+const EPIC_FIELDS: readonly string[] = ['summary', 'status', 'issuetype', 'priority', 'duedate']
 const BASE_FIELDS: readonly string[] = [
   'summary',
   'duedate',
@@ -125,7 +135,71 @@ export class JiraTracker implements TicketTracker {
     return `${this.baseUrl}/browse/${key}`
   }
 
-  private send(method: 'GET' | 'POST', path: string, body?: unknown): Promise<Response> {
+  async searchEpicTickets(jql: string, maxResults: number): Promise<readonly EpicTicket[]> {
+    const fields = [
+      ...EPIC_FIELDS,
+      ...(this.config.devPriorityFieldId === null ? [] : [this.config.devPriorityFieldId]),
+    ]
+    const response = await retryTransient(() =>
+      this.send('POST', '/rest/api/3/search/jql', { jql, maxResults, fields }),
+    )
+    if (!response.ok) {
+      throw new Error(`Jira search failed with status ${String(response.status)}`)
+    }
+    return parseEpicTickets(await response.json(), this.config.devPriorityFieldId)
+  }
+
+  // Only the GET is retried: a POST re-sent after a lost response could apply twice.
+  async transition(key: string, status: string): Promise<boolean> {
+    const path = `/rest/api/3/issue/${encodeURIComponent(key)}/transitions`
+    const listed = await retryTransient(() => this.send('GET', path))
+    if (!listed.ok) {
+      throw new Error(`Jira transitions lookup failed with status ${String(listed.status)}`)
+    }
+    const transitionId = findTransitionId(await listed.json(), status)
+    if (transitionId === null) {
+      return false
+    }
+    const applied = await this.send('POST', path, { transition: { id: transitionId } })
+    if (!applied.ok) {
+      throw new Error(`Jira transition failed with status ${String(applied.status)}`)
+    }
+    return true
+  }
+
+  // Never takes over a ticket someone else holds; a repeated PUT of the same assignee is harmless, so it is retried.
+  async assignToMe(key: string): Promise<string | null> {
+    const myself = await retryTransient(() => this.send('GET', '/rest/api/3/myself'))
+    if (!myself.ok) {
+      throw new Error(`Jira myself lookup failed with status ${String(myself.status)}`)
+    }
+    const me: unknown = await myself.json()
+    const accountId = isRecord(me) ? me['accountId'] : undefined
+    if (typeof accountId !== 'string' || accountId === '') {
+      throw new Error('Jira /myself returned no accountId')
+    }
+    const issuePath = `/rest/api/3/issue/${encodeURIComponent(key)}`
+    const issue = await retryTransient(() => this.send('GET', `${issuePath}?fields=assignee`))
+    if (!issue.ok) {
+      throw new Error(`Jira issue lookup failed with status ${String(issue.status)}`)
+    }
+    const assignee = parseAssignee(await issue.json())
+    if (assignee.accountId === accountId) {
+      return null
+    }
+    if (assignee.accountId !== null) {
+      return assignee.displayName ?? assignee.accountId
+    }
+    const assigned = await retryTransient(() =>
+      this.send('PUT', `${issuePath}/assignee`, { accountId }),
+    )
+    if (!assigned.ok) {
+      throw new Error(`Jira assign failed with status ${String(assigned.status)}`)
+    }
+    return null
+  }
+
+  private send(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown): Promise<Response> {
     const headers: Record<string, string> = {
       Authorization: this.authorization,
       Accept: 'application/json',

@@ -48,7 +48,8 @@ export function connectedSettings(): SettingsView {
         maxResults: 50,
         etaFieldId: null,
         devPriorityFieldId: null,
-        statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
+        statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+        suggestions: null,
       },
     },
   }

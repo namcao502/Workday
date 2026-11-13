@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { addTicket, boardAction, checkBoard, getBoard, queryKeys } from '../api/client.js'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
+import { useRepoLabels, useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
 import { errorText } from '../errors.js'
 import { formatClock, t, type Language } from '../i18n.js'
@@ -13,11 +14,15 @@ import { useNarrow } from '../shell/useNarrow.js'
 import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
 import './board.css'
 import { BoardCards } from './BoardCard.js'
-import { BoardTable } from './BoardTable.js'
+import { BoardTable, type RowWork } from './BoardTable.js'
 import type { RowWorkspace } from './RowMenu.js'
+import { SuggestionsCard } from './SuggestionsCard.js'
+import { TodoView } from './TodoView.js'
+import { useReadyToTest } from './useReadyToTest.js'
 import { useTicketLauncher } from './useTicketLauncher.js'
 import {
   countViews,
+  filterGroups,
   pickViewWithHits,
   rowsForView,
   VIEW_IDS,
@@ -28,6 +33,8 @@ const SEARCH_DEBOUNCE_MS = 200
 
 function viewLabel(view: BoardViewId, count: number): string {
   switch (view) {
+    case 'todo':
+      return t(`To do (${String(count)})`, `Việc cần làm (${String(count)})`)
     case 'working':
       return t(`Working (${String(count)})`, `Đang làm (${String(count)})`)
     case 'done':
@@ -81,10 +88,13 @@ export function BoardPage(): React.JSX.Element {
   const canAct = access.canAct('board')
   const workspace = useWorkspace().data
   const launcher = useTicketLauncher()
+  const work = useWork().data
+  const repoLabels = useRepoLabels()
+  const readyToTest = useReadyToTest()
   const board = useQuery({ queryKey: queryKeys.board, queryFn: getBoard })
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search)
-  const [view, setView] = useState<BoardViewId>('working')
+  const [view, setView] = useState<BoardViewId>('working') // the To do view is one click away
   const [pickedForSearch, setPickedForSearch] = useState<string | null>(null)
   const [addError, setAddError] = useState<string | null>(null)
 
@@ -102,7 +112,8 @@ export function BoardPage(): React.JSX.Element {
   const timeZone = settings.data?.config.timeZone ?? 'UTC'
   const projectKey = settings.data?.config.jira?.projectKey
   const rows = board.data?.rows ?? []
-  const counts = countViews(rows, debouncedSearch)
+  const todoGroups = filterGroups(work?.groups ?? [], rows, debouncedSearch)
+  const counts = { ...countViews(rows, debouncedSearch), todo: todoGroups.length }
   const searching = debouncedSearch.trim() !== ''
   const activeView =
     searching && pickedForSearch !== debouncedSearch ? pickViewWithHits(counts, view) : view
@@ -138,10 +149,21 @@ export function BoardPage(): React.JSX.Element {
         }
       : undefined
 
+  const rowWork: RowWork | undefined =
+    work === undefined
+      ? undefined
+      : {
+          prs: work.prs,
+          repoLabels,
+          readyToTest: work.readyToTest,
+          onReadyToTest: readyToTest.ask,
+        }
+
   const listProps = {
     workspace: rowWorkspace,
-    rows: rowsForView(rows, activeView, debouncedSearch),
-    view: activeView,
+    work: rowWork,
+    rows: activeView === 'todo' ? [] : rowsForView(rows, activeView, debouncedSearch),
+    view: activeView === 'todo' ? 'working' : activeView,
     language,
     onAction: (key: string, action: BoardAction) => {
       act.mutate({ key, action })
@@ -218,6 +240,19 @@ export function BoardPage(): React.JSX.Element {
           onCancel={launcher.cancelRecreate}
         />
       )}
+      {readyToTest.dialog}
+      {readyToTest.message === null ? null : (
+        <p className="status" role="status">
+          {readyToTest.message}
+        </p>
+      )}
+      {activeView === 'working' && work?.suggestions != null ? (
+        <SuggestionsCard
+          suggestions={work.suggestions}
+          today={board.data?.today ?? ''}
+          language={language}
+        />
+      ) : null}
       {board.data === undefined ? (
         <p className="muted">{t('Loading...', 'Đang tải...')}</p>
       ) : !board.data.connected ? (
@@ -235,6 +270,21 @@ export function BoardPage(): React.JSX.Element {
             {t('Open Settings', 'Mở Cài đặt')}
           </button>
         </div>
+      ) : activeView === 'todo' ? (
+        todoGroups.length === 0 ? (
+          <p className="muted">{t('Nothing to do', 'Không có việc cần làm')}</p>
+        ) : (
+          <TodoView
+            groups={todoGroups}
+            rows={rows}
+            language={language}
+            workspace={rowWorkspace}
+            onDone={(key) => {
+              act.mutate({ key, action: 'done' })
+            }}
+            onReadyToTest={readyToTest.ask}
+          />
+        )
       ) : listProps.rows.length === 0 ? (
         <p className="muted">{t('No tickets', 'Không có ticket')}</p>
       ) : narrow ? (

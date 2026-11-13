@@ -1,4 +1,4 @@
-import type { Ticket } from '@workday/core'
+import type { EpicTicket, Ticket } from '@workday/core'
 import { isRecord } from '../jsonFile.js'
 
 export interface JiraFieldIds {
@@ -74,4 +74,64 @@ export function parseSearchResponse(
     }
   }
   return tickets
+}
+
+function namedOrNull(value: unknown): string | null {
+  return textOrNull(objectOrEmpty(value)['name'])
+}
+
+// Jira's order is kept; an issue without a key is skipped.
+export function parseEpicTickets(
+  raw: unknown,
+  devPriorityFieldId: string | null,
+): readonly EpicTicket[] {
+  const issues = objectOrEmpty(raw)['issues']
+  if (!Array.isArray(issues)) {
+    return []
+  }
+  const tickets: EpicTicket[] = []
+  for (const issue of issues as readonly unknown[]) {
+    const key = textOrNull(objectOrEmpty(issue)['key'])
+    if (key === null || key === '') {
+      continue
+    }
+    const fields = objectOrEmpty(objectOrEmpty(issue)['fields'])
+    tickets.push({
+      key,
+      summary: textOrNull(fields['summary']) ?? '',
+      status: namedOrNull(fields['status']),
+      issueType: namedOrNull(fields['issuetype']),
+      priority: namedOrNull(fields['priority']),
+      devPriority: devPriorityFieldId === null ? null : numberOrNull(fields[devPriorityFieldId]),
+      dueDate: textOrNull(fields['duedate']),
+    })
+  }
+  return tickets
+}
+
+// The id of the transition whose target status is `targetStatus` (case-insensitive), else null.
+export function findTransitionId(raw: unknown, targetStatus: string): string | null {
+  const transitions = objectOrEmpty(raw)['transitions']
+  if (!Array.isArray(transitions)) {
+    return null
+  }
+  const wanted = targetStatus.toLowerCase()
+  for (const transition of transitions as readonly unknown[]) {
+    const name = namedOrNull(objectOrEmpty(transition)['to'])
+    if (name !== null && name.toLowerCase() === wanted) {
+      return textOrNull(objectOrEmpty(transition)['id'])
+    }
+  }
+  return null
+}
+
+export interface Assignee {
+  readonly accountId: string | null
+  readonly displayName: string | null
+}
+
+export function parseAssignee(raw: unknown): Assignee {
+  const assignee = objectOrEmpty(objectOrEmpty(raw)['fields'])['assignee']
+  const source = objectOrEmpty(assignee)
+  return { accountId: textOrNull(source['accountId']), displayName: textOrNull(source['displayName']) }
 }

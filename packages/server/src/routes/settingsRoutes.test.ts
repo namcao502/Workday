@@ -16,7 +16,8 @@ const JIRA: JiraConfig = {
   maxResults: 50,
   etaFieldId: null,
   devPriorityFieldId: null,
-  statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
+  statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+  suggestions: null,
 }
 
 const SAVED_HRM_KEY = 'saved-hrm-key'
@@ -44,6 +45,8 @@ async function connectedApp(): Promise<TestApp> {
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
     workspace: DEFAULT_WORKSPACE,
+    azureDevOps: null,
+    notices: {},
     theme: 'dark',
     language: 'en',
     jira: JIRA,
@@ -62,6 +65,8 @@ async function hrmApp(): Promise<TestApp> {
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
     workspace: DEFAULT_WORKSPACE,
+    azureDevOps: null,
+    notices: {},
     theme: 'dark',
     language: 'en',
     jira: null,
@@ -103,6 +108,8 @@ describe('settings routes', () => {
         timeZone: 'Asia/Ho_Chi_Minh',
         pollMinutes: 5,
         workspace: DEFAULT_WORKSPACE,
+        azureDevOps: null,
+        notices: {},
         theme: 'dark',
         language: 'en',
         jira: JIRA,
@@ -112,6 +119,7 @@ describe('settings routes', () => {
       jiraTokenSource: 'file',
       hrmKeySource: null,
       tunnelTokenSource: null,
+      adoPatSource: null,
     })
   })
 

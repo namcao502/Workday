@@ -9,6 +9,10 @@ export function setLanguage(language: Language): void {
   currentLanguage = language
 }
 
+export function getLanguage(): Language {
+  return currentLanguage
+}
+
 export function t(en: string, vi: string): string {
   return currentLanguage === 'vi' ? vi : en
 }

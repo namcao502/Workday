@@ -110,3 +110,22 @@ it('the Workspace item shows how many sessions are waiting', async () => {
     expect(item.querySelector('.nav-badge')).toHaveTextContent('2')
   })
 })
+
+it('sidebar shows the attention count on Board', async () => {
+  stubMatchMedia(false)
+  const work = {
+    adoConnected: true,
+    lastPrCheck: null,
+    groups: [],
+    attention: 3,
+    prs: {},
+    readyToTest: {},
+    suggestions: null,
+  }
+  stubFetch((url) => jsonResponse(url === '/api/work' ? work : {}))
+  renderWithQuery(<Shell page="insights" />)
+  const item = screen.getByRole('button', { name: /Tickets/ })
+  await waitFor(() => {
+    expect(item.querySelector('.nav-badge')).toHaveTextContent('3')
+  })
+})

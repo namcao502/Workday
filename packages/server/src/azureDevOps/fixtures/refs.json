@@ -1,0 +1,9 @@
+{
+  "value": [
+    { "name": "refs/heads/MDP-9379-dev" },
+    { "name": "refs/heads/MDP-9379-dev-2" },
+    { "name": "refs/heads/MDP-9379-fix" },
+    { "name": "refs/heads/MDP-93790" },
+    { "name": "refs/heads/MDP-9379-fix" }
+  ]
+}

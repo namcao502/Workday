@@ -7,6 +7,10 @@ import type { WorkspaceTab } from './workspaceTabs.js'
 import type { QueueEntry } from './timesheetQueue.js'
 import type { DayCoverage, HrmTask } from './timesheetWeek.js'
 import type { WeekReviewItem } from './weekReview.js'
+import type { NoticePrefs, Notice } from './notices.js'
+import type { TicketPr } from './prTracking.js'
+import type { Suggestion } from './ticketSuggestions.js'
+import type { TodoGroup } from './todos.js'
 
 export interface JiraConfig {
   readonly baseUrl: string
@@ -18,6 +22,22 @@ export interface JiraConfig {
   readonly etaFieldId: string | null
   readonly devPriorityFieldId: string | null
   readonly statusFlow: StatusFlow
+  readonly suggestions: SuggestionsConfig | null
+}
+
+export interface SuggestionsConfig {
+  readonly epicJql: string
+  readonly epicTitlePrefix: string // "MDP Issues - "
+  readonly candidatesJql: string // "{epic}" is replaced
+  readonly mineJql: string // "{epic}" is replaced
+  readonly selectedStatus: string | null
+}
+
+export interface AzureDevOpsConfig {
+  readonly organization: string
+  readonly project: string
+  readonly repoLabels: Readonly<Record<string, string>> // insertion order = display order
+  readonly devPipelineFolder: string | null // "\Development-Pipelines"; null = no deploy watch
 }
 
 export interface HrmConfig {
@@ -71,6 +91,8 @@ export interface WorkdayConfig {
   readonly timesheet: TimesheetConfig
   readonly remote: RemoteConfig | null // null until publicHost, accessTeamDomain and accessAud are all set
   readonly workspace: WorkspaceConfig
+  readonly azureDevOps: AzureDevOpsConfig | null
+  readonly notices: NoticePrefs
 }
 
 // Server never sends display text; the client translates the code with t().
@@ -107,6 +129,9 @@ export type AppError =
         | 'sessionNotFound'
         | 'pathOutside'
         | 'gitFailed'
+        | 'adoRejected'
+        | 'adoUnreachable'
+        | 'adoNotConfigured'
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
 
@@ -117,6 +142,7 @@ export interface SettingsView {
   readonly jiraTokenSource: JiraTokenSource // never the token itself
   readonly hrmKeySource: 'env' | 'file' | null // never the key itself
   readonly tunnelTokenSource: 'env' | 'file' | null // never the token itself
+  readonly adoPatSource: 'env' | 'file' | null // never the PAT itself
 }
 
 // Replaces each top-level field it carries; jira: null disconnects; jiraApiToken omitted keeps the saved token.
@@ -133,6 +159,9 @@ export interface SettingsUpdate {
   readonly remote?: RemoteConfig | null
   readonly tunnelToken?: string
   readonly workspace?: WorkspaceConfig
+  readonly azureDevOps?: AzureDevOpsConfig | null
+  readonly adoPat?: string
+  readonly notices?: NoticePrefs
 }
 
 export interface JiraCheckRequest {
@@ -140,6 +169,16 @@ export interface JiraCheckRequest {
   readonly email: string
   readonly jiraApiToken?: string
 }
+
+export interface AdoCheckRequest {
+  readonly organization: string
+  readonly project: string
+  readonly adoPat?: string
+}
+
+export type AdoCheckResult =
+  | { readonly ok: true; readonly displayName: string }
+  | { readonly ok: false; readonly error: AppError }
 
 export type JiraCheckResult =
   | { readonly ok: true; readonly displayName: string }
@@ -233,6 +272,8 @@ export type ServerEvent =
   | { readonly type: 'timesheet.changed' }
   | { readonly type: 'remote.changed' } // PC Settings refetches RemoteStatusView
   | { readonly type: 'workspace.changed' }
+  | { readonly type: 'work.changed' }
+  | { readonly type: 'notices.changed' }
 
 export interface SessionView {
   readonly name: string
@@ -347,3 +388,29 @@ export type FileContentView =
   | { readonly kind: 'text' | 'markdown'; readonly text: string }
   | { readonly kind: 'image' } // the client loads .../files/raw
   | { readonly kind: 'binary' | 'tooLarge' }
+
+export interface WorkView {
+  readonly adoConnected: boolean
+  readonly lastPrCheck: { readonly at: string; readonly ok: boolean } | null
+  readonly groups: readonly TodoGroup[]
+  readonly attention: number // attentionKeys(groups).length
+  readonly prs: Readonly<Record<string, readonly TicketPr[]>> // per board ticket
+  readonly readyToTest: Readonly<Record<string, readonly string[]>> // keys with steps left
+  readonly suggestions: {
+    readonly epicKey: string | null
+    readonly items: readonly Suggestion[]
+  } | null // null = not configured
+}
+
+export interface NoticesView {
+  readonly notices: readonly Notice[]
+  readonly unread: number
+  readonly prefs: NoticePrefs
+}
+
+export type ReadyToTestOutcome =
+  | { readonly status: 'moved' | 'alreadyPast' | 'notFound' | 'busy' }
+  | { readonly status: 'failed'; readonly step: string }
+
+export type TakeOutcome =
+  { readonly ok: true } | { readonly ok: false; readonly holder: string }

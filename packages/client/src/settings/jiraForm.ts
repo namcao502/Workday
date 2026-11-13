@@ -1,4 +1,4 @@
-import type { JiraConfig } from '@workday/core'
+import type { JiraConfig, SuggestionsConfig } from '@workday/core'
 
 export interface JiraForm {
   readonly baseUrl: string
@@ -10,6 +10,13 @@ export interface JiraForm {
   readonly mineJql: string
   readonly preWorkStatuses: string
   readonly reworkStatuses: string
+  readonly readyToTestPath: string
+  readonly developerStatuses: string
+  readonly suggestionsEpicJql: string
+  readonly suggestionsEpicTitlePrefix: string
+  readonly suggestionsCandidatesJql: string
+  readonly suggestionsMineJql: string
+  readonly suggestionsSelectedStatus: string
 }
 
 const DEFAULT_MAX_RESULTS = 50
@@ -25,6 +32,13 @@ export function formFromConfig(jira: JiraConfig | null): JiraForm {
     mineJql: jira?.mineJql ?? '',
     preWorkStatuses: (jira?.statusFlow.preWorkStatuses ?? []).join('\n'),
     reworkStatuses: (jira?.statusFlow.reworkStatuses ?? []).join('\n'),
+    readyToTestPath: (jira?.statusFlow.readyToTestPath ?? []).join('\n'),
+    developerStatuses: (jira?.statusFlow.developerStatuses ?? []).join('\n'),
+    suggestionsEpicJql: jira?.suggestions?.epicJql ?? '',
+    suggestionsEpicTitlePrefix: jira?.suggestions?.epicTitlePrefix ?? '',
+    suggestionsCandidatesJql: jira?.suggestions?.candidatesJql ?? '',
+    suggestionsMineJql: jira?.suggestions?.mineJql ?? '',
+    suggestionsSelectedStatus: jira?.suggestions?.selectedStatus ?? '',
   }
 }
 
@@ -54,7 +68,27 @@ export function configFromForm(form: JiraForm, saved: JiraConfig | null): JiraCo
     statusFlow: {
       preWorkStatuses: lines(form.preWorkStatuses),
       reworkStatuses: lines(form.reworkStatuses),
+      readyToTestPath: lines(form.readyToTestPath),
+      developerStatuses: lines(form.developerStatuses),
     },
+    suggestions: suggestionsFromForm(form),
+  }
+}
+
+// All four queries empty = the feature is off (null).
+function suggestionsFromForm(form: JiraForm): SuggestionsConfig | null {
+  const epicJql = form.suggestionsEpicJql.trim()
+  const candidatesJql = form.suggestionsCandidatesJql.trim()
+  const mineJql = form.suggestionsMineJql.trim()
+  if (epicJql === '' && candidatesJql === '' && mineJql === '') {
+    return null
+  }
+  return {
+    epicJql,
+    epicTitlePrefix: form.suggestionsEpicTitlePrefix.trim(),
+    candidatesJql,
+    mineJql,
+    selectedStatus: textOrNull(form.suggestionsSelectedStatus),
   }
 }
 

@@ -6,6 +6,7 @@ import {
   DEFAULT_WORKSPACE,
   loadConfig,
   loadGraphTokenOverride,
+  loadAdoPat,
   loadHrmKey,
   loadSecrets,
   loadTunnelToken,
@@ -44,6 +45,8 @@ describe('loadConfig', () => {
       jira: null,
       remote: null,
       workspace: DEFAULT_WORKSPACE,
+      azureDevOps: null,
+      notices: {},
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
   })
@@ -105,7 +108,8 @@ describe('loadConfig', () => {
       etaFieldId: null,
       mineJql: 'assignee = currentUser() OR assignee WAS currentUser()',
       devPriorityFieldId: null,
-      statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
+      statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+      suggestions: null,
     })
   })
 
@@ -121,11 +125,13 @@ describe('secrets', () => {
     vi.stubEnv('WORKDAY_JIRA_API_TOKEN', '')
     vi.stubEnv('WORKDAY_HRM_API_KEY', '')
     vi.stubEnv('WORKDAY_TUNNEL_TOKEN', '')
+    vi.stubEnv('WORKDAY_ADO_PAT', '')
     expect(loadSecrets(directory)).toEqual({
       jiraApiToken: null,
       hrmApiKey: null,
       tunnelToken: null,
       vapidPrivateKey: null,
+      adoPat: null,
     })
   })
 
@@ -307,5 +313,52 @@ describe('Graph token override', () => {
     expect(loadGraphTokenOverride()).toBeNull()
     vi.stubEnv('WORKDAY_MS_GRAPH_TOKEN', 'graph')
     expect(loadGraphTokenOverride()).toBe('graph')
+  })
+})
+
+describe('Azure DevOps PAT', () => {
+  it('loadAdoPat prefers WORKDAY_ADO_PAT', () => {
+    writeFileSync(join(directory, 'secrets.json'), JSON.stringify({ adoPat: 'from-file' }))
+    vi.stubEnv('WORKDAY_ADO_PAT', '')
+    expect(loadAdoPat(directory)).toEqual({ pat: 'from-file', source: 'file' })
+    vi.stubEnv('WORKDAY_ADO_PAT', 'from-env')
+    expect(loadAdoPat(directory)).toEqual({ pat: 'from-env', source: 'env' })
+  })
+})
+
+describe('azureDevOps, suggestions and notices config', () => {
+  it('config drops azureDevOps without organization or project', () => {
+    writeConfig({ azureDevOps: { organization: 'acme' } })
+    expect(loadConfig(directory).azureDevOps).toBeNull()
+    writeConfig({ azureDevOps: { project: 'Shop' } })
+    expect(loadConfig(directory).azureDevOps).toBeNull()
+  })
+
+  it('keeps the file order of repoLabels and defaults the pipeline folder to null', () => {
+    writeConfig({
+      azureDevOps: { organization: 'acme', project: 'Shop', repoLabels: { Zeta: 'Z', Alpha: 'A', Bad: 3 } },
+    })
+    const ado = loadConfig(directory).azureDevOps
+    expect(ado?.devPipelineFolder).toBeNull()
+    expect(Object.entries(ado?.repoLabels ?? {})).toEqual([
+      ['Zeta', 'Z'],
+      ['Alpha', 'A'],
+    ])
+  })
+
+  it('suggestions need all four values; selectedStatus is optional', () => {
+    const jira = { baseUrl: 'https://j', email: 'e', projectKey: 'P' }
+    const suggestions = { epicJql: 'a', epicTitlePrefix: 'P - ', candidatesJql: 'c', mineJql: 'm' }
+    writeConfig({ jira: { ...jira, suggestions } })
+    expect(loadConfig(directory).jira?.suggestions).toEqual({ ...suggestions, selectedStatus: null })
+    writeConfig({ jira: { ...jira, suggestions: { ...suggestions, mineJql: '' } } })
+    expect(loadConfig(directory).jira?.suggestions).toBeNull()
+  })
+
+  it('notices keep boolean channels of known topics and drop the rest', () => {
+    writeConfig({
+      notices: { pr: { toast: false, phone: 'yes', fax: true }, weird: { toast: true }, jira: 5 },
+    })
+    expect(loadConfig(directory).notices).toEqual({ pr: { toast: false } })
   })
 })

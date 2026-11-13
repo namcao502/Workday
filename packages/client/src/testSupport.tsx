@@ -30,10 +30,13 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
         localOnlyPaths: [],
         chatView: false,
       },
+      azureDevOps: null,
+      notices: {},
     },
     jiraTokenSource: null,
     hrmKeySource: null,
     tunnelTokenSource: null,
+    adoPatSource: null,
     ...overrides,
   }
 }

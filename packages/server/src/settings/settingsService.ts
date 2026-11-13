@@ -1,14 +1,19 @@
 import type {
+  AdoCheckRequest,
+  AdoCheckResult,
   AppError,
+  AzureDevOpsConfig,
   HoursLog,
   HrmConfig,
   JiraCheckRequest,
   JiraCheckResult,
   JiraConfig,
+  PullRequests,
   RemoteConfig,
   SettingsUpdate,
   SettingsView,
   SheetLog,
+  StatusFlow,
   TicketTracker,
   TscConfig,
   TscSessionResult,
@@ -17,18 +22,22 @@ import type {
   WorkspaceConfig,
 } from '@workday/core'
 import type { BoardService } from '../board/boardService.js'
+import type { PrSettings } from '../prs/prService.js'
 import {
   DEFAULT_OFF_MARKER,
+  loadAdoPat,
   loadHrmKey,
   loadJiraToken,
   loadTunnelToken,
   readFileSecrets,
   saveConfig,
   saveSecrets,
+  type AdoPat,
   type HrmKey,
   type JiraToken,
 } from '../config.js'
 import type { EventSink } from '../events.js'
+import type { SuggestionSettings } from '../suggestions/suggestionService.js'
 import type { LogTimer } from '../timesheet/logScheduler.js'
 import { sheetAppError } from '../timesheet/logEntry.js'
 import type { TimesheetService } from '../timesheet/timesheetService.js'
@@ -48,6 +57,10 @@ export interface SettingsServiceDeps {
   readonly createTracker: (jira: JiraConfig, token: string) => TicketTracker
   readonly timesheet: TimesheetService
   readonly logScheduler: LogTimer
+  readonly createPullRequests: (config: AzureDevOpsConfig, pat: string) => PullRequests
+  readonly prs: { configure(settings: PrSettings): void }
+  readonly prScheduler: Scheduler
+  readonly suggestions: { configure(settings: SuggestionSettings): void }
   readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
   readonly remote: { configure(remote: RemoteConfig | null): void }
@@ -67,6 +80,15 @@ interface AppliedState {
   readonly config: WorkdayConfig
   readonly token: string | null
   readonly hrmKey: string | null
+  readonly adoPat: string | null
+}
+
+const PR_CHECK_MINUTES = 5
+export const NO_STATUS_FLOW: StatusFlow = {
+  preWorkStatuses: [],
+  reworkStatuses: [],
+  readyToTestPath: [],
+  developerStatuses: [],
 }
 
 const NOT_CONFIGURED: AppError = { code: 'timesheetNotConfigured' }
@@ -78,13 +100,21 @@ const CHECK_ONLY_JIRA: Omit<JiraConfig, 'baseUrl' | 'email'> = {
   maxResults: 1,
   etaFieldId: null,
   devPriorityFieldId: null,
-  statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
+  statusFlow: {
+    preWorkStatuses: [],
+    reworkStatuses: [],
+    readyToTestPath: [],
+    developerStatuses: [],
+  },
+  suggestions: null,
 }
 
 export class SettingsService {
   private config: WorkdayConfig
   private jiraToken: JiraToken
   private hrmKey: HrmKey
+  private adoPat: AdoPat
+  private adoClient: PullRequests | null = null
   private tracker: TicketTracker | null = null
   private hours: HoursLog | null = null
   private sheet: SheetLog | null = null
@@ -94,14 +124,24 @@ export class SettingsService {
     this.config = deps.config
     this.jiraToken = loadJiraToken(deps.dataDir)
     this.hrmKey = loadHrmKey(deps.dataDir)
+    this.adoPat = loadAdoPat(deps.dataDir)
   }
 
   get language(): WorkdayConfig['language'] {
     return this.config.language
   }
 
+  get notices(): WorkdayConfig['notices'] {
+    return this.config.notices
+  }
+
   get timeZone(): string {
     return this.config.timeZone
+  }
+
+  // Null until Azure DevOps has both a config and a PAT.
+  get pullRequests(): PullRequests | null {
+    return this.adoClient
   }
 
   // Builds the tracker and starts polling from the loaded config; called once at startup.
@@ -110,13 +150,37 @@ export class SettingsService {
   }
 
   view(): SettingsView {
-    const { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote, workspace } =
-      this.config
+    const {
+      port,
+      timeZone,
+      pollMinutes,
+      theme,
+      language,
+      jira,
+      timesheet,
+      remote,
+      workspace,
+      azureDevOps,
+      notices,
+    } = this.config
     return {
-      config: { port, timeZone, pollMinutes, theme, language, jira, timesheet, remote, workspace },
+      config: {
+        port,
+        timeZone,
+        pollMinutes,
+        theme,
+        language,
+        jira,
+        timesheet,
+        remote,
+        workspace,
+        azureDevOps,
+        notices,
+      },
       jiraTokenSource: this.jiraToken.source,
       hrmKeySource: this.hrmKey.source,
       tunnelTokenSource: loadTunnelToken(this.deps.dataDir).source,
+      adoPatSource: this.adoPat.source,
     }
   }
 
@@ -164,6 +228,29 @@ export class SettingsService {
     return { ok: false, error: { code } }
   }
 
+  // The saved PAT goes only to the organization it was saved for.
+  async checkAdo(request: AdoCheckRequest): Promise<AdoCheckResult | 'tokenRequired'> {
+    const savedAdo = this.config.azureDevOps
+    const canUseSavedPat = savedAdo !== null && savedAdo.organization === request.organization
+    const pat = request.adoPat ?? (canUseSavedPat ? this.adoPat.pat : null)
+    if (pat === null) {
+      return 'tokenRequired'
+    }
+    const azureDevOps: AzureDevOpsConfig = {
+      repoLabels: {},
+      devPipelineFolder: null,
+      ...savedAdo,
+      organization: request.organization,
+      project: request.project,
+    }
+    const validation = await this.deps.createPullRequests(azureDevOps, pat).validate()
+    if (validation.ok) {
+      return { ok: true, displayName: validation.displayName }
+    }
+    const code = validation.reason === 'rejected' ? 'adoRejected' : 'adoUnreachable'
+    return { ok: false, error: { code } }
+  }
+
   async checkTscSession(): Promise<TscSessionResult> {
     if (this.sheet === null) {
       return { error: NOT_CONFIGURED, detail: null }
@@ -190,27 +277,48 @@ export class SettingsService {
   }
 
   private async runUpdate(update: SettingsUpdate): Promise<UpdateOutcome> {
-    if (this.wouldSendTokenElsewhere(update) || this.wouldSendHrmKeyElsewhere(update)) {
+    if (
+      this.wouldSendTokenElsewhere(update) ||
+      this.wouldSendHrmKeyElsewhere(update) ||
+      this.wouldSendAdoPatElsewhere(update)
+    ) {
       return { ok: false, reason: 'tokenRequired' }
     }
     const previous: AppliedState = {
       config: this.config,
       token: this.jiraToken.token,
       hrmKey: this.hrmKey.key,
+      adoPat: this.adoPat.pat,
     }
     // A token must never reach config.json.
-    const { jiraApiToken, hrmApiKey, tunnelToken, ...configFields } = update
+    const { jiraApiToken, hrmApiKey, tunnelToken, adoPat, ...configFields } = update
     const nextConfig = { ...this.config, ...configFields }
     // Both files are written before memory changes, so a failed write leaves the running settings as they were.
     await saveConfig(this.deps.dataDir, nextConfig)
-    if (jiraApiToken !== undefined || hrmApiKey !== undefined || tunnelToken !== undefined) {
-      await this.saveSecretsOrRollBack({ jiraApiToken, hrmApiKey, tunnelToken }, previous.config)
+    if (
+      jiraApiToken !== undefined ||
+      hrmApiKey !== undefined ||
+      tunnelToken !== undefined ||
+      adoPat !== undefined
+    ) {
+      await this.saveSecretsOrRollBack(
+        { jiraApiToken, hrmApiKey, tunnelToken, adoPat },
+        previous.config,
+      )
     }
     this.jiraToken = loadJiraToken(this.deps.dataDir)
     this.hrmKey = loadHrmKey(this.deps.dataDir)
+    this.adoPat = loadAdoPat(this.deps.dataDir)
     this.config = nextConfig
     this.apply(previous)
     this.deps.events.broadcast({ type: 'settings.changed' })
+    // The bell's view carries the prefs, and push text follows the language.
+    if (
+      previous.config.language !== nextConfig.language ||
+      JSON.stringify(previous.config.notices) !== JSON.stringify(nextConfig.notices)
+    ) {
+      this.deps.events.broadcast({ type: 'notices.changed' })
+    }
     return { ok: true, view: this.view() }
   }
 
@@ -220,6 +328,7 @@ export class SettingsService {
       readonly jiraApiToken: string | undefined
       readonly hrmApiKey: string | undefined
       readonly tunnelToken: string | undefined
+      readonly adoPat: string | undefined
     },
     previousConfig: WorkdayConfig,
   ): Promise<void> {
@@ -231,6 +340,7 @@ export class SettingsService {
         jiraApiToken: changes.jiraApiToken ?? saved.jiraApiToken,
         hrmApiKey: changes.hrmApiKey ?? saved.hrmApiKey,
         tunnelToken: changes.tunnelToken ?? saved.tunnelToken,
+        adoPat: changes.adoPat ?? saved.adoPat,
       })
     } catch (error: unknown) {
       try {
@@ -267,6 +377,18 @@ export class SettingsService {
     return savedHrm === null || !sameBaseUrl(savedHrm.mcpUrl, nextHrm.mcpUrl)
   }
 
+  private wouldSendAdoPatElsewhere(update: SettingsUpdate): boolean {
+    const nextAdo = update.azureDevOps
+    if (nextAdo === undefined || nextAdo === null || update.adoPat !== undefined) {
+      return false
+    }
+    if (this.adoPat.source !== 'file') {
+      return false
+    }
+    const savedAdo = this.config.azureDevOps
+    return savedAdo === null || savedAdo.organization !== nextAdo.organization
+  }
+
   private apply(previous: AppliedState | null): void {
     const { jira, pollMinutes, timeZone } = this.config
     const token = this.jiraToken.token
@@ -283,9 +405,41 @@ export class SettingsService {
     } else if (previous === null || trackerChanged || previous.config.pollMinutes !== pollMinutes) {
       this.deps.scheduler.start(pollMinutes)
     }
+    this.deps.suggestions.configure({
+      tracker: this.tracker,
+      config: jira === null ? null : jira.suggestions,
+      projectKey: jira === null ? null : jira.projectKey,
+      timeZone,
+    })
+    this.applyAzureDevOps(previous)
     this.applyTimesheet(previous)
     this.deps.remote.configure(this.config.remote)
     this.deps.workspace.configure(this.config.workspace, this.deps.dataDir)
+  }
+
+  private applyAzureDevOps(previous: AppliedState | null): void {
+    const { azureDevOps } = this.config
+    const pat = this.adoPat.pat
+    const changed =
+      previous === null ||
+      previous.adoPat !== pat ||
+      JSON.stringify(previous.config.azureDevOps) !== JSON.stringify(azureDevOps)
+    if (changed) {
+      this.adoClient =
+        azureDevOps !== null && pat !== null ? this.deps.createPullRequests(azureDevOps, pat) : null
+    }
+    this.deps.prs.configure({
+      pullRequests: this.adoClient,
+      tracker: this.tracker,
+      flow: this.config.jira?.statusFlow ?? NO_STATUS_FLOW,
+      repoLabels: azureDevOps?.repoLabels ?? {},
+    })
+    // Configured first: the scheduler checks at once.
+    if (this.adoClient === null) {
+      this.deps.prScheduler.stop()
+    } else if (changed) {
+      this.deps.prScheduler.start(PR_CHECK_MINUTES)
+    }
   }
 
   private applyTimesheet(previous: AppliedState | null): void {

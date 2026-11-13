@@ -1,8 +1,14 @@
 import type {
   BoardState,
+  DeployBuild,
+  EpicTicket,
   HoursLog,
   HoursWrite,
   HrmTask,
+  PrLookup,
+  PrReviewRequest,
+  PullRequests,
+  PullRequestsValidation,
   SheetError,
   SheetLog,
   SheetRead,
@@ -59,7 +65,13 @@ export class FakeTracker implements TicketTracker {
   filterMineFails = false
   assignedCalls = 0
   assigned: () => Promise<Readonly<Record<string, Ticket>>> = () => Promise.resolve({})
+  readonly transitionCalls: { readonly key: string; readonly status: string }[] = []
+  readonly assignCalls: string[] = []
   validation: TrackerValidation = { ok: true, displayName: 'Test User' }
+  transitionResult = true
+  assignResult: string | null = null
+  epicTickets: readonly EpicTicket[] = []
+  readonly epicSearches: string[] = []
 
   validate(): Promise<TrackerValidation> {
     return Promise.resolve(this.validation)
@@ -88,6 +100,47 @@ export class FakeTracker implements TicketTracker {
 
   ticketUrl(key: string): string {
     return `https://jira.example/browse/${key}`
+  }
+
+  transition(key: string, status: string): Promise<boolean> {
+    this.transitionCalls.push({ key, status })
+    return Promise.resolve(this.transitionResult)
+  }
+
+  assignToMe(key: string): Promise<string | null> {
+    this.assignCalls.push(key)
+    return Promise.resolve(this.assignResult)
+  }
+
+  searchEpicTickets(jql: string): Promise<readonly EpicTicket[]> {
+    this.epicSearches.push(jql)
+    return Promise.resolve(this.epicTickets)
+  }
+}
+
+// Answers from the fields a test sets; ticketPrs may be replaced to fail or to hold the call.
+export class FakePullRequests implements PullRequests {
+  readonly ticketPrsCalls: string[] = []
+  validation: PullRequestsValidation = { ok: true, displayName: 'Test User' }
+  lookup: PrLookup = { prs: [], complete: true }
+  requests: readonly PrReviewRequest[] = []
+  builds: readonly DeployBuild[] = []
+
+  validate(): Promise<PullRequestsValidation> {
+    return Promise.resolve(this.validation)
+  }
+
+  ticketPrs(ticketKey: string): Promise<PrLookup> {
+    this.ticketPrsCalls.push(ticketKey)
+    return Promise.resolve(this.lookup)
+  }
+
+  reviewRequests(): Promise<readonly PrReviewRequest[]> {
+    return Promise.resolve(this.requests)
+  }
+
+  devDeployBuilds(): Promise<readonly DeployBuild[]> {
+    return Promise.resolve(this.builds)
   }
 }
 

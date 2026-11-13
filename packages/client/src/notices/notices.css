@@ -1,0 +1,128 @@
+.shell-topbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px var(--page-margin) 0;
+}
+
+.notice-bell {
+  position: relative;
+}
+
+.notice-panel {
+  position: absolute;
+  right: 0;
+  z-index: 20;
+  width: min(380px, 92vw);
+  max-height: 70vh;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--dialog-border);
+  border-radius: var(--radius-popup);
+  background: var(--window-bg);
+}
+
+.notice-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notice-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notice-item {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notice-item:hover {
+  background: var(--hover);
+}
+
+.notice-item-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.notice-item-time {
+  font-size: var(--font-caption);
+}
+
+.notice-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+}
+
+.notice-dot.unread {
+  background: var(--accent);
+}
+
+.notice-toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, 92vw);
+}
+
+.notice-toast {
+  display: flex;
+  align-items: flex-start;
+  border: 1px solid var(--dialog-border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-button);
+  background: var(--window-bg);
+}
+
+.notice-toast.notice-tone-success {
+  border-left-color: var(--success);
+}
+
+.notice-toast.notice-tone-error {
+  border-left-color: var(--danger);
+}
+
+.notice-toast-text,
+.notice-toast-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.notice-toast-text {
+  flex: 1;
+  padding: 10px;
+  text-align: left;
+}
+
+.notice-toast-close {
+  padding: 10px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

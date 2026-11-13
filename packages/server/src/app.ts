@@ -4,8 +4,11 @@ import fastifyStatic from '@fastify/static'
 import fastifyWebsocket from '@fastify/websocket'
 import Fastify, { type FastifyInstance } from 'fastify'
 import type { BoardService } from './board/boardService.js'
+import type { PrService } from './prs/prService.js'
 import type { EventHub } from './events.js'
+import type { NoticeService } from './notices/noticeService.js'
 import { registerBoardRoutes } from './routes/boardRoutes.js'
+import { registerNoticeRoutes } from './routes/noticeRoutes.js'
 import { registerRemoteGate } from './remote/remoteGate.js'
 import type { RemoteService } from './remote/remoteService.js'
 import { registerEventsRoute } from './routes/eventsRoute.js'
@@ -16,10 +19,12 @@ import { registerSettingsRoutes } from './routes/settingsRoutes.js'
 import { registerTerminalRoute } from './routes/terminalRoute.js'
 import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
 import { registerChatRoutes } from './routes/chatRoute.js'
+import { registerWorkRoutes } from './routes/workRoutes.js'
 import { registerWorkspaceFilesRoutes } from './routes/workspaceFilesRoutes.js'
 import { registerWorkspaceRoutes } from './routes/workspaceRoutes.js'
 import { allowedHostHeaders, isAllowedHost, remoteHostHeaders } from './security/allowedHosts.js'
 import type { SettingsService } from './settings/settingsService.js'
+import type { SuggestionService } from './suggestions/suggestionService.js'
 import type { TimesheetService } from './timesheet/timesheetService.js'
 import type { WorkspaceService } from './workspace/workspaceService.js'
 
@@ -32,10 +37,13 @@ export interface AppDeps {
   // Built client folder; the SPA fallback is active only when it exists.
   clientDist?: string | undefined
   board: BoardService
+  prs: PrService
+  suggestions: SuggestionService
   settings: SettingsService
   timesheet: TimesheetService
   events: EventHub
   remote: RemoteService
+  notices: NoticeService
   workspace: WorkspaceService
 }
 
@@ -66,7 +74,9 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerEventsRoute(app, deps.events, allowedHosts, deps.remote)
   registerRemoteRoutes(app, deps.remote)
   registerPushRoutes(app, deps.remote, deps.settings)
-  registerBoardRoutes(app, deps.board)
+  registerBoardRoutes(app, deps.board, deps.prs)
+  registerWorkRoutes(app, deps)
+  registerNoticeRoutes(app, deps.notices)
   registerSettingsRoutes(app, deps.settings)
   registerTimesheetRoutes(app, deps.timesheet)
   registerWorkspaceRoutes(app, deps.workspace)

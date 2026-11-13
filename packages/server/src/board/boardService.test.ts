@@ -13,7 +13,13 @@ const JIRA: JiraConfig = {
   maxResults: 50,
   etaFieldId: null,
   devPriorityFieldId: null,
-  statusFlow: { preWorkStatuses: [], reworkStatuses: [] },
+  statusFlow: {
+    preWorkStatuses: [],
+    reworkStatuses: [],
+    readyToTestPath: [],
+    developerStatuses: [],
+  },
+  suggestions: null,
 }
 
 class RecordingSink implements EventSink {
@@ -27,6 +33,7 @@ let tracker = new FakeTracker()
 let sink = new RecordingSink()
 let saved: BoardState[] = []
 let saveFails = false
+let errors: string[] = []
 
 function createService(initialState: BoardState): BoardService {
   return new BoardService({
@@ -41,7 +48,9 @@ function createService(initialState: BoardState): BoardService {
     events: sink,
     settings: { jira: JIRA, tracker, timeZone: 'Asia/Ho_Chi_Minh' },
     now: () => new Date('2026-11-12T03:00:00Z'),
-    logError: () => undefined,
+    logError: (message) => {
+      errors.push(message)
+    },
   })
 }
 
@@ -57,6 +66,7 @@ beforeEach(() => {
   sink = new RecordingSink()
   saved = []
   saveFails = false
+  errors = []
 })
 
 describe('BoardService poll', () => {
@@ -268,5 +278,28 @@ describe('BoardService review fixes', () => {
     expect(await disconnected).toEqual({ ok: false, error: { code: 'notConnected' } })
     expect(service.view().rows).toEqual(current)
     expect(current).toEqual([])
+  })
+})
+
+describe('BoardService.refreshTicket', () => {
+  it('updates a ticket on the board from Jira', async () => {
+    const service = createService(boardWith({ inProgress: { 'MDP-1': makeTicket('MDP-1') } }))
+    tracker.live.set('MDP-1', makeTicket('MDP-1', { status: 'Ready to Test' }))
+
+    await service.refreshTicket('MDP-1')
+
+    expect(service.snapshot().inProgress['MDP-1']?.status).toBe('Ready to Test')
+    expect(saved).toHaveLength(1)
+  })
+
+  it('only logs a Jira error', async () => {
+    const before = boardWith({ inProgress: { 'MDP-1': makeTicket('MDP-1') } })
+    const service = createService(before)
+    tracker.failingKeys.add('MDP-1')
+
+    await service.refreshTicket('MDP-1')
+
+    expect(service.snapshot()).toBe(before)
+    expect(errors).toEqual(['Refreshing MDP-1 failed'])
   })
 })

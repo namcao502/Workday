@@ -1,0 +1,22 @@
+{
+  "value": [
+    {
+      "pullRequestId": 101,
+      "status": "active",
+      "mergeStatus": "conflicts",
+      "targetRefName": "refs/heads/development",
+      "repository": { "name": "Backend", "project": { "id": "proj-1" } },
+      "reviewers": [{ "id": "me", "vote": 10 }, { "id": "lead", "vote": -5 }]
+    },
+    {
+      "pullRequestId": 102,
+      "status": "completed",
+      "mergeStatus": "succeeded",
+      "targetRefName": "refs/heads/main",
+      "closedDate": "2026-10-20T22:10:00Z",
+      "lastMergeCommit": { "commitId": "c338c33b" },
+      "repository": { "name": "Portal", "project": { "id": "proj-1" } },
+      "reviewers": []
+    }
+  ]
+}

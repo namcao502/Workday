@@ -24,6 +24,8 @@ async function timesheetApp(): Promise<TestApp> {
     timeZone: 'Asia/Ho_Chi_Minh',
     pollMinutes: 5,
     workspace: DEFAULT_WORKSPACE,
+    azureDevOps: null,
+    notices: {},
     theme: 'dark',
     language: 'en',
     jira: null,

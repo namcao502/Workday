@@ -1,11 +1,21 @@
 import type {
+  AdoCheckRequest,
+  AzureDevOpsConfig,
   JiraCheckRequest,
   JiraConfig,
   RemoteConfig,
   SettingsUpdate,
   TimesheetConfig,
 } from '@workday/core'
-import { isLogTime, parseJira, parseRemote, parseTimesheet, parseWorkspace } from '../config.js'
+import {
+  isLogTime,
+  parseAzureDevOps,
+  parseJira,
+  parseNotices,
+  parseRemote,
+  parseTimesheet,
+  parseWorkspace,
+} from '../config.js'
 import { isRecord } from '../jsonFile.js'
 
 const MIN_PORT = 1024
@@ -51,6 +61,14 @@ function parseJiraField(raw: unknown): JiraConfig | null | undefined {
   return jira !== null && isHttpUrl(jira.baseUrl) ? jira : undefined
 }
 
+// undefined = invalid; null = disconnect. A block without organization or project is invalid.
+function parseAzureDevOpsField(raw: unknown): AzureDevOpsConfig | null | undefined {
+  if (raw === null) {
+    return null
+  }
+  return parseAzureDevOps(raw) ?? undefined
+}
+
 // undefined = invalid; null = remote access not configured. A string field of the wrong type is invalid too.
 function parseRemoteField(raw: unknown): RemoteConfig | null | undefined {
   if (raw === null) {
@@ -88,6 +106,7 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
   }
   let update: SettingsUpdate = {}
   const { port, timeZone, pollMinutes, theme, language, jiraApiToken, hrmApiKey, tunnelToken } = raw
+  const { adoPat } = raw
   if (port !== undefined) {
     if (!isIntegerBetween(port, MIN_PORT, MAX_PORT)) {
       return null
@@ -163,7 +182,40 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
     }
     update = { ...update, workspace: parseWorkspace(raw['workspace']) }
   }
+  if (Object.hasOwn(raw, 'azureDevOps')) {
+    const azureDevOps = parseAzureDevOpsField(raw['azureDevOps'])
+    if (azureDevOps === undefined) {
+      return null
+    }
+    update = { ...update, azureDevOps }
+  }
+  if (adoPat !== undefined) {
+    if (!isNonEmptyText(adoPat)) {
+      return null
+    }
+    update = { ...update, adoPat }
+  }
+  if (raw['notices'] !== undefined) {
+    if (!isRecord(raw['notices'])) {
+      return null
+    }
+    update = { ...update, notices: parseNotices(raw['notices']) }
+  }
   return update
+}
+
+export function parseAdoCheckRequest(raw: unknown): AdoCheckRequest | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const { organization, project, adoPat } = raw
+  if (!isNonEmptyText(organization) || !isNonEmptyText(project)) {
+    return null
+  }
+  if (adoPat === undefined) {
+    return { organization, project }
+  }
+  return isNonEmptyText(adoPat) ? { organization, project, adoPat } : null
 }
 
 export function parseHrmCheckRequest(raw: unknown): HrmCheckRequest | null {

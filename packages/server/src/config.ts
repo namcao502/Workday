@@ -2,11 +2,16 @@ import { renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   parseColumns,
+  type AzureDevOpsConfig,
   type HrmConfig,
   type JiraConfig,
   type JiraTokenSource,
+  type NoticeChannels,
+  type NoticePrefs,
+  type NoticeTopic,
   type RemoteConfig,
   type StatusFlow,
+  type SuggestionsConfig,
   type TimesheetConfig,
   type TscConfig,
   type WorkdayConfig,
@@ -20,6 +25,7 @@ export interface Secrets {
   readonly hrmApiKey: string | null
   readonly tunnelToken: string | null
   readonly vapidPrivateKey: string | null
+  readonly adoPat: string | null
 }
 
 type SecretName = keyof Secrets
@@ -29,6 +35,7 @@ export const NO_SECRETS: Secrets = {
   hrmApiKey: null,
   tunnelToken: null,
   vapidPrivateKey: null,
+  adoPat: null,
 }
 
 export interface TunnelToken {
@@ -41,6 +48,11 @@ export interface JiraToken {
   readonly source: JiraTokenSource
 }
 
+export interface AdoPat {
+  readonly pat: string | null
+  readonly source: 'env' | 'file' | null
+}
+
 const CONFIG_FILE = 'config.json'
 const SECRETS_FILE = 'secrets.json'
 export interface HrmKey {
@@ -51,6 +63,7 @@ export interface HrmKey {
 const TOKEN_ENVIRONMENT_VARIABLE = 'WORKDAY_JIRA_API_TOKEN'
 const HRM_KEY_ENVIRONMENT_VARIABLE = 'WORKDAY_HRM_API_KEY'
 const TUNNEL_TOKEN_ENVIRONMENT_VARIABLE = 'WORKDAY_TUNNEL_TOKEN'
+const ADO_PAT_ENVIRONMENT_VARIABLE = 'WORKDAY_ADO_PAT'
 const GRAPH_TOKEN_ENVIRONMENT_VARIABLE = 'WORKDAY_MS_GRAPH_TOKEN'
 const DEFAULT_POLL_MINUTES = 5
 const MIN_POLL_MINUTES = 1
@@ -90,6 +103,8 @@ function parseStatusFlow(raw: unknown): StatusFlow {
   return {
     preWorkStatuses: stringList(source['preWorkStatuses']),
     reworkStatuses: stringList(source['reworkStatuses']),
+    readyToTestPath: stringList(source['readyToTestPath']),
+    developerStatuses: stringList(source['developerStatuses']),
   }
 }
 
@@ -114,7 +129,83 @@ export function parseJira(raw: unknown): JiraConfig | null {
     etaFieldId: textOrNull(raw['etaFieldId']),
     devPriorityFieldId: textOrNull(raw['devPriorityFieldId']),
     statusFlow: parseStatusFlow(raw['statusFlow']),
+    suggestions: parseSuggestions(raw['suggestions']),
   }
+}
+
+// All four JQL/prefix values are required; a partial block reads as suggestions off.
+function parseSuggestions(raw: unknown): SuggestionsConfig | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const epicJql = textOrNull(raw['epicJql'])
+  const epicTitlePrefix = textOrNull(raw['epicTitlePrefix'])
+  const candidatesJql = textOrNull(raw['candidatesJql'])
+  const mineJql = textOrNull(raw['mineJql'])
+  if (epicJql === null || epicTitlePrefix === null || candidatesJql === null || mineJql === null) {
+    return null
+  }
+  return {
+    epicJql,
+    epicTitlePrefix,
+    candidatesJql,
+    mineJql,
+    selectedStatus: textOrNull(raw['selectedStatus']),
+  }
+}
+
+// Null until organization and project are both present; repoLabels keeps the file's key order.
+export function parseAzureDevOps(raw: unknown): AzureDevOpsConfig | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const organization = textOrNull(raw['organization'])
+  const project = textOrNull(raw['project'])
+  if (organization === null || project === null) {
+    return null
+  }
+  const repoLabels: Record<string, string> = {}
+  const rawLabels = raw['repoLabels']
+  if (isRecord(rawLabels)) {
+    for (const [repository, label] of Object.entries(rawLabels)) {
+      const text = textOrNull(label)
+      if (text !== null) {
+        repoLabels[repository] = text
+      }
+    }
+  }
+  return {
+    organization,
+    project,
+    repoLabels,
+    devPipelineFolder: textOrNull(raw['devPipelineFolder']),
+  }
+}
+
+const NOTICE_TOPICS: readonly NoticeTopic[] = ['claude', 'pr', 'jira', 'suggestions', 'other']
+const NOTICE_CHANNELS: readonly (keyof NoticeChannels)[] = ['toast', 'desktop', 'phone']
+
+// Unknown topics and channels, and any non-boolean value, are dropped.
+export function parseNotices(raw: unknown): NoticePrefs {
+  if (!isRecord(raw)) {
+    return {}
+  }
+  const prefs: Partial<Record<NoticeTopic, Partial<NoticeChannels>>> = {}
+  for (const topic of NOTICE_TOPICS) {
+    const rawChannels = raw[topic]
+    if (!isRecord(rawChannels)) {
+      continue
+    }
+    const channels: Partial<Record<keyof NoticeChannels, boolean>> = {}
+    for (const channel of NOTICE_CHANNELS) {
+      const value = rawChannels[channel]
+      if (typeof value === 'boolean') {
+        channels[channel] = value
+      }
+    }
+    prefs[topic] = channels
+  }
+  return prefs
 }
 
 function parseHrm(raw: unknown): HrmConfig | null {
@@ -204,6 +295,8 @@ function parseConfig(raw: unknown): WorkdayConfig | null {
     timesheet: parseTimesheet(raw['timesheet']),
     remote: parseRemote(raw['remote']),
     workspace: parseWorkspace(raw['workspace']),
+    azureDevOps: parseAzureDevOps(raw['azureDevOps']),
+    notices: parseNotices(raw['notices']),
   }
 }
 
@@ -270,6 +363,8 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   timesheet: { logTime: DEFAULT_LOG_TIME, hrm: null, tsc: null },
   remote: null,
   workspace: DEFAULT_WORKSPACE,
+  azureDevOps: null,
+  notices: {},
 }
 
 export function loadConfig(dataDir: string): WorkdayConfig {
@@ -292,6 +387,7 @@ function sealSecrets(key: Buffer, secrets: Secrets): Record<SecretName, string |
     hrmApiKey: seal(secrets.hrmApiKey),
     tunnelToken: seal(secrets.tunnelToken),
     vapidPrivateKey: seal(secrets.vapidPrivateKey),
+    adoPat: seal(secrets.adoPat),
   }
 }
 
@@ -323,6 +419,7 @@ export function readFileSecrets(dataDir: string): Secrets {
       hrmApiKey: read('hrmApiKey'),
       tunnelToken: read('tunnelToken'),
       vapidPrivateKey: read('vapidPrivateKey'),
+      adoPat: read('adoPat'),
     }
   }
   const path = join(dataDir, SECRETS_FILE)
@@ -365,6 +462,16 @@ export function loadHrmKey(dataDir: string): HrmKey {
   return { key: fileKey, source: fileKey === null ? null : 'file' }
 }
 
+// The environment variable wins over secrets.json.
+export function loadAdoPat(dataDir: string): AdoPat {
+  const environmentPat = textOrNull(process.env[ADO_PAT_ENVIRONMENT_VARIABLE])
+  if (environmentPat !== null) {
+    return { pat: environmentPat, source: 'env' }
+  }
+  const filePat = readFileSecrets(dataDir).adoPat
+  return { pat: filePat, source: filePat === null ? null : 'file' }
+}
+
 // Environment only: a short-lived Graph token is never written to disk.
 export function loadGraphTokenOverride(): string | null {
   return textOrNull(process.env[GRAPH_TOKEN_ENVIRONMENT_VARIABLE])
@@ -386,6 +493,7 @@ export function loadSecrets(dataDir: string): Secrets {
     hrmApiKey: loadHrmKey(dataDir).key,
     tunnelToken: loadTunnelToken(dataDir).token,
     vapidPrivateKey: readFileSecrets(dataDir).vapidPrivateKey,
+    adoPat: loadAdoPat(dataDir).pat,
   }
 }
 

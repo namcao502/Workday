@@ -1,0 +1,39 @@
+{
+  "value": [
+    {
+      "pullRequestId": 42, "title": "MDP-9001 Fix totals", "isDraft": false,
+      "sourceRefName": "refs/heads/MDP-9001-dev",
+      "createdBy": { "id": "lead", "displayName": "Minh Dinh" },
+      "repository": { "name": "Portal" },
+      "reviewers": [{ "id": "other", "vote": 10 }, { "id": "me", "vote": 0, "isRequired": true }]
+    },
+    {
+      "pullRequestId": 1, "title": "voted", "sourceRefName": "refs/heads/MDP-1", "createdBy": { "id": "lead" },
+      "repository": { "name": "Backend" }, "reviewers": [{ "id": "me", "vote": 10 }]
+    },
+    {
+      "pullRequestId": 2, "title": "waiting", "sourceRefName": "refs/heads/MDP-2", "createdBy": { "id": "lead" },
+      "repository": { "name": "Backend" }, "reviewers": [{ "id": "me", "vote": -5 }]
+    },
+    {
+      "pullRequestId": 3, "title": "declined", "sourceRefName": "refs/heads/MDP-3", "createdBy": { "id": "lead" },
+      "repository": { "name": "Backend" }, "reviewers": [{ "id": "me", "vote": 0, "hasDeclined": true }]
+    },
+    {
+      "pullRequestId": 4, "title": "draft", "isDraft": true, "sourceRefName": "refs/heads/MDP-4", "createdBy": { "id": "lead" },
+      "repository": { "name": "Backend" }, "reviewers": [{ "id": "me", "vote": 0 }]
+    },
+    {
+      "pullRequestId": 5, "title": "mine", "sourceRefName": "refs/heads/MDP-5", "createdBy": { "id": "me" },
+      "repository": { "name": "Backend" }, "reviewers": [{ "id": "me", "vote": 0 }]
+    },
+    {
+      "pullRequestId": 6, "title": "not asked", "sourceRefName": "refs/heads/MDP-6", "createdBy": { "id": "lead" },
+      "repository": { "name": "Backend" }, "reviewers": [{ "id": "other", "vote": 0 }]
+    },
+    {
+      "pullRequestId": 7, "title": "x", "sourceRefName": "refs/heads/feature/x", "createdBy": { "id": "lead" },
+      "repository": { "name": "Backend" }, "reviewers": [{ "id": "me", "vote": 0 }]
+    }
+  ]
+}

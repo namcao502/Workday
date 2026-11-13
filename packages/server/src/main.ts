@@ -71,6 +71,7 @@ async function main(): Promise<void> {
 
   const shutdown = (): void => {
     services.scheduler.stop()
+    services.prScheduler.stop()
     services.logScheduler.stop()
     services.workspace.shutdown()
     Promise.all([app.close(), services.remote.shutdown()]).then(

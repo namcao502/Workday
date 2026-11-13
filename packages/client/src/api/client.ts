@@ -1,5 +1,7 @@
 import type {
   AddTicketResult,
+  AdoCheckRequest,
+  AdoCheckResult,
   AppError,
   BoardAction,
   BoardView,
@@ -19,10 +21,12 @@ import { isRecord } from '../json.js'
 export const queryKeys = {
   board: ['board'],
   me: ['me'],
+  notices: ['notices'],
   remote: ['remote'],
   settings: ['settings'],
   timesheet: ['timesheet'],
   timesheetVisited: ['timesheet-visited'],
+  work: ['work'],
   workspace: ['workspace'],
   workspaceWarning: ['workspace-warning'],
 } as const
@@ -108,7 +112,7 @@ export async function addTicket(input: string): Promise<AddTicketResult> {
 function expectFailure(
   raw: RawResponse,
   path: string,
-): Extract<AddTicketResult | JiraCheckResult, { ok: false }> {
+): Extract<AddTicketResult | JiraCheckResult | AdoCheckResult, { ok: false }> {
   return { ok: false, error: readError(raw, path) }
 }
 
@@ -159,6 +163,9 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'sessionNotFound',
   'pathOutside',
   'gitFailed',
+  'adoRejected',
+  'adoUnreachable',
+  'adoNotConfigured',
 ])
 
 export function isPlainCode(code: unknown): code is PlainCode {
@@ -192,6 +199,19 @@ export async function saveSettings(update: SettingsUpdate): Promise<SettingsView
 
 export async function checkJira(request: JiraCheckRequest): Promise<JiraCheckResult> {
   const path = '/api/settings/jira/check'
+  const raw = await send('POST', path, request)
+  if (!raw.ok || !hasOkFlag(raw.body)) {
+    throw new ApiError(raw.status, path)
+  }
+  if (raw.body.ok) {
+    const displayName = raw.body['displayName']
+    return { ok: true, displayName: typeof displayName === 'string' ? displayName : '' }
+  }
+  return expectFailure(raw, path)
+}
+
+export async function checkAdo(request: AdoCheckRequest): Promise<AdoCheckResult> {
+  const path = '/api/settings/ado/check'
   const raw = await send('POST', path, request)
   if (!raw.ok || !hasOkFlag(raw.body)) {
     throw new ApiError(raw.status, path)

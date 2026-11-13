@@ -1,24 +1,34 @@
 import { homedir } from 'node:os'
 import type {
+  AzureDevOpsConfig,
   HoursLog,
   HrmConfig,
   JiraConfig,
+  PullRequests,
   SheetLog,
   TicketTracker,
   RemoteConfig,
   TscConfig,
   WorkdayConfig,
 } from '@workday/core'
+import { AzureDevOpsClient } from './azureDevOps/adoClient.js'
 import { BoardService } from './board/boardService.js'
 import { PollScheduler } from './board/pollScheduler.js'
 import { loadBoard, saveBoard } from './boardStore.js'
 import { DEFAULT_OFF_MARKER } from './config.js'
 import { EventHub } from './events.js'
+import { claudeWaitNotice } from './notices/claudeWaitNotice.js'
+import { loadNotices, saveNotices } from './notices/noticeStore.js'
+import { NoticeService } from './notices/noticeService.js'
+import { PrService } from './prs/prService.js'
+import { loadPrState, savePrState } from './prs/prStore.js'
 import type { AccessTokenVerifier } from './remote/accessJwt.js'
 import { RemoteService } from './remote/remoteService.js'
 import type { SendPush } from './remote/pushService.js'
 import type { SpawnTunnel } from './remote/tunnelSupervisor.js'
-import { SettingsService, type Scheduler } from './settings/settingsService.js'
+import { NO_STATUS_FLOW, SettingsService, type Scheduler } from './settings/settingsService.js'
+import { SuggestionService } from './suggestions/suggestionService.js'
+import { loadSuggestionState, saveSuggestionState } from './suggestions/suggestionStore.js'
 import { runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
@@ -39,9 +49,13 @@ export interface ServicesOptions {
   readonly config: WorkdayConfig
   readonly createTracker: (jira: JiraConfig, token: string) => TicketTracker
   readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
+  // Tests pass their own; by default a real Azure DevOps client.
+  readonly createPullRequests?: (config: AzureDevOpsConfig, pat: string) => PullRequests
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
   // Tests pass their own; by default a PollScheduler drives the board's poll.
   readonly scheduler?: Scheduler
+  // Tests pass their own; by default a PollScheduler drives the PR check.
+  readonly prScheduler?: Scheduler
   // Tests pass their own; by default a LogScheduler fires the timesheet's daily run.
   readonly logScheduler?: LogTimer
   // Tests pass their own; by default the real Cloudflare Access verifier.
@@ -64,8 +78,12 @@ export interface Services {
   readonly timesheet: TimesheetService
   readonly events: EventHub
   readonly remote: RemoteService
+  readonly notices: NoticeService
   readonly workspace: WorkspaceService
+  readonly prs: PrService
+  readonly suggestions: SuggestionService
   readonly scheduler: Scheduler
+  readonly prScheduler: Scheduler
   readonly logScheduler: LogTimer
 }
 
@@ -118,12 +136,31 @@ export function createServices(options: ServicesOptions): Services {
     },
     ...logError,
   })
+  const notices = new NoticeService({
+    initial: loadNotices(dataDir),
+    save: (list) => saveNotices(dataDir, list),
+    events,
+    now: () => new Date(),
+    push: (area, message) => remote.push.sendToArea(area, message),
+    settings: () => ({ prefs: settings.notices, language: settings.language }),
+    logError: reportError,
+  })
   const workspace = new WorkspaceService({
     dataDir,
     config: config.workspace,
     initialState: loadWorkspace(dataDir),
     save: (state) => saveWorkspace(dataDir, state),
     events,
+    onWait: (session, tab, wait) => {
+      notices.add(claudeWaitNotice(session, tab, wait)).catch((error: unknown) => {
+        reportError('Adding a Claude notice failed', error)
+      })
+    },
+    onSeen: (session) => {
+      notices.markReadAt(`session:${session}`).catch((error: unknown) => {
+        reportError('Reading a Claude notice failed', error)
+      })
+    },
     spawn: options.spawnPty ?? spawnNodePty,
     ...(options.spawnEditor === undefined ? {} : { spawnEditor: options.spawnEditor }),
     homeDir: options.homeDir ?? homedir(),
@@ -137,7 +174,39 @@ export function createServices(options: ServicesOptions): Services {
         })),
     ...logError,
   })
-  const scheduler = options.scheduler ?? new PollScheduler(() => board.poll())
+  const prs: PrService = new PrService({
+    initialState: loadPrState(dataDir),
+    save: (state) => savePrState(dataDir, state),
+    events,
+    notices,
+    board,
+    settings: {
+      pullRequests: null,
+      tracker: null,
+      flow: config.jira?.statusFlow ?? NO_STATUS_FLOW,
+      repoLabels: config.azureDevOps?.repoLabels ?? {},
+    },
+    ...logError,
+  })
+  const suggestions: SuggestionService = new SuggestionService({
+    initialState: loadSuggestionState(dataDir),
+    save: (state) => saveSuggestionState(dataDir, state),
+    events,
+    notices,
+    board,
+    settings: { tracker: null, config: null, projectKey: null, timeZone: config.timeZone },
+    ...logError,
+  })
+  // Suggestions follow a poll that read Jira; a failed poll keeps the last ones.
+  const scheduler =
+    options.scheduler ??
+    new PollScheduler(async () => {
+      await board.poll()
+      if (board.view().lastPoll?.ok === true) {
+        await suggestions.refresh()
+      }
+    })
+  const prScheduler = options.prScheduler ?? new PollScheduler(() => prs.check())
   const logScheduler = options.logScheduler ?? new LogScheduler(() => timesheet.runSchedule())
   const settings = new SettingsService({
     dataDir,
@@ -149,10 +218,28 @@ export function createServices(options: ServicesOptions): Services {
     timesheet,
     logScheduler,
     createHoursLog: options.createHoursLog,
+    createPullRequests:
+      options.createPullRequests ?? ((ado, pat) => new AzureDevOpsClient(ado, pat)),
     createSheetLog: options.createSheetLog,
+    prs,
+    suggestions,
+    prScheduler,
     remote,
     workspace,
     ...logError,
   })
-  return { board, settings, timesheet, events, remote, workspace, scheduler, logScheduler }
+  return {
+    board,
+    settings,
+    timesheet,
+    events,
+    remote,
+    notices,
+    workspace,
+    prs,
+    suggestions,
+    scheduler,
+    prScheduler,
+    logScheduler,
+  }
 }

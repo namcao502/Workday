@@ -58,6 +58,9 @@ export interface WorkspaceServiceDeps {
   readonly platform?: 'win32' | 'other'
   readonly environment?: Readonly<Record<string, string | undefined>>
   readonly logError?: (message: string, error: unknown) => void
+  // A session just got a new wait (different from its last one); onSeen: the user looked at a session.
+  readonly onWait?: (session: string, tab: WorkspaceTab, wait: WaitReason) => void
+  readonly onSeen?: (session: string) => void
   readonly board: TicketLauncherDeps['board']
   readonly timesheet: TicketLauncherDeps['timesheet']
   readonly createWorktree: TicketLauncherDeps['createWorktree']
@@ -234,11 +237,13 @@ export class WorkspaceService {
       return 'ok'
     })
   }
+
   seen(name: string): void {
     const current = this.attention.get(name) ?? IDLE
     if (current.wait !== null && clearsWhenSeen(current.wait)) {
       this.setAttention(name, { ...current, wait: null })
     }
+    this.deps.onSeen?.(name)
   }
 
   // Esc closes a permission or question dialog, and claude sends no hook for that.
@@ -255,15 +260,20 @@ export class WorkspaceService {
       return false
     }
     const event = parseHookEvent(payload)
-    if (event === null || this.tabOf(session) === undefined) {
+    const tab = this.tabOf(session)
+    if (event === null || tab === undefined) {
       return true
     }
     this.launcher.shipDone(session)
     const current = this.attention.get(session) ?? IDLE
+    const wait = nextWait(current.wait, event)
     this.setAttention(session, {
-      wait: nextWait(current.wait, event),
+      wait,
       working: workingAfter(event.eventName, current.working),
     })
+    if (wait !== null && wait !== current.wait) {
+      this.deps.onWait?.(session, tab, wait)
+    }
     if (isAcceptedPath(event.transcriptPath, this.projectsRoot(), this.platform)) {
       this.transcripts.set(session, event.transcriptPath ?? '')
     }

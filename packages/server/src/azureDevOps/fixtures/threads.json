@@ -1,0 +1,10 @@
+{
+  "value": [
+    { "status": "active", "comments": [{ "commentType": "text" }, { "commentType": "text" }] },
+    { "status": "pending", "comments": [{ "commentType": "text" }] },
+    { "status": "fixed", "comments": [{ "commentType": "text" }] },
+    { "status": "active", "comments": [{ "commentType": "system" }] },
+    { "status": "active", "isDeleted": true, "comments": [{ "commentType": "text" }] },
+    { "status": "active", "comments": [{ "commentType": "text", "isDeleted": true }] }
+  ]
+}
