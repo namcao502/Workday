@@ -45,81 +45,85 @@ export function ClaudePane({
   const waitOf = (name: string): 'finished' | 'permission' | 'question' | null =>
     workspace.data?.sessions.find((view) => view.name === name)?.wait ?? null
   return (
-    <div className="claude-pane" hidden={!active}>
-      <div
-        className="claude-sessions"
-        role="tablist"
-        aria-label={t('Claude sessions', 'Phiên Claude')}
-      >
-        {tab.sessions.map((name, index) => (
-          <div key={name} className="claude-session" data-selected={name === selected}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={name === selected}
-              onClick={() => {
-                onSelect(name)
-              }}
-            >
-              {sessionLabel(name)}
-            </button>
-            {index === 0 ? null : (
+    <div
+      className={`legacy-page h-full min-h-0 min-w-0 flex-[1_1_50%] flex-col ${active ? 'flex' : 'hidden'}`}
+    >
+      <div className="claude-pane" hidden={!active}>
+        <div
+          className="claude-sessions"
+          role="tablist"
+          aria-label={t('Claude sessions', 'Phiên Claude')}
+        >
+          {tab.sessions.map((name, index) => (
+            <div key={name} className="claude-session" data-selected={name === selected}>
               <button
                 type="button"
-                className="workspace-tab-close"
-                aria-label={t(`Close ${sessionLabel(name)}`, `Đóng ${sessionLabel(name)}`)}
+                role="tab"
+                aria-selected={name === selected}
                 onClick={() => {
-                  onClose(name)
+                  onSelect(name)
                 }}
               >
-                x
+                {sessionLabel(name)}
               </button>
-            )}
+              {index === 0 ? null : (
+                <button
+                  type="button"
+                  className="workspace-tab-close"
+                  aria-label={t(`Close ${sessionLabel(name)}`, `Đóng ${sessionLabel(name)}`)}
+                  onClick={() => {
+                    onClose(name)
+                  }}
+                >
+                  x
+                </button>
+              )}
+            </div>
+          ))}
+          {chatEnabled ? (
+            <div className="segmented" role="group">
+              {(['chat', 'terminal'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  aria-pressed={modeOf(selected) === mode}
+                  onClick={() => {
+                    chooseMode(selected, mode)
+                  }}
+                >
+                  {mode === 'chat' ? 'Chat' : 'Terminal'}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className="wd-button ghost"
+            aria-label={t('New Claude session', 'Phiên Claude mới')}
+            onClick={onAdd}
+          >
+            +
+          </button>
+        </div>
+        {tab.sessions.map((name) => (
+          <div key={name} className="claude-stage" hidden={name !== selected}>
+            <TerminalView
+              session={name}
+              visible={active && name === selected}
+              concealed={modeOf(name) === 'chat'}
+            />
+            {active && name === selected && modeOf(name) === 'chat' ? (
+              <ChatView
+                session={name}
+                wait={waitOf(name)}
+                onOpenTerminal={() => {
+                  chooseMode(name, 'terminal')
+                }}
+              />
+            ) : null}
           </div>
         ))}
-        {chatEnabled ? (
-          <div className="segmented" role="group">
-            {(['chat', 'terminal'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                aria-pressed={modeOf(selected) === mode}
-                onClick={() => {
-                  chooseMode(selected, mode)
-                }}
-              >
-                {mode === 'chat' ? 'Chat' : 'Terminal'}
-              </button>
-            ))}
-          </div>
-        ) : null}
-        <button
-          type="button"
-          className="wd-button ghost"
-          aria-label={t('New Claude session', 'Phiên Claude mới')}
-          onClick={onAdd}
-        >
-          +
-        </button>
       </div>
-      {tab.sessions.map((name) => (
-        <div key={name} className="claude-stage" hidden={name !== selected}>
-          <TerminalView
-            session={name}
-            visible={active && name === selected}
-            concealed={modeOf(name) === 'chat'}
-          />
-          {active && name === selected && modeOf(name) === 'chat' ? (
-            <ChatView
-              session={name}
-              wait={waitOf(name)}
-              onOpenTerminal={() => {
-                chooseMode(name, 'terminal')
-              }}
-            />
-          ) : null}
-        </div>
-      ))}
     </div>
   )
 }

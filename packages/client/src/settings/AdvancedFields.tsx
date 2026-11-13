@@ -1,6 +1,6 @@
 import { t } from '../i18n.js'
 import type { JiraForm } from './jiraForm.js'
-import { TextField } from './TextField.js'
+import { TextField } from '../ui/TextField.js'
 
 interface AdvancedFieldsProps {
   readonly form: JiraForm
@@ -9,7 +9,7 @@ interface AdvancedFieldsProps {
 
 export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.JSX.Element {
   return (
-    <div className="advanced">
+    <>
       <TextField
         id="jira-eta-field"
         label={t('ETA date field id', 'Mã trường ngày ETA')}
@@ -114,7 +114,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           onChange({ developerStatuses: value })
         }}
       />
-      <h4 className="section-subtitle">{t('Suggestions', 'Gợi ý')}</h4>
+      <h4 className="pt-2 text-sm font-semibold">{t('Suggestions', 'Gợi ý')}</h4>
       <TextField
         id="jira-suggestions-epic-jql"
         label={t('Epic query (JQL)', 'Truy vấn epic (JQL)')}
@@ -169,6 +169,6 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           onChange({ suggestionsSelectedStatus: value })
         }}
       />
-    </div>
+    </>
   )
 }

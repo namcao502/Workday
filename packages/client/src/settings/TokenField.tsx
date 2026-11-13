@@ -1,3 +1,4 @@
+import { Button, Chip, Description, Input, Label, TextField as HeroTextField } from '@heroui/react'
 import { t } from '../i18n.js'
 
 const MASK = '•'.repeat(8)
@@ -32,55 +33,36 @@ export function TokenField({
     'Tạo tại id.atlassian.com > Security > API tokens. Đây không phải mật khẩu.',
   ),
 }: TokenFieldProps): React.JSX.Element {
-  const hintId = `${id}-hint`
   if (source === 'env') {
     return (
-      <div className="form-field">
-        <label className="field-label" htmlFor={id}>
-          {label}
-        </label>
-        <input
-          id={id}
-          className="wd-input"
-          value={MASK}
-          aria-describedby={hintId}
-          disabled
-          readOnly
-        />
-        <span id={hintId} className="field-hint">
-          {envText}
-        </span>
-      </div>
+      <HeroTextField fullWidth isDisabled isReadOnly value={MASK}>
+        <Label>{label}</Label>
+        <Input id={id} variant="secondary" />
+        <div>
+          <Chip size="sm">{envText}</Chip>
+        </div>
+      </HeroTextField>
     )
   }
   const showMask = source === 'file' && !replacing
   return (
-    <div className="form-field">
-      <label className="field-label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="inline-row">
-        <input
-          id={id}
-          className="wd-input"
-          type={showMask ? 'text' : 'password'}
-          autoComplete="off"
-          aria-describedby={hintId}
-          disabled={showMask}
-          value={showMask ? MASK : value}
-          onChange={(event) => {
-            onChange(event.target.value)
-          }}
-        />
+    <HeroTextField
+      fullWidth
+      isDisabled={showMask}
+      type={showMask ? 'text' : 'password'}
+      value={showMask ? MASK : value}
+      onChange={onChange}
+    >
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input id={id} variant="secondary" autoComplete="off" className="flex-1" />
         {showMask ? (
-          <button type="button" className="wd-button secondary" onClick={onReplace}>
+          <Button variant="secondary" size="sm" onPress={onReplace}>
             {t('Replace', 'Thay thế')}
-          </button>
+          </Button>
         ) : null}
       </div>
-      <span id={hintId} className="field-hint">
-        {helpText}
-      </span>
-    </div>
+      <Description>{helpText}</Description>
+    </HeroTextField>
   )
 }

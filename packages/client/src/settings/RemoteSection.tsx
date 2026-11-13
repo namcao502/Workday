@@ -1,4 +1,5 @@
 import type { RemoteStatusView, SettingsView } from '@workday/core'
+import { Button, Switch } from '@heroui/react'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useRemote, useRemoteActions } from '../api/useRemote.js'
@@ -8,7 +9,8 @@ import { RemoteActivity } from './RemoteActivity.js'
 import { RemoteDevices, type RunRemote } from './RemoteDevices.js'
 import { RemotePairing } from './RemotePairing.js'
 import { formFromRemote, remoteFromForm, type RemoteForm } from './remoteForm.js'
-import { TextField } from './TextField.js'
+import { Section } from '../ui/Section.js'
+import { TextField } from '../ui/TextField.js'
 import { TokenField } from './TokenField.js'
 
 function tunnelText(status: RemoteStatusView): string {
@@ -72,19 +74,20 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
 
   const { language, timeZone } = settings.config
   return (
-    <section className="section">
-      <h2 className="section-title">{t('Remote access', 'Truy cập từ xa')}</h2>
-      <label className="field-row">
-        <span>{t('Allow remote access', 'Cho phép truy cập từ xa')}</span>
-        <input
-          type="checkbox"
-          role="switch"
-          checked={form.enabled}
-          onChange={(event) => {
-            change({ enabled: event.target.checked })
-          }}
-        />
-      </label>
+    <Section title={t('Remote access', 'Truy cập từ xa')}>
+      <Switch
+        isSelected={form.enabled}
+        onChange={(selected) => {
+          change({ enabled: selected })
+        }}
+      >
+        <Switch.Content>
+          <Switch.Control>
+            <Switch.Thumb />
+          </Switch.Control>
+          {t('Allow remote access', 'Cho phép truy cập từ xa')}
+        </Switch.Content>
+      </Switch>
       <TextField
         id="remote-public-host"
         label={t('Public host', 'Public host')}
@@ -145,27 +148,27 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
           setReplacing(true)
         }}
       />
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={busy}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={busy}
+          onPress={() => {
             void runSave()
           }}
         >
           {t('Save', 'Lưu')}
-        </button>
+        </Button>
       </div>
       {message === null ? null : (
-        <p className={message.ok ? 'status success' : 'status danger'} role="status">
+        <p className={message.ok ? 'text-sm text-success' : 'text-sm text-danger'} role="status">
           {message.text}
         </p>
       )}
       {remote.data === undefined ? null : (
         <>
           <p
-            className={remote.data.tunnel === 'failed' ? 'status danger' : 'status'}
+            className={remote.data.tunnel === 'failed' ? 'text-sm text-danger' : 'status'}
             title={remote.data.tunnelDetail ?? undefined}
           >
             {tunnelText(remote.data)}
@@ -176,7 +179,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
             actions={actions}
             run={run}
           />
-          <h3 className="section-subtitle">{t('Devices', 'Thiết bị')}</h3>
+          <h3 className="text-sm font-semibold">{t('Devices', 'Thiết bị')}</h3>
           <RemoteDevices
             devices={remote.data.devices}
             actions={actions}
@@ -187,7 +190,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
           <RemoteActivity activity={remote.data.activity} language={language} timeZone={timeZone} />
         </>
       )}
-    </section>
+    </Section>
   )
 }
 

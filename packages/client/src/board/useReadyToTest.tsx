@@ -2,7 +2,7 @@ import type { ReadyToTestOutcome } from '@workday/core'
 import { useState } from 'react'
 import { actionErrorText, useWorkActions } from '../api/useWork.js'
 import { t } from '../i18n.js'
-import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
+import { ConfirmDialog } from '../ui/ConfirmDialog.js'
 
 export function outcomeText(key: string, outcome: ReadyToTestOutcome): string {
   switch (outcome.status) {

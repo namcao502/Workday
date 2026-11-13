@@ -1,3 +1,4 @@
+import { Button, Input, Label, TextField } from '@heroui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { getPairingStatus, submitPairing } from '../api/remoteApi.js'
 import { errorText } from '../errors.js'
@@ -76,7 +77,7 @@ function WaitingView(props: {
 }): React.JSX.Element {
   useWaiting(props.requestId, props.options, props.onFailed)
   return (
-    <p className="status">
+    <p className="text-sm text-muted">
       {t('Waiting for approval on the PC...', 'Đang chờ duyệt trên máy tính...')}
     </p>
   )
@@ -115,8 +116,10 @@ export function PairPage({
   }
 
   return (
-    <main className="pair-page">
-      <h1 className="page-title">{t('Pair this device', 'Ghép nối thiết bị này')}</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {t('Pair this device', 'Ghép nối thiết bị này')}
+      </h1>
       {phase.kind === 'waiting' ? (
         <WaitingView
           requestId={phase.requestId}
@@ -125,49 +128,40 @@ export function PairPage({
         />
       ) : (
         <form
-          className="pair-form"
+          className="flex flex-col gap-4"
           onSubmit={(event) => {
             event.preventDefault()
             void pair()
           }}
         >
-          <p className="muted">
+          <p className="text-sm text-muted">
             {t(
               'Enter the code shown on the PC in Settings > Remote access.',
               'Nhập mã đang hiện trên máy tính ở Cài đặt > Truy cập từ xa.',
             )}
           </p>
-          <label className="field">
-            <span>{t('Code', 'Mã')}</span>
-            <input
-              className="wd-input"
-              value={code}
-              maxLength={CODE_LENGTH}
-              autoCapitalize="characters"
-              autoComplete="off"
-              onChange={(event) => {
-                setCode(event.target.value.replace(/\s+/g, '').toUpperCase())
-              }}
-            />
-          </label>
-          <label className="field">
-            <span>{t('Device name', 'Tên thiết bị')}</span>
-            <input
-              className="wd-input"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value)
-              }}
-            />
-          </label>
-          {phase.notice === null ? null : <p className="status danger">{phase.notice}</p>}
-          <button
+          <TextField
+            fullWidth
+            value={code}
+            onChange={(value) => {
+              setCode(value.replace(/\s+/g, '').toUpperCase())
+            }}
+          >
+            <Label>{t('Code', 'Mã')}</Label>
+            <Input variant="secondary" maxLength={CODE_LENGTH} autoCapitalize="characters" autoComplete="off" />
+          </TextField>
+          <TextField fullWidth value={name} onChange={setName}>
+            <Label>{t('Device name', 'Tên thiết bị')}</Label>
+            <Input variant="secondary" />
+          </TextField>
+          {phase.notice === null ? null : <p className="text-sm text-danger">{phase.notice}</p>}
+          <Button
             type="submit"
-            className="wd-button primary"
-            disabled={sending || code.length !== CODE_LENGTH || name.trim() === ''}
+            variant="primary"
+            isDisabled={sending || code.length !== CODE_LENGTH || name.trim() === ''}
           >
             {t('Pair', 'Ghép nối')}
-          </button>
+          </Button>
         </form>
       )}
     </main>

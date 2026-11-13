@@ -1,4 +1,5 @@
 import type { SessionView, WorkspaceTab } from '@workday/core'
+import { Alert, Button } from '@heroui/react'
 import { useEffect, useState } from 'react'
 import { useStartWarning, useWorkspace, useWorkspaceActions } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
@@ -9,7 +10,8 @@ import {
   workspaceSelectionFromHash,
   type WorkspaceSelection,
 } from '../shell/pages.js'
-import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
+import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { Page } from '../ui/Page.js'
 import { ClaudePane } from './ClaudePane.js'
 import { LeftPane } from './LeftPane.js'
 import { resolveSelection } from './selection.js'
@@ -83,29 +85,28 @@ export function WorkspacePage(): React.JSX.Element {
 
   if (view === undefined) {
     return (
-      <section className="page workspace-page">
-        <h1 className="page-title">{t('Workspace', 'Không gian làm việc')}</h1>
-        <p className="muted">{t('Loading...', 'Đang tải...')}</p>
-      </section>
+      <Page title={t('Workspace', 'Không gian làm việc')}>
+        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+      </Page>
     )
   }
   if (!view.configured) {
     return (
-      <section className="page workspace-page">
-        <h1 className="page-title">{t('Workspace', 'Không gian làm việc')}</h1>
-        <p className="muted">
+      <Page title={t('Workspace', 'Không gian làm việc')}>
+        <p className="text-sm text-muted">
           {t('Set the dev repo in Settings', 'Hãy đặt dev repo trong Cài đặt')}
         </p>
-        <button
-          type="button"
-          className="wd-button primary"
-          onClick={() => {
-            navigateTo('settings')
-          }}
-        >
-          {t('Open Settings', 'Mở Cài đặt')}
-        </button>
-      </section>
+        <div>
+          <Button
+            variant="primary"
+            onPress={() => {
+              navigateTo('settings')
+            }}
+          >
+            {t('Open Settings', 'Mở Cài đặt')}
+          </Button>
+        </div>
+      </Page>
     )
   }
 
@@ -131,20 +132,23 @@ export function WorkspacePage(): React.JSX.Element {
   }
 
   return (
-    <section className="page workspace-page">
+    <section className="flex h-full min-h-0 flex-col gap-3 px-6 pb-4">
       {warning === null ? null : (
-        <p className="status warning" role="status">
-          {warning}{' '}
-          <button
-            type="button"
-            className="wd-button ghost"
-            onClick={() => {
+        <Alert status="warning">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>{warning}</Alert.Title>
+          </Alert.Content>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
               setWarning(null)
             }}
           >
             {t('Dismiss', 'Bỏ qua')}
-          </button>
-        </p>
+          </Button>
+        </Alert>
       )}
       <WorkspaceTabs
         tabs={view.tabs}
@@ -160,19 +164,21 @@ export function WorkspacePage(): React.JSX.Element {
         }}
       />
       {tab === null || session === null ? (
-        <p className="muted">{t('No open tabs', 'Chưa có thẻ nào')}</p>
+        <p className="text-sm text-muted">{t('No open tabs', 'Chưa có thẻ nào')}</p>
       ) : (
-        <div className="workspace-body">
+        <div className="flex min-h-0 flex-1 gap-4">
           {leftHidden ? (
-            <button
-              type="button"
-              className="wd-button ghost workspace-show-left"
-              onClick={() => {
-                setLeftHidden(false)
-              }}
-            >
-              {t('Show files', 'Hiện tệp')}
-            </button>
+            <div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => {
+                  setLeftHidden(false)
+                }}
+              >
+                {t('Show files', 'Hiện tệp')}
+              </Button>
+            </div>
           ) : (
             // Distinct keys per sibling: a key shared with ClaudePane left old panes mounted on tab switch.
             <LeftPane

@@ -1,5 +1,6 @@
 import { useSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
+import { Page } from '../ui/Page.js'
 import { AzureDevOpsSection } from './AzureDevOpsSection.js'
 import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
@@ -12,10 +13,9 @@ import { WorkspaceSection } from './WorkspaceSection.js'
 export function SettingsPage(): React.JSX.Element {
   const settings = useSettings()
   return (
-    <section className="page">
-      <h1 className="page-title">{t('Settings', 'Cài đặt')}</h1>
+    <Page title={t('Settings', 'Cài đặt')}>
       {settings.data === undefined ? (
-        <p className="muted">{t('Loading...', 'Đang tải...')}</p>
+        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
       ) : (
         <>
           <GeneralSection settings={settings.data} />
@@ -28,6 +28,6 @@ export function SettingsPage(): React.JSX.Element {
           <RemoteSection settings={settings.data} />
         </>
       )}
-    </section>
+    </Page>
   )
 }

@@ -87,9 +87,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
       <div className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-14' : ''}`}>
         <TopBar />
         <main className="min-h-0 flex-1 overflow-auto">
-          <div className="legacy-page">
-            <PageContent page={page} />
-          </div>
+          <PageContent page={page} />
         </main>
       </div>
       {narrow ? (

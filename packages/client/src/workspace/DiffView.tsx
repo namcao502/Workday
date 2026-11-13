@@ -18,14 +18,16 @@ export function DiffView({ tabId, group, path }: DiffViewProps): React.JSX.Eleme
     [data],
   )
   if (isError) {
-    return <p className="status danger">{t('Could not load the diff.', 'Không tải được diff.')}</p>
+    return (
+      <p className="text-sm text-danger">{t('Could not load the diff.', 'Không tải được diff.')}</p>
+    )
   }
   if (data === undefined) {
-    return <p className="muted">{t('Loading...', 'Đang tải...')}</p>
+    return <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
   }
   if (data.kind === 'binary') {
     return (
-      <p className="muted">
+      <p className="text-sm text-muted">
         {t('(binary or too large to show)', '(tệp nhị phân hoặc quá lớn để hiển thị)')}
       </p>
     )

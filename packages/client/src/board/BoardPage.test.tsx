@@ -167,9 +167,9 @@ it("an overdue ticket's due cell uses the overdue color, a done ticket's never d
   ])
   stubBackend({ board })
   renderWithQuery(<BoardPage />)
-  expect(await screen.findByText('Nov 10')).toHaveClass('due-overdue')
+  expect(await screen.findByText('Nov 10')).toHaveAttribute('data-overdue')
   fireEvent.click(screen.getByRole('radio', { name: 'Done (1)' }))
-  expect(screen.getByText('Nov 11')).not.toHaveClass('due-overdue')
+  expect(screen.getByText('Nov 11')).not.toHaveAttribute('data-overdue')
 })
 
 it('without Jira the page links to Settings instead of a table', async () => {
@@ -312,17 +312,17 @@ it('an unseen urgent suggestion puts a dot on Available until the view is opened
   const first = renderWithQuery(<BoardPage />)
   const available = await screen.findByRole('radio', { name: /^Available/ })
   await waitFor(() => {
-    expect(available.querySelector('.view-dot')).not.toBeNull()
+    expect(available.querySelector('[data-testid="view-dot"]')).not.toBeNull()
   })
   fireEvent.click(available)
   await waitFor(() => {
-    expect(available.querySelector('.view-dot')).toBeNull()
+    expect(available.querySelector('[data-testid="view-dot"]')).toBeNull()
   })
   first.unmount()
   renderWithQuery(<BoardPage />)
   const again = await screen.findByRole('radio', { name: /^Available/ })
   await screen.findByText('Alpha work')
-  expect(again.querySelector('.view-dot')).toBeNull()
+  expect(again.querySelector('[data-testid="view-dot"]')).toBeNull()
 })
 
 it('without suggestions configured there is no Available view', async () => {

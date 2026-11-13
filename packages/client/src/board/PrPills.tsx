@@ -1,6 +1,7 @@
+import { Chip } from '@heroui/react'
 import { repoLabel, type TicketPr } from '@workday/core'
 import { t } from '../i18n.js'
-import type { TodoTone } from './todoText.js'
+import { chipColor, type TodoTone } from './todoText.js'
 
 interface PrState {
   readonly word: string
@@ -49,22 +50,24 @@ export function PrPills({ prs, repoLabels }: PrPillsProps): React.JSX.Element | 
     return null
   }
   return (
-    <span className="pr-pills">
+    <span className="ml-2 inline-flex flex-wrap gap-1 align-middle">
       {prs.map((ticketPr) => {
         const state = prState(ticketPr.pr)
         const repo = repoLabel(ticketPr.pr.repository, repoLabels)
         return (
           <a
             key={ticketPr.key}
-            className={`pill pr-pill todo-tone-${state.tone}`}
+            className="rounded-full no-underline"
             href={ticketPr.pr.url}
             target="_blank"
             rel="noopener noreferrer"
             title={`${repo} ${ticketPr.branch} #${String(ticketPr.pullRequestId)}`}
           >
-            {`${repo} ${ticketPr.branch} `}
-            <span aria-hidden="true">{state.mark}</span>
-            {` ${state.word}`}
+            <Chip size="sm" color={chipColor(state.tone)}>
+              {`${repo} ${ticketPr.branch} `}
+              <span aria-hidden="true">{state.mark}</span>
+              {` ${state.word}`}
+            </Chip>
           </a>
         )
       })}

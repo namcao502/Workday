@@ -1,5 +1,6 @@
+import { Button, Input } from '@heroui/react'
 import type { ReportRangeKind } from '@workday/core'
-import { Segmented } from '../settings/Segmented.js'
+import { Segmented } from '../ui/Segmented.js'
 import { t } from '../i18n.js'
 import type { InsightsRange } from './useInsights.js'
 
@@ -46,12 +47,12 @@ interface DateFieldProps {
 
 function DateField({ id, label, value, onChange }: DateFieldProps): React.JSX.Element {
   return (
-    <label className="insights-date" htmlFor={id}>
-      <span className="muted">{label}</span>
-      <input
+    <label className="flex items-center gap-2" htmlFor={id}>
+      <span className="text-sm text-muted">{label}</span>
+      <Input
         id={id}
         type="date"
-        className="wd-input"
+        className="w-40"
         value={value}
         onChange={(event) => {
           // A cleared field is not a range; keep the last date.
@@ -67,8 +68,8 @@ function DateField({ id, label, value, onChange }: DateFieldProps): React.JSX.El
 export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
   const { range, reading } = props
   return (
-    <div className="insights-header">
-      <div className="insights-bar">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Segmented
           label={t('Range', 'Khoảng thời gian')}
           value={range.kind}
@@ -97,32 +98,22 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
             />
           </>
         ) : null}
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={reading}
-          onClick={props.onRefresh}
-        >
+        <Button variant="secondary" size="sm" isDisabled={reading} onPress={props.onRefresh}>
           {t('Refresh', 'Làm mới')}
-        </button>
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={!props.hasReport}
-          onClick={props.onCopy}
-        >
+        </Button>
+        <Button variant="secondary" size="sm" isDisabled={!props.hasReport} onPress={props.onCopy}>
           {t('Copy markdown', 'Sao chép markdown')}
-        </button>
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={!props.hasReport}
-          onClick={props.onExport}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={!props.hasReport}
+          onPress={props.onExport}
         >
           {t('Export CSV...', 'Xuất CSV...')}
-        </button>
+        </Button>
       </div>
-      <div className="muted insights-status" aria-live="polite">
+      <div className="min-h-6 text-sm text-muted" aria-live="polite">
         {reading ? t('Reading the report...', 'Đang đọc báo cáo...') : props.status}
       </div>
     </div>

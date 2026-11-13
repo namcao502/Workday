@@ -1,9 +1,9 @@
 import { reportCsv, reportMarkdown, type TicketReport } from '@workday/core'
 import { useState } from 'react'
 import { actionErrorText } from '../api/useWork.js'
+import { Page } from '../ui/Page.js'
 import { useSettings } from '../api/useSettings.js'
 import { formatClock, getLanguage, t } from '../i18n.js'
-import './insights.css'
 import { ReportBody } from './ReportBody.js'
 import { ReportHeader } from './ReportHeader.js'
 import { useInsights } from './useInsights.js'
@@ -61,8 +61,7 @@ export function InsightsPage(): React.JSX.Element {
         )
 
   return (
-    <section className="page insights-page">
-      <h1 className="page-title">{t('Insights', 'Thống kê')}</h1>
+    <Page title={t('Insights', 'Thống kê')} wide>
       <ReportHeader
         range={insights.range}
         reading={insights.reading}
@@ -77,11 +76,11 @@ export function InsightsPage(): React.JSX.Element {
         onExport={exportCsv}
       />
       {insights.error === null ? null : (
-        <p className="insights-error" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {actionErrorText(insights.error)}
         </p>
       )}
       {view === null ? null : <ReportBody report={view.report} urlFor={urlFor} />}
-    </section>
+    </Page>
   )
 }

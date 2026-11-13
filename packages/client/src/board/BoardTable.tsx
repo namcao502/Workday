@@ -1,6 +1,8 @@
+import { Card } from '@heroui/react'
 import type { BoardAction, BoardRow, TicketPr } from '@workday/core'
 import { formatDateOnly, t, type Language } from '../i18n.js'
-import { dueClassName, type RowViewId } from './boardView.js'
+import type { RowViewId } from './boardView.js'
+import { DueDate } from './DueDate.js'
 import { KeyPill } from './KeyPill.js'
 import { PrPills } from './PrPills.js'
 import { RowMenu, type RowWorkspace } from './RowMenu.js'
@@ -49,56 +51,64 @@ export function BoardTable({
   workspace,
   work,
 }: BoardListProps): React.JSX.Element {
+  const th = 'px-3 py-2 text-left text-xs font-normal text-muted'
+  const td = 'border-t border-separator px-3 py-2'
   return (
-    <table className="board-table">
-      <thead>
-        <tr>
-          <th>{t('Key', 'Mã')}</th>
-          <th>{t('Summary', 'Tóm tắt')}</th>
-          <th>{t('Status', 'Trạng thái')}</th>
-          <th>{t('Due', 'Hạn')}</th>
-          <th>{t('ETA', 'ETA')}</th>
-          <th>{t('P', 'P')}</th>
-          <th />
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.ticket.key} data-ticket-key={row.ticket.key}>
-            <td>
-              <KeyPill ticketKey={row.ticket.key} url={row.url} />
-            </td>
-            <td className="board-summary">
-              {row.ticket.summary}
-              <PrPills
-                prs={prsOf(work, view, row.ticket.key)}
-                repoLabels={work?.repoLabels ?? {}}
-              />
-            </td>
-            <td>{row.ticket.status}</td>
-            <td>
-              {row.ticket.dueDate === null ? null : (
-                <span className={dueClassName(row)}>
-                  {formatDateOnly(row.ticket.dueDate, language)}
-                </span>
-              )}
-            </td>
-            <td>{row.ticket.eta === null ? null : formatDateOnly(row.ticket.eta, language)}</td>
-            <td>{row.ticket.devPriority}</td>
-            <td>
-              <RowMenu
-                ticketKey={row.ticket.key}
-                view={view}
-                workspace={workspace}
-                onReadyToTest={readyToTestFor(work, row.ticket.key)}
-                onAction={(action) => {
-                  onAction(row.ticket.key, action)
-                }}
-              />
-            </td>
+    <Card className="overflow-hidden p-0">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr>
+            <th className={th}>{t('Key', 'Mã')}</th>
+            <th className={th}>{t('Summary', 'Tóm tắt')}</th>
+            <th className={th}>{t('Status', 'Trạng thái')}</th>
+            <th className={th}>{t('Due', 'Hạn')}</th>
+            <th className={th}>{t('ETA', 'ETA')}</th>
+            <th className={th}>{t('P', 'P')}</th>
+            <th className={th} />
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              key={row.ticket.key}
+              data-ticket-key={row.ticket.key}
+              className="hover:bg-surface-secondary"
+            >
+              <td className={`${td} whitespace-nowrap`}>
+                <KeyPill ticketKey={row.ticket.key} url={row.url} />
+              </td>
+              <td className={`${td} [overflow-wrap:anywhere]`}>
+                {row.ticket.summary}
+                <PrPills
+                  prs={prsOf(work, view, row.ticket.key)}
+                  repoLabels={work?.repoLabels ?? {}}
+                />
+              </td>
+              <td className={`${td} whitespace-nowrap`}>{row.ticket.status}</td>
+              <td className={`${td} whitespace-nowrap`}>
+                {row.ticket.dueDate === null ? null : (
+                  <DueDate row={row} text={formatDateOnly(row.ticket.dueDate, language)} />
+                )}
+              </td>
+              <td className={`${td} whitespace-nowrap`}>
+                {row.ticket.eta === null ? null : formatDateOnly(row.ticket.eta, language)}
+              </td>
+              <td className={td}>{row.ticket.devPriority}</td>
+              <td className={td}>
+                <RowMenu
+                  ticketKey={row.ticket.key}
+                  view={view}
+                  workspace={workspace}
+                  onReadyToTest={readyToTestFor(work, row.ticket.key)}
+                  onAction={(action) => {
+                    onAction(row.ticket.key, action)
+                  }}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
   )
 }

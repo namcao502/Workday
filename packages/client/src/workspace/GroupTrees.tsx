@@ -37,9 +37,11 @@ function GroupSection({
     [group.id, onSelect],
   )
   return (
-    <section className="tree-group">
-      <h3 className="tree-group-title">{group.label}</h3>
-      {group.error === null ? null : <p className="status danger">{errorText(group.error)}</p>}
+    <section>
+      <h3 className="mb-1 mt-2 text-sm font-semibold">{group.label}</h3>
+      {group.error === null ? null : (
+        <p className="text-sm text-danger">{errorText(group.error)}</p>
+      )}
       <FileTree
         paths={group.paths}
         selectedPath={selectedPath}
@@ -53,7 +55,7 @@ function GroupSection({
 
 export function GroupTrees({ groups, ...rest }: GroupTreesProps): React.JSX.Element {
   return (
-    <div className="group-trees">
+    <div>
       {groups.map((group) => (
         <GroupSection key={group.id} group={group} {...rest} />
       ))}

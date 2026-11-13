@@ -88,14 +88,12 @@ it('locally every page and action stays available', async () => {
   expect(await screen.findByRole('button', { name: /Check now/ })).toBeInTheDocument()
 })
 
-it('the page content renders inside .legacy-page', async () => {
+it('the settings page is not wrapped in .legacy-page', async () => {
   stubMatchMedia(false)
   stubFetch(() => jsonResponse({}, 500))
-  renderWithQuery(<Shell page="tickets" />)
-  const checkNow = await screen.findByRole('button', { name: /Check now/ })
-  expect(checkNow.closest('.legacy-page')).not.toBeNull()
-  const sidebar = screen.getByRole('navigation', { name: 'Pages' })
-  expect(sidebar.closest('.legacy-page')).toBeNull()
+  renderWithQuery(<Shell page="settings" />)
+  const heading = await screen.findByRole('heading', { level: 1 })
+  expect(heading.closest('.legacy-page')).toBeNull()
 })
 
 it('the Workspace item shows how many sessions are waiting', async () => {

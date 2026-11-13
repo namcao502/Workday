@@ -1,3 +1,4 @@
+import { Button, Input } from '@heroui/react'
 import {
   isEmptyHtml,
   shortName,
@@ -198,11 +199,11 @@ export function TeamsComposer({
   }
 
   return (
-    <div className="teams-composer" data-mode={mode}>
-      <span className="teams-compose-label">{label}</span>
+    <div className="relative flex flex-col gap-1.5" data-mode={mode}>
+      <span className="text-xs text-muted">{label}</span>
       {withSubject ? (
-        <input
-          className="wd-input teams-subject-input"
+        <Input
+          variant="secondary"
           aria-label={t('Subject', 'Tiêu đề')}
           value={subject}
           onChange={(event) => {
@@ -234,7 +235,7 @@ export function TeamsComposer({
       />
       <div
         ref={editorRef}
-        className="teams-editor"
+        className="max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-xl border border-field-border bg-field-background p-2 text-sm outline-none focus:border-field-border-focus"
         role="textbox"
         aria-multiline="true"
         aria-label={label}
@@ -255,13 +256,17 @@ export function TeamsComposer({
         }}
       />
       {suggestions.length === 0 ? null : (
-        <ul className="teams-mention-list" role="listbox" aria-label={t('People', 'Mọi người')}>
+        <ul
+          className="m-0 list-none rounded-xl bg-overlay p-1 shadow-overlay"
+          role="listbox"
+          aria-label={t('People', 'Mọi người')}
+        >
           {suggestions.map((person, index) => (
             <li
               key={person.mri}
               role="option"
               aria-selected={index === active}
-              className="teams-mention-option"
+              className="cursor-pointer rounded-lg px-2 py-1 text-sm aria-selected:bg-default"
               onMouseDown={(event) => {
                 event.preventDefault()
                 pick(person)
@@ -272,24 +277,24 @@ export function TeamsComposer({
           ))}
         </ul>
       )}
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={sending || locked}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={sending || locked}
+          onPress={() => {
             void submit()
           }}
         >
           {submitLabel}
-        </button>
+        </Button>
         {onCancel === undefined ? null : (
-          <button type="button" className="wd-button ghost" onClick={onCancel}>
+          <Button variant="ghost" size="sm" onPress={onCancel}>
             {t('Cancel', 'Hủy')}
-          </button>
+          </Button>
         )}
         {problem === null ? null : (
-          <span className="status danger" role="alert">
+          <span className="text-sm text-danger" role="alert">
             {uncertain
               ? t(
                   'May have been sent - check the thread before sending again',

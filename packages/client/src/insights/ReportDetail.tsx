@@ -18,31 +18,42 @@ function timeText(iso: string | null): string {
 
 function StatsTable({ title, headers, rows }: StatsTableProps): React.JSX.Element {
   return (
-    <section className="stats-table">
-      <h3 className="section-label">{`${title} (${String(rows.length)})`}</h3>
+    <section>
+      <h3 className="mb-1 text-xs font-medium text-muted">{`${title} (${String(rows.length)})`}</h3>
       {rows.length === 0 ? (
-        <p className="muted">{EMPTY_CELL}</p>
+        <p className="text-sm text-muted">{EMPTY_CELL}</p>
       ) : (
-        <table className="report-table">
-          <thead>
-            <tr>
-              {headers.map((header) => (
-                <th key={header} scope="col">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((cells, index) => (
-              <tr key={`${String(index)}-${cells.join('|')}`}>
-                {cells.map((cell, cellIndex) => (
-                  <td key={headers[cellIndex]}>{cell}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr>
+                {headers.map((header) => (
+                  <th
+                    key={header}
+                    scope="col"
+                    className="whitespace-nowrap px-3 py-2 text-left text-xs font-medium text-muted"
+                  >
+                    {header}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((cells, index) => (
+                <tr key={`${String(index)}-${cells.join('|')}`}>
+                  {cells.map((cell, cellIndex) => (
+                    <td
+                      key={headers[cellIndex]}
+                      className="border-t border-separator px-3 py-2 align-top"
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )
@@ -62,7 +73,7 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
   const stats = row.agent
   if (stats === null) {
     return (
-      <p className="muted">
+      <p className="text-sm text-muted">
         {t('No Claude activity in this range', 'Không có hoạt động Claude trong khoảng này')}
       </p>
     )
@@ -70,7 +81,7 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
   const time = t('TIME', 'THỜI GIAN')
   const status = t('STATUS', 'TRẠNG THÁI')
   return (
-    <div className="report-detail">
+    <div className="flex flex-col gap-4">
       <StatsTable
         title="Skills"
         headers={[time, 'SKILL', t('ARGS', 'THAM SỐ')]}

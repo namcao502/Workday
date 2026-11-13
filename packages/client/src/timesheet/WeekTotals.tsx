@@ -1,4 +1,5 @@
 import { weekTicketTotals, type HrmTask, type QueueEntry } from '@workday/core'
+import { Card } from '@heroui/react'
 import { KeyPill } from '../board/KeyPill.js'
 import { t } from '../i18n.js'
 import { formatMinutes } from './timesheetText.js'
@@ -22,20 +23,26 @@ export function WeekTotals({
     return null
   }
   return (
-    <section className="week-totals-block">
-      <span className="section-label">{t('This week by ticket', 'Tuần này theo ticket')}</span>
-      {totals.map((total) => (
-        <div key={total.key} className="total-row">
-          <KeyPill ticketKey={total.key} url={urlFor(total.key)} />
-          <div className="total-track">
-            <div
-              className="total-fill"
-              style={{ width: `${String((total.minutes / largest) * 100)}%` }}
-            />
+    <Card>
+      <Card.Header>
+        <Card.Title className="text-base font-semibold" render={(props) => <h2 {...props} />}>
+          {t('This week by ticket', 'Tuần này theo ticket')}
+        </Card.Title>
+      </Card.Header>
+      <Card.Content className="flex flex-col gap-2">
+        {totals.map((total) => (
+          <div key={total.key} className="flex items-center gap-2">
+            <KeyPill ticketKey={total.key} url={urlFor(total.key)} />
+            <div className="h-2 flex-1 rounded-full bg-surface-secondary">
+              <div
+                className="h-full rounded-full bg-accent"
+                style={{ width: `${String((total.minutes / largest) * 100)}%` }}
+              />
+            </div>
+            <span className="text-sm text-muted">{formatMinutes(total.minutes)}</span>
           </div>
-          <span className="muted">{formatMinutes(total.minutes)}</span>
-        </div>
-      ))}
-    </section>
+        ))}
+      </Card.Content>
+    </Card>
   )
 }

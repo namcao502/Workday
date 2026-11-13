@@ -5,6 +5,7 @@ import {
   type NoticeTopic,
   type SettingsView,
 } from '@workday/core'
+import { Button, Switch } from '@heroui/react'
 import { useEffect, useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useSaveSettings } from '../api/useSettings.js'
@@ -15,6 +16,7 @@ import {
   subscribeLocalPush,
   unsubscribeLocalPush,
 } from '../remote/pushSubscription.js'
+import { Section } from '../ui/Section.js'
 import { requestNoticePermission } from '../workspace/useClaudeNotices.js'
 
 const CHANNELS: readonly (keyof NoticeChannels)[] = ['toast', 'desktop', 'phone']
@@ -121,20 +123,20 @@ function ClosedWindowToggle(): React.JSX.Element {
 
   return (
     <>
-      <button
-        type="button"
-        className="wd-button secondary"
+      <Button
+        variant="secondary"
+        size="sm"
         aria-pressed={state === 'on'}
-        onClick={() => {
+        onPress={() => {
           void toggle()
         }}
       >
         {state === 'on'
           ? t('Stop notifying when Workday is closed', 'Thôi thông báo khi đã đóng Workday')
           : t('Notify even when Workday is closed', 'Thông báo cả khi đã đóng Workday')}
-      </button>
+      </Button>
       {state === 'denied' ? (
-        <p className="status danger" role="status">
+        <p className="text-sm text-danger" role="status">
           {t(
             'The browser blocked notifications; allow them in the site settings.',
             'Trình duyệt đã chặn thông báo; hãy cho phép trong cài đặt trang.',
@@ -142,7 +144,7 @@ function ClosedWindowToggle(): React.JSX.Element {
         </p>
       ) : null}
       {state === 'failed' ? (
-        <p className="status danger" role="status">
+        <p className="text-sm text-danger" role="status">
           {t('Could not change the setting', 'Không đổi được cài đặt')}
         </p>
       ) : null}
@@ -180,20 +182,25 @@ export function NoticesSection({
   }
 
   return (
-    <section className="section">
-      <h2 className="section-title">{t('Notices', 'Thông báo')}</h2>
-      <p className="field-hint">
+    <Section title={t('Notices', 'Thông báo')}>
+      <p className="text-sm text-muted">
         {t(
           'The bell keeps every notice; these choose what also pops up.',
           'Chuông luôn giữ mọi thông báo; đây là chọn cái nào hiện thêm.',
         )}
       </p>
-      <table className="notice-prefs">
+      <table className="w-full text-sm">
         <thead>
           <tr>
-            <th scope="col">{t('Topic', 'Chủ đề')}</th>
+            <th scope="col" className="py-1 text-left text-xs font-medium uppercase text-muted">
+              {t('Topic', 'Chủ đề')}
+            </th>
             {CHANNELS.map((channel) => (
-              <th key={channel} scope="col">
+              <th
+                key={channel}
+                scope="col"
+                className="py-1 text-xs font-medium uppercase text-muted"
+              >
                 {channelName(channel)}
               </th>
             ))}
@@ -201,46 +208,54 @@ export function NoticesSection({
         </thead>
         <tbody>
           {TOPICS.map((topic) => (
-            <tr key={topic}>
-              <th scope="row">{topicName(topic)}</th>
+            <tr key={topic} className="border-t border-separator">
+              <th scope="row" className="py-2 text-left font-normal">
+                {topicName(topic)}
+              </th>
               {CHANNELS.map((channel) => (
-                <td key={channel}>
-                  <input
-                    type="checkbox"
-                    aria-label={`${topicName(topic)}: ${channelName(channel)}`}
-                    checked={channels[topic][channel]}
-                    onChange={(event) => {
-                      toggle(topic, channel, event.target.checked)
+                <td key={channel} className="py-2 text-center">
+                  <Switch
+                    size="sm"
+                    isSelected={channels[topic][channel]}
+                    onChange={(selected) => {
+                      toggle(topic, channel, selected)
                     }}
-                  />
+                  >
+                    <Switch.Content>
+                      <Switch.Control>
+                        <Switch.Thumb />
+                      </Switch.Control>
+                      <span className="sr-only">{`${topicName(topic)}: ${channelName(channel)}`}</span>
+                    </Switch.Content>
+                  </Switch>
                 </td>
               ))}
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button secondary"
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          onPress={() => {
             void apply(channelsFromPrefs({}), {})
           }}
         >
           {t('Restore defaults', 'Khôi phục mặc định')}
-        </button>
+        </Button>
         {askPermission ? (
-          <button type="button" className="wd-button secondary" onClick={requestNoticePermission}>
+          <Button variant="secondary" size="sm" onPress={requestNoticePermission}>
             {t('Allow desktop notifications', 'Cho phép thông báo desktop')}
-          </button>
+          </Button>
         ) : null}
         {local && pushSupported() ? <ClosedWindowToggle /> : null}
       </div>
       {failed ? (
-        <p className="status danger" role="status">
+        <p className="text-sm text-danger" role="status">
           {t('Could not save the notice settings', 'Không lưu được cài đặt thông báo')}
         </p>
       ) : null}
-    </section>
+    </Section>
   )
 }

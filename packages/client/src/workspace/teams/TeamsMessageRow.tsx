@@ -1,7 +1,8 @@
+import { Button, Card } from '@heroui/react'
 import { canReact, isEditable, QUICK_REACTION_KEYS, type TeamsMessage } from '@workday/core'
 import { useMemo, useState } from 'react'
 import { formatClock, formatShortDate, getLanguage, t } from '../../i18n.js'
-import { ConfirmDialog } from '../../timesheet/ConfirmDialog.js'
+import { ConfirmDialog } from '../../ui/ConfirmDialog.js'
 import { fullSizeProxyUrl, nameColor, renderTeamsHtml } from './teamsContent.js'
 import { TeamsEmoji } from './TeamsEmoji.js'
 
@@ -41,27 +42,27 @@ export function TeamsMessageRow({
   const time = `${formatShortDate(sentAt, language, timeZone)} ${formatClock(sentAt, language, timeZone)}`
 
   return (
-    <article className="teams-message" data-message-id={message.id}>
+    <Card className="group relative flex-row gap-2 p-3" data-message-id={message.id}>
       <span
-        className="teams-avatar"
+        className="grid size-7 flex-none place-items-center rounded-full font-semibold text-white"
         style={{ background: nameColor(message.senderName) }}
         aria-hidden="true"
       >
         {message.senderName.slice(0, 1).toUpperCase()}
       </span>
-      <div className="teams-message-main">
-        <header className="teams-message-head">
-          <strong>{message.senderName}</strong>
-          <span className="muted">{time}</span>
+      <div className="min-w-0 flex-1">
+        <header className="flex items-baseline gap-2">
+          <strong className="text-sm font-medium">{message.senderName}</strong>
+          <span className="text-xs text-muted">{time}</span>
           {message.editedAt === null ? null : (
-            <span className="muted">{t('(edited)', '(đã sửa)')}</span>
+            <span className="text-xs text-muted">{t('(edited)', '(đã sửa)')}</span>
           )}
         </header>
         {message.subject === null || message.subject === '' ? null : (
-          <h3 className="teams-subject">{message.subject}</h3>
+          <h3 className="my-0.5 text-sm font-semibold">{message.subject}</h3>
         )}
         <div
-          className="teams-content"
+          className="teams-content text-sm"
           onClick={(event) => {
             const url = fullSizeProxyUrl(event.target)
             if (url !== null) {
@@ -71,74 +72,77 @@ export function TeamsMessageRow({
           dangerouslySetInnerHTML={{ __html: html }}
         />
         {message.files.length === 0 ? null : (
-          <div className="teams-files">
+          <div className="mt-1 flex flex-wrap gap-1">
             {message.files.map((file) => (
-              <button
+              <Button
                 key={file.url}
-                type="button"
-                className="wd-button ghost"
-                onClick={() => {
+                variant="ghost"
+                size="sm"
+                onPress={() => {
                   window.open(file.url, '_blank', 'noopener')
                 }}
               >
                 {file.fileName}
-              </button>
+              </Button>
             ))}
           </div>
         )}
         {message.reactions.length === 0 ? null : (
-          <div className="teams-reactions">
+          <div className="mt-1 flex flex-wrap gap-1">
             {message.reactions.map((reaction) => (
-              <button
+              <Button
                 key={reaction.key}
-                type="button"
-                className="teams-chip"
-                data-mine={reaction.userMris.some((mri) => sameId(mri, myId))}
-                disabled={locked || !canReact(message, reaction.key)}
-                onClick={() => {
+                variant={
+                  reaction.userMris.some((mri) => sameId(mri, myId)) ? 'secondary' : 'outline'
+                }
+                size="sm"
+                className="h-6 min-w-0 gap-1 rounded-full px-2"
+                isDisabled={locked || !canReact(message, reaction.key)}
+                onPress={() => {
                   onReact(reaction.key)
                 }}
               >
                 <TeamsEmoji reaction={reaction.key} />
                 <span>{reaction.userMris.length}</span>
-              </button>
+              </Button>
             ))}
           </div>
         )}
       </div>
-      <div className="teams-hover-bar">
+      <div className="absolute -top-2.5 right-1 hidden items-center gap-0.5 rounded-xl border border-separator bg-overlay p-0.5 shadow-overlay group-focus-within:flex group-hover:flex">
         {QUICK_REACTION_KEYS.map((key) => (
-          <button
+          <Button
             key={key}
-            type="button"
-            className="teams-quick"
+            isIconOnly
+            variant="ghost"
+            size="sm"
             aria-label={t(`React ${key}`, `Phản ứng ${key}`)}
-            disabled={locked}
-            onClick={() => {
+            isDisabled={locked}
+            onPress={() => {
               onReact(key)
             }}
           >
             <TeamsEmoji reaction={key} />
-          </button>
+          </Button>
         ))}
-        <button type="button" className="wd-button ghost" onClick={onAskClaude}>
+        <Button variant="ghost" size="sm" onPress={onAskClaude}>
           {t('Ask Claude', 'Hỏi Claude')}
-        </button>
+        </Button>
         {own && isEditable(message) ? (
-          <button type="button" className="wd-button ghost" onClick={onEdit}>
+          <Button variant="ghost" size="sm" onPress={onEdit}>
             {t('Edit', 'Sửa')}
-          </button>
+          </Button>
         ) : null}
         {own ? (
-          <button
-            type="button"
-            className="wd-button ghost"
-            onClick={() => {
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
               setConfirming(true)
             }}
           >
             {t('Delete', 'Xóa')}
-          </button>
+          </Button>
         ) : null}
       </div>
       {confirming ? (
@@ -154,6 +158,6 @@ export function TeamsMessageRow({
           }}
         />
       ) : null}
-    </article>
+    </Card>
   )
 }

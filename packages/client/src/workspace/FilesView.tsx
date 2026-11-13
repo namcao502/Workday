@@ -25,10 +25,12 @@ function OpenFile({
 }): React.JSX.Element {
   const { data, isError } = useFileContent(tabId, file.group, file.path)
   if (isError) {
-    return <p className="status danger">{t('Could not read the file.', 'Không đọc được tệp.')}</p>
+    return (
+      <p className="text-sm text-danger">{t('Could not read the file.', 'Không đọc được tệp.')}</p>
+    )
   }
   if (data === undefined) {
-    return <p className="muted">{t('Loading...', 'Đang tải...')}</p>
+    return <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
   }
   return (
     <FileViewer
@@ -60,7 +62,7 @@ export function FilesView({ tabId }: FilesViewProps): React.JSX.Element {
   const known = groups.find((group) => group.id === selected?.group)?.paths ?? []
 
   return (
-    <div className="files-view">
+    <div className="flex flex-col gap-2">
       <GroupTrees groups={groups} selected={selected} onSelect={setChosen} defaultOpen={false} />
       {selected === null ? null : (
         <OpenFile

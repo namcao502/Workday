@@ -1,5 +1,5 @@
 import { t } from '../i18n.js'
-import { TextField } from './TextField.js'
+import { TextField } from '../ui/TextField.js'
 import type { TimesheetForm } from './timesheetForm.js'
 
 interface TscAdvancedFieldsProps {
@@ -9,7 +9,7 @@ interface TscAdvancedFieldsProps {
 
 export function TscAdvancedFields({ form, onChange }: TscAdvancedFieldsProps): React.JSX.Element {
   return (
-    <div className="advanced">
+    <>
       <TextField
         id="tsc-header-rows"
         label={t('Header rows', 'Số dòng tiêu đề')}
@@ -70,6 +70,6 @@ export function TscAdvancedFields({ form, onChange }: TscAdvancedFieldsProps): R
           onChange({ itemId: value })
         }}
       />
-    </div>
+    </>
   )
 }

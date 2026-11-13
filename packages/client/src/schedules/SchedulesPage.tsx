@@ -1,9 +1,9 @@
 import { useSettings } from '../api/useSettings.js'
 import { actionErrorText } from '../api/useWork.js'
 import { t } from '../i18n.js'
+import { Page } from '../ui/Page.js'
 import { JobsCard } from './JobsCard.js'
 import { ScanCard } from './ScanCard.js'
-import './schedules.css'
 import { REFRESH_MS, useMarkSeenOnOpen, useSchedulesView } from './useSchedules.js'
 
 export function SchedulesPage(): React.JSX.Element {
@@ -13,10 +13,9 @@ export function SchedulesPage(): React.JSX.Element {
   const view = schedules.data
 
   return (
-    <section className="page schedules-page">
-      <h1 className="page-title">{t('Schedules', 'Lịch chạy')}</h1>
+    <Page title={t('Schedules', 'Lịch chạy')}>
       {schedules.error === null ? null : (
-        <p className="status danger" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {actionErrorText(schedules.error)}
         </p>
       )}
@@ -37,6 +36,6 @@ export function SchedulesPage(): React.JSX.Element {
           />
         </>
       )}
-    </section>
+    </Page>
   )
 }

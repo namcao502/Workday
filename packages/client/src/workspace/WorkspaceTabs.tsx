@@ -1,5 +1,7 @@
 import type { SessionView, WorkspaceTab } from '@workday/core'
-import { useEffect, useRef, useState } from 'react'
+import { Badge, Button, CloseButton, Dropdown, Input } from '@heroui/react'
+import { Plus } from '@gravity-ui/icons'
+import { useState } from 'react'
 import { t } from '../i18n.js'
 
 export function folderName(folder: string | null): string {
@@ -20,107 +22,73 @@ interface AddMenuProps {
 }
 
 function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Element {
-  const [open, setOpen] = useState(false)
   const [typing, setTyping] = useState(false)
   const [path, setPath] = useState('')
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) {
-      return undefined
-    }
-    function closeOnOutsideClick(event: MouseEvent): void {
-      if (event.target instanceof Node && containerRef.current?.contains(event.target) !== true) {
-        setOpen(false)
-        setTyping(false)
-      }
-    }
-    document.addEventListener('mousedown', closeOnOutsideClick)
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutsideClick)
-    }
-  }, [open])
 
   function pick(folder: string | null): void {
-    setOpen(false)
     setTyping(false)
     setPath('')
     onAdd(folder)
   }
 
+  const folders: readonly { readonly id: string; readonly folder: string | null }[] = [
+    { id: 'dev-repo', folder: null },
+    ...recentFolders.map((folder) => ({ id: `recent:${folder}`, folder })),
+  ]
   return (
-    <div className="row-menu" ref={containerRef}>
-      <button
-        type="button"
-        className="wd-button ghost"
-        aria-label={t('New terminal', 'Terminal mới')}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => {
-          setOpen((wasOpen) => !wasOpen)
-        }}
-      >
-        +
-      </button>
-      {open ? (
-        <div className="wd-menu" role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            className="wd-menu-item"
-            onClick={() => {
-              pick(null)
-            }}
-          >
-            {t('Dev repo', 'Dev repo')}
-          </button>
-          {recentFolders.map((folder) => (
-            <button
-              key={folder}
-              type="button"
-              role="menuitem"
-              className="wd-menu-item"
-              title={folder}
-              onClick={() => {
-                pick(folder)
-              }}
-            >
-              {folderName(folder)}
-            </button>
-          ))}
-          {typing ? (
-            <form
-              className="menu-path"
-              onSubmit={(event) => {
-                event.preventDefault()
-                if (path.trim() !== '') {
-                  pick(path.trim())
-                }
-              }}
-            >
-              <input
-                className="wd-input"
-                autoFocus
-                aria-label={t('Folder path', 'Đường dẫn thư mục')}
-                value={path}
-                onChange={(event) => {
-                  setPath(event.target.value)
+    <div className="flex items-center gap-1">
+      <Dropdown>
+        <Button isIconOnly variant="ghost" size="sm" aria-label={t('New terminal', 'Terminal mới')}>
+          <Plus />
+        </Button>
+        <Dropdown.Popover>
+          <Dropdown.Menu>
+            {folders.map((item) => (
+              <Dropdown.Item
+                key={item.id}
+                id={item.id}
+                textValue={folderName(item.folder)}
+                onAction={() => {
+                  pick(item.folder)
                 }}
-              />
-            </form>
-          ) : (
-            <button
-              type="button"
-              role="menuitem"
-              className="wd-menu-item"
-              onClick={() => {
+              >
+                {folderName(item.folder)}
+              </Dropdown.Item>
+            ))}
+            <Dropdown.Item
+              id="choose"
+              textValue={t('Choose another folder...', 'Chọn thư mục khác...')}
+              onAction={() => {
                 setTyping(true)
               }}
             >
               {t('Choose another folder...', 'Chọn thư mục khác...')}
-            </button>
-          )}
-        </div>
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+      {typing ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (path.trim() !== '') {
+              pick(path.trim())
+            }
+          }}
+        >
+          <Input
+            variant="secondary"
+            autoFocus
+            aria-label={t('Folder path', 'Đường dẫn thư mục')}
+            value={path}
+            onChange={(event) => {
+              setPath(event.target.value)
+            }}
+            onBlur={() => {
+              setTyping(false)
+            }}
+          />
+        </form>
       ) : null}
     </div>
   )
@@ -142,39 +110,44 @@ export function WorkspaceTabs(props: WorkspaceTabsProps): React.JSX.Element {
   )
   return (
     <div
-      className="workspace-tabs"
+      className="flex flex-wrap items-center gap-1 border-b border-separator pb-2"
       role="tablist"
       aria-label={t('Workspace tabs', 'Thẻ không gian làm việc')}
     >
-      {props.tabs.map((tab) => (
-        <div key={tab.id} className="workspace-tab" data-selected={tab.id === props.selectedId}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab.id === props.selectedId}
-            className="workspace-tab-label"
-            title={tab.folder ?? undefined}
-            onClick={() => {
-              props.onSelect(tab.id)
-            }}
+      {props.tabs.map((tab) => {
+        const selected = tab.id === props.selectedId
+        return (
+          <div
+            key={tab.id}
+            className={`flex h-8 items-center rounded-lg pl-3 pr-1 text-sm${
+              selected ? ' bg-surface shadow-sm' : ''
+            }`}
           >
-            {tabLabel(tab)}
-            {tab.sessions.some((name) => waiting.has(name)) ? (
-              <span className="nav-dot" data-testid="tab-dot" aria-hidden="true" />
-            ) : null}
-          </button>
-          <button
-            type="button"
-            className="workspace-tab-close"
-            aria-label={t(`Close ${tabLabel(tab)}`, `Đóng ${tabLabel(tab)}`)}
-            onClick={() => {
-              props.onClose(tab)
-            }}
-          >
-            x
-          </button>
-        </div>
-      ))}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              className="flex items-center gap-1.5"
+              title={tab.folder ?? undefined}
+              onClick={() => {
+                props.onSelect(tab.id)
+              }}
+            >
+              {tabLabel(tab)}
+              {tab.sessions.some((name) => waiting.has(name)) ? (
+                <Badge color="danger" size="sm" data-testid="tab-dot" aria-hidden="true" />
+              ) : null}
+            </button>
+            <CloseButton
+              className="ml-1 size-6"
+              aria-label={t(`Close ${tabLabel(tab)}`, `Đóng ${tabLabel(tab)}`)}
+              onPress={() => {
+                props.onClose(tab)
+              }}
+            />
+          </div>
+        )
+      })}
       <AddTerminalMenu recentFolders={props.recentFolders} onAdd={props.onAddTerminal} />
     </div>
   )

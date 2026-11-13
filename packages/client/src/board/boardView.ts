@@ -109,18 +109,8 @@ export function pickViewWithHits(counts: ViewCounts, current: BoardViewId): Boar
 }
 
 // Only a Working ticket is urgent; Done and Dismissed rows never take the color.
-export function dueClassName(row: BoardRow): string {
-  if (viewOfRow(row) !== 'working') {
-    return 'due'
-  }
-  switch (row.dueUrgency) {
-    case 'overdue':
-      return 'due due-overdue'
-    case 'dueSoon':
-      return 'due due-soon'
-    case 'none':
-      return 'due'
-  }
+export function dueUrgencyOf(row: BoardRow): BoardRow['dueUrgency'] {
+  return viewOfRow(row) === 'working' ? row.dueUrgency : 'none'
 }
 
 // Search keeps whole groups: a group stays when its key, summary or a review title holds every word.

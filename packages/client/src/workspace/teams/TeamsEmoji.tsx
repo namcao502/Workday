@@ -5,11 +5,11 @@ import { useState } from 'react'
 export function TeamsEmoji({ reaction }: { readonly reaction: string }): React.JSX.Element {
   const [failed, setFailed] = useState(false)
   if (failed) {
-    return <span className="teams-emoji-key">{reaction}</span>
+    return <span className="text-xs">{reaction}</span>
   }
   return (
     <img
-      className="teams-emoji"
+      className="size-4"
       src={emojiUrl(reaction)}
       alt={reaction}
       onError={() => {

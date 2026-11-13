@@ -2,6 +2,7 @@
   box-sizing: border-box;
 }
 
+/* Only the Claude pane still uses these old styles; remove them with the pane in the SDK phase. */
 .legacy-page {
   height: 100%;
   min-height: 0;
@@ -30,24 +31,6 @@
   cursor: default;
 }
 
-.wd-button.primary {
-  background: var(--wd-accent);
-  color: var(--on-accent);
-}
-
-.wd-button.primary:hover:not(:disabled) {
-  background: var(--wd-accent-hover);
-}
-
-.wd-button.secondary {
-  background: var(--secondary-btn);
-  color: var(--secondary-btn-text);
-}
-
-.wd-button.secondary:hover:not(:disabled) {
-  background: var(--secondary-btn-hover);
-}
-
 .wd-button.ghost {
   min-width: 0;
   background: transparent;
@@ -58,79 +41,9 @@
   background: var(--hover);
 }
 
-.wd-button.danger {
-  background: var(--wd-danger);
-  color: var(--on-accent);
-}
-
-/* The only bordered controls: inputs, menus, popups, dialogs. */
-.wd-input {
-  width: 100%;
-  min-height: var(--control-h);
-  padding: 4px 8px;
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-button);
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font: inherit;
-}
-
-.wd-input:disabled {
-  background: var(--disabled-fill);
-  color: var(--wd-muted);
-}
-
-.wd-input:focus-visible {
-  outline: 2px solid var(--wd-accent);
-  outline-offset: -1px;
-}
-
 .segmented {
   display: inline-flex;
   padding: var(--segment-inset);
   border-radius: var(--radius-button);
   background: var(--segment-track);
-}
-
-.segment {
-  min-height: var(--compact-h);
-  padding: 0 14px;
-  border: 0;
-  border-radius: calc(var(--radius-button) - 2px);
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  cursor: pointer;
-}
-
-.segment:hover {
-  background: var(--segment-hover);
-}
-
-.segment[aria-checked='true'] {
-  background: var(--segment-selected);
-}
-
-.view-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-left: 5px;
-  border-radius: 50%;
-  background: var(--wd-danger);
-  vertical-align: middle;
-}
-
-.pill {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: var(--radius-chip);
-  background: var(--accent-tint);
-  color: var(--accent-text);
-  font-size: var(--font-caption);
-}
-
-.divider,
-.section + .section {
-  border-top: 1px solid var(--divider);
 }

@@ -6,7 +6,6 @@ import '@fontsource-variable/inter'
 import './styles/app.css'
 import './styles/tokens.css'
 import './styles/controls.css'
-import './styles/shell.css'
 
 const container = document.getElementById('root')
 if (container === null) {

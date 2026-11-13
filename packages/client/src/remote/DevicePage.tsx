@@ -1,10 +1,13 @@
+import { Button } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AccessLevel, RemoteArea, RemoteDevice } from '@workday/core'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { queryKeys } from '../api/client.js'
 import { useMe } from '../api/useMe.js'
 import { sendTestPush } from '../api/remoteApi.js'
 import { t } from '../i18n.js'
+import { Page } from '../ui/Page.js'
+import { Section } from '../ui/Section.js'
 import { pushSupported, subscribePush, unsubscribePush } from './pushSubscription.js'
 
 function areaLabel(area: RemoteArea): string {
@@ -49,7 +52,7 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
 
   if (!pushSupported()) {
     return (
-      <p className="muted">
+      <p className="text-sm text-muted">
         {t(
           'Add Workday to the Home Screen first to get notifications',
           'Hãy thêm Workday vào Màn hình chính trước để nhận thông báo',
@@ -59,22 +62,17 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
   }
   const subscribed = device.hasPushSubscription
   return (
-    <div className="device-push">
+    <div className="flex flex-wrap items-center gap-2">
       {subscribed ? (
         <>
-          <button
-            type="button"
-            className="wd-button secondary"
-            disabled={busy}
-            onClick={() => void run(turnOff)}
-          >
+          <Button variant="secondary" size="sm" isDisabled={busy} onPress={() => void run(turnOff)}>
             {t('Turn off', 'Tắt')}
-          </button>
-          <button
-            type="button"
-            className="wd-button secondary"
-            disabled={busy}
-            onClick={() =>
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            isDisabled={busy}
+            onPress={() =>
               void run(async () =>
                 (await sendTestPush())
                   ? t('Test sent', 'Đã gửi thử')
@@ -83,14 +81,14 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
             }
           >
             {t('Send test', 'Gửi thử')}
-          </button>
+          </Button>
         </>
       ) : (
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={busy}
-          onClick={() =>
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={busy}
+          onPress={() =>
             void run(async () =>
               (await subscribePush()) === 'denied'
                 ? t('Notifications are blocked in the browser', 'Trình duyệt đang chặn thông báo')
@@ -99,9 +97,9 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
           }
         >
           {t('Turn on notifications', 'Bật thông báo')}
-        </button>
+        </Button>
       )}
-      {message === null ? null : <p className="status">{message}</p>}
+      {message === null ? null : <p className="text-sm text-muted">{message}</p>}
     </div>
   )
 }
@@ -111,26 +109,28 @@ export function DevicePage(): React.JSX.Element {
   const me = useMe()
   const device = me.data?.mode === 'remote' ? me.data.device : null
   return (
-    <section className="page device-page">
-      <h1 className="page-title">{t('Settings', 'Cài đặt')}</h1>
+    <Page title={t('Settings', 'Cài đặt')}>
       {device === null ? (
-        <p className="muted">{t('Loading...', 'Đang tải...')}</p>
+        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
       ) : (
         <>
-          <dl className="device-facts">
-            <dt>{t('Device', 'Thiết bị')}</dt>
-            <dd>{device.name}</dd>
-            {AREAS.map((area) => (
-              <div key={area} className="device-right">
-                <dt>{areaLabel(area)}</dt>
-                <dd>{levelLabel(device.rights[area])}</dd>
-              </div>
-            ))}
-          </dl>
-          <h2 className="section-label">{t('Notifications', 'Thông báo')}</h2>
-          <PushSection device={device} />
+          <Section title={t('Device', 'Thiết bị')}>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+              <dt className="text-muted">{t('Device', 'Thiết bị')}</dt>
+              <dd>{device.name}</dd>
+              {AREAS.map((area) => (
+                <Fragment key={area}>
+                  <dt className="text-muted">{areaLabel(area)}</dt>
+                  <dd>{levelLabel(device.rights[area])}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          </Section>
+          <Section title={t('Notifications', 'Thông báo')}>
+            <PushSection device={device} />
+          </Section>
         </>
       )}
-    </section>
+    </Page>
   )
 }

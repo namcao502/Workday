@@ -1,10 +1,13 @@
 import type { SettingsView } from '@workday/core'
+import { Button, Spinner } from '@heroui/react'
 import { useState } from 'react'
 import { ApiError, checkHrm, checkTscSession, signInTsc } from '../api/client.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
-import { TextField } from './TextField.js'
+import { Section } from '../ui/Section.js'
+import { TextField } from '../ui/TextField.js'
+import { AdvancedDisclosure } from './AdvancedDisclosure.js'
 import { TokenField } from './TokenField.js'
 import { TscAdvancedFields } from './TscAdvancedFields.js'
 import { formFromTimesheet, timesheetFromForm, type TimesheetForm } from './timesheetForm.js'
@@ -21,7 +24,7 @@ function StatusText({ status }: { readonly status: StatusLine | null }): React.J
   }
   return (
     <p
-      className={status.kind === 'error' ? 'status danger' : 'status success'}
+      className={status.kind === 'error' ? 'text-sm text-danger' : 'text-sm text-success'}
       role="status"
       title={status.detail ?? undefined}
     >
@@ -48,7 +51,6 @@ export function TimesheetSection({
   )
   const [hrmKey, setHrmKey] = useState('')
   const [replacing, setReplacing] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [busy, setBusy] = useState(false)
   const [signingIn, setSigningIn] = useState(false)
   const [saveStatus, setSaveStatus] = useState<StatusLine | null>(null)
@@ -140,9 +142,8 @@ export function TimesheetSection({
   }
 
   return (
-    <section className="section">
-      <h2 className="section-title">{t('Timesheet', 'Chấm công')}</h2>
-      <h3 className="section-subtitle">{t('Auto-log', 'Tự động log')}</h3>
+    <Section title={t('Timesheet', 'Chấm công')}>
+      <h3 className="text-sm font-semibold">{t('Auto-log', 'Tự động log')}</h3>
       <TextField
         id="timesheet-log-time"
         label={t('Log time', 'Giờ log')}
@@ -156,7 +157,7 @@ export function TimesheetSection({
           change({ logTime: value })
         }}
       />
-      <h3 className="section-subtitle">HRM</h3>
+      <h3 className="text-sm font-semibold">HRM</h3>
       <TextField
         id="hrm-mcp-url"
         label={t('HRM MCP URL', 'Địa chỉ MCP của HRM')}
@@ -191,20 +192,20 @@ export function TimesheetSection({
           setReplacing(true)
         }}
       />
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={busy || form.mcpUrl.trim() === ''}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={busy || form.mcpUrl.trim() === ''}
+          onPress={() => {
             void runCheckHrm()
           }}
         >
           {t('Check HRM', 'Kiểm tra HRM')}
-        </button>
+        </Button>
       </div>
       <StatusText status={hrmStatus} />
-      <h3 className="section-subtitle">TSC</h3>
+      <h3 className="text-sm font-semibold">TSC</h3>
       <TextField
         id="tsc-share-url"
         label={t('TSC share URL', 'Share URL của TSC')}
@@ -250,54 +251,46 @@ export function TimesheetSection({
           change({ tokenPages: value })
         }}
       />
-      <button
-        type="button"
-        className="wd-button ghost"
-        aria-expanded={showAdvanced}
-        onClick={() => {
-          setShowAdvanced((current) => !current)
-        }}
-      >
-        {t('Advanced TSC', 'TSC nâng cao')}
-      </button>
-      {showAdvanced ? <TscAdvancedFields form={form} onChange={change} /> : null}
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={busy || signingIn}
-          onClick={() => {
+      <AdvancedDisclosure title={t('Advanced TSC', 'TSC nâng cao')}>
+        <TscAdvancedFields form={form} onChange={change} />
+      </AdvancedDisclosure>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={busy || signingIn}
+          onPress={() => {
             void runCheckTsc()
           }}
         >
           {t('Check TSC session', 'Kiểm tra phiên TSC')}
-        </button>
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={busy || signingIn}
-          onClick={() => {
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={busy || signingIn}
+          onPress={() => {
             void runSignIn()
           }}
         >
           {t('Sign in to TSC', 'Đăng nhập TSC')}
-        </button>
-        {signingIn ? <span className="wd-spinner" aria-hidden="true" /> : null}
+        </Button>
+        {signingIn ? <Spinner size="sm" /> : null}
       </div>
       <StatusText status={tscStatus} />
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={busy || signingIn}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={busy || signingIn}
+          onPress={() => {
             void runSave()
           }}
         >
           {t('Save', 'Lưu')}
-        </button>
+        </Button>
       </div>
       <StatusText status={saveStatus} />
-    </section>
+    </Section>
   )
 }

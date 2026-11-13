@@ -1,4 +1,6 @@
 import { describeSlots, slotsFor, type TicketCheck } from '@workday/core'
+import { Button, Input } from '@heroui/react'
+import { Xmark } from '@gravity-ui/icons'
 import { useState } from 'react'
 import { KeyPill } from '../board/KeyPill.js'
 import { t } from '../i18n.js'
@@ -32,11 +34,14 @@ function parseHours(text: string): number {
 
 function CheckDot({ check }: { readonly check: TicketCheck | undefined }): React.JSX.Element {
   if (check === undefined) {
-    return <span className="check-dot" aria-hidden="true" />
+    return <span className="size-2 flex-none rounded-full" aria-hidden="true" />
   }
   if (check.isMine === false) {
     return (
-      <span className="check-warn" title={t('Not your ticket', 'Không phải ticket của anh')}>
+      <span
+        className="w-2 flex-none text-center font-bold text-warning"
+        title={t('Not your ticket', 'Không phải ticket của anh')}
+      >
         !
       </span>
     )
@@ -46,7 +51,13 @@ function CheckDot({ check }: { readonly check: TicketCheck | undefined }): React
     notFound: t('Ticket not found', 'Không có ticket'),
     unknown: t('Could not check the ticket', 'Chưa kiểm tra được ticket'),
   } as const
-  return <span className={`check-dot check-${check.status}`} title={labels[check.status]} />
+  const dot = { valid: 'bg-success', notFound: 'bg-danger', unknown: 'bg-warning' } as const
+  return (
+    <span
+      className={`size-2 flex-none rounded-full ${dot[check.status]}`}
+      title={labels[check.status]}
+    />
+  )
 }
 
 interface HoursInputProps {
@@ -69,8 +80,9 @@ function HoursInput({ ticketKey, minutes, tooltip, onHours }: HoursInputProps): 
   }
 
   return (
-    <input
-      className="wd-input hours-input"
+    <Input
+      variant="secondary"
+      className="w-16 text-right"
       inputMode="decimal"
       aria-label={t(`Hours for ${ticketKey}`, `Số giờ cho ${ticketKey}`)}
       title={tooltip}
@@ -98,17 +110,19 @@ export function TicketRows({
 }: TicketRowsProps): React.JSX.Element {
   const allMinutes = rows.map((row) => row.minutes)
   return (
-    <ul className="ticket-rows">
+    <ul className="m-0 flex list-none flex-col gap-1 p-0">
       {rows.map((row, index) => {
         const check = checks?.[row.key]
         return (
-          <li key={row.key} className="ticket-row">
-            <div className="ticket-line">
+          <li key={row.key}>
+            <div className="flex items-center gap-2">
               {checks === undefined ? null : <CheckDot check={check} />}
               <KeyPill ticketKey={row.key} url={urlFor(row.key)} />
-              <span className="ticket-summary muted">{check?.summary ?? ''}</span>
+              <span className="min-w-0 flex-1 truncate text-sm text-muted">
+                {check?.summary ?? ''}
+              </span>
               {onHours === undefined ? (
-                <span className="hours-text">{formatMinutes(row.minutes)}</span>
+                <span className="text-sm">{formatMinutes(row.minutes)}</span>
               ) : (
                 <HoursInput
                   ticketKey={row.key}
@@ -118,33 +132,34 @@ export function TicketRows({
                 />
               )}
               {onRemove === undefined ? null : (
-                <button
-                  type="button"
-                  className="wd-button ghost row-remove"
+                <Button
+                  isIconOnly
+                  variant="ghost"
+                  size="sm"
                   aria-label={t(`Remove ${row.key}`, `Bỏ ${row.key}`)}
-                  onClick={() => {
+                  onPress={() => {
                     onRemove(row.key)
                   }}
                 >
-                  X
-                </button>
+                  <Xmark />
+                </Button>
               )}
             </div>
             {check?.isMine === false ? (
-              <div className="ticket-warning">
+              <div className="flex items-center gap-2 pl-4 text-sm text-warning">
                 <span>{t('Not your ticket', 'Không phải ticket của anh')}</span>
                 {check.suggestedKey === null || onUseKey === undefined ? null : (
-                  <button
-                    type="button"
-                    className="wd-button ghost"
-                    onClick={() => {
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => {
                       if (check.suggestedKey !== null) {
                         onUseKey(row.key, check.suggestedKey)
                       }
                     }}
                   >
                     {t(`Use ${check.suggestedKey}`, `Dùng ${check.suggestedKey}`)}
-                  </button>
+                  </Button>
                 )}
               </div>
             ) : null}

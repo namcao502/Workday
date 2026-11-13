@@ -1,5 +1,6 @@
 import type { BoardAction } from '@workday/core'
-import { useEffect, useRef, useState } from 'react'
+import { Button, Dropdown } from '@heroui/react'
+import { EllipsisVertical } from '@gravity-ui/icons'
 import { useAccess } from '../api/useMe.js'
 import { t } from '../i18n.js'
 import type { RowViewId } from './boardView.js'
@@ -81,61 +82,35 @@ function itemsFor(props: RowMenuProps): readonly MenuItem[] {
 
 export function RowMenu(props: RowMenuProps): React.JSX.Element | null {
   const { ticketKey } = props
-  const [open, setOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
   const canAct = useAccess().canAct('board')
-
-  useEffect(() => {
-    if (!open) {
-      return undefined
-    }
-    function closeOnOutsideClick(event: MouseEvent): void {
-      if (event.target instanceof Node && containerRef.current?.contains(event.target) !== true) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', closeOnOutsideClick)
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutsideClick)
-    }
-  }, [open])
-
   if (!canAct) {
     return null
   }
   return (
-    <div className="row-menu" ref={containerRef}>
-      <button
-        type="button"
-        className="wd-button ghost row-menu-trigger"
+    <Dropdown>
+      <Button
+        isIconOnly
+        variant="ghost"
+        size="sm"
         aria-label={t(`Actions for ${ticketKey}`, `Thao tác cho ${ticketKey}`)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => {
-          setOpen((wasOpen) => !wasOpen)
-        }}
       >
-        ...
-      </button>
-      {open ? (
-        <div className="wd-menu" role="menu">
+        <EllipsisVertical />
+      </Button>
+      <Dropdown.Popover>
+        <Dropdown.Menu>
           {itemsFor(props).map((item) => (
-            <button
+            <Dropdown.Item
               key={item.id}
-              type="button"
-              role="menuitem"
-              className="wd-menu-item"
-              disabled={item.disabled === true}
-              onClick={() => {
-                setOpen(false)
-                item.run()
-              }}
+              id={item.id}
+              textValue={item.label}
+              isDisabled={item.disabled === true}
+              onAction={item.run}
             >
               {item.label}
-            </button>
+            </Dropdown.Item>
           ))}
-        </div>
-      ) : null}
-    </div>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   )
 }

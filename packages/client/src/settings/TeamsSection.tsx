@@ -1,11 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { SettingsView } from '@workday/core'
+import { Button } from '@heroui/react'
 import { useState } from 'react'
 import { getTeamsStatus, teamsSignIn } from '../api/teamsApi.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
-import { TextField } from './TextField.js'
+import { Section } from '../ui/Section.js'
+import { TextField } from '../ui/TextField.js'
 import { formFromTeams, teamsFromForm, type TeamsForm } from './teamsForm.js'
 
 const STATUS_KEY = ['teams', 'status'] as const
@@ -67,8 +69,7 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
   }
 
   return (
-    <section className="section">
-      <h2 className="section-title">Teams</h2>
+    <Section title="Teams">
       <TextField
         id="teams-watched-channels"
         label={t('Watched channels', 'Kênh theo dõi')}
@@ -103,38 +104,38 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
           change({ postGreeting: value })
         }}
       />
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={busy}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={busy}
+          onPress={() => {
             void runSave()
           }}
         >
           {t('Save', 'Lưu')}
-        </button>
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={busy}
-          onClick={() => {
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={busy}
+          onPress={() => {
             void runSignIn()
           }}
         >
           {t('Sign in to Teams', 'Đăng nhập Teams')}
-        </button>
+        </Button>
       </div>
       {teamsStatus.data === undefined ? null : (
-        <p className="field-hint">
+        <p className="text-sm text-muted">
           {statusText(teamsStatus.data.configured, teamsStatus.data.signedIn)}
         </p>
       )}
       {status === null ? null : (
-        <p className={status.ok ? 'status success' : 'status danger'} role="status">
+        <p className={status.ok ? 'text-sm text-success' : 'text-sm text-danger'} role="status">
           {status.text}
         </p>
       )}
-    </section>
+    </Section>
   )
 }

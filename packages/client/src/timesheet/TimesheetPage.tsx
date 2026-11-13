@@ -24,7 +24,8 @@ import {
 } from '../api/useTimesheet.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
-import { ConfirmDialog } from './ConfirmDialog.js'
+import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { Page } from '../ui/Page.js'
 import { DayCard } from './DayCard.js'
 import { LogInput, type LogAction } from './LogInput.js'
 import { TimesheetBanners } from './TimesheetBanners.js'
@@ -32,9 +33,8 @@ import { showReminder, logTimeMinutes } from './timesheetState.js'
 import { dateLabel, formatMinutes } from './timesheetText.js'
 import { useColumns } from './useColumns.js'
 import { useTimesheetActions } from './useTimesheetActions.js'
-import { WeekHeader } from './WeekHeader.js'
+import { WeekHeader, WeekNav } from './WeekHeader.js'
 import { WeekTotals } from './WeekTotals.js'
-import './timesheet.css'
 
 const WORKDAYS = 5
 type Confirming = 'off' | 'clear' | null
@@ -167,8 +167,25 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
     entries.map((entry) => ({ date: entry.date, state: 'queued', coverage: null, queued: entry }))
 
   return (
-    <section className="page timesheet-page">
-      <h1 className="page-title">{t('Timesheet', 'Bảng công')}</h1>
+    <Page
+      title={t('Timesheet', 'Bảng công')}
+      wide
+      className="max-w-[1300px]"
+      actions={
+        <WeekNav
+          monday={monday}
+          thisMonday={thisMonday}
+          language={language}
+          reading={reading}
+          onShift={shiftWeek}
+          onReread={() => {
+            readWeek(monday, true)
+              .then(refresh)
+              .catch(() => undefined)
+          }}
+        />
+      }
+    >
       <TimesheetBanners view={view} reminder={showReminder(view, clock, timeZone)} />
       {canAct ? (
         <LogInput
@@ -205,17 +222,19 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
       ) : null}
       {actions.status === null ? null : (
         <p
-          className={actions.status.tone === 'ok' ? 'status' : 'status danger'}
+          className={actions.status.tone === 'ok' ? 'text-sm text-muted' : 'text-sm text-danger'}
           title={actions.status.detail ?? undefined}
         >
           {actions.status.text}
         </p>
       )}
       {outside.length === 0 ? null : (
-        <section className="queued-block">
-          <span className="section-label">{t('QUEUED', 'HÀNG ĐỢI')}</span>
+        <section className="flex flex-col gap-2">
+          <span className="text-xs font-semibold tracking-wide text-muted">
+            {t('QUEUED', 'HÀNG ĐỢI')}
+          </span>
           <div
-            className="day-grid"
+            className="grid gap-3"
             style={{ gridTemplateColumns: `repeat(${String(columns)}, 1fr)` }}
           >
             {queuedViews(outside).map(renderCard)}
@@ -224,22 +243,15 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
       )}
       <WeekHeader
         monday={monday}
-        thisMonday={thisMonday}
         today={clock.date}
         week={week}
         language={language}
         timeZone={timeZone}
         reading={reading}
-        onShift={shiftWeek}
-        onReread={() => {
-          readWeek(monday, true)
-            .then(refresh)
-            .catch(() => undefined)
-        }}
       />
       <div
         ref={gridRef}
-        className={reading ? 'day-grid reading' : 'day-grid'}
+        className={reading ? 'grid gap-3 opacity-50 pointer-events-none' : 'grid gap-3'}
         style={{ gridTemplateColumns: `repeat(${String(columns)}, 1fr)` }}
       >
         {days.map(renderCard)}
@@ -272,7 +284,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
           }}
         />
       )}
-    </section>
+    </Page>
   )
 }
 
@@ -281,10 +293,9 @@ export function TimesheetPage(): React.JSX.Element {
   const view = useTimesheetView()
   if (settings.data === undefined || view.data === undefined) {
     return (
-      <section className="page timesheet-page">
-        <h1 className="page-title">{t('Timesheet', 'Bảng công')}</h1>
-        <p className="muted">{t('Loading...', 'Đang tải...')}</p>
-      </section>
+      <Page title={t('Timesheet', 'Bảng công')} wide className="max-w-[1300px]">
+        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+      </Page>
     )
   }
   return <TimesheetBody view={view.data} config={settings.data.config} />

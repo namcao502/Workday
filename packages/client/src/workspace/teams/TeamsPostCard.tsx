@@ -1,3 +1,4 @@
+import { Button } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { TeamsReadView } from '@workday/core'
 import { useState } from 'react'
@@ -41,7 +42,7 @@ export function TeamsPostCard({
   const liveKey = draftKey(view.draft)
 
   return (
-    <div className="teams-post-card">
+    <div className="flex flex-col items-start gap-2">
       <TeamsComposer
         key={`${String(version)}:${frozen?.key ?? liveKey}`}
         mode="post"
@@ -72,10 +73,10 @@ export function TeamsPostCard({
           )
         }}
       />
-      <button
-        type="button"
-        className="wd-button ghost"
-        onClick={() => {
+      <Button
+        variant="ghost"
+        size="sm"
+        onPress={() => {
           setFrozen(null)
           setWarned(false)
           setVersion((current) => current + 1)
@@ -83,7 +84,7 @@ export function TeamsPostCard({
         }}
       >
         {t('Reload draft', 'Nạp lại bản nháp')}
-      </button>
+      </Button>
     </div>
   )
 }

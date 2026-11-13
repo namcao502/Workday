@@ -1,11 +1,14 @@
 import type { SettingsView } from '@workday/core'
+import { Button } from '@heroui/react'
 import { useState } from 'react'
 import { ApiError, checkJira } from '../api/client.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
+import { Section } from '../ui/Section.js'
+import { AdvancedDisclosure } from './AdvancedDisclosure.js'
 import { AdvancedFields } from './AdvancedFields.js'
-import { TextField } from './TextField.js'
+import { TextField } from '../ui/TextField.js'
 import { TokenField } from './TokenField.js'
 import { configFromForm, formFromConfig, hasRequiredFields, type JiraForm } from './jiraForm.js'
 
@@ -34,7 +37,6 @@ export function ConnectionsSection({
   const [form, setForm] = useState<JiraForm>(() => formFromConfig(savedJira))
   const [token, setToken] = useState('')
   const [replacing, setReplacing] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<StatusLine | null>(null)
 
@@ -85,9 +87,8 @@ export function ConnectionsSection({
   }
 
   return (
-    <section className="section">
-      <h2 className="section-title">{t('Connections', 'Kết nối')}</h2>
-      <h3 className="section-subtitle">Jira</h3>
+    <Section title={t('Connections', 'Kết nối')}>
+      <h3 className="text-sm font-semibold">Jira</h3>
       <TextField
         id="jira-base-url"
         label={t('Jira site URL', 'Địa chỉ trang Jira')}
@@ -133,44 +134,39 @@ export function ConnectionsSection({
           change({ projectKey: value })
         }}
       />
-      <button
-        type="button"
-        className="wd-button ghost"
-        aria-expanded={showAdvanced}
-        onClick={() => {
-          setShowAdvanced((current) => !current)
-        }}
-      >
-        {t('Advanced', 'Nâng cao')}
-      </button>
-      {showAdvanced ? <AdvancedFields form={form} onChange={change} /> : null}
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={busy || !hasRequiredFields(form)}
-          onClick={() => {
+      <AdvancedDisclosure title={t('Advanced', 'Nâng cao')}>
+        <AdvancedFields form={form} onChange={change} />
+      </AdvancedDisclosure>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={busy || !hasRequiredFields(form)}
+          onPress={() => {
             void runCheck()
           }}
         >
           {t('Check', 'Kiểm tra')}
-        </button>
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={busy || !hasRequiredFields(form)}
-          onClick={() => {
+        </Button>
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={busy || !hasRequiredFields(form)}
+          onPress={() => {
             void runSave()
           }}
         >
           {t('Save', 'Lưu')}
-        </button>
+        </Button>
       </div>
       {status === null ? null : (
-        <p className={status.kind === 'error' ? 'status danger' : 'status success'} role="status">
+        <p
+          className={status.kind === 'error' ? 'text-sm text-danger' : 'text-sm text-success'}
+          role="status"
+        >
           {status.text}
         </p>
       )}
-    </section>
+    </Section>
   )
 }

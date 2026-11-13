@@ -1,3 +1,4 @@
+import { Card } from '@heroui/react'
 import { totalTokens, type TicketReport } from '@workday/core'
 import { useState } from 'react'
 import { t } from '../i18n.js'
@@ -47,7 +48,7 @@ function Charts({ report }: { readonly report: TicketReport }): React.JSX.Elemen
     value: totalTokens(row.tokens),
   }))
   return (
-    <div className="report-charts">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(380px,1fr))] items-start gap-x-6 gap-y-4">
       {report.hoursRead ? (
         <BarChart
           title={t('Hours by ticket', 'Giờ theo ticket')}
@@ -82,7 +83,7 @@ export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Eleme
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   if (report.rows.length === 0) {
     return (
-      <p className="muted report-empty">
+      <p className="text-sm text-muted">
         {t(
           'No work in this range - pick another range',
           'Không có việc trong khoảng này - chọn khoảng khác',
@@ -92,34 +93,42 @@ export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Eleme
   }
   const selected = report.rows.find((row) => row.ticketKey === selectedKey) ?? null
   return (
-    <div className="report-body">
-      <div className="report-totals">
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-8">
         {totals(report).map((fact) => (
-          <div key={fact.label} className="report-fact">
-            <span className="section-label">{fact.label}</span>
-            <span className="report-fact-value">{fact.value}</span>
+          <div key={fact.label} className="flex flex-col">
+            <span className="text-xs font-medium text-muted">{fact.label}</span>
+            <span className="text-2xl font-semibold">{fact.value}</span>
           </div>
         ))}
       </div>
-      <Charts report={report} />
+      <Card>
+        <Card.Content>
+          <Charts report={report} />
+        </Card.Content>
+      </Card>
       {report.hoursRead ? null : (
-        <p className="muted">
+        <p className="text-sm text-muted">
           {t('HRM hours could not be read (see log)', 'Không đọc được giờ HRM (xem log)')}
         </p>
       )}
-      <div className="report-table-wrap">
-        <ReportTable
-          report={report}
-          selectedKey={selectedKey}
-          urlFor={urlFor}
-          onSelect={setSelectedKey}
-        />
-      </div>
+      <ReportTable
+        report={report}
+        selectedKey={selectedKey}
+        urlFor={urlFor}
+        onSelect={setSelectedKey}
+      />
       {selected === null ? null : (
-        <section className="report-detail-block" aria-label={selected.ticketKey}>
-          <h2 className="section-label">{selected.ticketKey}</h2>
-          <ReportDetail row={selected} />
-        </section>
+        <Card aria-label={selected.ticketKey}>
+          <Card.Header>
+            <Card.Title className="text-base font-semibold" render={(props) => <h2 {...props} />}>
+              {selected.ticketKey}
+            </Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <ReportDetail row={selected} />
+          </Card.Content>
+        </Card>
       )}
     </div>
   )

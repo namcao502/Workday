@@ -1,3 +1,4 @@
+import { Button, SearchField, Spinner } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { parseTicketKey, type BoardAction, type BoardView } from '@workday/core'
 import { useEffect, useState } from 'react'
@@ -8,11 +9,11 @@ import { useRepoLabels, useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
 import { errorText } from '../errors.js'
 import { formatClock, t, type Language } from '../i18n.js'
-import { Segmented } from '../settings/Segmented.js'
 import { navigateTo } from '../shell/pages.js'
 import { useNarrow } from '../shell/useNarrow.js'
-import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
-import './board.css'
+import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { Page } from '../ui/Page.js'
+import { Segmented } from '../ui/Segmented.js'
 import { BoardCards } from './BoardCard.js'
 import { BoardTable, type RowWork } from './BoardTable.js'
 import type { RowWorkspace } from './RowMenu.js'
@@ -74,11 +75,11 @@ function PollStatus({ board, language, timeZone }: PollStatusProps): React.JSX.E
   }
   if (!lastPoll.ok) {
     const text = errorText(lastPoll.error ?? { code: 'pollFailed' })
-    return <span className="poll-status danger">{text}</span>
+    return <span className="text-sm text-danger">{text}</span>
   }
   const clock = formatClock(new Date(lastPoll.at), language, timeZone)
   return (
-    <span className="poll-status muted">
+    <span className="text-sm text-muted">
       {t(`Checked at ${clock}`, `Đã kiểm tra lúc ${clock}`)}
     </span>
   )
@@ -194,9 +195,8 @@ export function BoardPage(): React.JSX.Element {
   }
 
   return (
-    <section className="page board-page">
-      <h1 className="page-title">{t('Tickets', 'Ticket')}</h1>
-      <div className="board-bar">
+    <Page title={t('Tickets', 'Ticket')} wide>
+      <div className="flex flex-wrap items-center gap-2">
         <Segmented
           label={t('Board view', 'Chế độ xem')}
           value={activeView}
@@ -210,52 +210,68 @@ export function BoardPage(): React.JSX.Element {
             setPickedForSearch(debouncedSearch)
           }}
         />
-        {canAct ? (
-          <button
-            type="button"
-            className="wd-button secondary check-now"
-            disabled={check.isPending}
-            onClick={() => {
-              check.mutate()
-            }}
-          >
-            {check.isPending ? <span className="wd-spinner" aria-hidden="true" /> : null}
-            {t('Check now', 'Kiểm tra ngay')}
-          </button>
-        ) : null}
-        {board.data === undefined ? null : (
-          <PollStatus board={board.data} language={language} timeZone={timeZone} />
-        )}
-      </div>
-      <div className="board-search">
-        <input
-          type="search"
-          className="wd-input"
-          placeholder={
+        <SearchField
+          variant="secondary"
+          className="min-w-48 flex-1"
+          aria-label={
             canAct
               ? t('Search or add a ticket', 'Tìm hoặc thêm ticket')
               : t('Search tickets', 'Tìm ticket')
           }
           value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
+          onChange={(value) => {
+            setSearch(value)
             setAddError(null)
           }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              void addTypedTicket()
-            }
+          onSubmit={() => {
+            void addTypedTicket()
           }}
-        />
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input
+              placeholder={
+                canAct
+                  ? t('Search or add a ticket', 'Tìm hoặc thêm ticket')
+                  : t('Search tickets', 'Tìm ticket')
+              }
+            />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
         {addableKey === null || !canAct ? null : (
-          <button type="button" className="wd-button primary" onClick={() => void addTypedTicket()}>
+          <Button
+            variant="primary"
+            size="sm"
+            onPress={() => {
+              void addTypedTicket()
+            }}
+          >
             {t(`Add ${addableKey}`, `Thêm ${addableKey}`)}
-          </button>
+          </Button>
+        )}
+        {canAct ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            isDisabled={check.isPending}
+            onPress={() => {
+              check.mutate()
+            }}
+          >
+            {check.isPending ? <Spinner size="sm" /> : null}
+            {t('Check now', 'Kiểm tra ngay')}
+          </Button>
+        ) : null}
+        {board.data === undefined ? null : (
+          <PollStatus board={board.data} language={language} timeZone={timeZone} />
         )}
       </div>
-      {check.isError ? <p className="status danger">{errorText({ code: 'pollFailed' })}</p> : null}
-      {addError === null ? null : <p className="status danger">{addError}</p>}
-      {launcher.error === null ? null : <p className="status danger">{launcher.error}</p>}
+      {check.isError ? (
+        <p className="text-sm text-danger">{errorText({ code: 'pollFailed' })}</p>
+      ) : null}
+      {addError === null ? null : <p className="text-sm text-danger">{addError}</p>}
+      {launcher.error === null ? null : <p className="text-sm text-danger">{launcher.error}</p>}
       {launcher.recreateKey === null ? null : (
         <ConfirmDialog
           message={t(
@@ -269,30 +285,29 @@ export function BoardPage(): React.JSX.Element {
       )}
       {readyToTest.dialog}
       {readyToTest.message === null ? null : (
-        <p className="status" role="status">
+        <p className="text-sm text-muted" role="status">
           {readyToTest.message}
         </p>
       )}
       {board.data === undefined ? (
-        <p className="muted">{t('Loading...', 'Đang tải...')}</p>
+        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
       ) : !board.data.connected ? (
-        <div className="board-empty">
-          <p className="muted">
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-sm text-muted">
             {t('Jira is not connected - open Settings', 'Chưa kết nối Jira - mở Cài đặt')}
           </p>
-          <button
-            type="button"
-            className="wd-button primary"
-            onClick={() => {
+          <Button
+            variant="primary"
+            onPress={() => {
               navigateTo('settings')
             }}
           >
             {t('Open Settings', 'Mở Cài đặt')}
-          </button>
+          </Button>
         </div>
       ) : activeView === 'available' && suggestions !== null ? (
         availableItems.length === 0 ? (
-          <p className="muted">{t('Nothing to take', 'Không có ticket để nhận')}</p>
+          <p className="text-sm text-muted">{t('Nothing to take', 'Không có ticket để nhận')}</p>
         ) : (
           <SuggestionsCard
             suggestions={{ ...suggestions, items: availableItems }}
@@ -302,7 +317,7 @@ export function BoardPage(): React.JSX.Element {
         )
       ) : activeView === 'todo' ? (
         todoGroups.length === 0 ? (
-          <p className="muted">{t('Nothing to do', 'Không có việc cần làm')}</p>
+          <p className="text-sm text-muted">{t('Nothing to do', 'Không có việc cần làm')}</p>
         ) : (
           <TodoView
             groups={todoGroups}
@@ -316,12 +331,12 @@ export function BoardPage(): React.JSX.Element {
           />
         )
       ) : listProps.rows.length === 0 ? (
-        <p className="muted">{t('No tickets', 'Không có ticket')}</p>
+        <p className="text-sm text-muted">{t('No tickets', 'Không có ticket')}</p>
       ) : narrow ? (
         <BoardCards {...listProps} />
       ) : (
         <BoardTable {...listProps} />
       )}
-    </section>
+    </Page>
   )
 }

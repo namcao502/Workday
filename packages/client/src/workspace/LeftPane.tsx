@@ -1,4 +1,5 @@
 import type { WorkspaceTab } from '@workday/core'
+import { Badge, Button } from '@heroui/react'
 import { useEffect, useState } from 'react'
 import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
@@ -13,6 +14,12 @@ interface LeftPaneProps {
   readonly tab: WorkspaceTab
   readonly teamsConversation: string | null // from the hash; opens the Teams view on it
   readonly onHide: () => void
+}
+
+const TAB_CLASS = 'flex h-7 items-center gap-1.5 rounded-lg px-3 text-sm'
+
+function tabClass(selected: boolean): string {
+  return selected ? `${TAB_CLASS} bg-surface shadow-sm` : `${TAB_CLASS} text-muted`
 }
 
 function TeamsTabButton({
@@ -32,12 +39,12 @@ function TeamsTabButton({
       type="button"
       role="tab"
       aria-selected={selected}
-      data-selected={selected}
+      className={tabClass(selected)}
       onClick={onSelect}
     >
       Teams
       {pending ? (
-        <span className="teams-dot" role="img" aria-label={t('New messages', 'Có tin mới')} />
+        <Badge color="danger" size="sm" role="img" aria-label={t('New messages', 'Có tin mới')} />
       ) : null}
     </button>
   )
@@ -60,14 +67,14 @@ export function LeftPane({
     }
   }, [teamsConversation, isTicket])
   return (
-    <div className="workspace-left" data-testid="workspace-left">
-      <div className="pane-toolbar">
-        <div className="segmented" role="tablist">
+    <div className="flex min-h-0 min-w-0 flex-[1_1_50%] flex-col" data-testid="workspace-left">
+      <div className="flex items-center gap-1.5 pb-2">
+        <div role="tablist" className="flex gap-0.5 rounded-xl bg-surface-secondary p-0.5">
           <button
             type="button"
             role="tab"
             aria-selected={tab === 'changes'}
-            data-selected={tab === 'changes'}
+            className={tabClass(tab === 'changes')}
             onClick={() => {
               setTab('changes')
             }}
@@ -78,7 +85,7 @@ export function LeftPane({
             type="button"
             role="tab"
             aria-selected={tab === 'files'}
-            data-selected={tab === 'files'}
+            className={tabClass(tab === 'files')}
             onClick={() => {
               setTab('files')
             }}
@@ -96,20 +103,20 @@ export function LeftPane({
             />
           ) : null}
         </div>
-        <button
-          type="button"
-          className="wd-button ghost"
-          onClick={() => {
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={() => {
             void openInVsCode(tabId)
           }}
         >
           VS Code
-        </button>
-        <button type="button" className="wd-button ghost" onClick={onHide}>
+        </Button>
+        <Button variant="ghost" size="sm" onPress={onHide}>
           {t('Hide', 'Ẩn')}
-        </button>
+        </Button>
       </div>
-      <div className="pane-scroll">
+      <div className="min-h-0 flex-1 overflow-auto">
         {tab === 'changes' ? <ChangesView tabId={tabId} /> : null}
         {tab === 'files' ? <FilesView tabId={tabId} /> : null}
         {tab === 'teams' ? (

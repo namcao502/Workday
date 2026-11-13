@@ -1,3 +1,4 @@
+import { Button, Card, Chip } from '@heroui/react'
 import {
   entryMinutes,
   isHrmClosed,
@@ -84,9 +85,9 @@ function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
           labels={tasks.map((task) => task.ticketKey)}
         />
       )}
-      <p className="day-line">{tscLine(day)}</p>
+      <p className="text-sm">{tscLine(day)}</p>
       {items.length === 0 ? null : (
-        <p className="day-line warning" title={tooltip}>
+        <p className="text-sm text-warning" title={tooltip}>
           {t(
             `${String(items.length)} ticket(s) to check`,
             `${String(items.length)} ticket cần xem`,
@@ -122,18 +123,19 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
       : base
   return (
     <>
-      <p className={state === 'due' ? 'day-line warning' : 'day-line muted'}>{status}</p>
+      <p className={state === 'due' ? 'text-sm text-warning' : 'text-sm text-muted'}>{status}</p>
       {canAct ? (
-        <button
-          type="button"
-          className="wd-button secondary day-log"
-          disabled={props.working || closed || !props.canLog}
-          onClick={() => {
+        <Button
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          isDisabled={props.working || closed || !props.canLog}
+          onPress={() => {
             props.onLogNow(entry.date)
           }}
         >
           {label}
-        </button>
+        </Button>
       ) : null}
       <HoursBar
         minutes={minutes}
@@ -176,7 +178,7 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
 function EmptyBody({ props }: { readonly props: DayCardProps }): React.JSX.Element {
   const past = props.day.date < props.clock.date
   return (
-    <p className={past ? 'day-line warning' : 'day-line muted'}>
+    <p className={past ? 'text-sm text-warning' : 'text-sm text-muted'}>
       {t('Nothing logged - type a ticket above', 'Chưa log gì - hãy gõ ticket ở trên')}
     </p>
   )
@@ -196,27 +198,40 @@ function Body({ props }: { readonly props: DayCardProps }): React.JSX.Element | 
   }
 }
 
+const STATE_COLOR = {
+  off: 'default',
+  logged: 'success',
+  queued: 'accent',
+  future: 'default',
+  empty: 'warning',
+} as const
+
 export function DayCard(props: DayCardProps): React.JSX.Element {
   const { day, clock, language, selected } = props
   const header = dayHeader(day.date, language)
-  const classes = ['day-card', selected ? 'selected' : '', day.date === clock.date ? 'today' : '']
+  const today = day.date === clock.date
+  const label = stateLabel(props)
   return (
-    <div
-      className={classes.filter((name) => name !== '').join(' ')}
+    <Card
       role="group"
       aria-label={header}
-      onClick={(event) => {
+      className={`cursor-pointer gap-2 p-3 ${selected ? 'ring-2 ring-accent' : ''}`}
+      onClick={(event: React.MouseEvent) => {
         const inside = event.target instanceof Element ? event.target : null
-        if (inside?.closest('button, input, .hours-bar') === null) {
+        if (inside?.closest('button, input, [data-hours-bar]') === null) {
           props.onSelect(day.date)
         }
       }}
     >
-      <div className="day-head">
-        <span className="day-title">{header}</span>
-        <span className="day-state">{stateLabel(props)}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`font-semibold ${today ? 'text-accent' : ''}`}>{header}</span>
+        {label === '' ? null : (
+          <Chip size="sm" color={STATE_COLOR[day.state]}>
+            {label}
+          </Chip>
+        )}
       </div>
       <Body props={props} />
-    </div>
+    </Card>
   )
 }

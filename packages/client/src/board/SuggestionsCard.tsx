@@ -1,10 +1,13 @@
+import { Button, Chip } from '@heroui/react'
 import type { Suggestion, WorkView } from '@workday/core'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
 import { actionErrorText, useWorkActions } from '../api/useWork.js'
 import { formatDateOnly, t, type Language } from '../i18n.js'
-import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
+import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { Section } from '../ui/Section.js'
+import { TodoIcon } from './TodoRow.js'
 
 const SHOW_MORE_STEP = 10
 const SEPARATOR = ' · '
@@ -105,15 +108,14 @@ export function SuggestionsCard({
   }
 
   return (
-    <section className="suggestions-card" aria-label={t('Available to take', 'Có thể nhận')}>
-      <h2 className="suggestions-title">
-        {t('Available to take', 'Có thể nhận')}
-        {suggestions.epicKey === null ? null : (
-          <span className="pill">{`Epic ${suggestions.epicKey}`}</span>
-        )}
-      </h2>
+    <Section
+      title={t('Available to take', 'Có thể nhận')}
+      actions={
+        suggestions.epicKey === null ? null : <Chip size="sm">{`Epic ${suggestions.epicKey}`}</Chip>
+      }
+    >
       {message === null ? null : (
-        <p className="status" role="status">
+        <p className="text-sm text-muted" role="status">
           {message}
         </p>
       )}
@@ -131,59 +133,65 @@ export function SuggestionsCard({
           }}
         />
       )}
-      <ul className="todo-list">
+      <ul className="m-0 list-none p-0">
         {items.slice(0, shown).map((suggestion) => {
           const { ticket } = suggestion
           const href =
             jira === undefined || jira === null ? null : `${jira.baseUrl}/browse/${ticket.key}`
+          const keyChip = (
+            <Chip size="sm" color="accent">
+              {ticket.key}
+            </Chip>
+          )
           return (
-            <li key={ticket.key} className="todo-row">
-              <span
-                className={`todo-icon ${suggestion.urgent ? 'todo-tone-warning' : 'todo-tone-accent'}`}
-                aria-hidden="true"
-              >
-                {suggestion.urgent ? '!' : '+'}
-              </span>
-              <div className="todo-text">
-                <div className="todo-title">
+            <li
+              key={ticket.key}
+              className="flex items-center gap-3 border-b border-separator py-2 last:border-b-0"
+            >
+              <TodoIcon
+                tone={suggestion.urgent ? 'warning' : 'accent'}
+                icon={suggestion.urgent ? '!' : '+'}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold [overflow-wrap:anywhere]">
                   {href === null ? (
-                    <span className="pill key-pill">{ticket.key}</span>
+                    keyChip
                   ) : (
                     <a
-                      className="pill key-pill"
+                      className="no-underline"
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {ticket.key}
+                      {keyChip}
                     </a>
                   )}{' '}
                   {ticket.summary}
                 </div>
-                <div className="todo-detail muted">
+                <div className="text-sm text-muted [overflow-wrap:anywhere]">
                   {suggestionDetail(suggestion, today, language, selectedStatus)}
                 </div>
               </div>
               {canAct ? (
-                <div className="todo-buttons">
-                  <button
-                    type="button"
-                    className="wd-button secondary"
-                    onClick={() => {
+                <div className="flex flex-none gap-1.5">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => {
                       setTaking(ticket.key)
                     }}
                   >
                     {t('Take', 'Nhận')}
-                  </button>
-                  <button
-                    type="button"
-                    className="wd-button secondary"
-                    onClick={() => {
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => {
                       void hide(ticket.key)
                     }}
                   >
                     {t('Hide', 'Ẩn')}
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </li>
@@ -191,19 +199,21 @@ export function SuggestionsCard({
         })}
       </ul>
       {left <= 0 ? null : (
-        <button
-          type="button"
-          className="wd-button secondary"
-          onClick={() => {
-            setShown(shown + SHOW_MORE_STEP)
-          }}
-        >
-          {t(
-            `Show ${String(Math.min(SHOW_MORE_STEP, left))} more (${String(left)} left)`,
-            `Xem thêm ${String(Math.min(SHOW_MORE_STEP, left))} (${String(left)} còn lại)`,
-          )}
-        </button>
+        <div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={() => {
+              setShown(shown + SHOW_MORE_STEP)
+            }}
+          >
+            {t(
+              `Show ${String(Math.min(SHOW_MORE_STEP, left))} more (${String(left)} left)`,
+              `Xem thêm ${String(Math.min(SHOW_MORE_STEP, left))} (${String(left)} còn lại)`,
+            )}
+          </Button>
+        </div>
       )}
-    </section>
+    </Section>
   )
 }

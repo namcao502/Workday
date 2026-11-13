@@ -1,3 +1,4 @@
+import { Button, Input } from '@heroui/react'
 import { useState } from 'react'
 import { t } from '../../i18n.js'
 import { isWebUrl, type FormatCommand } from './teamsComposerDom.js'
@@ -52,58 +53,57 @@ export function TeamsComposerToolbar({
   }
 
   return (
-    <div className="teams-toolbar">
+    <div className="flex flex-wrap items-center gap-0.5">
       {formatButtons().map((button) => (
-        <button
+        <Button
           key={button.command}
-          type="button"
-          className="wd-button ghost"
+          isIconOnly
+          variant="ghost"
+          size="sm"
           aria-label={button.label}
-          title={button.label}
-          disabled={disabled}
+          isDisabled={disabled}
           onMouseDown={(event) => {
             event.preventDefault()
           }}
-          onClick={() => {
+          onPress={() => {
             onFormat(button.command)
           }}
         >
           {button.text}
-        </button>
+        </Button>
       ))}
-      <button
-        type="button"
-        className="wd-button ghost"
+      <Button
+        variant="ghost"
+        size="sm"
         aria-label={t('Link', 'Liên kết')}
-        title={t('Link', 'Liên kết')}
-        disabled={disabled}
+        isDisabled={disabled}
         onMouseDown={(event) => {
           event.preventDefault()
         }}
-        onClick={() => {
+        onPress={() => {
           onLinkOpen()
           setLinking(true)
         }}
       >
         {t('Link', 'Liên kết')}
-      </button>
-      <button
-        type="button"
-        className="wd-button ghost"
+      </Button>
+      <Button
+        isIconOnly
+        variant="ghost"
+        size="sm"
         aria-label={t('Mention', 'Nhắc tên')}
-        title={t('Mention', 'Nhắc tên')}
-        disabled={disabled}
+        isDisabled={disabled}
         onMouseDown={(event) => {
           event.preventDefault()
         }}
-        onClick={onMention}
+        onPress={onMention}
       >
         @
-      </button>
+      </Button>
       {linking ? (
-        <span className="teams-link-prompt">
-          <input
-            className="wd-input"
+        <span className="inline-flex items-center gap-1">
+          <Input
+            variant="secondary"
             aria-label={t('Link address', 'Địa chỉ liên kết')}
             placeholder="https://"
             value={url}
@@ -118,21 +118,21 @@ export function TeamsComposerToolbar({
               }
             }}
           />
-          <button type="button" className="wd-button secondary" onClick={confirmLink}>
+          <Button variant="secondary" size="sm" onPress={confirmLink}>
             {t('Add link', 'Thêm liên kết')}
-          </button>
-          <button
-            type="button"
-            className="wd-button ghost"
-            onClick={() => {
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
               setLinking(false)
               setInvalid(false)
             }}
           >
             {t('Cancel', 'Hủy')}
-          </button>
+          </Button>
           {invalid ? (
-            <span className="status danger" role="alert">
+            <span className="text-sm text-danger" role="alert">
               {t('Only http(s) links', 'Chỉ nhận liên kết http(s)')}
             </span>
           ) : null}

@@ -1,3 +1,4 @@
+import { Chip } from '@heroui/react'
 import type { BoardRow, TodoGroup, TodoItem } from '@workday/core'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
@@ -61,13 +62,17 @@ function GroupHeader({ ticketKey, rows }: GroupHeaderProps): React.JSX.Element |
   }
   const row = rows.find((candidate) => candidate.ticket.key === ticketKey)
   return (
-    <div className="todo-group-head">
+    <div className="flex items-center gap-2 py-1.5">
       {row === undefined ? (
-        <span className="pill key-pill">{ticketKey}</span>
+        <Chip size="sm" color="accent">
+          {ticketKey}
+        </Chip>
       ) : (
         <KeyPill ticketKey={ticketKey} url={row.url} />
       )}
-      <span className="board-summary">{row?.ticket.summary ?? ''}</span>
+      <span className="text-xs font-medium text-muted uppercase [overflow-wrap:anywhere]">
+        {row?.ticket.summary ?? ''}
+      </span>
     </div>
   )
 }
@@ -188,19 +193,21 @@ export function TodoView({
   }
 
   return (
-    <div className="todo-view">
+    <div className="flex flex-col gap-3">
       {message === null ? null : (
-        <p className="status" role="status">
+        <p className="text-sm text-muted" role="status">
           {message}
         </p>
       )}
       {groups.map((group, index) => (
         <section
           key={group.ticketKey ?? `group-${String(index)}`}
-          className={group.neededNow ? 'todo-group todo-group-now' : 'todo-group'}
+          className={`rounded-lg border-l-3 bg-surface px-3 py-1 ${
+            group.neededNow ? 'border-l-accent' : 'border-l-transparent'
+          }`}
         >
           <GroupHeader ticketKey={group.ticketKey} rows={rows} />
-          <ul className="todo-list">
+          <ul className="m-0 list-none p-0">
             {group.items.map((item, itemIndex) => {
               const text = todoText(item, { ticketOf, repoLabels, language, timeZone })
               return (

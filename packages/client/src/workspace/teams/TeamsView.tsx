@@ -1,3 +1,4 @@
+import { Button } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import {
@@ -22,7 +23,6 @@ import { TeamsPostCard } from './TeamsPostCard.js'
 import { outcomeOf, type SendAction } from './teamsSend.js'
 import { TeamsThread } from './TeamsThread.js'
 import { useMarkTeamsSeen, useTeamsRead } from './useTeams.js'
-import './teams.css'
 
 export interface TeamsViewProps {
   readonly ticket: string
@@ -93,8 +93,8 @@ export function TeamsView({
 
   if (view === undefined) {
     return (
-      <div className="teams-view">
-        <p className={isError ? 'status danger' : 'muted'}>
+      <div className="flex h-full min-h-0 flex-col">
+        <p className={isError ? 'py-2 text-sm text-danger' : 'py-2 text-sm text-muted'}>
           {isError
             ? t('Could not read Teams.', 'Không đọc được Teams.')
             : t('Loading...', 'Đang tải...')}
@@ -110,32 +110,32 @@ export function TeamsView({
   )
 
   return (
-    <div className="teams-view">
-      <div className="teams-top">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex flex-wrap items-center gap-2 border-b border-separator py-1.5">
         {options.length === 0 ? null : (
           <ConversationSelect options={options} value={id} onChange={setSelected} />
         )}
         {view.state === 'thread' ? (
-          <button
-            type="button"
-            className="wd-button ghost"
-            onClick={() => {
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
               window.open(view.deepLink, '_blank', 'noopener')
             }}
           >
             {t('Open in Teams', 'Mở trong Teams')}
-          </button>
+          </Button>
         ) : null}
-        <button
-          type="button"
-          className="wd-button ghost"
-          onClick={() => {
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={() => {
             void queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
           }}
         >
           {t('Refresh', 'Làm mới')}
-        </button>
-        <span className="muted teams-status" role="status">
+        </Button>
+        <span className="min-w-0 flex-1 text-sm text-muted" role="status">
           {problem ?? (isFetching ? t('Reading...', 'Đang đọc...') : '')}
         </span>
       </div>
@@ -182,7 +182,7 @@ export function TeamsView({
         />
       ) : null}
       {view.state === 'thread' ? (
-        <div className="teams-compose-slot" data-testid="teams-compose-slot">
+        <div className="border-t border-separator py-2" data-testid="teams-compose-slot">
           <TeamsReplyBox
             ticket={ticket}
             conversationId={view.conversationId}
@@ -195,7 +195,7 @@ export function TeamsView({
         </div>
       ) : null}
       {view.state === 'notPosted' ? (
-        <div className="teams-compose-slot" data-testid="teams-compose-slot">
+        <div className="border-t border-separator py-2" data-testid="teams-compose-slot">
           <TeamsPostCard ticket={ticket} view={view} label={label} locked={writing} send={send} />
         </div>
       ) : null}

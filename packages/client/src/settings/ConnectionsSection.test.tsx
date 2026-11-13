@@ -13,7 +13,12 @@ const SAVED_JIRA: JiraConfig = {
   maxResults: 50,
   etaFieldId: null,
   devPriorityFieldId: null,
-  statusFlow: { preWorkStatuses: ['To Do'], reworkStatuses: ['Reopened'], readyToTestPath: [], developerStatuses: [] },
+  statusFlow: {
+    preWorkStatuses: ['To Do'],
+    reworkStatuses: ['Reopened'],
+    readyToTestPath: [],
+    developerStatuses: [],
+  },
   suggestions: null,
 }
 
@@ -77,7 +82,12 @@ it('Save sends the project key and the advanced fields', async () => {
     etaFieldId: 'customfield_1',
     devPriorityFieldId: 'customfield_2',
     assignedJql: 'project = XYZ',
-    statusFlow: { preWorkStatuses: ['To Do', 'Backlog'], reworkStatuses: ['Reopened'], readyToTestPath: [], developerStatuses: [] },
+    statusFlow: {
+      preWorkStatuses: ['To Do', 'Backlog'],
+      reworkStatuses: ['Reopened'],
+      readyToTestPath: [],
+      developerStatuses: [],
+    },
   })
 })
 

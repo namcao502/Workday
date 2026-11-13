@@ -3,6 +3,25 @@ import { formatClock, formatDateOnly, t, type Language } from '../i18n.js'
 
 export type TodoTone = 'accent' | 'success' | 'danger' | 'warning' | 'muted' | 'orange' | 'ready'
 
+export type ChipColor = 'accent' | 'success' | 'danger' | 'warning' | 'default'
+
+// The HeroUI Chip color that stands for a tone.
+export function chipColor(tone: TodoTone): ChipColor {
+  switch (tone) {
+    case 'accent':
+    case 'success':
+    case 'danger':
+    case 'warning':
+      return tone
+    case 'ready':
+      return 'success'
+    case 'orange':
+      return 'warning'
+    case 'muted':
+      return 'default'
+  }
+}
+
 export interface TodoTextParts {
   readonly title: string
   readonly detail: string

@@ -1,3 +1,4 @@
+import { Button, Header, ListBox, Select } from '@heroui/react'
 import type { TeamsOption, TeamsReadView } from '@workday/core'
 import { t } from '../../i18n.js'
 import { navigateTo } from '../../shell/pages.js'
@@ -19,29 +20,42 @@ export function ConversationSelect({
   const channels = options.filter((option) => option.kind === 'channel')
   const chats = options.filter((option) => option.kind === 'chat')
   return (
-    <select
-      className="teams-select"
+    <Select
       aria-label={t('Conversation', 'Hội thoại')}
+      className="min-w-0 max-w-full"
       value={value}
-      onChange={(event) => {
-        onChange(event.target.value)
+      onChange={(key) => {
+        if (key !== null) {
+          onChange(String(key))
+        }
       }}
     >
-      {channels.map((option) => (
-        <option key={option.id} value={option.id}>
-          {optionLabel(option)}
-        </option>
-      ))}
-      {chats.length === 0 ? null : (
-        <optgroup label={t('Chats', 'Trò chuyện')}>
-          {chats.map((option) => (
-            <option key={option.id} value={option.id}>
+      <Select.Trigger>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox>
+          {channels.map((option) => (
+            <ListBox.Item key={option.id} id={option.id} textValue={optionLabel(option)}>
               {optionLabel(option)}
-            </option>
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
           ))}
-        </optgroup>
-      )}
-    </select>
+          {chats.length === 0 ? null : (
+            <ListBox.Section>
+              <Header>{t('Chats', 'Trò chuyện')}</Header>
+              {chats.map((option) => (
+                <ListBox.Item key={option.id} id={option.id} textValue={optionLabel(option)}>
+                  {optionLabel(option)}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox.Section>
+          )}
+        </ListBox>
+      </Select.Popover>
+    </Select>
   )
 }
 
@@ -80,37 +94,37 @@ export function StatePanel({
   switch (view.state) {
     case 'signedOut':
       return (
-        <div className="teams-panel">
+        <div className="flex flex-col items-start gap-2 py-3">
           <p>{t('You are signed out of Teams.', 'Bạn chưa đăng nhập Teams.')}</p>
-          <button type="button" className="wd-button primary" disabled={writing} onClick={onSignIn}>
+          <Button variant="primary" size="sm" isDisabled={writing} onPress={onSignIn}>
             {t('Sign in to Teams', 'Đăng nhập Teams')}
-          </button>
+          </Button>
         </div>
       )
     case 'notConfigured':
       return (
-        <div className="teams-panel">
+        <div className="flex flex-col items-start gap-2 py-3">
           <p>{t('Teams is not set up.', 'Chưa cấu hình Teams.')}</p>
-          <button
-            type="button"
-            className="wd-button primary"
-            onClick={() => {
+          <Button
+            variant="primary"
+            size="sm"
+            onPress={() => {
               navigateTo('settings')
             }}
           >
             {t('Open Settings > Teams', 'Mở Cài đặt > Teams')}
-          </button>
+          </Button>
         </div>
       )
     case 'searching':
       return (
-        <p className="muted teams-panel">
+        <p className="py-3 text-sm text-muted">
           {t('Looking for an older post...', 'Đang tìm bài đăng cũ hơn...')}
         </p>
       )
     case 'notPosted':
       return (
-        <p className="muted teams-panel">
+        <p className="py-3 text-sm text-muted">
           {t('This ticket has no post here yet.', 'Ticket này chưa có bài đăng ở đây.')}
         </p>
       )

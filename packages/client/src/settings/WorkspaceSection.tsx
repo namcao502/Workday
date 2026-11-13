@@ -1,8 +1,10 @@
 import type { SettingsView } from '@workday/core'
+import { Button, Switch } from '@heroui/react'
 import { useState } from 'react'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
-import { TextField } from './TextField.js'
+import { Section } from '../ui/Section.js'
+import { TextField } from '../ui/TextField.js'
 import { formFromWorkspace, workspaceFromForm, type WorkspaceForm } from './workspaceForm.js'
 
 export function WorkspaceSection({
@@ -40,8 +42,7 @@ export function WorkspaceSection({
   }
 
   return (
-    <section className="section">
-      <h2 className="section-title">{t('Workspace', 'Không gian làm việc')}</h2>
+    <Section title={t('Workspace', 'Không gian làm việc')}>
       <TextField
         id="workspace-dev-repo"
         label={t('Dev repo', 'Dev repo')}
@@ -103,34 +104,36 @@ export function WorkspaceSection({
           change({ localOnlyPaths: value })
         }}
       />
-      <label className="field-row">
-        <span>{t('Chat view', 'Chat view')}</span>
-        <input
-          type="checkbox"
-          role="switch"
-          checked={form.chatView}
-          onChange={(event) => {
-            change({ chatView: event.target.checked })
-          }}
-        />
-      </label>
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={busy}
-          onClick={() => {
+      <Switch
+        isSelected={form.chatView}
+        onChange={(selected) => {
+          change({ chatView: selected })
+        }}
+      >
+        <Switch.Content>
+          <Switch.Control>
+            <Switch.Thumb />
+          </Switch.Control>
+          {t('Chat view', 'Chat view')}
+        </Switch.Content>
+      </Switch>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={busy}
+          onPress={() => {
             void runSave()
           }}
         >
           {t('Save', 'Lưu')}
-        </button>
+        </Button>
       </div>
       {status === null ? null : (
-        <p className={status.ok ? 'status success' : 'status danger'} role="status">
+        <p className={status.ok ? 'text-sm text-success' : 'text-sm text-danger'} role="status">
           {status.text}
         </p>
       )}
-    </section>
+    </Section>
   )
 }

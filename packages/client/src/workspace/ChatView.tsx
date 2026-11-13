@@ -1,3 +1,4 @@
+import { Spinner } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { WaitReason } from '@workday/core'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -83,7 +84,7 @@ export function ChatView({ session, wait, onOpenTerminal }: ChatViewProps): Reac
         <ChatRows messages={messages ?? []} />
         {working ? (
           <div className="chat-working">
-            <span className="wd-spinner" aria-hidden="true" />
+            <Spinner size="sm" aria-hidden="true" />
             {t('Claude is working...', 'Claude đang làm việc...')}
           </div>
         ) : null}

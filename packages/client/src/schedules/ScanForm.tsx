@@ -1,3 +1,12 @@
+import {
+  Input,
+  Label,
+  ListBox,
+  Select,
+  Switch,
+  TextArea,
+  TextField as HeroTextField,
+} from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   SCAN_DAYS,
@@ -9,7 +18,7 @@ import { useState } from 'react'
 import { queryKeys } from '../api/client.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
-import { Segmented } from '../settings/Segmented.js'
+import { Segmented } from '../ui/Segmented.js'
 import { dayLabel } from './scheduleFormat.js'
 
 export const DEFAULT_SCAN: KnowledgeScanConfig = {
@@ -73,60 +82,37 @@ export function ScanForm({
   }
 
   return (
-    <div className="scan-form">
-      <label className="form-field" htmlFor="scan-command">
-        <span className="field-label">{t('Command', 'Lệnh')}</span>
-        <input
-          id="scan-command"
-          className="wd-input"
-          value={command}
-          onChange={(event) => {
-            setCommand(event.target.value)
-          }}
-          onBlur={saveText}
-        />
-      </label>
-      <label className="form-field" htmlFor="scan-args">
-        <span className="field-label">
-          {t('Arguments (one per line)', 'Đối số (mỗi dòng một đối số)')}
-        </span>
-        <textarea
-          id="scan-args"
-          className="wd-input scan-args"
-          rows={3}
-          value={argsText}
-          onChange={(event) => {
-            setArgsText(event.target.value)
-          }}
-          onBlur={saveText}
-        />
-      </label>
-      <label className="form-field" htmlFor="scan-log-file">
-        <span className="field-label">{t('Log file', 'File log')}</span>
-        <input
+    <div className="flex flex-col gap-3">
+      <HeroTextField fullWidth value={command} onChange={setCommand} onBlur={saveText}>
+        <Label>{t('Command', 'Lệnh')}</Label>
+        <Input id="scan-command" variant="secondary" />
+      </HeroTextField>
+      <HeroTextField fullWidth value={argsText} onChange={setArgsText} onBlur={saveText}>
+        <Label>{t('Arguments (one per line)', 'Đối số (mỗi dòng một đối số)')}</Label>
+        <TextArea id="scan-args" rows={3} variant="secondary" className="font-mono" />
+      </HeroTextField>
+      <HeroTextField fullWidth value={logFile} onChange={setLogFile} onBlur={saveText}>
+        <Label>{t('Log file', 'File log')}</Label>
+        <Input
           id="scan-log-file"
-          className="wd-input"
-          value={logFile}
+          variant="secondary"
           placeholder={t('Optional: the script writes its own log', 'Tùy chọn: script tự ghi log')}
-          onChange={(event) => {
-            setLogFile(event.target.value)
-          }}
-          onBlur={saveText}
         />
-      </label>
-      <div className="scan-schedule">
-        <label className="inline-row" htmlFor="scan-enabled">
-          <input
-            id="scan-enabled"
-            type="checkbox"
-            role="switch"
-            checked={current.enabled}
-            onChange={(event) => {
-              void persist({ enabled: event.target.checked })
-            }}
-          />
-          <span>{t('Run on schedule', 'Chạy theo lịch')}</span>
-        </label>
+      </HeroTextField>
+      <div className="flex flex-wrap items-center gap-2">
+        <Switch
+          isSelected={current.enabled}
+          onChange={(enabled) => {
+            void persist({ enabled })
+          }}
+        >
+          <Switch.Content>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+            <Label>{t('Run on schedule', 'Chạy theo lịch')}</Label>
+          </Switch.Content>
+        </Switch>
         <Segmented
           label={t('Day', 'Ngày')}
           value={current.day}
@@ -135,23 +121,35 @@ export function ScanForm({
             void persist({ day })
           }}
         />
-        <select
-          className="wd-input scan-time"
+        <Select
           aria-label={t('Start time', 'Giờ bắt đầu')}
+          variant="secondary"
+          className="w-28"
           value={current.time}
-          onChange={(event) => {
-            void persist({ time: event.target.value })
+          onChange={(key) => {
+            if (key !== null) {
+              void persist({ time: String(key) })
+            }
           }}
         >
-          {startTimeChoices(current.time).map((time) => (
-            <option key={time} value={time}>
-              {time}
-            </option>
-          ))}
-        </select>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {startTimeChoices(current.time).map((time) => (
+                <ListBox.Item key={time} id={time} textValue={time}>
+                  {time}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
       </div>
-      <div className="scan-schedule">
-        <span className="field-label">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted">
           {t('Stop a run after (hours)', 'Dừng lần chạy sau (giờ)')}
         </span>
         <Segmented
@@ -170,7 +168,7 @@ export function ScanForm({
         />
       </div>
       {failed ? (
-        <p className="status danger" role="status">
+        <p className="text-sm text-danger" role="status">
           {t('Could not save the scan settings', 'Không lưu được cài đặt quét')}
         </p>
       ) : null}

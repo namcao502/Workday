@@ -60,12 +60,12 @@ it('an unpaired device sees the pair page before the settings are asked for', as
   expect(fetchMock.mock.calls.some(([url]) => url === '/api/settings')).toBe(false)
 })
 
-it('the pair page renders inside .legacy-page', async () => {
+it('the pair page is not wrapped in .legacy-page', async () => {
   stubMatchMedia(false)
   stubFetch(() => jsonResponse({ mode: 'unpaired' }))
   render(<App socketFactory={noSocket} />)
   const pair = await screen.findByRole('button', { name: 'Pair' })
-  expect(pair.closest('.legacy-page')).not.toBeNull()
+  expect(pair.closest('.legacy-page')).toBeNull()
 })
 
 it('accessRequired shows one line instead of the app', async () => {

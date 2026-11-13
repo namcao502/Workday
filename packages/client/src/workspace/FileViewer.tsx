@@ -1,9 +1,11 @@
 import type { FileContentView } from '@workday/core'
+import { Button } from '@heroui/react'
 import { useMemo, useState } from 'react'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { rawFileUrl } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
+import { Segmented } from '../ui/Segmented.js'
 
 interface FileViewerProps {
   readonly tabId: string
@@ -102,26 +104,17 @@ function MarkdownWithSource(props: FileViewerProps & { readonly text: string }):
   const [source, setSource] = useState(false)
   return (
     <>
-      <div className="segmented" role="group">
-        <button
-          type="button"
-          data-selected={source}
-          onClick={() => {
-            setSource(true)
-          }}
-        >
-          {t('Source', 'Mã nguồn')}
-        </button>
-        <button
-          type="button"
-          data-selected={!source}
-          onClick={() => {
-            setSource(false)
-          }}
-        >
-          {t('Rendered', 'Hiển thị')}
-        </button>
-      </div>
+      <Segmented
+        label={t('View mode', 'Chế độ xem')}
+        value={source ? 'source' : 'rendered'}
+        options={[
+          { value: 'source', label: t('Source', 'Mã nguồn') },
+          { value: 'rendered', label: t('Rendered', 'Hiển thị') },
+        ]}
+        onChange={(value) => {
+          setSource(value === 'source')
+        }}
+      />
       {source ? <SourceView text={props.text} /> : <MarkdownView {...props} />}
     </>
   )
@@ -138,15 +131,15 @@ export function FileViewer(props: FileViewerProps): React.JSX.Element {
       return <img className="image-view" src={rawFileUrl(tabId, group, path)} alt={path} />
     default:
       return (
-        <div className="file-note">
-          <p className="muted">
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-sm text-muted">
             {content.kind === 'tooLarge'
               ? t('This file is too large to show.', 'Tệp quá lớn để hiển thị.')
               : t('This is a binary file.', 'Đây là tệp nhị phân.')}
           </p>
-          <button type="button" className="wd-button" onClick={onOpenInEditor}>
+          <Button variant="secondary" size="sm" onPress={onOpenInEditor}>
             {t('Open in VS Code', 'Mở trong VS Code')}
-          </button>
+          </Button>
         </div>
       )
   }

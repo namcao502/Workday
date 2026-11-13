@@ -1,9 +1,11 @@
+import { Button } from '@heroui/react'
 import type { SchedulesView } from '@workday/core'
 import { useState } from 'react'
 import { ApiError } from '../api/client.js'
 import { runScanNow } from '../api/schedulesApi.js'
 import { t } from '../i18n.js'
-import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
+import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { Section } from '../ui/Section.js'
 import { ScanForm } from './ScanForm.js'
 import { ScanRuns } from './ScanRuns.js'
 import { formatWhen } from './scheduleFormat.js'
@@ -46,26 +48,27 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
         )
 
   return (
-    <section className="card schedules-card">
-      <div className="inline-row card-header">
-        <h2 className="section-title">{t('Knowledge scan', 'Quét knowledge base')}</h2>
-        <div className="button-row">
-          <button
-            type="button"
-            className="wd-button primary"
-            disabled={scan.config === null || running}
-            onClick={() => {
+    <Section
+      title={t('Knowledge scan', 'Quét knowledge base')}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            isDisabled={scan.config === null || running}
+            onPress={() => {
               setAsking(true)
             }}
           >
             {t('Run now', 'Chạy ngay')}
-          </button>
-          <button type="button" className="wd-button secondary" onClick={onRefresh}>
+          </Button>
+          <Button variant="secondary" size="sm" onPress={onRefresh}>
             {t('Refresh', 'Làm mới')}
-          </button>
+          </Button>
         </div>
-      </div>
-      <div className="muted" aria-live="polite">
+      }
+    >
+      <div className="text-sm text-muted" aria-live="polite">
         {message === '' ? nextText : message}
       </div>
       <ScanForm config={scan.config} />
@@ -85,6 +88,6 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
           }}
         />
       ) : null}
-    </section>
+    </Section>
   )
 }

@@ -91,6 +91,19 @@ it('the + menu adds a terminal for the dev repo', async () => {
   })
 })
 
+it('the workspace page is not wrapped in .legacy-page but the Claude pane is', async () => {
+  stubWorkspace(view())
+  const { container } = renderWithQuery(<WorkspacePage />)
+  const left = await screen.findByTestId('workspace-left')
+  expect(left.closest('.legacy-page')).toBeNull()
+  expect(screen.getByRole('tablist', { name: 'Workspace tabs' }).closest('.legacy-page')).toBeNull()
+  const panes = container.querySelectorAll('.claude-pane')
+  expect(panes.length).toBeGreaterThan(0)
+  for (const pane of panes) {
+    expect(pane.closest('.legacy-page')).not.toBeNull()
+  }
+})
+
 it('keeps every session of the open tab mounted and hides the unselected one', async () => {
   stubWorkspace(view())
   window.location.hash = '#/workspace/MDP-2/MDP-2~2'

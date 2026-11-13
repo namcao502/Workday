@@ -1,9 +1,10 @@
 import { REMOTE_AREAS, type AccessLevel, type RemoteArea, type RemoteDevice } from '@workday/core'
+import { Button, Input, Switch } from '@heroui/react'
 import { useState } from 'react'
 import type { RemoteActions } from '../api/useRemote.js'
 import { formatShortDate, t, type Language } from '../i18n.js'
-import { ConfirmDialog } from '../timesheet/ConfirmDialog.js'
-import { Segmented } from './Segmented.js'
+import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { Segmented } from '../ui/Segmented.js'
 
 export type RunRemote = (action: () => Promise<void>) => void
 
@@ -39,22 +40,23 @@ function DeviceName({
 
   if (!editing) {
     return (
-      <button
-        type="button"
-        className="wd-button ghost"
-        title={t('Click to rename', 'Bấm để đổi tên')}
-        onClick={() => {
-          setDraft(device.name)
-          setEditing(true)
-        }}
-      >
-        {device.name}
-      </button>
+      <span title={t('Click to rename', 'Bấm để đổi tên')}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={() => {
+            setDraft(device.name)
+            setEditing(true)
+          }}
+        >
+          {device.name}
+        </Button>
+      </span>
     )
   }
   return (
-    <input
-      className="wd-input"
+    <Input
+      variant="secondary"
       aria-label={t('Device name', 'Tên thiết bị')}
       value={draft}
       autoFocus
@@ -97,24 +99,24 @@ function DeviceRow({
   }
 
   return (
-    <li className="device-row">
-      <div className="inline-row">
+    <li className="flex flex-col gap-2 border-b border-separator py-3">
+      <div className="flex flex-wrap items-center gap-2">
         <DeviceName
           device={device}
           onRename={(name) => {
             run(() => actions.updateDevice(device.id, { name }))
           }}
         />
-        <span className="muted">{device.email ?? ''}</span>
-        <span className="muted">
+        <span className="text-sm text-muted">{device.email ?? ''}</span>
+        <span className="text-sm text-muted">
           {device.lastSeenAt === null
             ? t('Never seen', 'Chưa từng thấy')
             : formatShortDate(new Date(device.lastSeenAt), language, timeZone)}
         </span>
       </div>
       {REMOTE_AREAS.map((area) => (
-        <div key={area} className="field-row">
-          <span>{areaLabel(area)}</span>
+        <div key={area} className="flex flex-wrap items-center gap-3">
+          <span className="w-24 text-sm">{areaLabel(area)}</span>
           <Segmented
             label={t(`${areaLabel(area)} access`, `Quyền ${areaLabel(area)}`)}
             value={device.rights[area]}
@@ -127,41 +129,43 @@ function DeviceRow({
           />
         </div>
       ))}
-      <div className="button-row">
-        <label className="inline-row">
-          <input
-            type="checkbox"
-            role="switch"
-            checked={device.pushEnabled}
-            disabled={!device.hasPushSubscription}
-            onChange={(event) => {
-              run(() => actions.updateDevice(device.id, { pushEnabled: event.target.checked }))
-            }}
-          />
-          {t('Push', 'Push')}
-        </label>
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={!device.hasPushSubscription}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Switch
+          isSelected={device.pushEnabled}
+          isDisabled={!device.hasPushSubscription}
+          onChange={(selected) => {
+            run(() => actions.updateDevice(device.id, { pushEnabled: selected }))
+          }}
+        >
+          <Switch.Content>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+            {t('Push', 'Push')}
+          </Switch.Content>
+        </Switch>
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={!device.hasPushSubscription}
+          onPress={() => {
             run(testPush)
           }}
         >
           {t('Send test push', 'Gửi push thử')}
-        </button>
-        <button
-          type="button"
-          className="wd-button danger"
-          onClick={() => {
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          onPress={() => {
             setConfirming(true)
           }}
         >
           {t('Revoke', 'Thu hồi')}
-        </button>
+        </Button>
       </div>
       {pushMessage === null ? null : (
-        <p className="status" role="status">
+        <p className="text-sm text-muted" role="status">
           {pushMessage}
         </p>
       )}
@@ -188,11 +192,13 @@ function DeviceRow({
 export function RemoteDevices(props: RemoteDevicesProps): React.JSX.Element {
   if (props.devices.length === 0) {
     return (
-      <p className="muted">{t('No paired devices yet', 'Chưa có thiết bị nào được ghép nối')}</p>
+      <p className="text-sm text-muted">
+        {t('No paired devices yet', 'Chưa có thiết bị nào được ghép nối')}
+      </p>
     )
   }
   return (
-    <ul className="device-list">
+    <ul className="flex flex-col">
       {props.devices.map((device) => (
         <DeviceRow key={device.id} {...props} device={device} />
       ))}

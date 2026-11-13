@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { Button, Dropdown } from '@heroui/react'
+import { EllipsisVertical } from '@gravity-ui/icons'
 import { t } from '../i18n.js'
 
 export interface MenuAction {
@@ -12,57 +13,26 @@ export function ActionMenu({
 }: {
   readonly actions: readonly MenuAction[]
 }): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) {
-      return undefined
-    }
-    function closeOnOutsideClick(event: MouseEvent): void {
-      if (event.target instanceof Node && containerRef.current?.contains(event.target) !== true) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', closeOnOutsideClick)
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutsideClick)
-    }
-  }, [open])
-
   return (
-    <div className="row-menu" ref={containerRef}>
-      <button
-        type="button"
-        className="wd-button secondary menu-trigger"
-        aria-label={t('More actions', 'Thêm thao tác')}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => {
-          setOpen((wasOpen) => !wasOpen)
-        }}
-      >
-        ...
-      </button>
-      {open ? (
-        <div className="wd-menu" role="menu">
+    <Dropdown>
+      <Button isIconOnly variant="secondary" aria-label={t('More actions', 'Thêm thao tác')}>
+        <EllipsisVertical />
+      </Button>
+      <Dropdown.Popover>
+        <Dropdown.Menu>
           {actions.map((action) => (
-            <button
+            <Dropdown.Item
               key={action.label}
-              type="button"
-              role="menuitem"
-              className="wd-menu-item"
-              disabled={action.disabled}
-              onClick={() => {
-                setOpen(false)
-                action.onSelect()
-              }}
+              id={action.label}
+              textValue={action.label}
+              isDisabled={action.disabled}
+              onAction={action.onSelect}
             >
               {action.label}
-            </button>
+            </Dropdown.Item>
           ))}
-        </div>
-      ) : null}
-    </div>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   )
 }

@@ -38,7 +38,7 @@ export function TeamsThread({
   }, [count, thread.conversationId])
 
   return (
-    <div className="teams-thread">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto py-2">
       {thread.messages.map((message) =>
         message.id === editingId ? (
           <div key={message.id}>{renderEditor(message)}</div>

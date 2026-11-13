@@ -71,11 +71,16 @@ export function HoursBar({ minutes, labels, onCommit }: HoursBarProps): React.JS
   }
 
   return (
-    <div className="hours-bar" ref={barRef} data-testid="hours-bar">
+    <div
+      className="relative h-8 rounded-lg bg-surface-secondary"
+      ref={barRef}
+      data-testid="hours-bar"
+      data-hours-bar
+    >
       {segments.map((segment, index) => (
         <div
           key={segment.key}
-          className={`hours-segment tone-${String(index % 4)}`}
+          className="absolute inset-y-0 overflow-hidden rounded-lg bg-accent-soft text-accent-soft-foreground"
           data-testid={`segment-${segment.key}`}
           style={{
             left: `${String((segment.start / WORK_MINUTES) * 100)}%`,
@@ -83,10 +88,10 @@ export function HoursBar({ minutes, labels, onCommit }: HoursBarProps): React.JS
           }}
           title={`${segment.key} ${formatMinutes(segment.value)}`}
         >
-          <span className="hours-segment-label">{segment.key}</span>
+          <span className="whitespace-nowrap px-2 text-xs leading-8">{segment.key}</span>
           {onCommit === undefined ? null : (
             <div
-              className="hours-handle"
+              className="absolute inset-y-0 right-0 w-1.5 cursor-col-resize touch-none rounded-full bg-accent"
               role="slider"
               tabIndex={0}
               aria-label={t(`Boundary after ${segment.key}`, `Ranh sau ${segment.key}`)}

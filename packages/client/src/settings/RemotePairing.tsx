@@ -1,4 +1,5 @@
 import type { PairingView, RemoteConfig } from '@workday/core'
+import { Button } from '@heroui/react'
 import { useEffect, useState } from 'react'
 import type { RemoteActions } from '../api/useRemote.js'
 import { t } from '../i18n.js'
@@ -49,20 +50,20 @@ export function RemotePairing({
 
   return (
     <>
-      <h3 className="section-subtitle">{t('Pair a device', 'Ghép nối thiết bị')}</h3>
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={!ready}
-          onClick={() => {
+      <h3 className="text-sm font-semibold">{t('Pair a device', 'Ghép nối thiết bị')}</h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={!ready}
+          onPress={() => {
             run(actions.openPairing)
           }}
         >
           {t('Pair a device', 'Ghép nối thiết bị')}
-        </button>
+        </Button>
         {ready ? null : (
-          <span className="muted">
+          <span className="text-sm text-muted">
             {t(
               'Turn on remote access and save the settings first',
               'Hãy bật truy cập từ xa và lưu cài đặt trước',
@@ -71,51 +72,55 @@ export function RemotePairing({
         )}
       </div>
       {open ? (
-        <div className="pairing">
-          <p className="pairing-code" aria-label={t('Pairing code', 'Mã ghép nối')}>
+        <div className="flex flex-col items-start gap-2">
+          <p
+            className="rounded-xl bg-surface-secondary px-4 py-2 font-mono text-2xl tracking-widest"
+            aria-label={t('Pairing code', 'Mã ghép nối')}
+          >
             {pairing.code}
           </p>
-          <p className="muted">
+          <p className="text-sm text-muted">
             {t('Expires in', 'Hết hạn sau')} {countdown(pairing.expiresAt, now)}
           </p>
-          <button
-            type="button"
-            className="wd-button ghost"
-            title={t('Click to copy', 'Bấm để sao chép')}
-            onClick={() => {
-              void navigator.clipboard.writeText(link)
-            }}
-          >
-            {link}
-          </button>
+          <span title={t('Click to copy', 'Bấm để sao chép')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => {
+                void navigator.clipboard.writeText(link)
+              }}
+            >
+              {link}
+            </Button>
+          </span>
         </div>
       ) : null}
       {pairing.pending === null ? null : (
-        <div className="pairing-pending">
+        <div className="flex flex-col gap-2">
           <p>
             {pairing.pending.name}
             {pairing.pending.email === null ? '' : ` - ${pairing.pending.email}`}
             {pairing.pending.ip === null ? '' : ` - ${pairing.pending.ip}`}
           </p>
-          <div className="button-row">
-            <button
-              type="button"
-              className="wd-button primary"
-              onClick={() => {
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onPress={() => {
                 run(() => actions.decidePairing('approve'))
               }}
             >
               {t('Approve', 'Chấp nhận')}
-            </button>
-            <button
-              type="button"
-              className="wd-button secondary"
-              onClick={() => {
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onPress={() => {
                 run(() => actions.decidePairing('reject'))
               }}
             >
               {t('Reject', 'Từ chối')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

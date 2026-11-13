@@ -1,11 +1,13 @@
 import type { SettingsView } from '@workday/core'
+import { Button } from '@heroui/react'
 import { useState } from 'react'
 import { ApiError, checkAdo } from '../api/client.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
 import { adoFromForm, formFromAdo, hasAdoTarget, type AdoForm } from './adoForm.js'
-import { TextField } from './TextField.js'
+import { Section } from '../ui/Section.js'
+import { TextField } from '../ui/TextField.js'
 import { TokenField } from './TokenField.js'
 
 interface StatusLine {
@@ -82,8 +84,7 @@ export function AzureDevOpsSection({
   }
 
   return (
-    <section className="section">
-      <h2 className="section-title">Azure DevOps</h2>
+    <Section title="Azure DevOps">
       <TextField
         id="ado-organization"
         label={t('Organization', 'Organization')}
@@ -149,33 +150,36 @@ export function AzureDevOpsSection({
           setReplacing(true)
         }}
       />
-      <div className="button-row">
-        <button
-          type="button"
-          className="wd-button secondary"
-          disabled={busy || !hasAdoTarget(form)}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={busy || !hasAdoTarget(form)}
+          onPress={() => {
             void runCheck()
           }}
         >
           {t('Check', 'Kiểm tra')}
-        </button>
-        <button
-          type="button"
-          className="wd-button primary"
-          disabled={busy}
-          onClick={() => {
+        </Button>
+        <Button
+          variant="primary"
+          size="sm"
+          isDisabled={busy}
+          onPress={() => {
             void runSave()
           }}
         >
           {t('Save', 'Lưu')}
-        </button>
+        </Button>
       </div>
       {status === null ? null : (
-        <p className={status.kind === 'error' ? 'status danger' : 'status success'} role="status">
+        <p
+          className={status.kind === 'error' ? 'text-sm text-danger' : 'text-sm text-success'}
+          role="status"
+        >
           {status.text}
         </p>
       )}
-    </section>
+    </Section>
   )
 }

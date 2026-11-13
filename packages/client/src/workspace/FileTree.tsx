@@ -1,10 +1,19 @@
 import type { ChangeStatus } from '@workday/core'
+import { SearchField } from '@heroui/react'
+import { ChevronDown, ChevronRight } from '@gravity-ui/icons'
 import { useEffect, useMemo, useState } from 'react'
 import { t } from '../i18n.js'
 import { buildTree, type TreeFolder } from './buildTree.js'
 
 const FILTER_DELAY_MS = 150
 const FILTER_LIMIT = 500
+const ROW_CLASS =
+  'flex h-7 w-full cursor-pointer items-center gap-1.5 rounded-md px-2 text-left text-sm hover:bg-surface-secondary'
+const STATUS_COLOR: Record<ChangeStatus, string> = {
+  A: 'text-success',
+  M: 'text-warning',
+  D: 'text-danger',
+}
 
 interface FileTreeProps {
   readonly paths: readonly string[]
@@ -45,15 +54,14 @@ function FileButton({
   return (
     <button
       type="button"
-      className="tree-file"
-      data-selected={selected}
+      className={`${ROW_CLASS}${selected ? ' bg-accent-soft text-accent-soft-foreground' : ''}`}
       title={path}
       onClick={() => {
         onSelect(path)
       }}
     >
       {status === undefined ? null : (
-        <span className="change-status" data-status={status}>
+        <span className={`w-4 shrink-0 font-mono font-semibold ${STATUS_COLOR[status]}`}>
           {status}
         </span>
       )}
@@ -76,16 +84,17 @@ function FolderNode(props: FolderNodeProps): React.JSX.Element {
     <li>
       <button
         type="button"
-        className="tree-folder"
+        className={ROW_CLASS}
         aria-expanded={open}
         onClick={() => {
           onToggle(folder.path)
         }}
       >
-        {open ? '▾' : '▸'} {folder.name}
+        {open ? <ChevronDown /> : <ChevronRight />}
+        {folder.name}
       </button>
       {open ? (
-        <ul className="tree-list">
+        <ul className="list-none pl-3.5">
           {folder.folders.map((child) => (
             <FolderNode key={child.path} {...props} folder={child} />
           ))}
@@ -129,19 +138,21 @@ export function FileTree(props: FileTreeProps): React.JSX.Element {
   }
 
   return (
-    <div className="file-tree">
-      <input
-        type="search"
-        className="tree-filter"
-        value={filter}
-        placeholder={t('Filter files', 'Lọc tệp')}
+    <div className="flex flex-col gap-1">
+      <SearchField
+        fullWidth
         aria-label={t('Filter files', 'Lọc tệp')}
-        onChange={(event) => {
-          setFilter(event.target.value)
-        }}
-      />
+        value={filter}
+        onChange={setFilter}
+      >
+        <SearchField.Group>
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder={t('Filter files', 'Lọc tệp')} />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
       {needle === '' ? (
-        <ul className="tree-list tree-root">
+        <ul className="list-none pl-0">
           {tree.folders.map((folder) => (
             <FolderNode
               key={folder.path}
@@ -164,7 +175,7 @@ export function FileTree(props: FileTreeProps): React.JSX.Element {
           ))}
         </ul>
       ) : (
-        <ul className="tree-list tree-root">
+        <ul className="list-none pl-0">
           {matches.map((path) => (
             <li key={path}>
               <FileButton

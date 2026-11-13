@@ -27,7 +27,7 @@ npx vitest run -t "health returns ok" --root packages/server
 
 - `packages/core` (`@workday/core`): domain logic and the port interfaces. No I/O.
 - `packages/server` (`@workday/server`): Fastify app (`createApp(deps)`), REST + WebSocket, adapters for the ports.
-- `packages/client` (`@workday/client`): Vite + React UI.
+- `packages/client` (`@workday/client`): Vite + React UI built on HeroUI + Tailwind; `src/ui/` holds the shared components, hand-written CSS remains only for the Claude pane and rendered content.
 
 `@workday/core` exports a `development` condition pointing at `src`, so dev and tests need no core build;
 `npm start` uses the built `dist`.

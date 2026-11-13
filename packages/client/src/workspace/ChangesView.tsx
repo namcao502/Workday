@@ -1,4 +1,5 @@
 import type { ChangeStatus } from '@workday/core'
+import { Button } from '@heroui/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useChanges } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
@@ -59,22 +60,22 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
   }, [order, selected])
 
   return (
-    <div className="changes-view">
-      <div className="pane-toolbar">
-        <button
-          type="button"
-          className="wd-button ghost"
-          disabled={isFetching}
-          onClick={() => {
+    <div className="flex flex-col gap-2">
+      <div className="pb-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          isDisabled={isFetching}
+          onPress={() => {
             void refetch()
           }}
         >
           {t('Refresh', 'Làm mới')}
-        </button>
+        </Button>
       </div>
       <GroupTrees groups={groups} selected={selected} onSelect={setChosen} defaultOpen />
       {data !== undefined && order.length === 0 ? (
-        <p className="muted">{t('No changes', 'Không có thay đổi')}</p>
+        <p className="text-sm text-muted">{t('No changes', 'Không có thay đổi')}</p>
       ) : null}
       {selected === null ? null : (
         <DiffView key={`${selected.group}:${selected.path}`} tabId={tabId} {...selected} />
