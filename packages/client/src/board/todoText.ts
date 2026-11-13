@@ -1,5 +1,5 @@
 import { repoLabel, type DevDeploy, type Ticket, type TicketPr, type TodoItem } from '@workday/core'
-import { formatDateOnly, t, type Language } from '../i18n.js'
+import { formatClock, formatDateOnly, t, type Language } from '../i18n.js'
 
 export type TodoTone = 'accent' | 'success' | 'danger' | 'warning' | 'muted' | 'orange' | 'ready'
 
@@ -13,6 +13,7 @@ export interface TodoTextContext {
   readonly ticketOf: (key: string) => Ticket | undefined
   readonly repoLabels: Readonly<Record<string, string>>
   readonly language: Language
+  readonly timeZone?: string | undefined // the message time; UTC when unknown
 }
 
 // An open PR's blockers and the reviewer's ask, worst first (the words of TodoText.cs, PrBlocked).
@@ -74,6 +75,18 @@ export function todoText(item: TodoItem, context: TodoTextContext): TodoTextPart
         detail: summary === '' ? t('Open the tab to answer', 'Mở tab để trả lời') : summary,
         tone: 'accent',
       }
+    case 'teamsMessage': {
+      const sent = formatClock(
+        new Date(item.item.sentAt),
+        context.language,
+        context.timeZone ?? 'UTC',
+      )
+      return {
+        title: `${item.item.title}: ${item.item.senderName}`,
+        detail: summary === '' ? sent : `${summary} - ${sent}`,
+        tone: item.item.mentionsMe ? 'danger' : 'accent',
+      }
+    }
     case 'readyToTest':
       return {
         title: deployTitle(item.deploy),

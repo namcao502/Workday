@@ -1,7 +1,14 @@
 import type { WaitReason } from './claudeAttention.js'
 import type { PrVote } from './prTracking.js'
 
-export type NoticeTopic = 'claude' | 'pr' | 'jira' | 'suggestions' | 'other'
+export type NoticeTopic =
+  | 'claude'
+  | 'pr'
+  | 'jira'
+  | 'teams'
+  | 'teamsMention'
+  | 'suggestions'
+  | 'other'
 export type NoticeTone = 'info' | 'success' | 'error'
 
 export type NoticeEvent =
@@ -33,11 +40,19 @@ export type NoticeEvent =
     }
   | { readonly type: 'transitionFailed'; readonly key: string; readonly status: string }
   | { readonly type: 'suggestionsUrgent'; readonly keys: readonly string[] }
+  | {
+      readonly type: 'teamsMessage'
+      readonly key: string
+      readonly title: string
+      readonly sender: string
+      readonly mention: boolean
+    }
 
 export type NoticeTarget =
   | { readonly kind: 'board'; readonly key: string | null }
   | { readonly kind: 'workspace'; readonly tab: string; readonly session: string }
   | { readonly kind: 'url'; readonly url: string }
+  | { readonly kind: 'teams'; readonly key: string; readonly conversationId: string }
 
 export interface Notice {
   readonly id: number
@@ -67,6 +82,8 @@ const DEFAULT_CHANNELS: Readonly<Record<NoticeTopic, NoticeChannels>> = {
   claude: { toast: true, desktop: true, phone: false },
   pr: { toast: true, desktop: false, phone: true },
   jira: { toast: true, desktop: false, phone: true },
+  teams: { toast: true, desktop: true, phone: false },
+  teamsMention: { toast: true, desktop: true, phone: true },
   suggestions: { toast: true, desktop: false, phone: false },
   other: { toast: true, desktop: true, phone: false },
 }
@@ -217,6 +234,15 @@ export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
       return vi
         ? `Có ticket gấp để nhận: ${event.keys.join(', ')}`
         : `Urgent tickets to take: ${event.keys.join(', ')}`
+    case 'teamsMessage':
+      if (event.mention) {
+        return vi
+          ? `${event.sender} nhắc đến anh trong ${event.key} (${event.title}).`
+          : `${event.sender} mentioned you in ${event.key} (${event.title}).`
+      }
+      return vi
+        ? `${event.sender} nhắn trong ${event.key} (${event.title}).`
+        : `${event.sender} wrote in ${event.key} (${event.title}).`
     default:
       return ''
   }

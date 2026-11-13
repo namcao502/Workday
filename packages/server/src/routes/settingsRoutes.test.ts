@@ -3,7 +3,13 @@ import { join } from 'node:path'
 import type { JiraConfig } from '@workday/core'
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_WORKSPACE, NO_SECRETS, readFileSecrets, saveConfig, saveSecrets } from '../config.js'
+import {
+  DEFAULT_WORKSPACE,
+  NO_SECRETS,
+  readFileSecrets,
+  saveConfig,
+  saveSecrets,
+} from '../config.js'
 import { buildTestApp, LOOPBACK_HEADERS, newDataDir, type TestApp } from '../testing/testApp.js'
 
 const SAVED_TOKEN = 'saved-secret-token'
@@ -16,7 +22,12 @@ const JIRA: JiraConfig = {
   maxResults: 50,
   etaFieldId: null,
   devPriorityFieldId: null,
-  statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+  statusFlow: {
+    preWorkStatuses: [],
+    reworkStatuses: [],
+    readyToTestPath: [],
+    developerStatuses: [],
+  },
   suggestions: null,
 }
 
@@ -46,6 +57,7 @@ async function connectedApp(): Promise<TestApp> {
     pollMinutes: 5,
     workspace: DEFAULT_WORKSPACE,
     azureDevOps: null,
+    teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
     notices: {},
     theme: 'dark',
     language: 'en',
@@ -66,6 +78,7 @@ async function hrmApp(): Promise<TestApp> {
     pollMinutes: 5,
     workspace: DEFAULT_WORKSPACE,
     azureDevOps: null,
+    teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
     notices: {},
     theme: 'dark',
     language: 'en',
@@ -109,6 +122,7 @@ describe('settings routes', () => {
         pollMinutes: 5,
         workspace: DEFAULT_WORKSPACE,
         azureDevOps: null,
+        teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
         notices: {},
         theme: 'dark',
         language: 'en',

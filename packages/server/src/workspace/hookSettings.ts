@@ -10,6 +10,7 @@ const HOOK_EVENTS: readonly string[] = [
   'Notification',
   'Stop',
   'SessionEnd',
+  'SessionStart',
 ]
 
 // Claude merges these with the user's own hooks (all matching hooks run).

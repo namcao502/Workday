@@ -5,6 +5,7 @@ import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
 import { NoticesSection } from './NoticesSection.js'
 import { RemoteSection } from './RemoteSection.js'
+import { TeamsSection } from './TeamsSection.js'
 import { TimesheetSection } from './TimesheetSection.js'
 import { WorkspaceSection } from './WorkspaceSection.js'
 
@@ -22,6 +23,7 @@ export function SettingsPage(): React.JSX.Element {
           <AzureDevOpsSection settings={settings.data} />
           <NoticesSection settings={settings.data} />
           <TimesheetSection settings={settings.data} />
+          <TeamsSection settings={settings.data} />
           <WorkspaceSection settings={settings.data} />
           <RemoteSection settings={settings.data} />
         </>

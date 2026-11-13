@@ -19,6 +19,12 @@ export function jwtExpiry(token: string): Date | null {
   return typeof exp === 'number' ? new Date(exp * 1000) : null
 }
 
+// A string claim such as oid, name or aud; null when absent or not text.
+export function jwtClaim(token: string, name: string): string | null {
+  const value = payloadOf(token)?.[name]
+  return typeof value === 'string' ? value : null
+}
+
 // Delegated scopes (scp) or app roles, space separated; empty when unreadable.
 export function jwtScopes(token: string): string {
   const payload = payloadOf(token)

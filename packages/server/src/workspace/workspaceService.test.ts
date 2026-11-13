@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { claudeProjectDirName, type ServerEvent } from '@workday/core'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_WORKSPACE } from '../config.js'
 import { FakePtyFactory } from '../testing/fakePty.js'
 import { WorkspaceStartError } from './pty.js'
@@ -381,5 +381,69 @@ describe('WorkspaceService', () => {
     startHost(service, 'claude~2')
     service.shutdown()
     expect(ptys.spawned.map((pty) => pty.killed)).toEqual([true, true])
+  })
+})
+
+describe('WorkspaceService.prompt', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('pastes the line as one block, then sends Enter after the pause', () => {
+    vi.useFakeTimers()
+    const { service, ptys } = build(terminalState('claude'))
+    startHost(service, 'claude')
+
+    expect(service.prompt('claude', 'Read x')).toBe('sent')
+    expect(ptys.last().writes).toEqual(['\x1b[200~Read x\x1b[201~'])
+    vi.advanceTimersByTime(150)
+    expect(ptys.last().writes.at(-1)).toBe('\r')
+  })
+
+  it('refuses an unknown or stopped session and one waiting for a permission', async () => {
+    const { service, ptys } = build(terminalState('claude'))
+    expect(service.prompt('ghost', 'x')).toBe('notFound')
+    expect(service.prompt('claude', 'x')).toBe('notRunning')
+    startHost(service, 'claude')
+    await service.onHook('claude', service.hookToken, {
+      hook_event_name: 'Notification',
+      notification_type: 'permission_prompt',
+    })
+
+    expect(service.prompt('claude', 'x')).toBe('waiting')
+    expect(ptys.last().writes).toEqual([])
+  })
+
+  it('refuses while claude has ended in the shell, until it starts again', async () => {
+    const { service } = build(terminalState('claude'))
+    startHost(service, 'claude')
+    const token = service.hookToken
+    await service.onHook('claude', token, { hook_event_name: 'SessionEnd', reason: 'clear' })
+    const afterClear = service.promptState('claude')
+    await service.onHook('claude', token, {
+      hook_event_name: 'SessionEnd',
+      reason: 'prompt_input_exit',
+    })
+    const afterExit = service.promptState('claude')
+    await service.onHook('claude', token, { hook_event_name: 'SessionStart' })
+
+    expect(afterClear).toBe('sent')
+    expect(afterExit).toBe('notRunning')
+    expect(service.promptState('claude')).toBe('sent')
+  })
+
+  it('skips the Enter when a wait appears before the pause ends', async () => {
+    vi.useFakeTimers()
+    const { service, ptys } = build(terminalState('claude'))
+    startHost(service, 'claude')
+
+    service.prompt('claude', 'Read x')
+    await service.onHook('claude', service.hookToken, {
+      hook_event_name: 'Notification',
+      notification_type: 'permission_prompt',
+    })
+    vi.advanceTimersByTime(150)
+
+    expect(ptys.last().writes).toEqual(['\x1b[200~Read x\x1b[201~'])
   })
 })

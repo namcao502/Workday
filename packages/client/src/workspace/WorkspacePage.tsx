@@ -5,6 +5,7 @@ import { t } from '../i18n.js'
 import {
   navigateTo,
   navigateToWorkspace,
+  teamsConversationFromHash,
   workspaceSelectionFromHash,
   type WorkspaceSelection,
 } from '../shell/pages.js'
@@ -67,6 +68,14 @@ export function WorkspacePage(): React.JSX.Element {
     view?.sessions.find((candidate) => candidate.name === session),
     actions.markSeen,
   )
+
+  // A Teams notice must be visible even if the left pane was hidden.
+  const teamsConversation = teamsConversationFromHash(window.location.hash)
+  useEffect(() => {
+    if (teamsConversation !== null) {
+      setLeftHidden(false)
+    }
+  }, [teamsConversation, selection])
 
   useEffect(() => {
     requestNoticePermission()
@@ -167,7 +176,8 @@ export function WorkspacePage(): React.JSX.Element {
           ) : (
             <LeftPane
               key={tab.id}
-              tabId={tab.id}
+              tab={tab}
+              teamsConversation={teamsConversation}
               onHide={() => {
                 setLeftHidden(true)
               }}

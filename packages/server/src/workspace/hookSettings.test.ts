@@ -12,10 +12,11 @@ const EVENTS = [
   'Notification',
   'Stop',
   'SessionEnd',
+  'SessionStart',
 ]
 
 describe('hookSettingsJson', () => {
-  it('posts all six events to the URL with a 5 second timeout', () => {
+  it('posts all seven events to the URL with a 5 second timeout', () => {
     const parsed = JSON.parse(hookSettingsJson(URL)) as {
       hooks: Record<string, { hooks: { type: string; url: string; timeout: number }[] }[]>
     }

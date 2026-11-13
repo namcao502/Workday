@@ -42,6 +42,7 @@ function input(overrides: Partial<TodoInput> = {}): TodoInput {
     reviews: {},
     deploys: {},
     waits: [],
+    teams: [],
     ...overrides,
   }
 }

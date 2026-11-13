@@ -10,6 +10,7 @@ import type { WorktreeOptions } from '../workspace/worktreeService.js'
 import { FakeHoursLog, FakePullRequests, FakeSheetLog, FakeTracker } from './fakes.js'
 import type { EditorCommand } from '../workspace/openInEditor.js'
 import { FakePtyFactory } from './fakePty.js'
+import { FakeTeams } from './fakeTeams.js'
 
 export const TEST_PORT = 4870
 export const LOOPBACK_HEADERS = { host: `127.0.0.1:${String(TEST_PORT)}` }
@@ -53,11 +54,13 @@ export interface TestApp {
   readonly schedulerStops: { count: number }
   readonly prSchedulerStarts: number[]
   readonly prSchedulerStops: { count: number }
+  readonly teamsSchedulerStarts: number[]
   readonly pushes: PushCall[]
   readonly ptys: FakePtyFactory
   readonly homeDir: string
   readonly editorCommands: EditorCommand[] // what the fake VS Code spawner was asked to run
   readonly worktrees: WorktreeOptions[] // what Start asked the fake worktree service to create
+  readonly teamsChat: FakeTeams // what the Teams client answers once a watched channel is configured
 }
 
 export function newDataDir(): string {
@@ -75,6 +78,7 @@ export async function buildTestApp(
   const schedulerStops = { count: 0 }
   const prSchedulerStarts: number[] = []
   const prSchedulerStops = { count: 0 }
+  const teamsSchedulerStarts: number[] = []
   const sheet = new FakeSheetLog()
   const hours = new FakeHoursLog()
   const hoursLogCalls: HoursLogCall[] = []
@@ -86,6 +90,7 @@ export async function buildTestApp(
   const worktrees: WorktreeOptions[] = []
   const editorCommands: EditorCommand[] = []
   const homeDir = mkdtempSync(join(tmpdir(), 'workday-home-'))
+  const teamsChat = new FakeTeams()
   const services = createServices({
     dataDir,
     config: loadConfig(dataDir),
@@ -120,6 +125,13 @@ export async function buildTestApp(
         prSchedulerStops.count += 1
       },
     },
+    // Recorded only: the Teams check runs when a test asks for it.
+    teamsScheduler: {
+      start: (minutes) => {
+        teamsSchedulerStarts.push(minutes)
+      },
+      stop: () => undefined,
+    },
     scheduler: {
       start: (pollMinutes) => {
         schedulerStarts.push(pollMinutes)
@@ -146,6 +158,8 @@ export async function buildTestApp(
       return Promise.resolve()
     },
     homeDir,
+    teams: teamsChat,
+    tmpDir: homeDir,
     createWorktree: (worktree) => {
       worktrees.push(worktree)
       mkdirSync(worktree.worktreePath, { recursive: true })
@@ -178,10 +192,12 @@ export async function buildTestApp(
     schedulerStops,
     prSchedulerStarts,
     prSchedulerStops,
+    teamsSchedulerStarts,
     pushes,
     ptys,
     homeDir,
     worktrees,
     editorCommands,
+    teamsChat,
   }
 }

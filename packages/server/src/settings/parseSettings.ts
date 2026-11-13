@@ -10,6 +10,7 @@ import type {
 import {
   isLogTime,
   parseAzureDevOps,
+  parseTeams,
   parseJira,
   parseNotices,
   parseRemote,
@@ -188,6 +189,12 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
       return null
     }
     update = { ...update, azureDevOps }
+  }
+  if (raw['teams'] !== undefined) {
+    if (!isRecord(raw['teams'])) {
+      return null
+    }
+    update = { ...update, teams: parseTeams(raw['teams']) }
   }
   if (adoPat !== undefined) {
     if (!isNonEmptyText(adoPat)) {

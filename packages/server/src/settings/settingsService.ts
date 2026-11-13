@@ -14,6 +14,7 @@ import type {
   SettingsView,
   SheetLog,
   StatusFlow,
+  TeamsConfig,
   TicketTracker,
   TscConfig,
   TscSessionResult,
@@ -41,6 +42,8 @@ import type { SuggestionSettings } from '../suggestions/suggestionService.js'
 import type { LogTimer } from '../timesheet/logScheduler.js'
 import { sheetAppError } from '../timesheet/logEntry.js'
 import type { TimesheetService } from '../timesheet/timesheetService.js'
+import type { TeamsGateway } from '../teams/teamsChatClient.js'
+import type { TeamsSettings } from '../teams/teamsService.js'
 import { sameBaseUrl, type HrmCheckRequest } from './parseSettings.js'
 
 export interface Scheduler {
@@ -65,6 +68,9 @@ export interface SettingsServiceDeps {
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
   readonly remote: { configure(remote: RemoteConfig | null): void }
   readonly workspace: { configure(workspace: WorkspaceConfig, dataDir: string): void }
+  readonly teams: TeamsGateway
+  readonly teamsService: { configure(settings: TeamsSettings): boolean }
+  readonly teamsWatcher: { configure(active: boolean, changed: boolean): void }
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -144,6 +150,15 @@ export class SettingsService {
     return this.adoClient
   }
 
+  // Null while no watched channel is configured (Teams off); the client itself lives for the app.
+  get teams(): TeamsGateway | null {
+    return this.config.teams.watchedChannels.length === 0 ? null : this.deps.teams
+  }
+
+  get teamsConfig(): TeamsConfig {
+    return this.config.teams
+  }
+
   // Builds the tracker and starts polling from the loaded config; called once at startup.
   start(): void {
     this.apply(null)
@@ -161,6 +176,7 @@ export class SettingsService {
       remote,
       workspace,
       azureDevOps,
+      teams,
       notices,
     } = this.config
     return {
@@ -175,6 +191,7 @@ export class SettingsService {
         remote,
         workspace,
         azureDevOps,
+        teams,
         notices,
       },
       jiraTokenSource: this.jiraToken.source,
@@ -415,6 +432,14 @@ export class SettingsService {
     this.applyTimesheet(previous)
     this.deps.remote.configure(this.config.remote)
     this.deps.workspace.configure(this.config.workspace, this.deps.dataDir)
+    const teamsChanged = this.deps.teamsService.configure({
+      chat: this.teams,
+      config: this.config.teams,
+      devRepoPath: this.config.workspace.devRepoPath,
+      repoLabels: this.config.azureDevOps?.repoLabels ?? {},
+      timeZone,
+    })
+    this.deps.teamsWatcher.configure(this.teams !== null, teamsChanged)
   }
 
   private applyAzureDevOps(previous: AppliedState | null): void {

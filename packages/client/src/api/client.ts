@@ -166,6 +166,13 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'adoRejected',
   'adoUnreachable',
   'adoNotConfigured',
+  'teamsSignedOut',
+  'teamsBusy',
+  'teamsNotConfigured',
+  'teamsUncertain',
+  'teamsFailed',
+  'claudeNotRunning',
+  'claudeWaiting',
 ])
 
 export function isPlainCode(code: unknown): code is PlainCode {

@@ -1,6 +1,7 @@
 import type { BoardRow, TodoGroup, TodoItem } from '@workday/core'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
+import { useSettings } from '../api/useSettings.js'
 import { actionErrorText, useRepoLabels, useWorkActions } from '../api/useWork.js'
 import { t, type Language } from '../i18n.js'
 import { navigateToWorkspace } from '../shell/pages.js'
@@ -20,6 +21,7 @@ interface TodoViewProps {
 
 const ICONS: Readonly<Record<TodoItem['kind'], string>> = {
   claudeWaiting: 'C',
+  teamsMessage: 'T',
   readyToTest: '>',
   prReview: 'R',
   prBlocked: '!',
@@ -79,6 +81,7 @@ export function TodoView({
   onReadyToTest,
 }: TodoViewProps): React.JSX.Element {
   const access = useAccess()
+  const timeZone = useSettings().data?.config.timeZone
   const canAct = access.canAct('board')
   const actions = useWorkActions()
   const repoLabels = useRepoLabels()
@@ -167,6 +170,18 @@ export function TodoView({
               },
             ]
           : []
+      case 'teamsMessage':
+        return access.mode === 'remote'
+          ? []
+          : [
+              {
+                id: 'open',
+                label: t('Open', 'Mở'),
+                onClick: () => {
+                  navigateToWorkspace(item.ticketKey, null, item.item.conversationId)
+                },
+              },
+            ]
       case 'overdue':
         return workspace === undefined ? [] : [overdueButton(item.ticketKey, workspace)]
     }
@@ -187,7 +202,7 @@ export function TodoView({
           <GroupHeader ticketKey={group.ticketKey} rows={rows} />
           <ul className="todo-list">
             {group.items.map((item, itemIndex) => {
-              const text = todoText(item, { ticketOf, repoLabels, language })
+              const text = todoText(item, { ticketOf, repoLabels, language, timeZone })
               return (
                 <TodoRow
                   key={`${item.kind}-${String(itemIndex)}`}

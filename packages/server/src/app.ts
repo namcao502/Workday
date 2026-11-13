@@ -16,6 +16,7 @@ import { registerHookRoute } from './routes/hookRoute.js'
 import { registerPushRoutes } from './routes/pushRoutes.js'
 import { registerRemoteRoutes } from './routes/remoteRoutes.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
+import { registerTeamsRoutes } from './routes/teamsRoutes.js'
 import { registerTerminalRoute } from './routes/terminalRoute.js'
 import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
 import { registerChatRoutes } from './routes/chatRoute.js'
@@ -25,6 +26,8 @@ import { registerWorkspaceRoutes } from './routes/workspaceRoutes.js'
 import { allowedHostHeaders, isAllowedHost, remoteHostHeaders } from './security/allowedHosts.js'
 import type { SettingsService } from './settings/settingsService.js'
 import type { SuggestionService } from './suggestions/suggestionService.js'
+import type { TeamsService } from './teams/teamsService.js'
+import type { TeamsWatcher } from './teams/teamsWatcher.js'
 import type { TimesheetService } from './timesheet/timesheetService.js'
 import type { WorkspaceService } from './workspace/workspaceService.js'
 
@@ -45,6 +48,8 @@ export interface AppDeps {
   remote: RemoteService
   notices: NoticeService
   workspace: WorkspaceService
+  teams: TeamsService
+  teamsWatcher: TeamsWatcher
 }
 
 export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
@@ -82,6 +87,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerWorkspaceRoutes(app, deps.workspace)
   registerWorkspaceFilesRoutes(app, deps.workspace)
   registerChatRoutes(app, deps.workspace)
+  registerTeamsRoutes(app, deps.teams, deps.teamsWatcher)
   registerTerminalRoute(app, deps.workspace, allowedHosts)
   await registerHookRoute(app, deps.workspace)
 

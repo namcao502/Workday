@@ -20,6 +20,10 @@ function topicName(topic: NoticeTopic): string {
       return t('Pull requests', 'Pull request')
     case 'jira':
       return 'Jira'
+    case 'teams':
+      return 'Teams'
+    case 'teamsMention':
+      return t('Teams mentions', 'Teams nhắc đến bạn')
     case 'suggestions':
       return t('Suggestions', 'Gợi ý')
     case 'other':
@@ -38,7 +42,15 @@ function channelName(channel: keyof NoticeChannels): string {
   }
 }
 
-const TOPICS: readonly NoticeTopic[] = ['claude', 'pr', 'jira', 'suggestions', 'other']
+const TOPICS: readonly NoticeTopic[] = [
+  'claude',
+  'pr',
+  'jira',
+  'teams',
+  'teamsMention',
+  'suggestions',
+  'other',
+]
 
 // Keeps only the channels that differ from the topic's default, so a later default change still applies.
 export function prefsFromChannels(
@@ -64,6 +76,8 @@ function channelsFromPrefs(prefs: NoticePrefs): Record<NoticeTopic, NoticeChanne
     claude: noticeChannels('claude', prefs),
     pr: noticeChannels('pr', prefs),
     jira: noticeChannels('jira', prefs),
+    teams: noticeChannels('teams', prefs),
+    teamsMention: noticeChannels('teamsMention', prefs),
     suggestions: noticeChannels('suggestions', prefs),
     other: noticeChannels('other', prefs),
   }

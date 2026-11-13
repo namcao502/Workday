@@ -12,6 +12,7 @@ import {
 } from './prTracking.js'
 import { isWithDeveloper, readyToTestSteps } from './readyToTest.js'
 import type { StatusFlow } from './statusFlow.js'
+import type { TeamsAttentionItem } from './teamsAttention.js'
 import { dueUrgency, isStatusDone, type Ticket } from './ticket.js'
 
 // The order of the union is the order on screen.
@@ -23,6 +24,7 @@ export type TodoItem =
       readonly ticketKey: string | null
       readonly wait: WaitReason
     }
+  | { readonly kind: 'teamsMessage'; readonly ticketKey: string; readonly item: TeamsAttentionItem }
   | {
       readonly kind: 'readyToTest'
       readonly ticketKey: string
@@ -59,6 +61,7 @@ export interface TodoInput {
   readonly reviews: Readonly<Record<string, PrReviewRequest>>
   readonly deploys: Readonly<Record<string, DevDeploy>>
   readonly waits: readonly TodoWait[]
+  readonly teams: readonly TeamsAttentionItem[]
 }
 
 export interface TodoGroup {
@@ -69,6 +72,7 @@ export interface TodoGroup {
 
 const KIND_ORDER: readonly TodoKind[] = [
   'claudeWaiting',
+  'teamsMessage',
   'readyToTest',
   'prReview',
   'prBlocked',
@@ -157,7 +161,7 @@ function claudeTodos(waits: readonly TodoWait[]): readonly TodoItem[] {
     .map((wait): TodoItem => ({ kind: 'claudeWaiting', ...wait }))
 }
 
-// Port of DashboardDataBuilder.Build (to-do part) and DashboardTodos.Build, minus Teams, QC bugs and Jira updates.
+// Port of DashboardDataBuilder.Build (to-do part) and DashboardTodos.Build, minus QC bugs and Jira updates.
 export function buildTodos(input: TodoInput): readonly TodoItem[] {
   const started = byDue(input.board.inProgress)
   const done = byDue(input.board.done)
@@ -190,6 +194,10 @@ export function buildTodos(input: TodoInput): readonly TodoItem[] {
     todos.push({ kind: 'prReview', review })
   }
   todos.push(...commentTodos(input))
+  // Oldest first, like reviews: that message has waited longest.
+  for (const item of [...input.teams].sort((a, b) => compareText(a.sentAt, b.sentAt))) {
+    todos.push({ kind: 'teamsMessage', ticketKey: item.ticketKey, item })
+  }
   return todos.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind))
 }
 
@@ -198,6 +206,9 @@ function ticketKeyOf(item: TodoItem): string | null {
 }
 
 function isNeededNow(item: TodoItem): boolean {
+  if (item.kind === 'teamsMessage') {
+    return item.item.mentionsMe
+  }
   return NEEDED_NOW.has(item.kind)
 }
 

@@ -31,6 +31,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
         chatView: false,
       },
       azureDevOps: null,
+      teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
       notices: {},
     },
     jiraTokenSource: null,

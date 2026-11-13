@@ -1,4 +1,5 @@
-import { homedir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type {
   AzureDevOpsConfig,
   HoursLog,
@@ -27,6 +28,12 @@ import { RemoteService } from './remote/remoteService.js'
 import type { SendPush } from './remote/pushService.js'
 import type { SpawnTunnel } from './remote/tunnelSupervisor.js'
 import { NO_STATUS_FLOW, SettingsService, type Scheduler } from './settings/settingsService.js'
+import { TeamsChatClient, type TeamsGateway } from './teams/teamsChatClient.js'
+import { PlaywrightTeamsSniffer } from './teams/teamsSniffer.js'
+import { TeamsService } from './teams/teamsService.js'
+import { TeamsWatcher } from './teams/teamsWatcher.js'
+import { loadPostIndex, loadTeamsState, savePostIndex, saveTeamsState } from './teams/teamsStore.js'
+import { BrowserLock } from './tsc/browserLock.js'
 import { SuggestionService } from './suggestions/suggestionService.js'
 import { loadSuggestionState, saveSuggestionState } from './suggestions/suggestionStore.js'
 import { runPushMessage } from './timesheet/runNotification.js'
@@ -44,18 +51,24 @@ import {
   type WorktreeResult,
 } from './workspace/worktreeService.js'
 
+const TEAMS_BROWSER_FOLDER = 'teams-browser'
+const TEAMS_FIRST_CHECK_MINUTES = 1
+
 export interface ServicesOptions {
   readonly dataDir: string
   readonly config: WorkdayConfig
   readonly createTracker: (jira: JiraConfig, token: string) => TicketTracker
   readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
   // Tests pass their own; by default a real Azure DevOps client.
+  readonly teams?: TeamsGateway // default: the real client on the Teams browser profile
   readonly createPullRequests?: (config: AzureDevOpsConfig, pat: string) => PullRequests
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
   // Tests pass their own; by default a PollScheduler drives the board's poll.
   readonly scheduler?: Scheduler
   // Tests pass their own; by default a PollScheduler drives the PR check.
   readonly prScheduler?: Scheduler
+  // Tests pass their own; by default the Teams reminder check first runs after a minute.
+  readonly teamsScheduler?: Scheduler
   // Tests pass their own; by default a LogScheduler fires the timesheet's daily run.
   readonly logScheduler?: LogTimer
   // Tests pass their own; by default the real Cloudflare Access verifier.
@@ -66,6 +79,7 @@ export interface ServicesOptions {
   // Tests pass a fake PTY and a temp home, so no real shell or ~/.claude is touched.
   readonly spawnPty?: SpawnPty
   readonly homeDir?: string
+  readonly tmpDir?: string // Teams hand-off task files go under it
   readonly spawnEditor?: SpawnEditor
   // Tests pass a fake, so Start never runs git against a real repo.
   readonly createWorktree?: (options: WorktreeOptions) => Promise<WorktreeResult>
@@ -82,8 +96,11 @@ export interface Services {
   readonly workspace: WorkspaceService
   readonly prs: PrService
   readonly suggestions: SuggestionService
+  readonly teams: TeamsService
+  readonly teamsWatcher: TeamsWatcher
   readonly scheduler: Scheduler
   readonly prScheduler: Scheduler
+  readonly teamsScheduler: Scheduler
   readonly logScheduler: LogTimer
 }
 
@@ -136,7 +153,7 @@ export function createServices(options: ServicesOptions): Services {
     },
     ...logError,
   })
-  const notices = new NoticeService({
+  const notices: NoticeService = new NoticeService({
     initial: loadNotices(dataDir),
     save: (list) => saveNotices(dataDir, list),
     events,
@@ -197,6 +214,32 @@ export function createServices(options: ServicesOptions): Services {
     settings: { tracker: null, config: null, projectKey: null, timeZone: config.timeZone },
     ...logError,
   })
+  const teams = new TeamsService({
+    initialIndex: loadPostIndex(dataDir),
+    saveIndex: (index) => savePostIndex(dataDir, index),
+    initialState: loadTeamsState(dataDir),
+    saveState: (state) => saveTeamsState(dataDir, state),
+    now: () => new Date(),
+    board,
+    prs,
+    workspace,
+    tmpDir: options.tmpDir ?? tmpdir(),
+  })
+  const teamsScheduler: Scheduler =
+    options.teamsScheduler ??
+    new PollScheduler(() => teamsWatcher.check(), reportError, TEAMS_FIRST_CHECK_MINUTES)
+  const teamsWatcher: TeamsWatcher = new TeamsWatcher({
+    lookup: teams.lookup,
+    board,
+    workspace,
+    notices,
+    events,
+    scheduler: teamsScheduler,
+    logError: reportError,
+  })
+  teams.onSignedIn(() => {
+    teamsWatcher.resume()
+  })
   // Suggestions follow a poll that read Jira; a failed poll keeps the last ones.
   const scheduler =
     options.scheduler ??
@@ -208,7 +251,7 @@ export function createServices(options: ServicesOptions): Services {
     })
   const prScheduler = options.prScheduler ?? new PollScheduler(() => prs.check())
   const logScheduler = options.logScheduler ?? new LogScheduler(() => timesheet.runSchedule())
-  const settings = new SettingsService({
+  const settings: SettingsService = new SettingsService({
     dataDir,
     config,
     board,
@@ -221,6 +264,13 @@ export function createServices(options: ServicesOptions): Services {
     createPullRequests:
       options.createPullRequests ?? ((ado, pat) => new AzureDevOpsClient(ado, pat)),
     createSheetLog: options.createSheetLog,
+    teams:
+      options.teams ??
+      new TeamsChatClient(
+        new PlaywrightTeamsSniffer(join(dataDir, TEAMS_BROWSER_FOLDER), new BrowserLock()),
+      ),
+    teamsService: teams,
+    teamsWatcher,
     prs,
     suggestions,
     prScheduler,
@@ -238,8 +288,11 @@ export function createServices(options: ServicesOptions): Services {
     workspace,
     prs,
     suggestions,
+    teams,
+    teamsWatcher,
     scheduler,
     prScheduler,
+    teamsScheduler,
     logScheduler,
   }
 }

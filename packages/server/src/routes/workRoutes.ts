@@ -4,6 +4,7 @@ import type { BoardService } from '../board/boardService.js'
 import type { PrService } from '../prs/prService.js'
 import type { SettingsService } from '../settings/settingsService.js'
 import type { SuggestionService } from '../suggestions/suggestionService.js'
+import type { TeamsWatcher } from '../teams/teamsWatcher.js'
 import { buildWorkView } from '../work/workView.js'
 import type { WorkspaceService } from '../workspace/workspaceService.js'
 
@@ -16,6 +17,7 @@ export interface WorkRouteDeps {
   readonly settings: SettingsService
   readonly workspace: WorkspaceService
   readonly suggestions: SuggestionService
+  readonly teamsWatcher: TeamsWatcher
 }
 
 function fail(reply: FastifyReply, status: number, code: string): FastifyReply {
@@ -27,7 +29,7 @@ export function registerWorkRoutes(
   deps: WorkRouteDeps,
   logError: (message: string, error: unknown) => void = console.error,
 ): void {
-  const { board, prs, settings, workspace, suggestions } = deps
+  const { board, prs, settings, workspace, suggestions, teamsWatcher } = deps
 
   app.get('/api/work', BOARD_VIEW, () => {
     const { config } = settings.view()
@@ -43,6 +45,7 @@ export function registerWorkRoutes(
       sessions,
       tabs,
       suggestions: suggestions.view(),
+      teams: teamsWatcher.items(),
     })
   })
 

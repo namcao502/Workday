@@ -48,6 +48,7 @@ function input(overrides: Partial<WorkViewInput> = {}): WorkViewInput {
     sessions: [],
     tabs: [],
     suggestions: null,
+    teams: [],
     ...overrides,
   }
 }

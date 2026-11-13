@@ -9,6 +9,7 @@ import {
   type BoardState,
   type JiraConfig,
   type SessionView,
+  type TeamsAttentionItem,
   type StatusFlow,
   type Suggestion,
   type TicketPr,
@@ -32,6 +33,7 @@ export interface WorkViewInput {
     readonly epicKey: string | null
     readonly items: readonly Suggestion[]
   } | null
+  readonly teams: readonly TeamsAttentionItem[]
 }
 
 const NO_FLOW: StatusFlow = {
@@ -76,6 +78,7 @@ export function buildWorkView(input: WorkViewInput): WorkView {
       reviews: prs.reviews,
       deploys: prs.deploys,
       waits: waitsOf(input.sessions, input.tabs),
+      teams: input.teams,
     }),
   )
   const ticketPrs: Record<string, readonly TicketPr[]> = {}

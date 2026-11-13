@@ -45,6 +45,7 @@ import { WorkspaceStartError, type SpawnPty } from './pty.js'
 import { isDirectory, SessionHost, type SessionDirectory } from './sessionHost.js'
 import { TicketLauncher, type TicketLauncherDeps } from './ticketLauncher.js'
 import { MAX_RECENT_FOLDERS, type WorkspaceState } from './workspaceStore.js'
+import type { PromptOutcome } from '../teams/teamsHandOff.js'
 
 export interface WorkspaceServiceDeps {
   readonly dataDir: string
@@ -74,6 +75,9 @@ interface Attention {
   readonly working: boolean
 }
 
+const PROMPT_SUBMIT_DELAY_MS = 150
+const PASTE_START = '\x1b[200~'
+const PASTE_END = '\x1b[201~'
 const IDLE: Attention = { wait: null, working: false }
 const PLAIN_BASH: ShellLaunch = { file: 'bash', args: ['-i'] }
 
@@ -108,6 +112,7 @@ export class WorkspaceService {
   private queue: Promise<unknown> = Promise.resolve()
   private readonly hosts = new Map<string, SessionHost>()
   private readonly attention = new Map<string, Attention>()
+  private readonly endedInShell = new Set<string>() // sessions whose claude exited to the shell
   private readonly transcripts = new Map<string, string>() // newest accepted transcript path per session
   private readonly platform: 'win32' | 'other'
   private readonly environment: Readonly<Record<string, string | undefined>>
@@ -265,6 +270,7 @@ export class WorkspaceService {
       return true
     }
     this.launcher.shipDone(session)
+    this.trackClaudeInShell(session, event.eventName, event.reason)
     const current = this.attention.get(session) ?? IDLE
     const wait = nextWait(current.wait, event)
     this.setAttention(session, {
@@ -325,6 +331,7 @@ export class WorkspaceService {
       launch: (cwd) => this.launchFor(name, cwd),
       env: () => sessionEnvironment(this.environment),
       onStarted: () => {
+        this.endedInShell.delete(name)
         this.deps.events.broadcast({ type: 'workspace.changed' })
       },
       onEnded: () => {
@@ -334,6 +341,43 @@ export class WorkspaceService {
     })
     this.hosts.set(name, host)
     return host
+  }
+
+  // 'sent' when a line may be typed now: the Enter after it would answer an open permission or question.
+  promptState(name: string): PromptOutcome {
+    if (this.tabOf(name) === undefined) {
+      return 'notFound'
+    }
+    if (this.hosts.get(name)?.running !== true || this.endedInShell.has(name)) {
+      return 'notRunning'
+    }
+    const { wait } = this.attention.get(name) ?? IDLE
+    return wait === 'permission' || wait === 'question' ? 'waiting' : 'sent'
+  }
+
+  // Pasted as one block, then Enter after a pause, only if nothing started waiting meanwhile.
+  prompt(name: string, text: string): PromptOutcome {
+    const state = this.promptState(name)
+    const host = this.hosts.get(name)
+    if (state !== 'sent' || host === undefined) {
+      return state
+    }
+    host.write(`${PASTE_START}${text}${PASTE_END}`)
+    setTimeout(() => {
+      if (this.promptState(name) === 'sent') {
+        host.write('\r')
+      }
+    }, PROMPT_SUBMIT_DELAY_MS)
+    return 'sent'
+  }
+
+  // Port of TeamsHandOff.EndsClaude: SessionEnd other than /clear leaves the shell prompt, not Claude's.
+  private trackClaudeInShell(name: string, eventName: string, reason: string | null): void {
+    if (eventName === 'SessionEnd' && reason !== null && reason !== 'clear') {
+      this.endedInShell.add(name)
+    } else if (eventName === 'SessionStart' || eventName === 'UserPromptSubmit') {
+      this.endedInShell.delete(name)
+    }
   }
 
   shutdown(): void {
@@ -484,6 +528,7 @@ export class WorkspaceService {
       this.hosts.delete(name)
       this.attention.delete(name)
       this.transcripts.delete(name)
+      this.endedInShell.delete(name)
     }
   }
 

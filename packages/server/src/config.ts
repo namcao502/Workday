@@ -12,6 +12,7 @@ import {
   type RemoteConfig,
   type StatusFlow,
   type SuggestionsConfig,
+  type TeamsConfig,
   type TimesheetConfig,
   type TscConfig,
   type WorkdayConfig,
@@ -182,6 +183,20 @@ export function parseAzureDevOps(raw: unknown): AzureDevOpsConfig | null {
   }
 }
 
+// Only "Team > Channel" lines count; no valid line means Teams is off.
+export function parseTeams(raw: unknown): TeamsConfig {
+  const record = isRecord(raw) ? raw : {}
+  const lines = record['watchedChannels']
+  const watchedChannels = Array.isArray(lines)
+    ? lines.filter((line): line is string => typeof line === 'string' && line.includes('>'))
+    : []
+  return {
+    watchedChannels,
+    postLeadName: textOrNull(record['postLeadName']),
+    postGreeting: textOrNull(record['postGreeting']),
+  }
+}
+
 const NOTICE_TOPICS: readonly NoticeTopic[] = ['claude', 'pr', 'jira', 'suggestions', 'other']
 const NOTICE_CHANNELS: readonly (keyof NoticeChannels)[] = ['toast', 'desktop', 'phone']
 
@@ -296,6 +311,7 @@ function parseConfig(raw: unknown): WorkdayConfig | null {
     remote: parseRemote(raw['remote']),
     workspace: parseWorkspace(raw['workspace']),
     azureDevOps: parseAzureDevOps(raw['azureDevOps']),
+    teams: parseTeams(raw['teams']),
     notices: parseNotices(raw['notices']),
   }
 }
@@ -364,6 +380,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   remote: null,
   workspace: DEFAULT_WORKSPACE,
   azureDevOps: null,
+  teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
   notices: {},
 }
 

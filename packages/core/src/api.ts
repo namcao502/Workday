@@ -10,6 +10,8 @@ import type { WeekReviewItem } from './weekReview.js'
 import type { NoticePrefs, Notice } from './notices.js'
 import type { TicketPr } from './prTracking.js'
 import type { Suggestion } from './ticketSuggestions.js'
+import type { TeamsThread } from './teamsChat.js'
+import type { TeamsPerson } from './teamsCompose.js'
 import type { TodoGroup } from './todos.js'
 
 export interface JiraConfig {
@@ -80,6 +82,12 @@ export interface WorkspaceConfig {
   readonly chatView: boolean
 }
 
+export interface TeamsConfig {
+  readonly watchedChannels: readonly string[] // "Team > Channel"; first = default post channel; [] = Teams off
+  readonly postLeadName: string | null
+  readonly postGreeting: string | null // "a {lead}, da "
+}
+
 export interface WorkdayConfig {
   readonly host: string
   readonly port: number
@@ -92,6 +100,7 @@ export interface WorkdayConfig {
   readonly remote: RemoteConfig | null // null until publicHost, accessTeamDomain and accessAud are all set
   readonly workspace: WorkspaceConfig
   readonly azureDevOps: AzureDevOpsConfig | null
+  readonly teams: TeamsConfig
   readonly notices: NoticePrefs
 }
 
@@ -132,6 +141,13 @@ export type AppError =
         | 'adoRejected'
         | 'adoUnreachable'
         | 'adoNotConfigured'
+        | 'teamsSignedOut'
+        | 'teamsBusy'
+        | 'teamsNotConfigured'
+        | 'teamsUncertain' // a write that may have reached Teams
+        | 'teamsFailed'
+        | 'claudeNotRunning'
+        | 'claudeWaiting' // a permission or question is open: the Enter would answer it
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
 
@@ -160,6 +176,7 @@ export interface SettingsUpdate {
   readonly tunnelToken?: string
   readonly workspace?: WorkspaceConfig
   readonly azureDevOps?: AzureDevOpsConfig | null
+  readonly teams?: TeamsConfig
   readonly adoPat?: string
   readonly notices?: NoticePrefs
 }
@@ -295,9 +312,7 @@ export type StartOutcome =
   | { readonly ok: true; readonly warning: AppError | null }
   | { readonly ok: false; readonly error: AppError }
 
-export type OpenOutcome =
-  | StartOutcome
-  | { readonly ok: false; readonly confirmRecreate: true } // worktree missing and recreate not set
+export type OpenOutcome = StartOutcome | { readonly ok: false; readonly confirmRecreate: true } // worktree missing and recreate not set
 
 export interface PushSubscriptionJson {
   readonly endpoint: string
@@ -412,5 +427,45 @@ export type ReadyToTestOutcome =
   | { readonly status: 'moved' | 'alreadyPast' | 'notFound' | 'busy' }
   | { readonly status: 'failed'; readonly step: string }
 
-export type TakeOutcome =
-  { readonly ok: true } | { readonly ok: false; readonly holder: string }
+export type TakeOutcome = { readonly ok: true } | { readonly ok: false; readonly holder: string }
+
+// A watched channel (its post) or one of the ticket's group chats; posted: the ticket has a post there.
+export interface TeamsOption {
+  readonly id: string
+  readonly label: string
+  readonly kind: 'channel' | 'chat'
+  readonly posted: boolean
+}
+
+// searching: the deep scan is unfinished, the client reads again in 5 s.
+export type TeamsConversationView =
+  | { readonly state: 'signedOut' | 'notConfigured' }
+  | { readonly state: 'searching'; readonly options: readonly TeamsOption[] }
+  | {
+      readonly state: 'notPosted'
+      readonly options: readonly TeamsOption[]
+      readonly channelId: string
+      readonly draft: { readonly subject: string; readonly body: string; readonly bodyHtml: string }
+      readonly posted: boolean
+    }
+  | {
+      readonly state: 'thread'
+      readonly options: readonly TeamsOption[]
+      readonly conversationId: string
+      readonly thread: TeamsThread
+      readonly myId: string
+      readonly people: readonly TeamsPerson[]
+      readonly deepLink: string
+    }
+
+// The read plus the conversation ids of the ticket with a message waiting.
+export type TeamsReadView = TeamsConversationView & { readonly pending: readonly string[] }
+
+export type TeamsWriteResult =
+  | { readonly ok: true; readonly id: string | null }
+  | { readonly ok: false; readonly error: AppError }
+
+export interface TeamsStatusView {
+  readonly configured: boolean
+  readonly signedIn: boolean | null // null = not asked yet or not configured
+}

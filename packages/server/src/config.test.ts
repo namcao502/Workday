@@ -46,6 +46,7 @@ describe('loadConfig', () => {
       remote: null,
       workspace: DEFAULT_WORKSPACE,
       azureDevOps: null,
+      teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
       notices: {},
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
@@ -108,7 +109,12 @@ describe('loadConfig', () => {
       etaFieldId: null,
       mineJql: 'assignee = currentUser() OR assignee WAS currentUser()',
       devPriorityFieldId: null,
-      statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+      statusFlow: {
+        preWorkStatuses: [],
+        reworkStatuses: [],
+        readyToTestPath: [],
+        developerStatuses: [],
+      },
       suggestions: null,
     })
   })
@@ -336,7 +342,11 @@ describe('azureDevOps, suggestions and notices config', () => {
 
   it('keeps the file order of repoLabels and defaults the pipeline folder to null', () => {
     writeConfig({
-      azureDevOps: { organization: 'acme', project: 'Shop', repoLabels: { Zeta: 'Z', Alpha: 'A', Bad: 3 } },
+      azureDevOps: {
+        organization: 'acme',
+        project: 'Shop',
+        repoLabels: { Zeta: 'Z', Alpha: 'A', Bad: 3 },
+      },
     })
     const ado = loadConfig(directory).azureDevOps
     expect(ado?.devPipelineFolder).toBeNull()
@@ -350,7 +360,10 @@ describe('azureDevOps, suggestions and notices config', () => {
     const jira = { baseUrl: 'https://j', email: 'e', projectKey: 'P' }
     const suggestions = { epicJql: 'a', epicTitlePrefix: 'P - ', candidatesJql: 'c', mineJql: 'm' }
     writeConfig({ jira: { ...jira, suggestions } })
-    expect(loadConfig(directory).jira?.suggestions).toEqual({ ...suggestions, selectedStatus: null })
+    expect(loadConfig(directory).jira?.suggestions).toEqual({
+      ...suggestions,
+      selectedStatus: null,
+    })
     writeConfig({ jira: { ...jira, suggestions: { ...suggestions, mineJql: '' } } })
     expect(loadConfig(directory).jira?.suggestions).toBeNull()
   })
@@ -360,5 +373,27 @@ describe('azureDevOps, suggestions and notices config', () => {
       notices: { pr: { toast: false, phone: 'yes', fax: true }, weird: { toast: true }, jira: 5 },
     })
     expect(loadConfig(directory).notices).toEqual({ pr: { toast: false } })
+  })
+})
+
+describe('teams config', () => {
+  it('config drops a watched channel line without ">"', () => {
+    writeConfig({
+      teams: {
+        watchedChannels: ['Team A > General', 'no separator', 7],
+        postLeadName: 'Lead',
+        postGreeting: '',
+      },
+    })
+    expect(loadConfig(directory).teams).toEqual({
+      watchedChannels: ['Team A > General'],
+      postLeadName: 'Lead',
+      postGreeting: null,
+    })
+  })
+
+  it('config turns Teams off when the block is missing', () => {
+    writeConfig({})
+    expect(loadConfig(directory).teams.watchedChannels).toEqual([])
   })
 })

@@ -107,3 +107,32 @@ it('a remote device sees no workspace action on a Claude to-do', async () => {
   expect(await screen.findByText('Claude needs your permission')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Open' })).not.toBeInTheDocument()
 })
+
+it("a teams to-do opens the ticket's Teams view", async () => {
+  const teamsGroup: TodoGroup = {
+    ticketKey: 'MDP-1',
+    neededNow: true,
+    items: [
+      {
+        kind: 'teamsMessage',
+        ticketKey: 'MDP-1',
+        item: {
+          title: 'Team > Chan',
+          senderName: 'Minh',
+          sentAt: '2026-11-01T08:00:00Z',
+          mentionsMe: true,
+          conversationId: 'c1',
+          ticketKey: 'MDP-1',
+          conversationKey: 'k1',
+          chatId: null,
+        },
+      },
+    ],
+  }
+  stubBackend([teamsGroup])
+  renderWithQuery(<BoardPage />)
+  await openTodoView()
+  expect(await screen.findByText('Team > Chan: Minh')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+  expect(window.location.hash).toBe('#/workspace/MDP-1?teams=c1')
+})

@@ -94,5 +94,25 @@ export function errorText(error: AppError): string {
       return t('Azure DevOps could not be reached', 'Không kết nối được tới Azure DevOps')
     case 'adoNotConfigured':
       return t('Azure DevOps is not set up', 'Chưa cấu hình Azure DevOps')
+    case 'teamsSignedOut':
+      return t('Teams is signed out. Sign in again.', 'Teams đã đăng xuất. Hãy đăng nhập lại.')
+    case 'teamsBusy':
+      return t('Teams sign-in or read is already running', 'Đang đăng nhập hoặc đọc Teams')
+    case 'teamsNotConfigured':
+      return t('Teams is not set up', 'Chưa cấu hình Teams')
+    case 'teamsUncertain':
+      return t(
+        'Teams did not confirm; check the channel before trying again',
+        'Teams chưa xác nhận; hãy kiểm tra kênh trước khi thử lại',
+      )
+    case 'teamsFailed':
+      return t('Teams request failed', 'Yêu cầu Teams thất bại')
+    case 'claudeNotRunning':
+      return t('Claude is not running in that session', 'Claude không chạy trong phiên này')
+    case 'claudeWaiting':
+      return t(
+        'Claude is waiting for your answer; answer it, then try again',
+        'Claude đang chờ bạn trả lời; trả lời xong rồi thử lại',
+      )
   }
 }

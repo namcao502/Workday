@@ -25,6 +25,7 @@ async function timesheetApp(): Promise<TestApp> {
     pollMinutes: 5,
     workspace: DEFAULT_WORKSPACE,
     azureDevOps: null,
+    teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
     notices: {},
     theme: 'dark',
     language: 'en',
