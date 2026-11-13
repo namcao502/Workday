@@ -4,9 +4,11 @@ import { useSettings } from '../api/useSettings.js'
 import { useNow, useTimesheetView } from '../api/useTimesheet.js'
 import { useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
+import { InsightsPage } from '../insights/InsightsPage.js'
 import { DevicePage } from '../remote/DevicePage.js'
+import { SchedulesPage } from '../schedules/SchedulesPage.js'
+import { useSchedulesView } from '../schedules/useSchedules.js'
 import { SettingsPage } from '../settings/SettingsPage.js'
-import { t } from '../i18n.js'
 import { TimesheetPage } from '../timesheet/TimesheetPage.js'
 import { needsAttention } from '../timesheet/timesheetState.js'
 import { NoticeBell } from '../notices/NoticeBell.js'
@@ -15,7 +17,7 @@ import { useNotices } from '../notices/useNotices.js'
 import { WorkspacePage } from '../workspace/WorkspacePage.js'
 import { Sidebar } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
-import { navigateTo, pageLabel, visiblePages, type PageId } from './pages.js'
+import { navigateTo, visiblePages, type PageId } from './pages.js'
 import { useNarrow } from './useNarrow.js'
 import { zonedClock } from '@workday/core'
 
@@ -37,12 +39,10 @@ function PageContent({ page }: ShellProps): React.JSX.Element {
   if (page === 'workspace') {
     return <WorkspacePage />
   }
-  return (
-    <section className="page">
-      <h1 className="page-title">{pageLabel(page)}</h1>
-      <p className="muted">{t('Coming soon', 'Sắp ra mắt')}</p>
-    </section>
-  )
+  if (page === 'schedules') {
+    return <SchedulesPage />
+  }
+  return <InsightsPage />
 }
 
 // True when the Timesheet page has something to do: today's reminder or a queued day past its run.
@@ -70,6 +70,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
   const waiting = useWaitingSessions()
   const todoAttention = useWork().data?.attention ?? 0
   const alerts = useNotices(page)
+  const schedulesDot = useSchedulesView(useAccess().mode !== 'remote').data?.scan.unseenBad === true
   return (
     <div className={narrow ? 'shell shell-narrow' : 'shell'}>
       {narrow ? null : (
@@ -77,6 +78,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
           current={page}
           onSelect={navigateTo}
           attention={attention}
+          schedulesDot={schedulesDot}
           pages={pages}
           workspaceBadge={waiting}
           boardBadge={todoAttention}

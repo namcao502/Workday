@@ -50,6 +50,7 @@ async function timesheetApp(language: 'en' | 'vi'): Promise<TestApp> {
     azureDevOps: null,
     teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
     notices: {},
+    knowledgeScan: null,
     theme: 'dark',
     language,
     jira: null,

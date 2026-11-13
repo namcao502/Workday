@@ -86,6 +86,8 @@ export function errorText(error: AppError): string {
       return t('That session no longer exists', 'Phiên này không còn nữa')
     case 'pathOutside':
       return t('That path is outside the worktree', 'Đường dẫn nằm ngoài worktree')
+    case 'insightsFailed':
+      return t('The report could not be read', 'Không đọc được báo cáo')
     case 'gitFailed':
       return t('A git command failed', 'Lệnh git thất bại')
     case 'adoRejected':

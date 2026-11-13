@@ -47,6 +47,7 @@ export async function buildRemoteApp(
     azureDevOps: null,
     teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
     notices: {},
+    knowledgeScan: null,
     theme: 'dark',
     language: 'en',
     jira: null,

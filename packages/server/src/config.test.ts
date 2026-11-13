@@ -48,6 +48,7 @@ describe('loadConfig', () => {
       azureDevOps: null,
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
       notices: {},
+      knowledgeScan: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
   })
@@ -373,6 +374,14 @@ describe('azureDevOps, suggestions and notices config', () => {
       notices: { pr: { toast: false, phone: 'yes', fax: true }, weird: { toast: true }, jira: 5 },
     })
     expect(loadConfig(directory).notices).toEqual({ pr: { toast: false } })
+  })
+
+  it('a teams notice pref survives parsing', () => {
+    writeConfig({ notices: { teams: { desktop: false }, teamsMention: { phone: false } } })
+    expect(loadConfig(directory).notices).toEqual({
+      teams: { desktop: false },
+      teamsMention: { phone: false },
+    })
   })
 })
 

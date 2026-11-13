@@ -5,6 +5,7 @@ interface NavProps {
   readonly current: PageId
   readonly onSelect: (page: PageId) => void
   readonly attention?: boolean // dot on the Timesheet item
+  readonly schedulesDot?: boolean // a scan run ended badly and was not seen yet
   readonly pages?: readonly PageId[]
   readonly workspaceBadge?: number // sessions waiting for the user
   readonly boardBadge?: number // to-dos that need the user now
@@ -14,6 +15,7 @@ export function Sidebar({
   current,
   onSelect,
   attention = false,
+  schedulesDot = false,
   pages = PAGE_IDS,
   workspaceBadge = 0,
   boardBadge = 0,
@@ -29,7 +31,9 @@ export function Sidebar({
             page={page}
             current={current}
             onSelect={onSelect}
-            attention={page === 'timesheet' && attention}
+            attention={
+              (page === 'timesheet' && attention) || (page === 'schedules' && schedulesDot)
+            }
             workspaceBadge={page === 'workspace' ? workspaceBadge : 0}
             boardBadge={page === 'tickets' ? boardBadge : 0}
           />

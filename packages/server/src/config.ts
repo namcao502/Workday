@@ -2,6 +2,10 @@ import { renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   parseColumns,
+  parseTime,
+  SCAN_DAYS,
+  SCAN_LIMIT_HOURS,
+  type KnowledgeScanConfig,
   type AzureDevOpsConfig,
   type HrmConfig,
   type JiraConfig,
@@ -197,7 +201,48 @@ export function parseTeams(raw: unknown): TeamsConfig {
   }
 }
 
-const NOTICE_TOPICS: readonly NoticeTopic[] = ['claude', 'pr', 'jira', 'suggestions', 'other']
+// Null when the command, day, time or limit is not valid, so a bad file or request never half-applies.
+export function parseKnowledgeScan(raw: unknown): KnowledgeScanConfig | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const { enabled, command, args, day, time, limitHours, logFile } = raw
+  const isValid =
+    typeof enabled === 'boolean' &&
+    typeof command === 'string' &&
+    command.trim() !== '' &&
+    Array.isArray(args) &&
+    args.every((arg) => typeof arg === 'string') &&
+    typeof day === 'string' &&
+    SCAN_DAYS.some((choice) => choice === day) &&
+    typeof time === 'string' &&
+    parseTime(time) !== null &&
+    SCAN_LIMIT_HOURS.some((choice) => choice === limitHours) &&
+    (logFile === undefined || logFile === null || typeof logFile === 'string')
+  if (!isValid) {
+    return null
+  }
+  return {
+    enabled,
+    command: command.trim(),
+    args: stringList(args),
+    day: day as KnowledgeScanConfig['day'],
+    time,
+    limitHours: limitHours as KnowledgeScanConfig['limitHours'],
+    logFile: textOrNull(logFile),
+  }
+}
+
+const NOTICE_TOPICS: readonly NoticeTopic[] = [
+  'claude',
+  'pr',
+  'jira',
+  'suggestions',
+  'teams',
+  'teamsMention',
+  'knowledge',
+  'other',
+]
 const NOTICE_CHANNELS: readonly (keyof NoticeChannels)[] = ['toast', 'desktop', 'phone']
 
 // Unknown topics and channels, and any non-boolean value, are dropped.
@@ -313,6 +358,7 @@ function parseConfig(raw: unknown): WorkdayConfig | null {
     azureDevOps: parseAzureDevOps(raw['azureDevOps']),
     teams: parseTeams(raw['teams']),
     notices: parseNotices(raw['notices']),
+    knowledgeScan: parseKnowledgeScan(raw['knowledgeScan']),
   }
 }
 
@@ -382,6 +428,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   azureDevOps: null,
   teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
   notices: {},
+  knowledgeScan: null,
 }
 
 export function loadConfig(dataDir: string): WorkdayConfig {

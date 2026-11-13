@@ -6,6 +6,7 @@ import type {
   BoardAction,
   BoardView,
   EntryOutcome,
+  InsightsView,
   JiraCheckRequest,
   JiraCheckResult,
   SettingsUpdate,
@@ -20,9 +21,11 @@ import { isRecord } from '../json.js'
 
 export const queryKeys = {
   board: ['board'],
+  insights: ['insights'],
   me: ['me'],
   notices: ['notices'],
   remote: ['remote'],
+  schedules: ['schedules'],
   settings: ['settings'],
   timesheet: ['timesheet'],
   timesheetVisited: ['timesheet-visited'],
@@ -173,6 +176,7 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'teamsFailed',
   'claudeNotRunning',
   'claudeWaiting',
+  'insightsFailed',
 ])
 
 export function isPlainCode(code: unknown): code is PlainCode {
@@ -396,4 +400,35 @@ export async function checkTickets(keys: readonly string[]): Promise<readonly Ti
     throw new ApiError(raw.status, path)
   }
   return raw.body.filter(isTicketCheck)
+}
+
+export interface InsightsRequest {
+  readonly kind: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth' | 'custom'
+  readonly from?: string // custom only
+  readonly to?: string // custom only
+}
+
+function isInsightsView(value: unknown): value is InsightsView {
+  if (!isRecord(value) || typeof value['readAt'] !== 'string') {
+    return false
+  }
+  const report = value['report']
+  return isRecord(report) && Array.isArray(report['rows'])
+}
+
+// A refusal with a named code (insightsFailed) is thrown as an ApiError carrying it.
+export async function getInsights(request: InsightsRequest): Promise<InsightsView> {
+  const query = new URLSearchParams({ kind: request.kind })
+  if (request.from !== undefined && request.to !== undefined) {
+    query.set('from', request.from)
+    query.set('to', request.to)
+  }
+  const path = `/api/insights?${query.toString()}`
+  const raw = await send('GET', path)
+  if (raw.ok && isInsightsView(raw.body)) {
+    return raw.body
+  }
+  const error = isRecord(raw.body) ? raw.body['error'] : undefined
+  const code = isRecord(error) && isPlainCode(error['code']) ? error['code'] : null
+  throw new ApiError(raw.status, path, code)
 }

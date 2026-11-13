@@ -14,7 +14,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('the sidebar shows the five pages and marks the current one', () => {
+it('the sidebar shows the six pages and marks the current one', () => {
   stubMatchMedia(false)
   stubFetch(() => jsonResponse({}, 500))
   renderWithQuery(<Shell page="timesheet" />)
@@ -22,7 +22,7 @@ it('the sidebar shows the five pages and marks the current one', () => {
   const names = within(sidebar)
     .getAllByRole('button')
     .map((button) => button.textContent)
-  expect(names).toEqual(['Tickets', 'Workspace', 'Timesheet', 'Insights', 'Settings'])
+  expect(names).toEqual(['Tickets', 'Workspace', 'Timesheet', 'Insights', 'Schedules', 'Settings'])
   expect(within(sidebar).getByRole('button', { name: 'Timesheet' })).toHaveAttribute(
     'aria-current',
     'page',
@@ -38,13 +38,6 @@ it('below 720px the tab bar replaces the sidebar', () => {
   renderWithQuery(<Shell page="tickets" />)
   expect(screen.getByRole('navigation', { name: 'Tabs' })).toBeInTheDocument()
   expect(screen.queryByRole('navigation', { name: 'Pages' })).not.toBeInTheDocument()
-})
-
-it('an unbuilt page shows Coming soon', () => {
-  stubMatchMedia(false)
-  stubFetch(() => jsonResponse({}, 500))
-  renderWithQuery(<Shell page="insights" />)
-  expect(screen.getByText('Coming soon')).toBeInTheDocument()
 })
 
 it('the Timesheet item shows a dot when a queued day is past its run', async () => {
@@ -91,7 +84,7 @@ it('locally every page and action stays available', async () => {
   renderWithQuery(<Shell page="tickets" />)
   expect(
     within(screen.getByRole('navigation', { name: 'Pages' })).getAllByRole('button'),
-  ).toHaveLength(5)
+  ).toHaveLength(6)
   expect(await screen.findByRole('button', { name: /Check now/ })).toBeInTheDocument()
 })
 

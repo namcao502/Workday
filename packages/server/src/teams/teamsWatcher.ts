@@ -14,6 +14,7 @@ import {
 } from '@workday/core'
 import type { Scheduler } from '../settings/settingsService.js'
 import type { EventSink } from '../events.js'
+import type { RecordJob } from '../schedules/jobRuns.js'
 import type { NoticeInput } from '../notices/noticeService.js'
 import type { TeamsLookup } from './teamsLookup.js'
 import type { TeamsState } from './teamsStore.js'
@@ -31,6 +32,7 @@ export interface TeamsWatcherDeps {
   }
   readonly events: EventSink
   readonly scheduler: Scheduler
+  readonly recordJob?: RecordJob
   readonly logError: (message: string, error: unknown) => void
 }
 
@@ -113,6 +115,8 @@ export class TeamsWatcher {
       return
     }
     this.running = true
+    const startedAt = new Date()
+    let ok = true
     try {
       const ticketKeys = this.ticketKeys()
       if (ticketKeys.length !== 0) {
@@ -121,6 +125,7 @@ export class TeamsWatcher {
         await this.apply(conversations, myId)
       }
     } catch (error: unknown) {
+      ok = false
       if (error instanceof TeamsSignedOut) {
         this.deps.scheduler.stop()
         this.deps.lookup.log(
@@ -131,6 +136,12 @@ export class TeamsWatcher {
       }
     } finally {
       this.running = false
+      this.deps.recordJob?.('teamsCheck', {
+        startedAt: startedAt.toISOString(),
+        endedAt: new Date().toISOString(),
+        ok,
+        summary: null,
+      })
     }
   }
 

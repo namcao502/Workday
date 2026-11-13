@@ -13,6 +13,7 @@ import type { Suggestion } from './ticketSuggestions.js'
 import type { TeamsThread } from './teamsChat.js'
 import type { TeamsPerson } from './teamsCompose.js'
 import type { TodoGroup } from './todos.js'
+import type { TicketReport } from './ticketReports.js'
 
 export interface JiraConfig {
   readonly baseUrl: string
@@ -88,6 +89,18 @@ export interface TeamsConfig {
   readonly postGreeting: string | null // "a {lead}, da "
 }
 
+export type ScanDay = 'daily' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface KnowledgeScanConfig {
+  readonly enabled: boolean
+  readonly command: string // "pwsh"
+  readonly args: readonly string[] // ["-NoProfile", "-File", "<dev repo>/docs/local-config/daily-knowledge-scan.ps1"]
+  readonly day: ScanDay
+  readonly time: string // "HH:mm", on the hour 06:00-23:00
+  readonly limitHours: 1 | 2 | 3 | 4 | 6
+  readonly logFile: string | null // the script's own log; its new lines join the run log
+}
+
 export interface WorkdayConfig {
   readonly host: string
   readonly port: number
@@ -102,6 +115,7 @@ export interface WorkdayConfig {
   readonly azureDevOps: AzureDevOpsConfig | null
   readonly teams: TeamsConfig
   readonly notices: NoticePrefs
+  readonly knowledgeScan: KnowledgeScanConfig | null // null = no scan command set up
 }
 
 // Server never sends display text; the client translates the code with t().
@@ -148,6 +162,7 @@ export type AppError =
         | 'teamsFailed'
         | 'claudeNotRunning'
         | 'claudeWaiting' // a permission or question is open: the Enter would answer it
+        | 'insightsFailed'
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
 
@@ -179,6 +194,7 @@ export interface SettingsUpdate {
   readonly teams?: TeamsConfig
   readonly adoPat?: string
   readonly notices?: NoticePrefs
+  readonly knowledgeScan?: KnowledgeScanConfig | null
 }
 
 export interface JiraCheckRequest {
@@ -291,6 +307,7 @@ export type ServerEvent =
   | { readonly type: 'workspace.changed' }
   | { readonly type: 'work.changed' }
   | { readonly type: 'notices.changed' }
+  | { readonly type: 'schedules.changed' }
 
 export interface SessionView {
   readonly name: string
@@ -468,4 +485,52 @@ export type TeamsWriteResult =
 export interface TeamsStatusView {
   readonly configured: boolean
   readonly signedIn: boolean | null // null = not asked yet or not configured
+}
+
+export interface InsightsView {
+  readonly report: TicketReport
+  readonly readAt: string
+}
+
+export type ScanOutcome = 'running' | 'ok' | 'withProblems' | 'stopped' | 'failed'
+
+export interface ScanRun {
+  readonly id: string
+  readonly startedAt: string
+  readonly endedAt: string | null
+  readonly outcome: ScanOutcome
+  readonly exitCode: number | null
+  readonly found: number
+  readonly mined: number
+  readonly refreshed: number
+  readonly problemLines: readonly string[]
+  readonly trigger: 'schedule' | 'user'
+}
+
+export type AppJobName = 'jiraPoll' | 'prCheck' | 'teamsCheck' | 'timesheetRun' | 'catchUp'
+
+export interface JobRun {
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly ok: boolean
+  readonly summary: string | null
+}
+
+export interface SchedulesView {
+  readonly scan: {
+    readonly config: KnowledgeScanConfig | null
+    readonly nextRunAt: string | null
+    readonly runs: readonly ScanRun[]
+    readonly unseenBad: boolean
+  }
+  readonly jobs: Readonly<
+    Record<AppJobName, { readonly runs: readonly JobRun[]; readonly nextRunAt: string | null }>
+  >
+}
+
+export type StartScanResult = { readonly ok: true } | { readonly ok: false; readonly busy: true }
+
+export interface ScanLogChunk {
+  readonly text: string
+  readonly next: number // the byte offset to read from next
 }

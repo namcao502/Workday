@@ -18,9 +18,16 @@ import { PollScheduler } from './board/pollScheduler.js'
 import { loadBoard, saveBoard } from './boardStore.js'
 import { DEFAULT_OFF_MARKER } from './config.js'
 import { EventHub } from './events.js'
+import { createInsights } from './insights/createInsights.js'
+import type { ReportReader } from './insights/reportReader.js'
 import { claudeWaitNotice } from './notices/claudeWaitNotice.js'
 import { loadNotices, saveNotices } from './notices/noticeStore.js'
 import { NoticeService } from './notices/noticeService.js'
+import { JobRuns, type RecordJob } from './schedules/jobRuns.js'
+import { spawnScan, type SpawnScan } from './schedules/scanProcess.js'
+import { ScanRunner } from './schedules/scanRunner.js'
+import type { SchedulesSource } from './schedules/schedulesView.js'
+import { loadScanState } from './schedules/scanStore.js'
 import { PrService } from './prs/prService.js'
 import { loadPrState, savePrState } from './prs/prStore.js'
 import type { AccessTokenVerifier } from './remote/accessJwt.js'
@@ -81,6 +88,8 @@ export interface ServicesOptions {
   readonly homeDir?: string
   readonly tmpDir?: string // Teams hand-off task files go under it
   readonly spawnEditor?: SpawnEditor
+  // Tests pass a fake process, so the knowledge scan never starts pwsh.
+  readonly spawnScan?: SpawnScan
   // Tests pass a fake, so Start never runs git against a real repo.
   readonly createWorktree?: (options: WorktreeOptions) => Promise<WorktreeResult>
   readonly logError?: (message: string, error: unknown) => void
@@ -98,6 +107,9 @@ export interface Services {
   readonly suggestions: SuggestionService
   readonly teams: TeamsService
   readonly teamsWatcher: TeamsWatcher
+  readonly insights: ReportReader
+  readonly schedules: SchedulesSource
+  readonly scanRunner: ScanRunner
   readonly scheduler: Scheduler
   readonly prScheduler: Scheduler
   readonly teamsScheduler: Scheduler
@@ -110,11 +122,16 @@ export function createServices(options: ServicesOptions): Services {
   const logError = options.logError === undefined ? {} : { logError: options.logError }
   const reportError = options.logError ?? console.error
   const events = new EventHub()
+  const jobRuns = new JobRuns(dataDir, reportError)
+  const recordJob: RecordJob = (job, run) => {
+    jobRuns.record(job, run)
+  }
   const board = new BoardService({
     initialState: loadBoard(dataDir),
     save: (state) => saveBoard(dataDir, state),
     events,
     settings: { jira: config.jira, tracker: null, timeZone: config.timeZone },
+    recordJob,
     ...logError,
   })
   const remote = new RemoteService({
@@ -143,6 +160,7 @@ export function createServices(options: ServicesOptions): Services {
       logTime: config.timesheet.logTime,
       offMarker: config.timesheet.tsc?.offMarker ?? DEFAULT_OFF_MARKER,
     },
+    recordJob,
     onRun: (summary) => {
       const message = runPushMessage(summary, settings.language, settings.timeZone)
       if (message !== null) {
@@ -160,6 +178,16 @@ export function createServices(options: ServicesOptions): Services {
     now: () => new Date(),
     push: (area, message) => remote.push.sendToArea(area, message),
     settings: () => ({ prefs: settings.notices, language: settings.language }),
+    logError: reportError,
+  })
+  const scanRunner = new ScanRunner({
+    dataDir,
+    initial: loadScanState(dataDir),
+    now: () => new Date(),
+    spawn: options.spawnScan ?? spawnScan,
+    events,
+    notices,
+    environment: process.env,
     logError: reportError,
   })
   const workspace = new WorkspaceService({
@@ -203,6 +231,7 @@ export function createServices(options: ServicesOptions): Services {
       flow: config.jira?.statusFlow ?? NO_STATUS_FLOW,
       repoLabels: config.azureDevOps?.repoLabels ?? {},
     },
+    recordJob,
     ...logError,
   })
   const suggestions: SuggestionService = new SuggestionService({
@@ -235,6 +264,7 @@ export function createServices(options: ServicesOptions): Services {
     notices,
     events,
     scheduler: teamsScheduler,
+    recordJob,
     logError: reportError,
   })
   teams.onSignedIn(() => {
@@ -271,6 +301,7 @@ export function createServices(options: ServicesOptions): Services {
       ),
     teamsService: teams,
     teamsWatcher,
+    scanRunner,
     prs,
     suggestions,
     prScheduler,
@@ -278,6 +309,30 @@ export function createServices(options: ServicesOptions): Services {
     workspace,
     ...logError,
   })
+  const insights = createInsights({
+    dataDir,
+    homeDir: options.homeDir ?? homedir(),
+    config: () => settings.view().config,
+    board: () => board.snapshot(),
+    hrmTasks: (from, to) => timesheet.hrmTasks(from, to),
+    logError: reportError,
+  })
+  const schedules: SchedulesSource = {
+    runner: scanRunner,
+    jobRuns,
+    settings: {
+      get timeZone() {
+        return settings.timeZone
+      },
+      get knowledgeScan() {
+        return settings.view().config.knowledgeScan
+      },
+      get logTime() {
+        return settings.view().config.timesheet.logTime
+      },
+    },
+    now: () => new Date(),
+  }
   return {
     board,
     settings,
@@ -290,6 +345,9 @@ export function createServices(options: ServicesOptions): Services {
     suggestions,
     teams,
     teamsWatcher,
+    insights,
+    schedules,
+    scanRunner,
     scheduler,
     prScheduler,
     teamsScheduler,

@@ -201,19 +201,30 @@ describe('isEditable', () => {
 })
 
 describe('buildBody on hostile input stays linear', () => {
-  const inputs: Record<string, string> = {
-    'an unclosed quote': '<a href="'.repeat(22_000),
-    'many unmatched closing tags': '<span>'.repeat(20_000) + '</p>'.repeat(20_000),
-    'many unterminated mention spans': '<span data-mention="0">'.repeat(25_000),
-    'many empty paragraphs': '<p></p>'.repeat(25_000),
-    'many unterminated scripts': '<script>'.repeat(25_000),
-    'a long space run': `<p>a${' '.repeat(200_000)}b</p>`,
+  // Growth is compared, not wall-clock: quadratic work grows ~16x from n to 4n, linear ~4x.
+  const fastestMs = (run: () => void): number => {
+    let fastest = Number.POSITIVE_INFINITY
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const started = performance.now()
+      run()
+      fastest = Math.min(fastest, performance.now() - started)
+    }
+    return fastest
+  }
+  const inputs: Record<string, (count: number) => string> = {
+    'an unclosed quote': (count) => '<a href="'.repeat(count),
+    'many unmatched closing tags': (count) => '<span>'.repeat(count) + '</p>'.repeat(count),
+    'many unterminated mention spans': (count) => '<span data-mention="0">'.repeat(count),
+    'many empty paragraphs': (count) => '<p></p>'.repeat(count),
+    'many unterminated scripts': (count) => '<script>'.repeat(count),
+    'a long space run': (count) => `<p>a${' '.repeat(count * 10)}b</p>`,
   }
 
-  it.each(Object.entries(inputs))('handles %s in under 200 ms', (_name, html) => {
+  it.each(Object.entries(inputs))('stays linear on %s', (_name, build) => {
     const mentions = [{ text: 'M', mri: MINH, displayName: 'M' }]
-    const started = performance.now()
-    buildBody({ html, mentions })
-    expect(performance.now() - started).toBeLessThan(200)
+    const small = fastestMs(() => buildBody({ html: build(5_000), mentions }))
+    const large = fastestMs(() => buildBody({ html: build(20_000), mentions }))
+    expect(large).toBeLessThan(small * 10 + 50)
+    expect(large).toBeLessThan(2_000)
   })
 })

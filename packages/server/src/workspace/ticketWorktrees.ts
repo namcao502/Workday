@@ -12,7 +12,7 @@ export function worktreePathOf(repositoryPath: string, ticketKey: string): strin
 }
 
 // Only "*" as prefix*suffix; any other shape matches nothing. Case-insensitive, like Windows folder names.
-function matchesGlob(name: string, glob: string): boolean {
+export function matchesGlob(name: string, glob: string): boolean {
   const parts = glob.toLowerCase().split('*')
   const lower = name.toLowerCase()
   if (parts.length === 1) {
@@ -22,7 +22,11 @@ function matchesGlob(name: string, glob: string): boolean {
   if (parts.length !== 2 || prefix === undefined || suffix === undefined) {
     return false
   }
-  return lower.length >= prefix.length + suffix.length && lower.startsWith(prefix) && lower.endsWith(suffix)
+  return (
+    lower.length >= prefix.length + suffix.length &&
+    lower.startsWith(prefix) &&
+    lower.endsWith(suffix)
+  )
 }
 
 // Port of TicketWorktrees.Find: the dev repo first, then each sibling repo matching the glob that has one.

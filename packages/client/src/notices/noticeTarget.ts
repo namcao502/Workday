@@ -22,6 +22,8 @@ export function openNoticeTarget(target: NoticeTarget | null, remote: boolean): 
   }
   if (target.kind === 'url') {
     window.open(target.url, '_blank', 'noopener')
+  } else if (target.kind === 'schedules' && !remote) {
+    navigateTo('schedules')
   } else if (target.kind === 'workspace' && !remote) {
     navigateToWorkspace(target.tab, target.session)
   } else if (target.kind === 'teams' && !remote) {

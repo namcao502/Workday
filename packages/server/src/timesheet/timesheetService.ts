@@ -11,6 +11,7 @@ import {
   type AppError,
   type EntryOutcome,
   type HoursLog,
+  type HrmTask,
   type QueueEntry,
   type RunSummary,
   type SheetLog,
@@ -21,6 +22,7 @@ import {
   type ZonedClock,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
+import type { RecordJob } from '../schedules/jobRuns.js'
 import { isFullySuccessful, logEntry, sheetStep, type LogTarget } from './logEntry.js'
 import { checkTickets, MineCache, type BoardKeys } from './ticketCheck.js'
 import { readCoverage, reviewOf } from './weekReader.js'
@@ -44,6 +46,7 @@ export interface TimesheetServiceDeps {
   readonly settings: TimesheetSettings
   // Called after each new lastRun, e.g. to push it to phones.
   readonly onRun?: (summary: RunSummary) => void
+  readonly recordJob?: RecordJob
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -103,6 +106,12 @@ export class TimesheetService {
     if (changed) {
       this.broadcast()
     }
+  }
+
+  // HRM's tasks over a range; null when HRM is not set up or the read failed.
+  async hrmTasks(from: string, to: string): Promise<readonly HrmTask[] | null> {
+    const { hours } = this.settings
+    return hours === null ? null : hours.tasks(from, to)
   }
 
   view(): TimesheetView {
@@ -184,6 +193,7 @@ export class TimesheetService {
     }
     this.draining = true
     this.broadcast()
+    const startedAt = this.now()
     let summary: RunSummary
     try {
       summary = await this.runDrain(trigger, date)
@@ -199,6 +209,7 @@ export class TimesheetService {
     this.lastRun = summary
     this.broadcast()
     this.deps.onRun?.(summary)
+    this.recordJob(startedAt, summary)
     this.rereadWeek()
     if (this.redrainPending) {
       this.redrainPending = false
@@ -375,6 +386,25 @@ export class TimesheetService {
     this.lastRun = { at: this.now(), trigger, kind }
     this.broadcast()
     this.deps.onRun?.(this.lastRun)
+    this.recordJob(this.lastRun.at, this.lastRun)
+  }
+
+  // The 18:00 run and the catch-up go to the Schedules history; a run the user asked for does not.
+  private recordJob(startedAt: string, summary: RunSummary): void {
+    if (summary.trigger === 'user' || summary.kind === 'joined') {
+      return
+    }
+    const drained = summary.kind === 'drained'
+    this.deps.recordJob?.(summary.trigger === 'catchUp' ? 'catchUp' : 'timesheetRun', {
+      startedAt,
+      endedAt: this.now(),
+      ok: drained
+        ? summary.kept.length === 0 && !summary.timedOut
+        : summary.kind !== 'notConfigured',
+      summary: drained
+        ? `${String(summary.logged)} logged, ${String(summary.kept.length)} kept for retry`
+        : summary.kind,
+    })
   }
 
   private now(): string {

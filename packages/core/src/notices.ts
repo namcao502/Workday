@@ -1,14 +1,9 @@
 import type { WaitReason } from './claudeAttention.js'
+import type { ScanOutcome } from './api.js'
 import type { PrVote } from './prTracking.js'
 
 export type NoticeTopic =
-  | 'claude'
-  | 'pr'
-  | 'jira'
-  | 'teams'
-  | 'teamsMention'
-  | 'suggestions'
-  | 'other'
+  'claude' | 'pr' | 'jira' | 'teams' | 'teamsMention' | 'suggestions' | 'knowledge' | 'other'
 export type NoticeTone = 'info' | 'success' | 'error'
 
 export type NoticeEvent =
@@ -39,6 +34,7 @@ export type NoticeEvent =
       readonly key: string
     }
   | { readonly type: 'transitionFailed'; readonly key: string; readonly status: string }
+  | { readonly type: 'scanBad'; readonly outcome: ScanOutcome }
   | { readonly type: 'suggestionsUrgent'; readonly keys: readonly string[] }
   | {
       readonly type: 'teamsMessage'
@@ -49,6 +45,7 @@ export type NoticeEvent =
     }
 
 export type NoticeTarget =
+  | { readonly kind: 'schedules' }
   | { readonly kind: 'board'; readonly key: string | null }
   | { readonly kind: 'workspace'; readonly tab: string; readonly session: string }
   | { readonly kind: 'url'; readonly url: string }
@@ -85,6 +82,7 @@ const DEFAULT_CHANNELS: Readonly<Record<NoticeTopic, NoticeChannels>> = {
   teams: { toast: true, desktop: true, phone: false },
   teamsMention: { toast: true, desktop: true, phone: true },
   suggestions: { toast: true, desktop: false, phone: false },
+  knowledge: { toast: true, desktop: true, phone: false },
   other: { toast: true, desktop: true, phone: false },
 }
 
@@ -96,7 +94,8 @@ export function addNotice(notices: readonly Notice[], notice: Notice): readonly 
 export function removeExpired(notices: readonly Notice[], now: string): readonly Notice[] {
   const nowMs = Date.parse(now)
   const kept = notices.filter(
-    (notice) => nowMs - Date.parse(notice.at) <= (notice.read ? READ_LIFETIME_MS : UNREAD_LIFETIME_MS),
+    (notice) =>
+      nowMs - Date.parse(notice.at) <= (notice.read ? READ_LIFETIME_MS : UNREAD_LIFETIME_MS),
   )
   return kept.length === notices.length ? notices : kept
 }
@@ -160,7 +159,9 @@ function voteSentence(key: string, branch: string, vote: PrVote, vi: boolean): s
 function prText(event: NoticeEvent, vi: boolean): string | null {
   switch (event.type) {
     case 'prMerged':
-      return vi ? `${event.key}: PR (${event.branch}) đã merge.` : `${event.key}: PR (${event.branch}) merged.`
+      return vi
+        ? `${event.key}: PR (${event.branch}) đã merge.`
+        : `${event.key}: PR (${event.branch}) merged.`
     case 'prBuildFailed':
       return vi
         ? `${event.key}: build lỗi trên PR (${event.branch}).`
@@ -208,6 +209,19 @@ function deployText(event: NoticeEvent, vi: boolean): string | null {
   }
 }
 
+function scanBadText(outcome: ScanOutcome, vi: boolean): string {
+  switch (outcome) {
+    case 'stopped':
+      return vi
+        ? 'Quét knowledge bị dừng trước khi xong.'
+        : 'The knowledge scan was stopped before it finished.'
+    case 'failed':
+      return vi ? 'Quét knowledge lỗi.' : 'The knowledge scan failed.'
+    default:
+      return vi ? 'Quét knowledge xong nhưng có lỗi.' : 'The knowledge scan finished with problems.'
+  }
+}
+
 // One sentence per event, the same meaning as the C# app's notices; branch is a label like "FE Portal dev".
 export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
   const vi = language === 'vi'
@@ -219,7 +233,9 @@ export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
     case 'claudeWait':
       return `${event.subject}: ${waitSentence(event.wait, vi)}`
     case 'movedToReadyToTest':
-      return vi ? `${event.key} đã chuyển sang Ready to Test.` : `${event.key} moved to Ready to Test.`
+      return vi
+        ? `${event.key} đã chuyển sang Ready to Test.`
+        : `${event.key} moved to Ready to Test.`
     case 'alreadyPastReadyToTest':
       return vi
         ? `${event.key} đã ở hoặc qua Ready to Test.`
@@ -230,6 +246,8 @@ export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
       return vi
         ? `${event.key}: không chuyển được sang ${event.status} (xem log).`
         : `${event.key}: could not move to ${event.status} (see log).`
+    case 'scanBad':
+      return scanBadText(event.outcome, vi)
     case 'suggestionsUrgent':
       return vi
         ? `Có ticket gấp để nhận: ${event.keys.join(', ')}`

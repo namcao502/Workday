@@ -74,6 +74,7 @@ async function main(): Promise<void> {
     services.prScheduler.stop()
     services.teamsScheduler.stop()
     services.logScheduler.stop()
+    services.scanRunner.stop()
     services.workspace.shutdown()
     Promise.all([app.close(), services.remote.shutdown()]).then(
       () => process.exit(0),

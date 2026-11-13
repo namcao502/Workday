@@ -23,6 +23,7 @@ import {
   type TicketTracker,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
+import type { RecordJob } from '../schedules/jobRuns.js'
 
 export interface BoardSettings {
   readonly jira: JiraConfig | null
@@ -36,6 +37,7 @@ export interface BoardServiceDeps {
   readonly events: EventSink
   readonly settings: BoardSettings
   readonly now?: () => Date
+  readonly recordJob?: RecordJob
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -62,6 +64,7 @@ export class BoardService {
   private readonly save: (state: BoardState) => Promise<void>
   private readonly events: EventSink
   private readonly now: () => Date
+  private readonly recordJob: RecordJob | undefined
   private readonly logError: (message: string, error: unknown) => void
 
   constructor(deps: BoardServiceDeps) {
@@ -70,6 +73,7 @@ export class BoardService {
     this.save = deps.save
     this.events = deps.events
     this.now = deps.now ?? (() => new Date())
+    this.recordJob = deps.recordJob
     this.logError = deps.logError ?? logToConsole
   }
 
@@ -231,12 +235,13 @@ export class BoardService {
 
   // Each step re-checks the tracker: a result from a Jira replaced mid-poll is dropped.
   private async runPoll(jira: JiraConfig, tracker: TicketTracker): Promise<void> {
+    const startedAt = this.now()
     let assigned: Readonly<Record<string, Ticket>>
     try {
       assigned = await tracker.getAssignedTickets()
     } catch (error: unknown) {
       this.logError('Jira assigned query failed; the board is kept as it was', error)
-      await this.recordPollIfCurrent(tracker, false)
+      await this.recordPollIfCurrent(tracker, false, startedAt)
       return
     }
     try {
@@ -255,19 +260,19 @@ export class BoardService {
       await this.enqueue(async () => {
         if (this.settings.tracker === tracker) {
           await this.commit(applyLiveTickets(this.state, live))
-          this.recordPoll(true)
+          this.recordPoll(true, startedAt)
         }
       })
     } catch (error: unknown) {
       this.logError('Saving the polled board failed', error)
-      await this.recordPollIfCurrent(tracker, false)
+      await this.recordPollIfCurrent(tracker, false, startedAt)
     }
   }
 
-  private recordPollIfCurrent(tracker: TicketTracker, ok: boolean): Promise<void> {
+  private recordPollIfCurrent(tracker: TicketTracker, ok: boolean, startedAt: Date): Promise<void> {
     return this.enqueue(() => {
       if (this.settings.tracker === tracker) {
-        this.recordPoll(ok)
+        this.recordPoll(ok, startedAt)
       }
     })
   }
@@ -292,12 +297,19 @@ export class BoardService {
     return live
   }
 
-  private recordPoll(ok: boolean): void {
+  private recordPoll(ok: boolean, startedAt: Date): void {
+    const endedAt = this.now().toISOString()
     this.lastPoll = {
-      at: this.now().toISOString(),
+      at: endedAt,
       ok,
       error: ok ? null : { code: 'pollFailed' },
     }
+    this.recordJob?.('jiraPoll', {
+      startedAt: startedAt.toISOString(),
+      endedAt,
+      ok,
+      summary: null,
+    })
     this.events.broadcast({ type: 'board.changed' })
   }
 

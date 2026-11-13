@@ -45,6 +45,8 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
         void queryClient.invalidateQueries({ queryKey: queryKeys.timesheet })
       } else if (type === 'notices.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.notices })
+      } else if (type === 'schedules.changed') {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.schedules })
       } else if (type === 'work.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.work })
       } else if (type === 'workspace.changed') {

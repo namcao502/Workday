@@ -6,15 +6,19 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import type { BoardService } from './board/boardService.js'
 import type { PrService } from './prs/prService.js'
 import type { EventHub } from './events.js'
+import type { ReportReader } from './insights/reportReader.js'
 import type { NoticeService } from './notices/noticeService.js'
 import { registerBoardRoutes } from './routes/boardRoutes.js'
 import { registerNoticeRoutes } from './routes/noticeRoutes.js'
 import { registerRemoteGate } from './remote/remoteGate.js'
 import type { RemoteService } from './remote/remoteService.js'
 import { registerEventsRoute } from './routes/eventsRoute.js'
+import { registerInsightsRoutes } from './routes/insightsRoutes.js'
 import { registerHookRoute } from './routes/hookRoute.js'
 import { registerPushRoutes } from './routes/pushRoutes.js'
 import { registerRemoteRoutes } from './routes/remoteRoutes.js'
+import { registerSchedulesRoutes } from './routes/schedulesRoutes.js'
+import type { SchedulesSource } from './schedules/schedulesView.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
 import { registerTeamsRoutes } from './routes/teamsRoutes.js'
 import { registerTerminalRoute } from './routes/terminalRoute.js'
@@ -50,6 +54,8 @@ export interface AppDeps {
   workspace: WorkspaceService
   teams: TeamsService
   teamsWatcher: TeamsWatcher
+  insights: ReportReader
+  schedules: SchedulesSource
 }
 
 export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
@@ -88,6 +94,8 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerWorkspaceFilesRoutes(app, deps.workspace)
   registerChatRoutes(app, deps.workspace)
   registerTeamsRoutes(app, deps.teams, deps.teamsWatcher)
+  registerInsightsRoutes(app, deps.insights, () => deps.settings.timeZone)
+  registerSchedulesRoutes(app, deps.schedules)
   registerTerminalRoute(app, deps.workspace, allowedHosts)
   await registerHookRoute(app, deps.workspace)
 

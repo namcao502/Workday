@@ -1,4 +1,5 @@
 import { closeSync, fstatSync, openSync, readSync } from 'node:fs'
+import { open } from 'node:fs/promises'
 
 export const MAX_WHOLE_FILE_BYTES = 20 * 1024 * 1024
 export const TAIL_BYTES = 4 * 1024 * 1024
@@ -27,6 +28,27 @@ export function readTranscriptLines(path: string): TranscriptLines {
     return splitLines(bytes.subarray(0, read), start)
   } finally {
     closeSync(descriptor)
+  }
+}
+
+// Same cut as readTranscriptLines, without blocking the event loop.
+export async function readTranscriptLinesAsync(path: string): Promise<TranscriptLines> {
+  const handle = await open(path, 'r')
+  try {
+    const { size } = await handle.stat()
+    const start = size > MAX_WHOLE_FILE_BYTES ? size - TAIL_BYTES : 0
+    const bytes = Buffer.alloc(size - start)
+    let read = 0
+    while (read < bytes.length) {
+      const result = await handle.read(bytes, read, bytes.length - read, start + read)
+      if (result.bytesRead === 0) {
+        break
+      }
+      read += result.bytesRead
+    }
+    return splitLines(bytes.subarray(0, read), start)
+  } finally {
+    await handle.close()
   }
 }
 

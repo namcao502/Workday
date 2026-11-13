@@ -3,9 +3,22 @@ import type { Notice, NoticeEvent, NoticeTarget, NoticeTone, NoticeTopic } from 
 import { isRecord, readJson, writeJsonAtomic } from '../jsonFile.js'
 
 const NOTICES_FILE = 'notices.json'
-const TOPICS: ReadonlySet<string> = new Set(['claude', 'pr', 'jira', 'suggestions', 'other'])
+const TOPICS: ReadonlySet<string> = new Set([
+  'claude',
+  'pr',
+  'jira',
+  'suggestions',
+  'knowledge',
+  'other',
+])
 const TONES: ReadonlySet<string> = new Set(['info', 'success', 'error'])
-const TARGET_KINDS: ReadonlySet<string> = new Set(['board', 'workspace', 'url'])
+const TARGET_KINDS: ReadonlySet<string> = new Set([
+  'board',
+  'workspace',
+  'url',
+  'schedules',
+  'teams',
+])
 
 function isTarget(raw: unknown): raw is NoticeTarget {
   if (!isRecord(raw) || typeof raw['kind'] !== 'string' || !TARGET_KINDS.has(raw['kind'])) {
@@ -14,6 +27,10 @@ function isTarget(raw: unknown): raw is NoticeTarget {
   switch (raw['kind']) {
     case 'board':
       return raw['key'] === null || typeof raw['key'] === 'string'
+    case 'schedules':
+      return true
+    case 'teams':
+      return typeof raw['key'] === 'string' && typeof raw['conversationId'] === 'string'
     case 'workspace':
       return typeof raw['tab'] === 'string' && typeof raw['session'] === 'string'
     default:

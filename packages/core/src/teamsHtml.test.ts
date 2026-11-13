@@ -81,24 +81,41 @@ describe('toPlainText', () => {
   })
 })
 
+// Wall-clock limits flake under parallel test load, so growth is compared instead:
+// quadratic work grows ~16x from n to 4n, linear ~4x.
+function fastestMs(run: () => void): number {
+  let fastest = Number.POSITIVE_INFINITY
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const started = performance.now()
+    run()
+    fastest = Math.min(fastest, performance.now() - started)
+  }
+  return fastest
+}
+
 describe('hostile input stays linear', () => {
-  const inputs: Record<string, string> = {
-    'an unclosed quote': '<a href="'.repeat(22_000),
-    'an unclosed quote after one tag': '<a "'.repeat(50_000),
-    'one long attribute name': `<a ${'a'.repeat(200_000)}>x</a>`,
-    'a long space run': `<p>a${' '.repeat(200_000)}b</p>`,
-    'many unmatched closing tags': '<b>'.repeat(20_000) + '</zz>'.repeat(20_000),
-    'many unterminated scripts': '<script>'.repeat(25_000),
-    'many unterminated tags': '<a b'.repeat(50_000),
+  const inputs: Record<string, (count: number) => string> = {
+    'an unclosed quote': (count) => '<a href="'.repeat(count),
+    'an unclosed quote after one tag': (count) => '<a "'.repeat(count),
+    'one long attribute name': (count) => `<a ${'a'.repeat(count * 10)}>x</a>`,
+    'a long space run': (count) => `<p>a${' '.repeat(count * 10)}b</p>`,
+    'many unmatched closing tags': (count) => '<b>'.repeat(count) + '</zz>'.repeat(count),
+    'many unterminated scripts': (count) => '<script>'.repeat(count),
+    'many unterminated tags': (count) => '<a b'.repeat(count),
   }
 
-  it.each(Object.entries(inputs))(
-    'safeHtml and toPlainText handle %s in under 200 ms',
-    (_name, input) => {
-      const started = performance.now()
+  it.each(Object.entries(inputs))('safeHtml and toPlainText stay linear on %s', (_name, build) => {
+    const parse = (input: string): void => {
       safeHtml(input, false)
       toPlainText(input, false)
-      expect(performance.now() - started).toBeLessThan(200)
-    },
-  )
+    }
+    const small = fastestMs(() => {
+      parse(build(5_000))
+    })
+    const large = fastestMs(() => {
+      parse(build(20_000))
+    })
+    expect(large).toBeLessThan(small * 10 + 50)
+    expect(large).toBeLessThan(2_000)
+  })
 })

@@ -14,6 +14,7 @@ import {
   type TicketTracker,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
+import type { RecordJob } from '../schedules/jobRuns.js'
 import type { NoticeInput } from '../notices/noticeService.js'
 import { commentsPlace, deployNotice } from './prNotices.js'
 import { applyPass, readPrPass, sameDeploy, sameEntries, sameState, type PrPass } from './prPass.js'
@@ -46,6 +47,7 @@ export interface PrServiceDeps {
   readonly board: { snapshot(): BoardState; refreshTicket(key: string): Promise<void> }
   readonly settings: PrSettings
   readonly now?: () => Date
+  readonly recordJob?: RecordJob
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -145,6 +147,7 @@ export class PrService {
 
   // Azure DevOps is read outside the queue; each result is applied to the state current then.
   private async runCheck(client: PullRequests): Promise<void> {
+    const startedAt = this.now()
     let ok = false
     try {
       const pass = await readPrPass(
@@ -166,7 +169,14 @@ export class PrService {
     }
     await this.enqueue(() => {
       if (this.settings.pullRequests === client) {
-        this.lastRun = { at: this.now().toISOString(), ok }
+        const endedAt = this.now().toISOString()
+        this.lastRun = { at: endedAt, ok }
+        this.deps.recordJob?.('prCheck', {
+          startedAt: startedAt.toISOString(),
+          endedAt,
+          ok,
+          summary: null,
+        })
         this.deps.events.broadcast({ type: 'work.changed' })
       }
     })

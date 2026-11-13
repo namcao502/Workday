@@ -33,6 +33,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
       azureDevOps: null,
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
       notices: {},
+      knowledgeScan: null,
     },
     jiraTokenSource: null,
     hrmKeySource: null,

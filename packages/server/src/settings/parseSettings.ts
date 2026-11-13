@@ -12,6 +12,7 @@ import {
   parseAzureDevOps,
   parseTeams,
   parseJira,
+  parseKnowledgeScan,
   parseNotices,
   parseRemote,
   parseTimesheet,
@@ -207,6 +208,14 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
       return null
     }
     update = { ...update, notices: parseNotices(raw['notices']) }
+  }
+  if (raw['knowledgeScan'] !== undefined) {
+    const knowledgeScan =
+      raw['knowledgeScan'] === null ? null : parseKnowledgeScan(raw['knowledgeScan'])
+    if (knowledgeScan === null && raw['knowledgeScan'] !== null) {
+      return null
+    }
+    update = { ...update, knowledgeScan }
   }
   return update
 }

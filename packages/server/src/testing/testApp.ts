@@ -10,6 +10,7 @@ import type { WorktreeOptions } from '../workspace/worktreeService.js'
 import { FakeHoursLog, FakePullRequests, FakeSheetLog, FakeTracker } from './fakes.js'
 import type { EditorCommand } from '../workspace/openInEditor.js'
 import { FakePtyFactory } from './fakePty.js'
+import { FakeScanProcess } from './fakeScan.js'
 import { FakeTeams } from './fakeTeams.js'
 
 export const TEST_PORT = 4870
@@ -60,6 +61,7 @@ export interface TestApp {
   readonly homeDir: string
   readonly editorCommands: EditorCommand[] // what the fake VS Code spawner was asked to run
   readonly worktrees: WorktreeOptions[] // what Start asked the fake worktree service to create
+  readonly scans: FakeScanProcess[] // every process the fake scan spawner handed out
   readonly teamsChat: FakeTeams // what the Teams client answers once a watched channel is configured
 }
 
@@ -91,6 +93,7 @@ export async function buildTestApp(
   const editorCommands: EditorCommand[] = []
   const homeDir = mkdtempSync(join(tmpdir(), 'workday-home-'))
   const teamsChat = new FakeTeams()
+  const scans: FakeScanProcess[] = []
   const services = createServices({
     dataDir,
     config: loadConfig(dataDir),
@@ -153,6 +156,11 @@ export async function buildTestApp(
       throw new Error('A test must not start cloudflared')
     },
     spawnPty: ptys.spawn,
+    spawnScan: () => {
+      const scan = new FakeScanProcess()
+      scans.push(scan)
+      return scan
+    },
     spawnEditor: (command) => {
       editorCommands.push(command)
       return Promise.resolve()
@@ -198,6 +206,7 @@ export async function buildTestApp(
     homeDir,
     worktrees,
     editorCommands,
+    scans,
     teamsChat,
   }
 }

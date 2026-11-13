@@ -1,4 +1,5 @@
 import type {
+  KnowledgeScanConfig,
   AdoCheckRequest,
   AdoCheckResult,
   AppError,
@@ -71,6 +72,7 @@ export interface SettingsServiceDeps {
   readonly teams: TeamsGateway
   readonly teamsService: { configure(settings: TeamsSettings): boolean }
   readonly teamsWatcher: { configure(active: boolean, changed: boolean): void }
+  readonly scanRunner: { configure(config: KnowledgeScanConfig | null, timeZone: string): void }
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -178,6 +180,7 @@ export class SettingsService {
       azureDevOps,
       teams,
       notices,
+      knowledgeScan,
     } = this.config
     return {
       config: {
@@ -193,6 +196,7 @@ export class SettingsService {
         azureDevOps,
         teams,
         notices,
+        knowledgeScan,
       },
       jiraTokenSource: this.jiraToken.source,
       hrmKeySource: this.hrmKey.source,
@@ -440,6 +444,7 @@ export class SettingsService {
       timeZone,
     })
     this.deps.teamsWatcher.configure(this.teams !== null, teamsChanged)
+    this.deps.scanRunner.configure(this.config.knowledgeScan, timeZone)
   }
 
   private applyAzureDevOps(previous: AppliedState | null): void {
