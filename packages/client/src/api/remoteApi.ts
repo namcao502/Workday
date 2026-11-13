@@ -79,6 +79,20 @@ export async function deletePush(): Promise<void> {
   }
 }
 
+export async function putLocalPush(subscription: PushSubscriptionJSON): Promise<void> {
+  const raw = await send('PUT', '/api/push/local', { subscription })
+  if (!raw.ok) {
+    throw new ApiError(raw.status, '/api/push/local')
+  }
+}
+
+export async function deleteLocalPush(endpoint: string): Promise<void> {
+  const raw = await send('DELETE', '/api/push/local', { endpoint })
+  if (!raw.ok) {
+    throw new ApiError(raw.status, '/api/push/local')
+  }
+}
+
 export async function sendTestPush(): Promise<boolean> {
   const raw = await send('POST', '/api/push/test')
   return raw.ok && isRecord(raw.body) && raw.body['ok'] === true

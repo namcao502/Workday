@@ -1,6 +1,7 @@
 import type { PushSubscriptionJson } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { isRecord } from '../jsonFile.js'
+import { parsePushSubscription } from '../notices/localPushStore.js'
 import type { RemoteService } from '../remote/remoteService.js'
 import type { SettingsService } from '../settings/settingsService.js'
 import { testPushMessage } from '../timesheet/runNotification.js'
@@ -8,29 +9,9 @@ import { testPushMessage } from '../timesheet/runNotification.js'
 // A paired device may call these; the push routes act on the calling device only.
 const ANY_DEVICE = { config: { access: { area: 'any' } } } as const
 
-function isHttpsUrl(value: string): boolean {
-  try {
-    return new URL(value).protocol === 'https:'
-  } catch {
-    return false
-  }
-}
-
-function nonEmptyText(value: unknown): value is string {
-  return typeof value === 'string' && value !== ''
-}
-
-// Null unless the endpoint is an https URL and both keys are text.
+// Null unless the body is { subscription } with an https endpoint and both keys.
 function parseSubscription(body: unknown): PushSubscriptionJson | null {
-  const raw = isRecord(body) ? body['subscription'] : undefined
-  if (!isRecord(raw) || !nonEmptyText(raw['endpoint']) || !isRecord(raw['keys'])) {
-    return null
-  }
-  const { p256dh, auth } = raw['keys']
-  if (!isHttpsUrl(raw['endpoint']) || !nonEmptyText(p256dh) || !nonEmptyText(auth)) {
-    return null
-  }
-  return { endpoint: raw['endpoint'], keys: { p256dh, auth } }
+  return parsePushSubscription(isRecord(body) ? body['subscription'] : undefined)
 }
 
 // A request from this PC has no device, so there is no subscription to set.
@@ -73,6 +54,25 @@ export function registerPushRoutes(
       return deviceRequired(reply)
     }
     return remote.push.sendToDevice(device.id, testPushMessage(settings.language))
+  })
+
+  // This PC's browser subscription: no access config, so local-only.
+  app.put('/api/push/local', async (request, reply) => {
+    const subscription = parseSubscription(request.body)
+    if (subscription === null) {
+      return reply.code(400).send({ error: 'Body must be { subscription } with an https endpoint' })
+    }
+    await remote.push.local.add(subscription)
+    return reply.code(204).send()
+  })
+
+  app.delete('/api/push/local', async (request, reply) => {
+    const endpoint = isRecord(request.body) ? request.body['endpoint'] : undefined
+    if (typeof endpoint !== 'string' || endpoint === '') {
+      return reply.code(400).send({ error: 'Body must be { endpoint }' })
+    }
+    await remote.push.local.remove(endpoint)
+    return reply.code(204).send()
   })
 
   // From the PC's Settings: no access config, so local-only.

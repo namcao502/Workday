@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import fastifyStatic from '@fastify/static'
 import fastifyWebsocket from '@fastify/websocket'
 import Fastify, { type FastifyInstance } from 'fastify'
@@ -102,7 +102,15 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   const { clientDist } = deps
   const hasClient = clientDist !== undefined && existsSync(join(clientDist, 'index.html'))
   if (hasClient) {
-    await app.register(fastifyStatic, { root: clientDist })
+    await app.register(fastifyStatic, {
+      root: clientDist,
+      // The browser must re-check the service worker on every load, or an update never lands.
+      setHeaders: (response, path) => {
+        if (basename(path) === 'sw.js') {
+          void response.header('Cache-Control', 'no-cache')
+        }
+      },
+    })
   }
 
   app.setNotFoundHandler(async (request, reply) => {

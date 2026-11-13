@@ -4,6 +4,13 @@ import { NoticeToasts } from './NoticeToasts.js'
 import { firstLoad, notice, renderNotices } from './noticeTestSupport.js'
 import { useNotices } from './useNotices.js'
 
+const localPushActive = vi.hoisted(() => vi.fn<() => Promise<boolean>>())
+
+vi.mock('../remote/pushSubscription.js', () => ({
+  localPushActive,
+  LOCAL_PUSH_CHANGED_EVENT: 'workday:local-push-changed',
+}))
+
 function Harness(): React.JSX.Element {
   return <NoticeToasts alerts={useNotices('insights')} />
 }
@@ -19,6 +26,7 @@ class FakeNotification {
 
 beforeEach(() => {
   FakeNotification.shown.length = 0
+  localPushActive.mockResolvedValue(false)
   vi.stubGlobal('Notification', FakeNotification)
   vi.spyOn(document, 'hasFocus').mockReturnValue(false)
   window.location.hash = '#/insights'
@@ -74,4 +82,25 @@ it('clicking a toast navigates to its target and marks it read', async () => {
     )
   })
   expect(screen.queryByText('MDP-2 moved to Ready to Test.')).toBeNull()
+})
+
+it('no in-window desktop notification while local push is active', async () => {
+  localPushActive.mockResolvedValue(true)
+  const first = notice(1)
+  const harness = renderNotices(<Harness />, [first])
+  await firstLoad(harness)
+  await waitFor(() => {
+    expect(localPushActive).toHaveBeenCalled()
+  })
+  harness.setView([
+    first,
+    notice(2, {
+      topic: 'claude',
+      event: { type: 'claudeWait', subject: 'MDP-2', wait: 'finished' },
+    }),
+  ])
+  await act(() => harness.reload())
+  // The toast still shows; only the in-window desktop notification is left to the service worker.
+  expect(await screen.findByText('MDP-2: Claude is done - your turn.')).toBeInTheDocument()
+  expect(FakeNotification.shown).toEqual([])
 })

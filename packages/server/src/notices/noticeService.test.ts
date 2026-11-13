@@ -1,6 +1,6 @@
 import type { Notice, NoticePrefs, ServerEvent } from '@workday/core'
 import { NOTICE_CAP } from '@workday/core'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { PushMessage } from '../remote/pushService.js'
 import { NoticeService, type NoticeInput } from './noticeService.js'
 
@@ -13,6 +13,7 @@ interface Harness {
   readonly saved: (readonly Notice[])[]
   readonly events: ServerEvent[]
   readonly pushes: { area: string; message: PushMessage }[]
+  readonly localPushes: PushMessage[]
   readonly errors: string[]
 }
 
@@ -32,11 +33,18 @@ function aged(id: number, ageMs: number, read: boolean): Notice {
 }
 
 function harness(
-  options: { initial?: readonly Notice[]; prefs?: NoticePrefs; failSave?: boolean; now?: () => Date } = {},
+  options: {
+    initial?: readonly Notice[]
+    prefs?: NoticePrefs
+    failSave?: boolean
+    failLocalPush?: boolean
+    now?: () => Date
+  } = {},
 ): Harness {
   const saved: (readonly Notice[])[] = []
   const events: ServerEvent[] = []
   const pushes: { area: string; message: PushMessage }[] = []
+  const localPushes: PushMessage[] = []
   const errors: string[] = []
   const service = new NoticeService({
     initial: options.initial ?? [],
@@ -53,10 +61,17 @@ function harness(
       pushes.push({ area, message })
       return Promise.resolve()
     },
+    pushLocal: (message) => {
+      if (options.failLocalPush === true) {
+        return Promise.reject(new Error('boom'))
+      }
+      localPushes.push(message)
+      return Promise.resolve()
+    },
     settings: () => ({ prefs: options.prefs ?? {}, language: 'en' }),
     logError: (message) => errors.push(message),
   })
-  return { service, saved, events, pushes, errors }
+  return { service, saved, events, pushes, localPushes, errors }
 }
 
 describe('NoticeService', () => {
@@ -82,7 +97,11 @@ describe('NoticeService', () => {
 
   it('a restart drops expired notices before marking the rest read', () => {
     const { service } = harness({
-      initial: [aged(1, 2 * DAY_MS, true), aged(2, 12 * HOUR_MS, false), aged(3, 8 * DAY_MS, false)],
+      initial: [
+        aged(1, 2 * DAY_MS, true),
+        aged(2, 12 * HOUR_MS, false),
+        aged(3, 8 * DAY_MS, false),
+      ],
     })
 
     expect(service.view().notices.map((notice) => notice.id)).toEqual([2])
@@ -134,7 +153,7 @@ describe('NoticeService', () => {
     expect(events).toHaveLength(3)
   })
 
-  it('add pushes to the board area only when the topic\'s phone channel is on', async () => {
+  it("add pushes to the board area only when the topic's phone channel is on", async () => {
     const { service, pushes } = harness({ prefs: { jira: { phone: true }, pr: { phone: false } } })
 
     await service.add(input({ topic: 'jira' }))
@@ -163,5 +182,43 @@ describe('NoticeService', () => {
     expect(service.view().notices).toHaveLength(1)
     expect(events).toEqual([{ type: 'notices.changed' }])
     expect(errors).toEqual(['Saving the notices failed'])
+  })
+
+  it('a desktop notice is pushed to local subscriptions with its tag', async () => {
+    const { service, localPushes } = harness({ prefs: { other: { desktop: true } } })
+
+    const notice = await service.add(
+      input({ target: { kind: 'workspace', tab: 'MDP-1', session: 'MDP-1~2' } }),
+    )
+
+    expect(localPushes).toEqual([
+      {
+        title: 'Workday',
+        body: expect.stringContaining('MDP-1') as string,
+        url: '/#/workspace/MDP-1/MDP-1~2',
+        tag: `notice-${String(notice.id)}`,
+      },
+    ])
+  })
+
+  it('a notice without the desktop channel is not pushed locally', async () => {
+    const { service, localPushes } = harness({ prefs: { other: { desktop: false } } })
+
+    await service.add(input())
+
+    expect(localPushes).toEqual([])
+  })
+
+  it('a failed local push is only logged', async () => {
+    const { service, errors } = harness({
+      prefs: { other: { desktop: true } },
+      failLocalPush: true,
+    })
+    await service.add(input())
+    await vi.waitFor(() => {
+      expect(errors).toHaveLength(1)
+    })
+
+    expect(errors).toEqual(['Pushing a notice locally failed'])
   })
 })

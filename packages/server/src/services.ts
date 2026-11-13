@@ -177,6 +177,7 @@ export function createServices(options: ServicesOptions): Services {
     events,
     now: () => new Date(),
     push: (area, message) => remote.push.sendToArea(area, message),
+    pushLocal: (message) => remote.push.sendToLocal(message),
     settings: () => ({ prefs: settings.notices, language: settings.language }),
     logError: reportError,
   })

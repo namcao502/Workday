@@ -39,6 +39,21 @@ describe('createApp', () => {
     expect(response.body).toBe(INDEX_HTML)
   })
 
+  it('sw.js and offline.html are served, not index.html', async () => {
+    const clientDist = mkdtempSync(join(tmpdir(), 'workday-client-'))
+    writeFileSync(join(clientDist, 'index.html'), INDEX_HTML)
+    writeFileSync(join(clientDist, 'sw.js'), '// sw')
+    writeFileSync(join(clientDist, 'offline.html'), '<title>Offline</title>')
+    const { app } = await buildTestApp({ clientDist })
+    openApps.push(app)
+    const worker = await app.inject({ url: '/sw.js', headers: LOOPBACK_HEADERS })
+    expect(worker.statusCode).toBe(200)
+    expect(worker.body).toBe('// sw')
+    expect(worker.headers['cache-control']).toBe('no-cache')
+    const offline = await app.inject({ url: '/offline.html', headers: LOOPBACK_HEADERS })
+    expect(offline.body).toBe('<title>Offline</title>')
+  })
+
   it('an unknown api route returns a JSON 404, never index.html', async () => {
     const app = await buildApp(true)
     const response = await app.inject({ url: '/api/nope', headers: LOOPBACK_HEADERS })

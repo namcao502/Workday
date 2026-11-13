@@ -3,6 +3,7 @@ import { allows, type PushSubscriptionJson, type RemoteArea } from '@workday/cor
 import { generateVAPIDKeys, sendNotification, WebPushError } from 'web-push'
 import { readFileSecrets, saveSecrets } from '../config.js'
 import { isRecord, readJson, writeJsonAtomic } from '../jsonFile.js'
+import { LocalPushStore } from '../notices/localPushStore.js'
 import type { StoredDevice } from './deviceStore.js'
 
 export interface PushMessage {
@@ -39,6 +40,9 @@ export interface PushServiceDeps {
 }
 
 const REMOTE_FILE = 'remote.json'
+const LOCAL_PUSH_FILE = 'local-push.json'
+// The push service only needs a contact URL; the PC has no public host yet.
+const LOCAL_VAPID_SUBJECT = 'https://localhost'
 const GONE_STATUSES: ReadonlySet<number> = new Set([404, 410])
 const SUCCESS_STATUS_MIN = 200
 const SUCCESS_STATUS_MAX = 299
@@ -74,8 +78,11 @@ export class PushService {
   private publicKeyValue: string | null
   private keysReady: Promise<string> | null = null
   private readonly send: SendPush
+  // This PC's own browser subscriptions, for desktop notices when the Workday window is closed.
+  readonly local: LocalPushStore
 
   constructor(private readonly deps: PushServiceDeps) {
+    this.local = new LocalPushStore(join(deps.dataDir, LOCAL_PUSH_FILE))
     this.publicKeyValue = this.readPublicKey()
     this.send = deps.send ?? sendWithWebPush
   }
@@ -113,6 +120,25 @@ export class PushService {
       }
     } catch (error: unknown) {
       this.logError('Sending the push failed', error)
+    }
+  }
+
+  // Never rejects: a failed subscription is logged (never its endpoint) and skipped.
+  async sendToLocal(message: PushMessage): Promise<void> {
+    try {
+      if (this.local.list().length === 0) {
+        return
+      }
+      const vapid = await this.vapidDetails(LOCAL_VAPID_SUBJECT)
+      if (vapid === null) {
+        return
+      }
+      const payload = JSON.stringify(message)
+      for (const subscription of this.local.list()) {
+        await this.deliverLocal(subscription, payload, vapid)
+      }
+    } catch (error: unknown) {
+      this.logError('Sending the local push failed', error)
     }
   }
 
@@ -164,14 +190,33 @@ export class PushService {
     return false
   }
 
-  // Null while there is no public host: the subject cannot be built.
-  private async vapidDetails(): Promise<VapidDetails | null> {
+  private async deliverLocal(
+    subscription: PushSubscriptionJson,
+    payload: string,
+    vapid: VapidDetails,
+  ): Promise<void> {
+    try {
+      const { statusCode } = await this.send(subscription, payload, vapid)
+      if (GONE_STATUSES.has(statusCode)) {
+        await this.local.remove(subscription.endpoint)
+      }
+      if (!isSuccess(statusCode)) {
+        this.logError(`Local push failed with status ${String(statusCode)}`, null)
+      }
+    } catch (error: unknown) {
+      this.logError('Local push failed', error)
+    }
+  }
+
+  // Null while there is no public host and no fallback subject: devices cannot be reached then.
+  private async vapidDetails(fallbackSubject?: string): Promise<VapidDetails | null> {
     const host = this.deps.publicHost()
-    if (host === null) {
+    const subject = host === null ? fallbackSubject : `https://${host}`
+    if (subject === undefined) {
       return null
     }
     const publicKey = await this.publicKey()
-    return { subject: `https://${host}`, publicKey, privateKey: this.privateKey() }
+    return { subject, publicKey, privateKey: this.privateKey() }
   }
 
   private readPublicKey(): string | null {

@@ -126,6 +126,46 @@ describe('PushService', () => {
     expect(sent.map((item) => item.endpoint)).toEqual(['https://push/me'])
   })
 
+  it('vapid subject falls back to https://localhost without a public host', async () => {
+    const { dataDir, sent, push } = setup(201, null)
+    await push.local.add(subscription('https://push/local'))
+
+    await push.sendToLocal(MESSAGE)
+
+    expect(sent.map((item) => item.endpoint)).toEqual(['https://push/local'])
+    expect(sent[0]?.vapid.subject).toBe('https://localhost')
+    expect(JSON.parse(sent[0]?.payload ?? '')).toEqual(MESSAGE)
+    expect(readFileSync(join(dataDir, 'local-push.json'), 'utf8')).toContain('https://push/local')
+  })
+
+  it.each([404, 410])('a gone local subscription is removed on %i', async (statusCode) => {
+    const { push } = setup(statusCode)
+    await push.local.add(subscription('https://push/gone'))
+
+    await push.sendToLocal(MESSAGE)
+
+    expect(push.local.list()).toEqual([])
+  })
+
+  it('a local subscription stays on another error and sendToLocal never rejects', async () => {
+    const { dataDir, store } = setup()
+    const logged: string[] = []
+    const push = new PushService({
+      dataDir,
+      store,
+      publicHost: () => null,
+      send: () => Promise.reject(new Error('network down')),
+      logError: (message) => logged.push(message),
+    })
+    await push.local.add(subscription('https://push/boom'))
+
+    await expect(push.sendToLocal(MESSAGE)).resolves.toBeUndefined()
+
+    expect(push.local.list()).toHaveLength(1)
+    expect(logged).toHaveLength(1)
+    expect(logged[0]).not.toContain('boom')
+  })
+
   it('creates the VAPID keys once, keeps the private one sealed and reloads them', async () => {
     const { dataDir, create, push } = setup()
     expect(push.peekPublicKey()).toBeNull()

@@ -5,6 +5,7 @@ import { queryKeys } from '../api/client.js'
 import { getNotices, markAllNoticesRead, markNoticeRead, markPlaceRead } from '../api/noticeApi.js'
 import { useAccess } from '../api/useMe.js'
 import { getLanguage } from '../i18n.js'
+import { LOCAL_PUSH_CHANGED_EVENT, localPushActive } from '../remote/pushSubscription.js'
 import type { PageId } from '../shell/pages.js'
 import { openNoticeTarget } from './noticeTarget.js'
 
@@ -61,6 +62,28 @@ export function useNotices(page: PageId): NoticeAlerts {
   const [toasts, setToasts] = useState<readonly Notice[]>([])
   const highestSeen = useRef<number | null>(null)
   const highestBoardRead = useRef(0)
+  // With a local push subscription the service worker shows the desktop notice, so the page must not.
+  const localPush = useRef(false)
+
+  useEffect(() => {
+    if (remote) {
+      return
+    }
+    let active = true
+    function refresh(): void {
+      void localPushActive().then((value) => {
+        if (active) {
+          localPush.current = value
+        }
+      })
+    }
+    refresh()
+    window.addEventListener(LOCAL_PUSH_CHANGED_EVENT, refresh)
+    return () => {
+      active = false
+      window.removeEventListener(LOCAL_PUSH_CHANGED_EVENT, refresh)
+    }
+  }, [remote])
 
   function open(notice: Notice): void {
     openNoticeTarget(notice.target, remote)
@@ -86,7 +109,11 @@ export function useNotices(page: PageId): NoticeAlerts {
       setToasts((current) => [...current, ...forToast].slice(-MAX_TOASTS))
     }
     for (const notice of fresh) {
-      if (noticeChannels(notice.topic, view.prefs).desktop && desktopAllowed()) {
+      if (
+        noticeChannels(notice.topic, view.prefs).desktop &&
+        !localPush.current &&
+        desktopAllowed()
+      ) {
         const desktop = new Notification(noticeText(notice.event, getLanguage()))
         desktop.onclick = () => {
           window.focus()

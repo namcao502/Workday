@@ -5,9 +5,16 @@ import {
   type NoticeTopic,
   type SettingsView,
 } from '@workday/core'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAccess } from '../api/useMe.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
+import {
+  localPushActive,
+  pushSupported,
+  subscribeLocalPush,
+  unsubscribeLocalPush,
+} from '../remote/pushSubscription.js'
 import { requestNoticePermission } from '../workspace/useClaudeNotices.js'
 
 const CHANNELS: readonly (keyof NoticeChannels)[] = ['toast', 'desktop', 'phone']
@@ -87,6 +94,62 @@ function channelsFromPrefs(prefs: NoticePrefs): Record<NoticeTopic, NoticeChanne
   }
 }
 
+type ClosedWindowState = 'off' | 'on' | 'denied' | 'failed'
+
+// Desktop notices through the browser's push service: shown even when the Workday window is closed.
+function ClosedWindowToggle(): React.JSX.Element {
+  const [state, setState] = useState<ClosedWindowState>('off')
+
+  useEffect(() => {
+    void localPushActive().then((active) => {
+      setState(active ? 'on' : 'off')
+    })
+  }, [])
+
+  async function toggle(): Promise<void> {
+    try {
+      if (state === 'on') {
+        await unsubscribeLocalPush()
+        setState('off')
+      } else {
+        setState((await subscribeLocalPush()) === 'subscribed' ? 'on' : 'denied')
+      }
+    } catch {
+      setState('failed')
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="button secondary"
+        aria-pressed={state === 'on'}
+        onClick={() => {
+          void toggle()
+        }}
+      >
+        {state === 'on'
+          ? t('Stop notifying when Workday is closed', 'Thôi thông báo khi đã đóng Workday')
+          : t('Notify even when Workday is closed', 'Thông báo cả khi đã đóng Workday')}
+      </button>
+      {state === 'denied' ? (
+        <p className="status danger" role="status">
+          {t(
+            'The browser blocked notifications; allow them in the site settings.',
+            'Trình duyệt đã chặn thông báo; hãy cho phép trong cài đặt trang.',
+          )}
+        </p>
+      ) : null}
+      {state === 'failed' ? (
+        <p className="status danger" role="status">
+          {t('Could not change the setting', 'Không đổi được cài đặt')}
+        </p>
+      ) : null}
+    </>
+  )
+}
+
 export function NoticesSection({
   settings,
 }: {
@@ -95,6 +158,7 @@ export function NoticesSection({
   const save = useSaveSettings()
   const [channels, setChannels] = useState(() => channelsFromPrefs(settings.config.notices))
   const [failed, setFailed] = useState(false)
+  const local = useAccess().mode === 'local'
   const askPermission = typeof Notification !== 'undefined' && Notification.permission === 'default'
 
   async function apply(
@@ -170,6 +234,7 @@ export function NoticesSection({
             {t('Allow desktop notifications', 'Cho phép thông báo desktop')}
           </button>
         ) : null}
+        {local && pushSupported() ? <ClosedWindowToggle /> : null}
       </div>
       {failed ? (
         <p className="status danger" role="status">

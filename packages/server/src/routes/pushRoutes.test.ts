@@ -176,6 +176,73 @@ describe('push routes', () => {
   })
 })
 
+describe('local push routes', () => {
+  it('local push routes reject a remote request', async () => {
+    const testApp = await remoteApp()
+    const token = await pairDevice(testApp)
+
+    const replies = await Promise.all([
+      testApp.app.inject({
+        method: 'PUT',
+        url: '/api/push/local',
+        headers: remoteHeaders(token),
+        payload: { subscription: SUBSCRIPTION },
+      }),
+      testApp.app.inject({
+        method: 'DELETE',
+        url: '/api/push/local',
+        headers: remoteHeaders(token),
+        payload: { endpoint: SUBSCRIPTION.endpoint },
+      }),
+    ])
+
+    expect(replies.map((reply) => reply.statusCode)).toEqual([403, 403])
+    expect(testApp.services.remote.push.local.list()).toEqual([])
+  })
+
+  it('PUT stores a local subscription, DELETE removes it, a bad body is a 400', async () => {
+    const testApp = await remoteApp()
+    const put = (payload: unknown) =>
+      testApp.app.inject({
+        method: 'PUT',
+        url: '/api/push/local',
+        headers: LOOPBACK_HEADERS,
+        payload: payload as object,
+      })
+
+    const stored = await put({ subscription: SUBSCRIPTION })
+    const bad = await put({ subscription: { ...SUBSCRIPTION, endpoint: 'http://push.example/x' } })
+    const listed = testApp.services.remote.push.local.list().map((item) => item.endpoint)
+    const removed = await testApp.app.inject({
+      method: 'DELETE',
+      url: '/api/push/local',
+      headers: LOOPBACK_HEADERS,
+      payload: { endpoint: SUBSCRIPTION.endpoint },
+    })
+    const missing = await testApp.app.inject({
+      method: 'DELETE',
+      url: '/api/push/local',
+      headers: LOOPBACK_HEADERS,
+      payload: {},
+    })
+
+    expect([stored.statusCode, bad.statusCode, removed.statusCode, missing.statusCode]).toEqual([
+      204, 400, 204, 400,
+    ])
+    expect(listed).toEqual([SUBSCRIPTION.endpoint])
+    expect(testApp.services.remote.push.local.list()).toEqual([])
+  })
+
+  it('GET /api/push/key works from this PC', async () => {
+    const testApp = await remoteApp()
+
+    const reply = await testApp.app.inject({ url: '/api/push/key', headers: LOOPBACK_HEADERS })
+
+    expect(reply.statusCode).toBe(200)
+    expect(reply.json<{ publicKey: string }>().publicKey).not.toBe('')
+  })
+})
+
 describe('timesheet run push', () => {
   it('the reminder run pushes to timesheet devices in the configured language', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })

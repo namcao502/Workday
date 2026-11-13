@@ -21,7 +21,9 @@ export default tseslint.config(
   },
   {
     files: ['packages/client/public/sw.js'],
-    languageOptions: { globals: { self: 'readonly' } },
+    languageOptions: {
+      globals: { self: 'readonly', caches: 'readonly', fetch: 'readonly', Response: 'readonly' },
+    },
   },
   {
     files: ['scripts/**/*.mjs'],

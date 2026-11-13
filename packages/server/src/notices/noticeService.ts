@@ -33,6 +33,7 @@ export interface NoticeServiceDeps {
   readonly events: EventSink
   readonly now: () => Date
   readonly push: (area: RemoteArea, message: PushMessage) => Promise<void>
+  readonly pushLocal: (message: PushMessage) => Promise<void> // this PC's browser, window closed
   readonly settings: () => { readonly prefs: NoticePrefs; readonly language: 'en' | 'vi' }
   readonly logError: (message: string, error: unknown) => void
 }
@@ -42,6 +43,25 @@ const BOARD_URL = '/#/board'
 // The phone cannot open the Workspace, so a workspace notice opens the board there.
 function pushUrl(target: NoticeTarget | null): string {
   return target !== null && target.kind === 'url' ? target.url : BOARD_URL
+}
+
+// Local push opens the PC's own page, so a workspace or Teams notice keeps its full target.
+function localUrl(target: NoticeTarget | null): string {
+  if (target === null) {
+    return '/'
+  }
+  switch (target.kind) {
+    case 'url':
+      return target.url
+    case 'schedules':
+      return '/#/schedules'
+    case 'board':
+      return '/#/tickets'
+    case 'workspace':
+      return `/#/workspace/${encodeURIComponent(target.tab)}/${encodeURIComponent(target.session)}`
+    case 'teams':
+      return `/#/workspace/${encodeURIComponent(target.key)}?teams=${encodeURIComponent(target.conversationId)}`
+  }
 }
 
 export class NoticeService {
@@ -72,6 +92,7 @@ export class NoticeService {
       return added
     })
     this.pushToPhone(notice)
+    this.pushToDesktop(notice)
     return notice
   }
 
@@ -100,6 +121,22 @@ export class NoticeService {
     }
     this.deps.push('board', message).catch((error: unknown) => {
       this.deps.logError('Pushing a notice failed', error)
+    })
+  }
+
+  private pushToDesktop(notice: Notice): void {
+    const { prefs, language } = this.deps.settings()
+    if (!noticeChannels(notice.topic, prefs).desktop) {
+      return
+    }
+    const message: PushMessage = {
+      title: 'Workday',
+      body: noticeText(notice.event, language),
+      url: localUrl(notice.target),
+      tag: `notice-${String(notice.id)}`,
+    }
+    this.deps.pushLocal(message).catch((error: unknown) => {
+      this.deps.logError('Pushing a notice locally failed', error)
     })
   }
 
