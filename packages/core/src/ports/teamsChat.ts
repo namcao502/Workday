@@ -1,4 +1,5 @@
 import type { TeamsMessageBody } from '../teamsCompose.js'
+import type { TeamsUploadedFile } from '../teamsFiles.js'
 import type { TeamsChannel, TeamsGroupChat, TeamsMessagePage, TeamsThread } from '../teamsChat.js'
 
 export interface TeamsImage {
@@ -31,6 +32,11 @@ export interface TeamsChat {
   image(url: string): Promise<TeamsImage>
   // Uploads to the object store, readable in the conversation; returns the object id for amsreferences.
   uploadImage(conversationId: string, image: TeamsImageUpload): Promise<string>
+  // A chat's file goes to the user's OneDrive, a channel's to its folder on the team site.
+  uploadFile(
+    file: { readonly fileName: string; readonly bytes: Uint8Array },
+    channel: TeamsChannel | null,
+  ): Promise<TeamsUploadedFile>
   invalidateSession(): void
 }
 

@@ -14,9 +14,13 @@ Goal: the web Teams composer matches the WPF one (`NoisWorkday/UI/TeamsComposer*
 - Done for reply and post. Edit does not take new images yet (`buildBody` is called without uploads there).
 - Verified live 2026-11-16: a post with a 64x32 PNG reached Task-MDP > Alert, the message carried the AMS image, the image loaded through the proxy, and the test message was deleted.
 
-## Phase 3 - files (not started)
+## Phase 3 - files (done, verified live on Task-MDP > Alert)
 - Also needed: `TeamsChannel` gets `siteUrl` and `folderName` (C# parses them from the channel list), `properties.files` on the message (`TeamsFiles.FilesJson`), and a size limit that fits a JSON body (the C# app sends by path, up to 100 MB).
 - A live test leaves a file in the channel's SharePoint folder (or the user's OneDrive for a chat); it needs a delete call afterwards.
 - Server: the Teams sniffer must also keep the SharePoint token and the OneDrive host (`TeamsSession` has neither today; C# `TeamsWebSniffer`). Upload with `TeamsChatClient.Files.cs`: folder by id, PUT content, `createLink`, then `filesJson` on the message. Not in an edit; max files and size from `TeamsFiles`.
 - Client: attach button, list under the text with remove buttons.
 - Needs a live Teams check, and a re-sniff to get the new tokens.
+
+Done: the sniffer keeps the SharePoint token and OneDrive host; channels carry `siteUrl` / `folderName`; `TeamsChatClient.uploadFile` / `deleteFile`; `properties.files`; the composer lists files under the text. Files go as base64 in the JSON body, so the limits are 10 files, 25 MB each, 40 MB together (the C# app: 100 MB each). A message of only files is sent with `<p>&nbsp;</p>` as its content (an empty content is accepted but not read back by the parser).
+Verified live 2026-11-16: a file uploaded to the Alert folder of the Task-MDP site, a post carrying it was read back with `hasFiles`, then the message and the file were deleted.
+Not done: files in an edit (as in the C# app), a channel the app does not watch, the Teams file picker.

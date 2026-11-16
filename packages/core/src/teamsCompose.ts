@@ -17,17 +17,28 @@ export interface TeamsDraftImage {
   readonly height: number
 }
 
+export const MAX_FILES = 10
+export const MAX_FILE_BYTES = 25 * 1024 * 1024
+export const MAX_TOTAL_FILE_BYTES = 40 * 1024 * 1024
+
+export interface TeamsDraftFile {
+  readonly data: string // base64
+  readonly fileName: string
+}
+
 /** html carries `<span data-mention="i">` markers into mentions and `<img data-image="i">` markers into images. */
 export interface TeamsDraft {
   readonly html: string
   readonly mentions: readonly TeamsMention[]
   readonly images?: readonly TeamsDraftImage[]
+  readonly files?: readonly TeamsDraftFile[]
 }
 
 export interface TeamsMessageBody {
   readonly html: string
   readonly mentionsJson: string | null
   readonly amsReferences: readonly string[] // object ids of the images in html
+  readonly filesJson?: string | null // properties.files of a message with attachments
 }
 
 export interface TeamsPerson {

@@ -84,13 +84,18 @@ export function parseChannels(json: unknown): readonly TeamsChannel[] {
   const channels: TeamsChannel[] = []
   for (const team of array(json, 'teams') ?? []) {
     const teamName = withoutEmoji(str(team, 'displayName') ?? '')
+    const siteInformation = isJson(team) ? team['teamSiteInformation'] : undefined
+    const siteUrl = str(siteInformation, 'sharepointSiteUrl')
     for (const channel of array(team, 'channels') ?? []) {
       const id = str(channel, 'id')
       if (id !== null && id !== '') {
+        const folderName = str(channel, 'displayName') ?? ''
         channels.push({
           id,
           teamName,
-          channelName: withoutEmoji(str(channel, 'displayName') ?? ''),
+          channelName: withoutEmoji(folderName),
+          siteUrl,
+          folderName: folderName === '' ? null : folderName,
         })
       }
     }

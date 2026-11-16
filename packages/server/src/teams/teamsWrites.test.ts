@@ -29,6 +29,43 @@ const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3
 )
 const PICTURE = { data: PNG, contentType: 'image/png', fileName: 'shot.png', width: 40, height: 20 }
 
+describe('TeamsWrites files', () => {
+  const FILE = { data: Buffer.from('hello').toString('base64'), fileName: 'notes.txt' }
+
+  it('a post with only a file uploads it to the channel and carries properties.files', async () => {
+    const { teams, service } = serviceRig(['c1'])
+    teams.channels.push({
+      id: 'c1',
+      teamName: 'T',
+      channelName: 'C',
+      siteUrl: 'https://t.sharepoint.com/sites/x',
+      folderName: 'C',
+    })
+
+    const result = await service.write.post('MDP-1', {
+      ...POST,
+      draft: { html: '', mentions: [], files: [FILE] },
+    })
+
+    expect(result).toEqual({ ok: true, id: 'sent-1' })
+    expect(teams.fileUploads).toEqual([{ fileName: 'notes.txt', size: 5, channelId: 'c1' }])
+    expect(teams.sent[0]?.body.filesJson).toContain('"fileName":"notes.txt"')
+  })
+
+  it('refuses too many files, an empty file and an empty message, and uploads nothing', async () => {
+    const { teams, service } = serviceRig(['c1'])
+    const empty = { ...FILE, data: '' }
+    for (const draft of [
+      { html: '<p>x</p>', mentions: [], files: [empty] },
+      { html: '<p>x</p>', mentions: [], files: Array.from({ length: 11 }, () => FILE) },
+      { html: '', mentions: [], files: [] },
+    ]) {
+      expect(await service.write.post('MDP-1', { ...POST, draft })).toBe('invalid')
+    }
+    expect(teams.fileUploads).toEqual([])
+  })
+})
+
 describe('TeamsWrites images', () => {
   it('uploads each image for the channel, then posts the message with its object ids', async () => {
     const { teams, service } = serviceRig(['c1'])

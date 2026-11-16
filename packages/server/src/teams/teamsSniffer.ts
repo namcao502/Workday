@@ -16,6 +16,7 @@ const TEAMS_URL = 'https://teams.cloud.microsoft/'
 const GOTO_TIMEOUT_MILLISECONDS = 60_000
 const SNIFF_WAIT_MILLISECONDS = 45_000
 const SNIFF_POLL_MILLISECONDS = 500
+const SHAREPOINT_WAIT_MILLISECONDS = 5_000
 const SIGN_IN_TIMEOUT_MILLISECONDS = 270_000
 const SIGN_IN_POLL_MILLISECONDS = 2_000
 
@@ -68,6 +69,15 @@ export class PlaywrightTeamsSniffer implements TeamsSniffer {
       const userAgent = await page.evaluate(() => navigator.userAgent).catch(() => null)
       const deadline = this.now() + SNIFF_WAIT_MILLISECONDS
       while (this.now() < deadline && !hasBothTokens(capture)) {
+        await sleep(SNIFF_POLL_MILLISECONDS)
+      }
+      // Teams web sends its OneDrive token a few seconds after the others; files need it.
+      const sharePointDeadline = this.now() + SHAREPOINT_WAIT_MILLISECONDS
+      while (
+        hasBothTokens(capture) &&
+        capture.sharePointToken === undefined &&
+        this.now() < sharePointDeadline
+      ) {
         await sleep(SNIFF_POLL_MILLISECONDS)
       }
       return outcomeOf(capture, this.now(), userAgent, page.url())

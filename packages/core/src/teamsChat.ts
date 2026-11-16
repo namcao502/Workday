@@ -5,6 +5,8 @@ export interface TeamsChannel {
   readonly id: string
   readonly teamName: string
   readonly channelName: string
+  readonly siteUrl?: string | null // the team's SharePoint site, for the channel's files
+  readonly folderName?: string | null // the channel's own name there, emoji kept
 }
 
 export interface TeamsReaction {

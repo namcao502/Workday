@@ -53,7 +53,7 @@ describe('parseChannels', () => {
         { displayName: 'No channels' },
       ],
     }
-    expect(parseChannels(json)).toEqual([
+    expect(parseChannels(json)).toMatchObject([
       { id: 'a', teamName: 'MDP', channelName: 'PR in the hole' },
       { id: 'g', teamName: 'Other', channelName: 'Random' },
     ])
@@ -76,7 +76,7 @@ describe('parseChannels', () => {
       ],
     }
     const channels = parseChannels(json)
-    expect(channels[0]).toEqual({ id: 'a', teamName: 'MDP', channelName: 'PR in the hole' })
+    expect(channels[0]).toMatchObject({ id: 'a', teamName: 'MDP', channelName: 'PR in the hole' })
     expect(channels[1]?.channelName).toBe('Deploy done')
     expect(channels[2]?.channelName).toBe('\u{1F389}')
     expect(channels[3]?.channelName).toBe('Caf\u00e9 \u2615')

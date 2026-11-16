@@ -84,7 +84,8 @@ export class TeamsWrites {
       if (subject === '' || !channels.some((tc) => tc.id === request.channelId)) {
         return 'invalid'
       }
-      const outcome = await bodyWithImages(chat, request.channelId, request.draft)
+      const channel = channels.find((tc) => tc.id === request.channelId)
+      const outcome = await bodyWithImages(chat, request.channelId, request.draft, channel)
       if (outcome.kind === 'invalid') {
         return 'invalid'
       }
@@ -112,7 +113,11 @@ export class TeamsWrites {
       if (thread === null || !rootMatches) {
         return FAILED
       }
-      const outcome = await bodyWithImages(chat, thread.conversationId, request.draft)
+      // A chat's files go to the user's OneDrive; a channel's need the watched channel's site.
+      const channel = thread.isChat
+        ? null
+        : (await this.lookup.channels(chat)).find((tc) => tc.id === thread.conversationId)
+      const outcome = await bodyWithImages(chat, thread.conversationId, request.draft, channel)
       if (outcome.kind === 'invalid') {
         return 'invalid'
       }

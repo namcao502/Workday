@@ -1,8 +1,12 @@
 import {
   isTicketKey,
+  MAX_FILE_BYTES,
+  MAX_FILES,
   MAX_IMAGES,
   MAX_IMAGE_BYTES,
+  MAX_TOTAL_FILE_BYTES,
   type TeamsDraft,
+  type TeamsDraftFile,
   type TeamsDraftImage,
   type TeamsMention,
 } from '@workday/core'
@@ -15,7 +19,12 @@ import { teamsError, type WriteOutcome } from '../teams/teamsWrites.js'
 const MAX_TEXT_LENGTH = 200_000
 const MAX_MENTIONS = 50
 const MAX_IMAGE_BASE64_LENGTH = Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 4
-const WRITE_BODY_LIMIT = MAX_IMAGES * MAX_IMAGE_BASE64_LENGTH + MAX_TEXT_LENGTH + 10_000
+const MAX_FILE_BASE64_LENGTH = Math.ceil((MAX_FILE_BYTES * 4) / 3) + 4
+const WRITE_BODY_LIMIT =
+  MAX_IMAGES * MAX_IMAGE_BASE64_LENGTH +
+  Math.ceil((MAX_TOTAL_FILE_BYTES * 4) / 3) +
+  MAX_TEXT_LENGTH +
+  10_000
 const IMAGE_CACHE = 'private, max-age=86400'
 const IMAGE_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 
@@ -53,9 +62,29 @@ function draftOf(body: Body): TeamsDraft | null {
   }
   const mentions = list.map(mention)
   const images = draftImages(raw['images'])
-  return mentions.every((item) => item !== null) && images !== null
-    ? { html: raw['html'], mentions, images }
+  const files = draftFiles(raw['files'])
+  return mentions.every((item) => item !== null) && images !== null && files !== null
+    ? { html: raw['html'], mentions, images, files }
     : null
+}
+
+// No field is no files; the bytes and the count are checked in decodeFiles before anything is uploaded.
+function draftFiles(raw: unknown): readonly TeamsDraftFile[] | null {
+  if (raw === undefined) {
+    return []
+  }
+  if (!Array.isArray(raw) || raw.length > MAX_FILES) {
+    return null
+  }
+  const files = (raw as unknown[]).map((item): TeamsDraftFile | null =>
+    isRecord(item) &&
+    typeof item['data'] === 'string' &&
+    item['data'].length <= MAX_FILE_BASE64_LENGTH &&
+    typeof item['fileName'] === 'string'
+      ? { data: item['data'], fileName: item['fileName'] }
+      : null,
+  )
+  return files.every((item) => item !== null) ? files : null
 }
 
 function draftImage(raw: unknown): TeamsDraftImage | null {

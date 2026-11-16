@@ -18,6 +18,8 @@ function session(expiresAt = NOW + 3_600_000): TeamsSession {
     myId: '8:orgid:abc',
     myName: 'Test User',
     expiresAt,
+    sharePointToken: null,
+    oneDriveHost: null,
   }
 }
 
@@ -80,13 +82,27 @@ describe('reads', () => {
   it('lists channels with the aggregator token', async () => {
     const fetchMock = fakeFetch(() =>
       json(200, {
-        teams: [{ displayName: 'T', channels: [{ id: '19:c@thread.tacv2', displayName: 'C' }] }],
+        teams: [
+          {
+            displayName: 'T',
+            teamSiteInformation: { sharepointSiteUrl: 'https://t.sharepoint.com/sites/T' },
+            channels: [{ id: '19:c@thread.tacv2', displayName: 'C' }],
+          },
+        ],
       }),
     )
 
     const channels = await clientWith(fetchMock).listChannels()
 
-    expect(channels).toEqual([{ id: '19:c@thread.tacv2', teamName: 'T', channelName: 'C' }])
+    expect(channels).toEqual([
+      {
+        id: '19:c@thread.tacv2',
+        teamName: 'T',
+        channelName: 'C',
+        siteUrl: 'https://t.sharepoint.com/sites/T',
+        folderName: 'C',
+      },
+    ])
     expect(urlOf(fetchMock)).toBe(
       `${AGGREGATOR_BASE}api/v3/teams/users/me?isPrefetch=false&enableMembershipSummary=true`,
     )

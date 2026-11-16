@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { TeamsDraft, TeamsPerson } from '@workday/core'
 import { expect, it, vi } from 'vitest'
 import { TeamsComposer, type ComposeMode, type TeamsComposerProps } from './TeamsComposer.js'
@@ -171,4 +171,37 @@ it('refuses an image that is not PNG, JPEG or GIF', async () => {
     },
   })
   expect(await screen.findByText(/a\.webp is not a PNG, JPEG or GIF/)).toBeInTheDocument()
+})
+
+it('a dropped file is listed, can be removed, and is sent with the draft', async () => {
+  const drafts: TeamsDraft[] = []
+  const onSend: TeamsComposerProps['onSend'] = (draft) => {
+    drafts.push(draft)
+    return Promise.resolve({ ok: true })
+  }
+  const editor = renderComposer('reply', onSend)
+  const keep = new File(['hello'], 'notes.txt', { type: 'text/plain' })
+  const drop = new File(['bye'], 'old.txt', { type: 'text/plain' })
+  fireEvent.drop(editor, { dataTransfer: { files: [keep, drop] } })
+  expect(await screen.findByText('notes.txt')).toBeInTheDocument()
+  expect(await screen.findByText('old.txt')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Remove old.txt' }))
+  expect(screen.queryByText('old.txt')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => {
+    expect(drafts).toHaveLength(1)
+  })
+  expect(drafts[0]?.files).toEqual([{ data: 'aGVsbG8=', fileName: 'notes.txt' }])
+  await waitFor(() => {
+    expect(screen.queryByText('notes.txt')).not.toBeInTheDocument()
+  })
+})
+
+it('refuses an empty file and offers no attach button when editing', async () => {
+  const editor = renderComposer('reply', vi.fn())
+  fireEvent.drop(editor, { dataTransfer: { files: [new File([], 'none.txt')] } })
+  expect(await screen.findByText('none.txt is empty.')).toBeInTheDocument()
+  cleanup()
+  renderComposer('edit', vi.fn())
+  expect(screen.queryByRole('button', { name: 'Attach a file' })).not.toBeInTheDocument()
 })

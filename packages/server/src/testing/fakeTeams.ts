@@ -4,6 +4,7 @@ import {
   type TeamsGroupChat,
   type TeamsImage,
   type TeamsImageUpload,
+  type TeamsUploadedFile,
   type TeamsMessage,
   type TeamsMessageBody,
   type TeamsMessagePage,
@@ -144,6 +145,29 @@ export class FakeTeams implements TeamsGateway {
   setReaction(conversationId: string, messageId: string, key: string, add: boolean): Promise<void> {
     this.reactions.push([conversationId, messageId, key, add])
     return Promise.resolve()
+  }
+
+  readonly fileUploads: { fileName: string; size: number; channelId: string | null }[] = []
+
+  uploadFile(
+    file: { readonly fileName: string; readonly bytes: Uint8Array },
+    channel: TeamsChannel | null,
+  ): Promise<TeamsUploadedFile> {
+    this.fileUploads.push({
+      fileName: file.fileName,
+      size: file.bytes.byteLength,
+      channelId: channel?.id ?? null,
+    })
+    return Promise.resolve({
+      fileName: file.fileName,
+      webUrl: 'https://t.sharepoint.com/sites/x/doc.pdf',
+      siteUrl: 'https://t.sharepoint.com/sites/x',
+      shareUrl: channel === null ? 'https://t.sharepoint.com/:b:/s/x/share' : null,
+      sharepointIds: { listItemUniqueId: 'uid-1', siteUrl: 'https://t.sharepoint.com/sites/x' },
+      isChat: channel === null,
+      itemId: 'item-1',
+      driveUrl: 'https://t.sharepoint.com/sites/x/_api/v2.0/drive',
+    })
   }
 
   readonly uploads: { conversationId: string; fileName: string; size: number }[] = []

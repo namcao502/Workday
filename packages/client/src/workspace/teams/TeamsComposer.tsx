@@ -1,5 +1,5 @@
-import { At, Picture } from '@gravity-ui/icons'
-import { Button, Input } from '@heroui/react'
+import { At, Paperclip, Picture } from '@gravity-ui/icons'
+import { Button, CloseButton, Input } from '@heroui/react'
 import {
   isEmptyHtml,
   shortName,
@@ -9,6 +9,7 @@ import {
 } from '@workday/core'
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../../i18n.js'
+import { fileProblem, readAttached, sizeText, type AttachedFile } from './teamsComposerFiles.js'
 import { imageFiles, imageProblem, pickImage } from './teamsComposerImages.js'
 import { TeamsComposerToolbar } from './TeamsComposerToolbar.js'
 import {
@@ -70,6 +71,8 @@ export function TeamsComposer({
   const mentionsRef = useRef<readonly TeamsMention[]>(initialMentions)
   const linkRangeRef = useRef<Range | null>(null)
   const imagesRef = useRef<readonly PickedImage[]>([])
+  const [files, setFiles] = useState<readonly AttachedFile[]>([])
+  const attachInput = useRef<HTMLInputElement>(null)
   const nextImageId = useRef(1)
   const fileInput = useRef<HTMLInputElement>(null)
   const [subject, setSubject] = useState(initialSubject)
@@ -133,6 +136,39 @@ export function TeamsComposer({
     }
   }
 
+  async function addFiles(picked: readonly File[]): Promise<void> {
+    let attached = files
+    for (const file of picked) {
+      const refused = fileProblem(file, attached)
+      if (refused !== null) {
+        setProblem(refused)
+        continue
+      }
+      try {
+        const id = nextImageId.current
+        nextImageId.current += 1
+        attached = [...attached, await readAttached(file, id)]
+        setFiles(attached)
+        setProblem(null)
+        onChange?.()
+      } catch {
+        setProblem(t('Could not read the file.', 'Không đọc được file.'))
+      }
+    }
+  }
+
+  // Images join the text where the caret is; every other file is listed under it.
+  function addDropped(list: FileList | undefined): boolean {
+    const all = Array.from(list ?? [])
+    if (mode === 'edit' || all.length === 0) {
+      return false
+    }
+    const images = imageFiles(list)
+    void addImages(images)
+    void addFiles(all.filter((file) => !images.includes(file)))
+    return true
+  }
+
   function startMention(): void {
     const editor = editorRef.current
     if (editor === null) {
@@ -148,8 +184,12 @@ export function TeamsComposer({
     if (editor === null || sending || locked) {
       return
     }
-    const draft = draftFromEditor(editor, mentionsRef.current, imagesRef.current)
-    if (isEmptyHtml(draft.html) && (draft.images ?? []).length === 0) {
+    const edited = draftFromEditor(editor, mentionsRef.current, imagesRef.current)
+    const draft: TeamsDraft = {
+      ...edited,
+      files: files.map(({ data, name }) => ({ data, fileName: name })),
+    }
+    if (isEmptyHtml(draft.html) && (draft.images ?? []).length === 0 && files.length === 0) {
       return
     }
     setSending(true)
@@ -162,6 +202,7 @@ export function TeamsComposer({
           editor.innerHTML = ''
           mentionsRef.current = []
           imagesRef.current = []
+          setFiles([])
           setSubject('')
         }
       } else {
@@ -285,23 +326,44 @@ export function TeamsComposer({
           }
         }}
         onDrop={(event) => {
-          const files = imageFiles(event.dataTransfer.files)
-          if (mode !== 'edit' && files.length !== 0) {
+          if (addDropped(event.dataTransfer.files)) {
             event.preventDefault()
-            void addImages(files)
           }
         }}
         onPaste={(event) => {
           event.preventDefault()
-          const files = imageFiles(event.clipboardData.files)
-          if (mode !== 'edit' && files.length !== 0) {
-            void addImages(files)
-          } else if (editorRef.current !== null) {
+          if (addDropped(event.clipboardData.files)) {
+            return
+          }
+          if (editorRef.current !== null) {
             insertPlainText(editorRef.current, event.clipboardData.getData('text/plain'))
             onChange?.()
           }
         }}
       />
+      {files.length === 0 ? null : (
+        <ul
+          className="m-0 flex list-none flex-wrap gap-1 p-0"
+          aria-label={t('Attached files', 'File đính kèm')}
+        >
+          {files.map((file) => (
+            <li
+              key={file.id}
+              className="flex items-center gap-1 rounded-xl bg-surface-secondary py-0.5 pl-3 pr-1 text-sm"
+            >
+              <span className="max-w-60 truncate">{file.name}</span>
+              <span className="text-xs text-muted">{sizeText(file.size)}</span>
+              <CloseButton
+                className="size-6 hover:bg-danger hover:text-danger-foreground"
+                aria-label={t(`Remove ${file.name}`, `Bỏ ${file.name}`)}
+                onPress={() => {
+                  setFiles((current) => current.filter((item) => item.id !== file.id))
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
       {suggestions.length === 0 ? null : (
         <ul
           className="m-0 list-none rounded-xl bg-overlay p-1 shadow-overlay"
@@ -339,6 +401,31 @@ export function TeamsComposer({
                 event.target.value = ''
               }}
             />
+            <input
+              ref={attachInput}
+              type="file"
+              hidden
+              multiple
+              aria-label={t('Choose files', 'Chọn file')}
+              onChange={(event) => {
+                void addFiles(Array.from(event.target.files ?? []))
+                event.target.value = ''
+              }}
+            />
+            <Button
+              isIconOnly
+              variant="secondary"
+              size="sm"
+              aria-label={t('Attach a file', 'Đính kèm file')}
+              isDisabled={sending}
+              onPress={() => {
+                attachInput.current?.click()
+              }}
+            >
+              <span title={t('Attach a file', 'Đính kèm file')} className="flex">
+                <Paperclip />
+              </span>
+            </Button>
             <Button
               isIconOnly
               variant="secondary"

@@ -19,6 +19,8 @@ function session(expiresAt = NOW + 3_600_000): TeamsSession {
     myId: '8:orgid:abc',
     myName: 'Test User',
     expiresAt,
+    sharePointToken: null,
+    oneDriveHost: null,
   }
 }
 

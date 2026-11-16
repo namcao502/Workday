@@ -108,3 +108,27 @@ describe('outcomeOf', () => {
     )
   })
 })
+
+describe('recordRequest for files', () => {
+  const SHAREPOINT_TOKEN = `h.${Buffer.from(JSON.stringify({ aud: 'https://x/00000003-0000-0ff1-ce00-000000000000' })).toString('base64url')}.s`
+
+  it('keeps the SharePoint token with the OneDrive host it was sent to', () => {
+    const capture: TeamsCapture = {}
+    recordRequest(capture, 'https://monster-my.sharepoint.com/_api/v2.0/me/drive', {
+      authorization: `Bearer ${SHAREPOINT_TOKEN}`,
+    })
+    expect(capture.sharePointToken).toBe(SHAREPOINT_TOKEN)
+    expect(capture.oneDriveHost).toBe('monster-my.sharepoint.com')
+  })
+
+  it('ignores another host and a token for another audience', () => {
+    const capture: TeamsCapture = {}
+    recordRequest(capture, 'https://evil.example.com/_api', {
+      authorization: `Bearer ${SHAREPOINT_TOKEN}`,
+    })
+    recordRequest(capture, 'https://monster-my.sharepoint.com/_api', {
+      authorization: 'Bearer a.e30.b',
+    })
+    expect(capture.sharePointToken).toBeUndefined()
+  })
+})

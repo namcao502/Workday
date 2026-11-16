@@ -33,7 +33,7 @@ export function imageProblem(file: File, already: number): string | null {
     : null
 }
 
-function readDataUrl(file: File): Promise<string> {
+export function readDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {

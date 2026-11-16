@@ -18,7 +18,7 @@ export class TeamsNoResponse extends Error {}
 export interface TeamsRequest {
   readonly method: 'GET' | 'POST' | 'PUT' | 'DELETE'
   readonly url: string
-  readonly token: 'chat' | 'aggregator'
+  readonly token: 'chat' | 'aggregator' | 'sharepoint'
   readonly json?: unknown
   readonly bytes?: Uint8Array // a binary body (an upload), sent as application/octet-stream
   readonly asBrowser?: boolean // the object store wants the browser's own headers
@@ -116,9 +116,22 @@ export class TeamsHttp {
   }
 }
 
+function tokenOf(kind: TeamsRequest['token'], session: TeamsSession): string {
+  if (kind === 'chat') {
+    return session.chatToken
+  }
+  if (kind === 'aggregator') {
+    return session.aggregatorToken
+  }
+  if (session.sharePointToken === null) {
+    throw new Error('Teams gave no token for files; try again in a minute')
+  }
+  return session.sharePointToken
+}
+
 function headersFor(request: TeamsRequest, session: TeamsSession): Record<string, string> {
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${request.token === 'chat' ? session.chatToken : session.aggregatorToken}`,
+    Authorization: `Bearer ${tokenOf(request.token, session)}`,
   }
   if (request.json !== undefined) {
     headers['Content-Type'] = 'application/json'

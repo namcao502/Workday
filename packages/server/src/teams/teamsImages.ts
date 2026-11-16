@@ -1,12 +1,19 @@
 // The images of a draft: checked here (the browser is not trusted), then uploaded before the message is built.
 import {
   buildBody,
+  filesJson,
+  MAX_FILE_BYTES,
+  MAX_FILES,
   MAX_IMAGE_BYTES,
   MAX_IMAGES,
+  MAX_TOTAL_FILE_BYTES,
   MAX_TOTAL_IMAGE_BYTES,
+  sharePointName,
+  type TeamsChannel,
   type TeamsDraft,
   type TeamsImageUpload,
   type TeamsMessageBody,
+  type TeamsUploadedFile,
 } from '@workday/core'
 import type { TeamsGateway } from './teamsChatClient.js'
 
@@ -67,24 +74,76 @@ export function decodeImages(draft: TeamsDraft): readonly TeamsImageUpload[] | n
   return total > MAX_TOTAL_IMAGE_BYTES ? null : decoded
 }
 
+export interface FileUpload {
+  readonly fileName: string
+  readonly bytes: Uint8Array
+}
+
+/** The decoded files, or null when there are too many, one is empty or too big, or the total is. */
+export function decodeFiles(draft: TeamsDraft): readonly FileUpload[] | null {
+  const files = draft.files ?? []
+  if (files.length > MAX_FILES) {
+    return null
+  }
+  const decoded: FileUpload[] = []
+  let total = 0
+  for (const file of files) {
+    if (!BASE64.test(file.data)) {
+      return null
+    }
+    const bytes = Buffer.from(file.data, 'base64')
+    total += bytes.byteLength
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_FILE_BYTES) {
+      return null
+    }
+    decoded.push({ fileName: sharePointName(file.fileName), bytes })
+  }
+  return total > MAX_TOTAL_FILE_BYTES ? null : decoded
+}
+
 export type ImageOutcome =
   { readonly kind: 'invalid' } | { readonly kind: 'body'; readonly body: TeamsMessageBody }
 
-// Refuses an empty or bad message before anything is uploaded; one upload per image, in order.
+const EMPTY_BODY: TeamsMessageBody = {
+  html: '<p>&nbsp;</p>',
+  mentionsJson: null,
+  amsReferences: [],
+}
+
+// Refuses an empty or bad message before anything is uploaded; then one upload per image and per file, in order.
+// channel: where a channel's files go; null for a chat (the user's OneDrive); undefined for an unwatched channel.
 export async function bodyWithImages(
   chat: TeamsGateway,
   conversationId: string,
   draft: TeamsDraft,
+  channel: TeamsChannel | null | undefined,
 ): Promise<ImageOutcome> {
   const images = decodeImages(draft)
-  const placeholders = (images ?? []).map((_, index) => `pending-${String(index)}`)
-  if (images === null || buildBody(draft, placeholders) === null) {
+  const files = decodeFiles(draft)
+  if (images === null || files === null) {
+    return { kind: 'invalid' }
+  }
+  const placeholders = images.map((_, index) => `pending-${String(index)}`)
+  const hasContent = buildBody(draft, placeholders) !== null
+  // A channel's files need a watched channel to know the site and folder.
+  if ((!hasContent && files.length === 0) || (files.length !== 0 && !isFileTarget(channel))) {
     return { kind: 'invalid' }
   }
   const uploaded: string[] = []
   for (const image of images) {
     uploaded.push(await chat.uploadImage(conversationId, image))
   }
-  const body = buildBody(draft, uploaded)
-  return body === null ? { kind: 'invalid' } : { kind: 'body', body }
+  const sent: TeamsUploadedFile[] = []
+  for (const file of files) {
+    sent.push(await chat.uploadFile(file, channel ?? null))
+  }
+  const body = buildBody(draft, uploaded) ?? EMPTY_BODY
+  return {
+    kind: 'body',
+    body: sent.length === 0 ? body : { ...body, filesJson: filesJson(sent) },
+  }
+}
+
+function isFileTarget(channel: TeamsChannel | null | undefined): boolean {
+  return channel !== undefined
 }

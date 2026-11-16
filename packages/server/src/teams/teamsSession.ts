@@ -10,6 +10,8 @@ export interface TeamsSession {
   readonly myId: string
   readonly myName: string
   readonly expiresAt: number // epoch milliseconds
+  readonly sharePointToken: string | null // for files; Teams web sends it with the aggregator one
+  readonly oneDriveHost: string | null // "<tenant>-my.sharepoint.com"
 }
 
 // What the browser saw on Teams web's own requests.
@@ -19,6 +21,8 @@ export interface TeamsCapture {
   aggregatorToken?: string
   aggregatorUrl?: string
   clientVersion?: string
+  sharePointToken?: string
+  oneDriveHost?: string
 }
 
 export type TeamsSniffResult =
@@ -44,7 +48,20 @@ const CHAT_AUDIENCE = 'ic3.teams.office.com'
 const CHAT_URL = /^(https:\/\/[^/]+\/api\/chatsvc\/[^/]+\/v1\/users\/ME\/)/
 const AGGREGATOR_URL = /^(https:\/\/[^/]+\/api\/csa\/[^/]+\/)/
 const BEARER = /^bearer\s+(.+)$/i
+const SHAREPOINT_AUDIENCE = '00000003-0000-0ff1-ce00-000000000000'
+const ONEDRIVE_HOST = /^[a-z0-9-]+-my\.sharepoint\.com$/i
 const FALLBACK_LIFETIME_MILLISECONDS = 30 * 60_000
+
+// The user's OneDrive host when the request went there over https, else null.
+function oneDriveHostOf(url: string): string | null {
+  if (!URL.canParse(url)) {
+    return null
+  }
+  const parsed = new URL(url)
+  return parsed.protocol === 'https:' && ONEDRIVE_HOST.test(parsed.hostname)
+    ? parsed.hostname.toLowerCase()
+    : null
+}
 
 // Keeps the latest chat and aggregator token with the URL they were sent to; other audiences are ignored.
 export function recordRequest(
@@ -60,7 +77,13 @@ export function recordRequest(
   if (token === undefined) {
     return
   }
-  if (CHAT_URL.test(url)) {
+  const sharePointHost = oneDriveHostOf(url)
+  if (sharePointHost !== null) {
+    if ((jwtClaim(token, 'aud') ?? '').includes(SHAREPOINT_AUDIENCE)) {
+      capture.sharePointToken = token
+      capture.oneDriveHost = sharePointHost
+    }
+  } else if (CHAT_URL.test(url)) {
     if ((jwtClaim(token, 'aud') ?? '').includes(CHAT_AUDIENCE)) {
       capture.chatToken = token
       capture.chatUrl = url
@@ -125,6 +148,8 @@ export function sessionFrom(
     myId: `8:orgid:${objectId}`.toLowerCase(),
     myName: jwtClaim(chatToken, 'name') ?? '',
     expiresAt: Math.min(...expiries),
+    sharePointToken: capture.sharePointToken ?? null,
+    oneDriveHost: capture.oneDriveHost ?? null,
   }
 }
 
