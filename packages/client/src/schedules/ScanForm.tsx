@@ -19,6 +19,7 @@ import { queryKeys } from '../api/client.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
 import { Segmented } from '../ui/Segmented.js'
+import { TEXTAREA_ROWS } from '../ui/TextField.js'
 import { dayLabel } from './scheduleFormat.js'
 
 export const DEFAULT_SCAN: KnowledgeScanConfig = {
@@ -89,7 +90,12 @@ export function ScanForm({
       </HeroTextField>
       <HeroTextField fullWidth value={argsText} onChange={setArgsText} onBlur={saveText}>
         <Label>{t('Arguments (one per line)', 'Đối số (mỗi dòng một đối số)')}</Label>
-        <TextArea id="scan-args" rows={3} variant="secondary" className="font-mono" />
+        <TextArea
+          id="scan-args"
+          rows={TEXTAREA_ROWS}
+          variant="secondary"
+          className="resize-none font-mono"
+        />
       </HeroTextField>
       <HeroTextField fullWidth value={logFile} onChange={setLogFile} onBlur={saveText}>
         <Label>{t('Log file', 'File log')}</Label>

@@ -113,7 +113,7 @@ export function AzureDevOpsSection({
           'One Repo=Label per line, in the order shown. Example: MDP-Portal=Portal',
           'Mỗi dòng một Repo=Nhãn, theo thứ tự hiển thị. Ví dụ: MDP-Portal=Portal',
         )}
-        rows={4}
+        multiline
         value={form.repoLabels}
         onChange={(value) => {
           change({ repoLabels: value })

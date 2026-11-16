@@ -100,7 +100,7 @@ export function WorkspaceSection({
           'One per line. Never listed in Changes',
           'Mỗi dòng một đường dẫn. Không hiện trong Changes',
         )}
-        rows={3}
+        multiline
         value={form.localOnlyPaths}
         onChange={(value) => {
           change({ localOnlyPaths: value })

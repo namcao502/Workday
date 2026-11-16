@@ -245,7 +245,7 @@ export function TimesheetSection({
           'One URL per line, tried in order, to read the Microsoft token from',
           'Mỗi dòng một URL, thử lần lượt, để lấy token Microsoft',
         )}
-        rows={3}
+        multiline
         value={form.tokenPages}
         onChange={(value) => {
           change({ tokenPages: value })

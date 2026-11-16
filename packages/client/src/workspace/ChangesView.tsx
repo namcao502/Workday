@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useChanges } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
 import { CopyPath } from '../ui/CopyPath.js'
+import { FindablePane } from '../ui/FindablePane.js'
 import { SplitView } from '../ui/SplitView.js'
 import { useStoredSplit } from '../ui/useStoredSplit.js'
 import { buildTree, treeOrder } from './buildTree.js'
@@ -109,11 +110,13 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
           </div>
         }
         right={
-          <div className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
+          <FindablePane>
             {selected === null ? null : (
-              <DiffView key={`${selected.group}:${selected.path}`} tabId={tabId} {...selected} />
+              <div key={`${selected.group}:${selected.path}`} className="animate-fade-in">
+                <DiffView tabId={tabId} {...selected} />
+              </div>
             )}
-          </div>
+          </FindablePane>
         }
       />
     </div>

@@ -8,7 +8,7 @@ import { buildTree, type TreeFolder } from './buildTree.js'
 const FILTER_DELAY_MS = 150
 const FILTER_LIMIT = 500
 const ROW_CLASS =
-  'flex h-7 w-full cursor-pointer items-center gap-1.5 rounded-md px-2 text-left text-sm hover:bg-surface-secondary'
+  'flex min-h-8 w-full cursor-pointer items-start gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm leading-snug hover:bg-surface-secondary'
 const STATUS_COLOR: Record<ChangeStatus, string> = {
   A: 'text-success',
   M: 'text-warning',
@@ -65,7 +65,7 @@ function FileButton({
           {status}
         </span>
       )}
-      {label}
+      <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
     </button>
   )
 }
@@ -90,11 +90,15 @@ function FolderNode(props: FolderNodeProps): React.JSX.Element {
           onToggle(folder.path)
         }}
       >
-        {open ? <ChevronDown /> : <ChevronRight />}
-        {folder.name}
+        {open ? (
+          <ChevronDown className="mt-0.5 shrink-0" />
+        ) : (
+          <ChevronRight className="mt-0.5 shrink-0" />
+        )}
+        <span className="min-w-0 [overflow-wrap:anywhere]">{folder.name}</span>
       </button>
       {open ? (
-        <ul className="list-none pl-3.5">
+        <ul className="flex list-none flex-col gap-0.5 pl-3.5">
           {folder.folders.map((child) => (
             <FolderNode key={child.path} {...props} folder={child} />
           ))}
@@ -152,7 +156,7 @@ export function FileTree(props: FileTreeProps): React.JSX.Element {
         </SearchField.Group>
       </SearchField>
       {needle === '' ? (
-        <ul className="list-none pl-0">
+        <ul className="flex list-none flex-col gap-0.5 pl-0">
           {tree.folders.map((folder) => (
             <FolderNode
               key={folder.path}
@@ -175,7 +179,7 @@ export function FileTree(props: FileTreeProps): React.JSX.Element {
           ))}
         </ul>
       ) : (
-        <ul className="list-none pl-0">
+        <ul className="flex list-none flex-col gap-0.5 pl-0">
           {matches.map((path) => (
             <li key={path}>
               <FileButton

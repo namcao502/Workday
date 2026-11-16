@@ -5,6 +5,7 @@ import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { ChangesView } from './ChangesView.js'
 import { FilesView } from './FilesView.js'
+import { SEGMENT_GROUP, segmentClass } from '../ui/segmentedStyle.js'
 import type { PaneToggle } from './paneToggle.js'
 import { TeamsView } from './teams/TeamsView.js'
 import { useTeamsPending } from './teams/useTeams.js'
@@ -15,14 +16,6 @@ interface LeftPaneProps {
   readonly tab: WorkspaceTab
   readonly teamsConversation: string | null // from the hash; opens the Teams view on it
   readonly toggle: PaneToggle // hides this pane, or brings Claude back
-}
-
-const TAB_CLASS = 'flex h-7 items-center gap-1.5 rounded-full px-3 text-sm'
-
-function tabClass(selected: boolean): string {
-  return selected
-    ? `${TAB_CLASS} bg-surface shadow-sm`
-    : `${TAB_CLASS} text-muted hover:bg-surface hover:text-foreground`
 }
 
 function TeamsTabButton({
@@ -42,7 +35,7 @@ function TeamsTabButton({
       type="button"
       role="tab"
       aria-selected={selected}
-      className={tabClass(selected)}
+      className={segmentClass(selected)}
       onClick={onSelect}
     >
       Teams
@@ -72,12 +65,12 @@ export function LeftPane({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-testid="workspace-left">
       <div className="flex items-center gap-1.5 pb-2">
-        <div role="tablist" className="flex gap-0.5 rounded-full bg-surface-secondary p-0.5">
+        <div role="tablist" className={SEGMENT_GROUP}>
           <button
             type="button"
             role="tab"
             aria-selected={tab === 'changes'}
-            className={tabClass(tab === 'changes')}
+            className={segmentClass(tab === 'changes')}
             onClick={() => {
               setTab('changes')
             }}
@@ -88,7 +81,7 @@ export function LeftPane({
             type="button"
             role="tab"
             aria-selected={tab === 'files'}
-            className={tabClass(tab === 'files')}
+            className={segmentClass(tab === 'files')}
             onClick={() => {
               setTab('files')
             }}

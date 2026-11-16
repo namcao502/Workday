@@ -5,6 +5,7 @@ import { useFileContent, useFiles } from '../api/useWorkspace.js'
 import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { CopyPath } from '../ui/CopyPath.js'
+import { FindablePane } from '../ui/FindablePane.js'
 import { SplitView } from '../ui/SplitView.js'
 import { useStoredSplit } from '../ui/useStoredSplit.js'
 import { FileViewer } from './FileViewer.js'
@@ -103,17 +104,13 @@ export function FilesView({ tabId }: FilesViewProps): React.JSX.Element {
           </div>
         }
         right={
-          <div className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
+          <FindablePane>
             {selected === null ? null : (
-              <OpenFile
-                key={`${selected.group}:${selected.path}`}
-                tabId={tabId}
-                file={selected}
-                knownPaths={known}
-                onSelect={setChosen}
-              />
+              <div key={`${selected.group}:${selected.path}`} className="animate-fade-in">
+                <OpenFile tabId={tabId} file={selected} knownPaths={known} onSelect={setChosen} />
+              </div>
             )}
-          </div>
+          </FindablePane>
         }
       />
     </div>

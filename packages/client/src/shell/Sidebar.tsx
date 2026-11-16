@@ -127,7 +127,7 @@ function SidebarItem({
   return (
     <button
       type="button"
-      className={`${buttonVariants({ variant: 'ghost' })} relative h-11 w-full gap-2.5 ${
+      className={`${buttonVariants({ variant: 'ghost' })} relative h-11 w-full gap-3 ${
         collapsed ? 'justify-center' : 'justify-start'
       }${selected ? ' bg-accent-soft text-accent' : ''}`}
       aria-current={selected ? 'page' : undefined}

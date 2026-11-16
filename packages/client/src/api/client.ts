@@ -18,6 +18,7 @@ import type {
   TscSignInResult,
 } from '@workday/core'
 import { isRecord } from '../json.js'
+import { trackAction } from './pendingActions.js'
 
 export const queryKeys = {
   board: ['board'],
@@ -57,7 +58,14 @@ export interface RawResponse {
 }
 
 // A 401 means the device is not (or no longer) paired; it is thrown so one handler can show the pair page.
-export async function send(method: string, path: string, payload?: unknown): Promise<RawResponse> {
+export function send(method: string, path: string, payload?: unknown): Promise<RawResponse> {
+  // A read shows its own loading state through the query; an action lights the global loading icon.
+  return method === 'GET'
+    ? request(method, path, payload)
+    : trackAction(() => request(method, path, payload))
+}
+
+async function request(method: string, path: string, payload?: unknown): Promise<RawResponse> {
   const init: RequestInit =
     payload === undefined
       ? { method }

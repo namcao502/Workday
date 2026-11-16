@@ -14,7 +14,7 @@ export function KeyPill({ ticketKey, url }: KeyPillProps): React.JSX.Element {
         window.open(url, '_blank', 'noopener')
       }}
     >
-      <Chip size="sm" color="accent" className="whitespace-nowrap">
+      <Chip size="lg" color="accent" className="whitespace-nowrap px-3 text-sm font-medium">
         {ticketKey}
       </Chip>
     </button>

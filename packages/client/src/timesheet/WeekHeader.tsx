@@ -40,7 +40,7 @@ function tscCount(coverage: readonly DayCoverage[], today: string): string {
   return `${String(done)} / ${String(days.length)}`
 }
 
-// Week switcher shown in the page title row.
+// Week switcher shown between the log input and the week's cards.
 export function WeekNav({
   monday,
   thisMonday,
@@ -52,7 +52,7 @@ export function WeekNav({
   const range = `${formatDateOnly(monday, language)} - ${formatDateOnly(addDays(monday, WORKDAYS - 1), language)}`
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="flex flex-col items-end leading-tight">
+      <div className="mr-2 flex flex-col items-start leading-tight">
         <span className="text-xs font-semibold tracking-wide text-muted">
           {titleFor(monday, thisMonday)}
         </span>

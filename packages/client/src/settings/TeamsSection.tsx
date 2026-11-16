@@ -87,7 +87,7 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
           'One "Team > Channel" per line. The first is where new posts go. Empty = Teams off',
           'Mỗi dòng một "Team > Channel". Dòng đầu là nơi đăng bài mới. Để trống = tắt Teams',
         )}
-        rows={4}
+        multiline
         value={form.watchedChannels}
         onChange={(value) => {
           change({ watchedChannels: value })

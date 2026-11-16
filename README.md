@@ -1,10 +1,13 @@
 # Workday
 
-A local web app for daily work-log entries. It runs on your machine and is reachable only from it.
+A local web app for daily work-log entries. It runs on your machine and listens on 127.0.0.1 only. Optional remote access goes through a Cloudflare tunnel
+(paired devices only; see `docs/remote-access/`).
 
 ## Requirements
 
 - Node 22 (see `.nvmrc`) and npm
+- Microsoft Edge (Playwright drives it for the TSC and Teams sign-ins)
+- Claude Code sign-in on the machine (the Workspace chat runs on the Claude Agent SDK)
 
 ## Install
 
@@ -40,6 +43,10 @@ commit it). `WORKDAY_JIRA_API_TOKEN` there wins over a token saved in Settings, 
 WORKDAY_JIRA_API_TOKEN=<your Jira API token>
 WORKDAY_HRM_API_KEY=<your HRM API key>
 ```
+
+Other overrides, all optional: `WORKDAY_ADO_PAT` (Azure DevOps), `WORKDAY_TUNNEL_TOKEN` (Cloudflare tunnel),
+`WORKDAY_MASTER_KEY` (base64 key for `secrets.json`, wins over `master.key` in the data dir),
+`WORKDAY_IMPORT_PASSWORD` (for `import-wpf` without a terminal).
 
 On Windows, `scripts/env-from-tokens.ps1` writes `.env` from NOIS Workday's `tokens.env`, both values included.
 `WORKDAY_MS_GRAPH_TOKEN` (env only) replaces the TSC token sniff, for a machine without a display.

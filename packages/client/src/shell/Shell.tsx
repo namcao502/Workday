@@ -73,7 +73,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
   const alerts = useNotices(page)
   const schedulesDot = useSchedulesView(useAccess().mode !== 'remote').data?.scan.unseenBad === true
   return (
-    <div className="flex h-dvh bg-background text-foreground">
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
       {narrow ? null : (
         <Sidebar
           current={page}
@@ -90,7 +90,9 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
         <TopBar onToggleMenu={narrow ? undefined : toggleCollapsed} slotRef={setHeaderSlot} />
         <main className="min-h-0 flex-1 overflow-auto">
           <HeaderSlotContext.Provider value={headerSlot}>
-            <PageContent page={page} />
+            <div key={page} className="h-full animate-fade-in">
+              <PageContent page={page} />
+            </div>
           </HeaderSlotContext.Provider>
         </main>
       </div>

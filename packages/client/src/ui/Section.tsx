@@ -15,7 +15,7 @@ export function Section({
   children,
 }: SectionProps): React.JSX.Element {
   return (
-    <Card>
+    <Card className="animate-fade-in">
       <Card.Header className="flex-row items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <Card.Title className="text-base font-semibold" render={(props) => <h2 {...props} />}>

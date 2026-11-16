@@ -43,7 +43,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           'Which tickets the board checks. Empty: your open tickets, newest first.',
           'Những ticket board sẽ kiểm. Để trống: ticket chưa xong của bạn, mới nhất trước.',
         )}
-        rows={2}
+        multiline
         value={form.assignedJql}
         onChange={(value) => {
           onChange({ assignedJql: value })
@@ -56,7 +56,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           'Which tickets count as yours when you log time. Empty: assigned to you now or before.',
           'Những ticket được tính là của bạn khi log giờ. Để trống: được giao cho bạn hiện tại hoặc trước đây.',
         )}
-        rows={2}
+        multiline
         value={form.mineJql}
         onChange={(value) => {
           onChange({ mineJql: value })
@@ -69,7 +69,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           'One per line, as Jira names them: Backlog, Selected for Development, In Progress, Hold.',
           'Mỗi dòng một tên, đúng như Jira: Backlog, Selected for Development, In Progress, Hold.',
         )}
-        rows={3}
+        multiline
         value={form.preWorkStatuses}
         onChange={(value) => {
           onChange({ preWorkStatuses: value })
@@ -82,7 +82,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           'One per line. A Done ticket that moves to one of these returns to Working: In Progress, QA Failed, Reopened.',
           'Mỗi dòng một tên. Ticket đã Done chuyển sang một trong các trạng thái này sẽ quay về Working: In Progress, QA Failed, Reopened.',
         )}
-        rows={3}
+        multiline
         value={form.reworkStatuses}
         onChange={(value) => {
           onChange({ reworkStatuses: value })
@@ -95,7 +95,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           'One status per line, in order; the last is Ready to Test. Empty: the feature is off.',
           'Mỗi dòng một trạng thái, theo thứ tự; dòng cuối là Ready to Test. Để trống: tắt tính năng.',
         )}
-        rows={3}
+        multiline
         value={form.readyToTestPath}
         onChange={(value) => {
           onChange({ readyToTestPath: value })
@@ -108,7 +108,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           'One per line. A ticket in one of these is yours to move. Empty: every status counts.',
           'Mỗi dòng một tên. Ticket ở các trạng thái này là việc của bạn. Để trống: mọi trạng thái đều tính.',
         )}
-        rows={3}
+        multiline
         value={form.developerStatuses}
         onChange={(value) => {
           onChange({ developerStatuses: value })
@@ -122,7 +122,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
           'Finds the epic that holds the tickets to take.',
           'Tìm epic chứa các ticket để nhận.',
         )}
-        rows={2}
+        multiline
         value={form.suggestionsEpicJql}
         onChange={(value) => {
           onChange({ suggestionsEpicJql: value })
@@ -141,7 +141,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
         id="jira-suggestions-candidates-jql"
         label={t('Candidates query (JQL)', 'Truy vấn ticket ứng viên (JQL)')}
         hint={t('{epic} is replaced by the epic key.', '{epic} được thay bằng mã epic.')}
-        rows={2}
+        multiline
         value={form.suggestionsCandidatesJql}
         onChange={(value) => {
           onChange({ suggestionsCandidatesJql: value })
@@ -151,7 +151,7 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
         id="jira-suggestions-mine-jql"
         label={t('My tickets in the epic (JQL)', 'Ticket của tôi trong epic (JQL)')}
         hint={t('{epic} is replaced by the epic key.', '{epic} được thay bằng mã epic.')}
-        rows={2}
+        multiline
         value={form.suggestionsMineJql}
         onChange={(value) => {
           onChange({ suggestionsMineJql: value })

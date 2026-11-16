@@ -167,25 +167,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
     entries.map((entry) => ({ date: entry.date, state: 'queued', coverage: null, queued: entry }))
 
   return (
-    <Page
-      title={t('Timesheet', 'Bảng công')}
-      wide
-      className="max-w-[1300px]"
-      actions={
-        <WeekNav
-          monday={monday}
-          thisMonday={thisMonday}
-          language={language}
-          reading={reading}
-          onShift={shiftWeek}
-          onReread={() => {
-            readWeek(monday, true)
-              .then(refresh)
-              .catch(() => undefined)
-          }}
-        />
-      }
-    >
+    <Page title={t('Timesheet', 'Bảng công')} wide className="max-w-[1300px]">
       <TimesheetBanners view={view} reminder={showReminder(view, clock, timeZone)} />
       {canAct ? (
         <LogInput
@@ -241,6 +223,18 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
           </div>
         </section>
       )}
+      <WeekNav
+        monday={monday}
+        thisMonday={thisMonday}
+        language={language}
+        reading={reading}
+        onShift={shiftWeek}
+        onReread={() => {
+          readWeek(monday, true)
+            .then(refresh)
+            .catch(() => undefined)
+        }}
+      />
       <WeekHeader
         monday={monday}
         today={clock.date}

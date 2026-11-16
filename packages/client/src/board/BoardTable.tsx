@@ -54,7 +54,7 @@ export function BoardTable({
   const th = 'px-3 py-2 text-left text-xs font-normal text-muted'
   const td = 'px-3 py-2'
   return (
-    <Card className="overflow-hidden p-0">
+    <Card className="animate-fade-in overflow-hidden p-0">
       <table className="w-full text-sm">
         <thead>
           <tr>

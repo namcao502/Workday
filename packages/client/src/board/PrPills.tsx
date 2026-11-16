@@ -1,7 +1,7 @@
-import { Chip } from '@heroui/react'
+import { Button, Popover } from '@heroui/react'
 import { repoLabel, type TicketPr } from '@workday/core'
 import { t } from '../i18n.js'
-import { chipColor, type TodoTone } from './todoText.js'
+import type { TodoTone } from './todoText.js'
 
 interface PrState {
   readonly word: string
@@ -44,33 +44,70 @@ interface PrPillsProps {
   readonly repoLabels: Readonly<Record<string, string>>
 }
 
-// One pill per latest PR (repo + branch); a click opens the PR in a new tab.
+// The worst state first: a blocker, then work to do, then waiting, then approved, and merged last.
+const TONE_RANK: readonly TodoTone[] = ['danger', 'warning', 'orange', 'muted', 'accent', 'success']
+const DOT_CLASS: Readonly<Record<TodoTone, string>> = {
+  danger: 'bg-danger',
+  warning: 'bg-warning',
+  orange: 'bg-warning',
+  muted: 'bg-muted',
+  accent: 'bg-accent',
+  success: 'bg-success',
+  ready: 'bg-success',
+}
+
+function worstTone(prs: readonly TicketPr[]): TodoTone {
+  const tones = prs.map((ticketPr) => prState(ticketPr.pr).tone)
+  return TONE_RANK.find((tone) => tones.includes(tone)) ?? 'muted'
+}
+
+// One button for all of a ticket's PRs: its dot is the worst state; a click lists each PR (repo, branch, state)
+// with a link that opens it in a new tab.
 export function PrPills({ prs, repoLabels }: PrPillsProps): React.JSX.Element | null {
   if (prs.length === 0) {
     return null
   }
   return (
-    <span className="ml-2 inline-flex flex-wrap gap-1 align-middle">
-      {prs.map((ticketPr) => {
-        const state = prState(ticketPr.pr)
-        const repo = repoLabel(ticketPr.pr.repository, repoLabels)
-        return (
-          <a
-            key={ticketPr.key}
-            className="rounded-full no-underline"
-            href={ticketPr.pr.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={`${repo} ${ticketPr.branch} #${String(ticketPr.pullRequestId)}`}
-          >
-            <Chip size="sm" color={chipColor(state.tone)}>
-              {`${repo} ${ticketPr.branch} `}
-              <span aria-hidden="true">{state.mark}</span>
-              {` ${state.word}`}
-            </Chip>
-          </a>
-        )
-      })}
-    </span>
+    <Popover>
+      <Button size="sm" variant="secondary" className="ml-2 align-middle">
+        {`PR ${String(prs.length)}`}
+        <span
+          aria-hidden="true"
+          className={`size-2 rounded-full ${DOT_CLASS[worstTone(prs)]}`}
+          data-testid="pr-dot"
+        />
+      </Button>
+      <Popover.Content placement="bottom start">
+        <Popover.Dialog className="w-72 max-w-[92vw]">
+          <Popover.Heading className="pb-2 font-semibold">
+            {t('Pull requests', 'Pull request')}
+          </Popover.Heading>
+          <ul className="m-0 flex list-none flex-col gap-1 p-0">
+            {prs.map((ticketPr) => {
+              const state = prState(ticketPr.pr)
+              const repo = repoLabel(ticketPr.pr.repository, repoLabels)
+              return (
+                <li key={ticketPr.key}>
+                  <a
+                    className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm no-underline hover:bg-surface-secondary"
+                    href={ticketPr.pr.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${repo} ${ticketPr.branch} #${String(ticketPr.pullRequestId)}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`size-2 shrink-0 rounded-full ${DOT_CLASS[state.tone]}`}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{`${repo} ${ticketPr.branch}`}</span>
+                    <span className="shrink-0 text-muted">{`${state.mark} ${state.word}`}</span>
+                  </a>
+                </li>
+              )
+            })}
+          </ul>
+        </Popover.Dialog>
+      </Popover.Content>
+    </Popover>
   )
 }

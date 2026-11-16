@@ -52,13 +52,10 @@ function Toast({
   )
 }
 
-// Bottom-right stack; a toast closes itself after six seconds without reading the notice.
+// Top-right stack under the bell; a toast closes itself after six seconds without reading the notice.
 export function NoticeToasts({ alerts }: { readonly alerts: NoticeAlerts }): React.JSX.Element {
   return (
-    <div
-      className="fixed bottom-16 right-4 z-30 flex flex-col gap-2 min-[720px]:bottom-4"
-      role="status"
-    >
+    <div className="fixed right-4 top-16 z-30 flex flex-col gap-2" role="status">
       {alerts.toasts.map((notice) => (
         <Toast key={notice.id} notice={notice} alerts={alerts} />
       ))}
