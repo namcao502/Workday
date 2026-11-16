@@ -1,11 +1,18 @@
 import type { ChangeStatus } from '@workday/core'
+import { LayoutSideContent } from '@gravity-ui/icons'
 import { Button } from '@heroui/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useChanges } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
+import { CopyPath } from '../ui/CopyPath.js'
+import { SplitView } from '../ui/SplitView.js'
+import { useStoredSplit } from '../ui/useStoredSplit.js'
 import { buildTree, treeOrder } from './buildTree.js'
 import { DiffView } from './DiffView.js'
 import { GroupTrees, type FileRef, type TreeGroup } from './GroupTrees.js'
+
+const LIST_SHARE = 0.3
+const LIST_MIN_PX = 160
 
 interface ChangesViewProps {
   readonly tabId: string
@@ -18,6 +25,7 @@ function sameRef(a: FileRef | null, b: FileRef): boolean {
 export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
   const { data, refetch, isFetching } = useChanges(tabId)
   const [chosen, setChosen] = useState<FileRef | null>(null)
+  const split = useStoredSplit('changes')
   const groups = useMemo<readonly TreeGroup[]>(
     () =>
       (data ?? []).map((group) => ({
@@ -60,10 +68,22 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
   }, [order, selected])
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="pb-1">
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <div className="flex items-center gap-1 pb-1">
         <Button
-          variant="ghost"
+          isIconOnly
+          variant="secondary"
+          size="sm"
+          aria-label={t('Show or hide the file list', 'Ẩn / hiện danh sách file')}
+          aria-pressed={split.hidden === 'none'}
+          onPress={() => {
+            split.setHidden(split.hidden === 'none' ? 'left' : 'none')
+          }}
+        >
+          <LayoutSideContent />
+        </Button>
+        <Button
+          variant="secondary"
           size="sm"
           isDisabled={isFetching}
           onPress={() => {
@@ -72,14 +92,30 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
         >
           {t('Refresh', 'Làm mới')}
         </Button>
+        {selected === null ? null : <CopyPath text={selected.path} />}
       </div>
-      <GroupTrees groups={groups} selected={selected} onSelect={setChosen} defaultOpen />
-      {data !== undefined && order.length === 0 ? (
-        <p className="text-sm text-muted">{t('No changes', 'Không có thay đổi')}</p>
-      ) : null}
-      {selected === null ? null : (
-        <DiffView key={`${selected.group}:${selected.path}`} tabId={tabId} {...selected} />
-      )}
+      <SplitView
+        className="flex-1"
+        share={split.share ?? LIST_SHARE}
+        onShareChange={split.setShare}
+        hidden={split.hidden}
+        minPx={LIST_MIN_PX}
+        left={
+          <div className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
+            <GroupTrees groups={groups} selected={selected} onSelect={setChosen} defaultOpen />
+            {data !== undefined && order.length === 0 ? (
+              <p className="text-sm text-muted">{t('No changes', 'Không có thay đổi')}</p>
+            ) : null}
+          </div>
+        }
+        right={
+          <div className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
+            {selected === null ? null : (
+              <DiffView key={`${selected.group}:${selected.path}`} tabId={tabId} {...selected} />
+            )}
+          </div>
+        }
+      />
     </div>
   )
 }

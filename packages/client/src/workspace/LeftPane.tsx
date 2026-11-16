@@ -5,6 +5,7 @@ import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { ChangesView } from './ChangesView.js'
 import { FilesView } from './FilesView.js'
+import type { PaneToggle } from './paneToggle.js'
 import { TeamsView } from './teams/TeamsView.js'
 import { useTeamsPending } from './teams/useTeams.js'
 
@@ -13,13 +14,15 @@ type LeftTab = 'changes' | 'files' | 'teams'
 interface LeftPaneProps {
   readonly tab: WorkspaceTab
   readonly teamsConversation: string | null // from the hash; opens the Teams view on it
-  readonly onHide: () => void
+  readonly toggle: PaneToggle // hides this pane, or brings Claude back
 }
 
-const TAB_CLASS = 'flex h-7 items-center gap-1.5 rounded-lg px-3 text-sm'
+const TAB_CLASS = 'flex h-7 items-center gap-1.5 rounded-full px-3 text-sm'
 
 function tabClass(selected: boolean): string {
-  return selected ? `${TAB_CLASS} bg-surface shadow-sm` : `${TAB_CLASS} text-muted`
+  return selected
+    ? `${TAB_CLASS} bg-surface shadow-sm`
+    : `${TAB_CLASS} text-muted hover:bg-surface hover:text-foreground`
 }
 
 function TeamsTabButton({
@@ -53,7 +56,7 @@ function TeamsTabButton({
 export function LeftPane({
   tab: workspaceTab,
   teamsConversation,
-  onHide,
+  toggle,
 }: LeftPaneProps): React.JSX.Element {
   const tabId = workspaceTab.id
   const isTicket = workspaceTab.kind === 'ticket'
@@ -67,9 +70,9 @@ export function LeftPane({
     }
   }, [teamsConversation, isTicket])
   return (
-    <div className="flex min-h-0 min-w-0 flex-[1_1_50%] flex-col" data-testid="workspace-left">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-testid="workspace-left">
       <div className="flex items-center gap-1.5 pb-2">
-        <div role="tablist" className="flex gap-0.5 rounded-xl bg-surface-secondary p-0.5">
+        <div role="tablist" className="flex gap-0.5 rounded-full bg-surface-secondary p-0.5">
           <button
             type="button"
             role="tab"
@@ -103,20 +106,24 @@ export function LeftPane({
             />
           ) : null}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={() => {
-            void openInVsCode(tabId)
-          }}
-        >
-          VS Code
-        </Button>
-        <Button variant="ghost" size="sm" onPress={onHide}>
-          {t('Hide', 'Ẩn')}
+        {isTicket ? null : (
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={() => {
+              void openInVsCode(tabId)
+            }}
+          >
+            VS Code
+          </Button>
+        )}
+        <Button className="ml-auto" variant="secondary" size="sm" onPress={toggle.onPress}>
+          {toggle.label}
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div
+        className={`min-h-0 flex-1 ${tab === 'teams' ? 'overflow-auto pr-2 [scrollbar-gutter:stable]' : 'overflow-hidden'}`}
+      >
         {tab === 'changes' ? <ChangesView tabId={tabId} /> : null}
         {tab === 'files' ? <FilesView tabId={tabId} /> : null}
         {tab === 'teams' ? (

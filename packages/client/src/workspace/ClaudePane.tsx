@@ -3,6 +3,7 @@ import { Plus } from '@gravity-ui/icons'
 import type { WorkspaceTab } from '@workday/core'
 import { t } from '../i18n.js'
 import { ChatView } from './ChatView.js'
+import type { PaneToggle } from './paneToggle.js'
 
 // "MDP-1" / "claude2" -> "Claude"; "MDP-1~3" -> "Claude 3".
 export function sessionLabel(name: string): string {
@@ -14,6 +15,7 @@ interface ClaudePaneProps {
   readonly tab: WorkspaceTab
   readonly active: boolean // false: another ticket tab is open; stay mounted but hidden
   readonly selected: string
+  readonly toggle: PaneToggle // hides this pane, or brings the other one back
   readonly onSelect: (session: string) => void
   readonly onAdd: () => void
   readonly onClose: (session: string) => void
@@ -24,23 +26,24 @@ export function ClaudePane({
   tab,
   active,
   selected,
+  toggle,
   onSelect,
   onAdd,
   onClose,
 }: ClaudePaneProps): React.JSX.Element {
   return (
-    <div className={`h-full min-h-0 min-w-0 flex-[1_1_50%] flex-col ${active ? 'flex' : 'hidden'}`}>
+    <div className={`h-full min-h-0 min-w-0 flex-1 flex-col ${active ? 'flex' : 'hidden'}`}>
       <div
-        className="flex flex-wrap items-center gap-1 border-b border-separator pb-2"
+        className="flex flex-wrap items-center gap-1 pb-2"
         role="tablist"
         aria-label={t('Claude sessions', 'Phiên Claude')}
       >
         {tab.sessions.map((name, index) => (
           <div
             key={name}
-            className={`flex h-8 items-center rounded-lg pl-3 text-sm ${
+            className={`flex h-8 items-center rounded-full pl-3.5 text-sm transition-colors duration-150 ${
               index === 0 ? 'pr-3' : 'pr-1'
-            }${name === selected ? ' bg-surface shadow-sm' : ''}`}
+            }${name === selected ? ' bg-surface shadow-sm' : ' hover:bg-surface-secondary'}`}
           >
             <button
               type="button"
@@ -54,7 +57,7 @@ export function ClaudePane({
             </button>
             {index === 0 ? null : (
               <CloseButton
-                className="ml-1 size-6"
+                className="ml-1 size-6 hover:bg-danger hover:text-danger-foreground"
                 aria-label={t(`Close ${sessionLabel(name)}`, `Đóng ${sessionLabel(name)}`)}
                 onPress={() => {
                   onClose(name)
@@ -65,12 +68,15 @@ export function ClaudePane({
         ))}
         <Button
           isIconOnly
-          variant="ghost"
+          variant="secondary"
           size="sm"
           aria-label={t('New Claude session', 'Phiên Claude mới')}
           onPress={onAdd}
         >
           <Plus />
+        </Button>
+        <Button className="ml-auto" variant="secondary" size="sm" onPress={toggle.onPress}>
+          {toggle.label}
         </Button>
       </div>
       {tab.sessions.map((name) => (

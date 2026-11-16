@@ -1,5 +1,6 @@
 import type { AppError, ChangeStatus } from '@workday/core'
-import { useMemo } from 'react'
+import { ChevronDown, ChevronRight } from '@gravity-ui/icons'
+import { useMemo, useState } from 'react'
 import { errorText } from '../errors.js'
 import { FileTree } from './FileTree.js'
 
@@ -36,19 +37,37 @@ function GroupSection({
     },
     [group.id, onSelect],
   )
+  const [collapsed, setCollapsed] = useState(false)
+  const Chevron = collapsed ? ChevronRight : ChevronDown
   return (
     <section>
-      <h3 className="mb-1 mt-2 text-sm font-semibold">{group.label}</h3>
-      {group.error === null ? null : (
-        <p className="text-sm text-danger">{errorText(group.error)}</p>
+      <h3 className="mb-1 mt-2 text-sm font-semibold">
+        <button
+          type="button"
+          className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-1 py-0.5 text-left hover:bg-surface-secondary"
+          aria-expanded={!collapsed}
+          onClick={() => {
+            setCollapsed(!collapsed)
+          }}
+        >
+          <Chevron width={14} height={14} aria-hidden="true" />
+          {group.label}
+        </button>
+      </h3>
+      {collapsed ? null : (
+        <>
+          {group.error === null ? null : (
+            <p className="text-sm text-danger">{errorText(group.error)}</p>
+          )}
+          <FileTree
+            paths={group.paths}
+            selectedPath={selectedPath}
+            onSelect={select}
+            defaultOpen={defaultOpen}
+            statuses={group.statuses}
+          />
+        </>
       )}
-      <FileTree
-        paths={group.paths}
-        selectedPath={selectedPath}
-        onSelect={select}
-        defaultOpen={defaultOpen}
-        statuses={group.statuses}
-      />
     </section>
   )
 }

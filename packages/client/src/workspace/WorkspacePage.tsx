@@ -1,6 +1,6 @@
 import type { SessionView, WorkspaceTab } from '@workday/core'
 import { Alert, Button } from '@heroui/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStartWarning, useWorkspace, useWorkspaceActions } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
 import {
@@ -11,13 +11,19 @@ import {
   type WorkspaceSelection,
 } from '../shell/pages.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
-import { Page } from '../ui/Page.js'
+import { Page, PageHeading } from '../ui/Page.js'
+import { SplitView } from '../ui/SplitView.js'
+import { useStoredSplit } from '../ui/useStoredSplit.js'
+import { TicketInfoBar } from './TicketInfoBar.js'
 import { ClaudePane } from './ClaudePane.js'
 import { LeftPane } from './LeftPane.js'
 import { resolveSelection } from './selection.js'
 import { requestNoticePermission } from './useClaudeNotices.js'
 import { tabLabel, WorkspaceTabs } from './WorkspaceTabs.js'
 import './workspace.css'
+
+const DEFAULT_SHARE = 0.5
+const MIN_PANE_PX = 240
 
 function useHashSelection(): WorkspaceSelection {
   const [selection, setSelection] = useState(() => workspaceSelectionFromHash(window.location.hash))
@@ -63,7 +69,6 @@ export function WorkspacePage(): React.JSX.Element {
   const selection = useHashSelection()
   const { warning, setWarning } = useStartWarning()
   const [closing, setClosing] = useState<WorkspaceTab | null>(null)
-  const [leftHidden, setLeftHidden] = useState(false)
   const view = workspace.data
   const { tab, session } = resolveSelection(view?.tabs ?? [], selection)
   useMarkSeen(
@@ -71,11 +76,20 @@ export function WorkspacePage(): React.JSX.Element {
     actions.markSeen,
   )
 
+  // Each tab keeps its own share and hidden pane, as in the WPF app.
+  const split = useStoredSplit(tab?.id ?? '')
+  const showBoth = useRef(() => {})
+  useEffect(() => {
+    showBoth.current = () => {
+      split.setHidden('none')
+    }
+  })
+
   // A Teams notice must be visible even if the left pane was hidden.
   const teamsConversation = teamsConversationFromHash(window.location.hash)
   useEffect(() => {
     if (teamsConversation !== null) {
-      setLeftHidden(false)
+      showBoth.current()
     }
   }, [teamsConversation, selection])
 
@@ -110,6 +124,10 @@ export function WorkspacePage(): React.JSX.Element {
     )
   }
 
+  function showBothNow(): void {
+    split.setHidden('none')
+  }
+
   function closeTab(target: WorkspaceTab): void {
     const running = view?.sessions.some(
       (candidate) => candidate.running && target.sessions.includes(candidate.name),
@@ -133,6 +151,7 @@ export function WorkspacePage(): React.JSX.Element {
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-3 px-6 pb-4">
+      <PageHeading title={t('Workspace', 'Không gian làm việc')} />
       {warning === null ? null : (
         <Alert status="warning">
           <Alert.Indicator />
@@ -140,7 +159,7 @@ export function WorkspacePage(): React.JSX.Element {
             <Alert.Title>{warning}</Alert.Title>
           </Alert.Content>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onPress={() => {
               setWarning(null)
@@ -150,47 +169,54 @@ export function WorkspacePage(): React.JSX.Element {
           </Button>
         </Alert>
       )}
-      <WorkspaceTabs
-        tabs={view.tabs}
-        sessions={view.sessions}
-        selectedId={tab?.id ?? null}
-        recentFolders={view.recentFolders}
-        onSelect={(id) => {
-          navigateToWorkspace(id)
-        }}
-        onClose={closeTab}
-        onAddTerminal={(folder) => {
-          void actions.addTerminal(folder)
-        }}
-      />
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <WorkspaceTabs
+            tabs={view.tabs}
+            sessions={view.sessions}
+            selectedId={tab?.id ?? null}
+            recentFolders={view.recentFolders}
+            onSelect={(id) => {
+              navigateToWorkspace(id)
+            }}
+            onClose={closeTab}
+            onAddTerminal={(folder) => {
+              void actions.addTerminal(folder)
+            }}
+          />
+        </div>
+      </div>
+      {tab?.kind === 'ticket' ? <TicketInfoBar ticketKey={tab.id} /> : null}
       {tab === null || session === null ? (
         <p className="text-sm text-muted">{t('No open tabs', 'Chưa có thẻ nào')}</p>
       ) : (
-        <div className="flex min-h-0 flex-1 gap-4">
-          {leftHidden ? (
-            <div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() => {
-                  setLeftHidden(false)
-                }}
-              >
-                {t('Show files', 'Hiện tệp')}
-              </Button>
-            </div>
-          ) : (
-            // Distinct keys per sibling: a key shared with ClaudePane left old panes mounted on tab switch.
-            <LeftPane
-              key={`left-${tab.id}`}
-              tab={tab}
-              teamsConversation={teamsConversation}
-              onHide={() => {
-                setLeftHidden(true)
-              }}
-            />
-          )}
-          {view.tabs.map((paneTab) => {
+        <SplitView
+          className="flex-1"
+          share={split.share ?? DEFAULT_SHARE}
+          onShareChange={split.setShare}
+          hidden={split.hidden}
+          minPx={MIN_PANE_PX}
+          left={
+            split.hidden === 'left' ? null : (
+              // Distinct keys per sibling: a key shared with ClaudePane left old panes mounted on tab switch.
+              <LeftPane
+                key={`left-${tab.id}`}
+                tab={tab}
+                teamsConversation={teamsConversation}
+                toggle={
+                  split.hidden === 'right'
+                    ? { label: t('Show Claude', 'Hiện Claude'), onPress: showBothNow }
+                    : {
+                        label: t('Hide', 'Ẩn'),
+                        onPress: () => {
+                          split.setHidden('left')
+                        },
+                      }
+                }
+              />
+            )
+          }
+          right={view.tabs.map((paneTab) => {
             const active = paneTab.id === tab.id
             // A hidden pane shows nothing, so any of its sessions will do; every one stays mounted.
             const shown = active ? session : (paneTab.sessions[0] ?? '')
@@ -200,6 +226,16 @@ export function WorkspacePage(): React.JSX.Element {
                 tab={paneTab}
                 active={active}
                 selected={shown}
+                toggle={
+                  split.hidden === 'left'
+                    ? { label: t('Show files', 'Hiện tệp'), onPress: showBothNow }
+                    : {
+                        label: t('Hide Claude', 'Ẩn Claude'),
+                        onPress: () => {
+                          split.setHidden('right')
+                        },
+                      }
+                }
                 onSelect={(name) => {
                   navigateToWorkspace(paneTab.id, name)
                 }}
@@ -213,7 +249,7 @@ export function WorkspacePage(): React.JSX.Element {
               />
             )
           })}
-        </div>
+        />
       )}
       {closing === null ? null : (
         <ConfirmDialog
