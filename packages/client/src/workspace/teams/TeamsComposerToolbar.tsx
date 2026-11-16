@@ -1,5 +1,6 @@
 import {
   Bold,
+  Code,
   Italic,
   Link,
   ListOl,
@@ -100,6 +101,23 @@ export function TeamsComposerToolbar({
           ))}
         </div>
       ))}
+      <Button
+        isIconOnly
+        variant="secondary"
+        size="sm"
+        aria-label={t('Insert code block', 'Chèn khối code')}
+        isDisabled={disabled}
+        onMouseDown={(event) => {
+          event.preventDefault()
+        }}
+        onPress={() => {
+          onFormat('codeBlock')
+        }}
+      >
+        <span title={t('Insert code block', 'Chèn khối code')} className="flex">
+          <Code />
+        </span>
+      </Button>
       <Button
         isIconOnly
         variant="secondary"

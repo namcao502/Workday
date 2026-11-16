@@ -201,6 +201,15 @@ export type FormatCommand =
   | 'insertUnorderedList'
   | 'insertOrderedList'
   | 'blockquote'
+  | 'codeBlock'
+
+// A caret or selection inside a <pre> turns back into a paragraph; anywhere else it becomes a code block.
+function toggleCodeBlock(): void {
+  const anchor = window.getSelection()?.anchorNode ?? null
+  const element = anchor instanceof Element ? anchor : (anchor?.parentElement ?? null)
+  const inside = element?.closest('pre') ?? null
+  document.execCommand('formatBlock', false, inside === null ? 'pre' : 'p')
+}
 
 export function applyFormat(command: FormatCommand): void {
   if (typeof document.execCommand !== 'function') {
@@ -208,6 +217,8 @@ export function applyFormat(command: FormatCommand): void {
   }
   if (command === 'blockquote') {
     document.execCommand('formatBlock', false, 'blockquote')
+  } else if (command === 'codeBlock') {
+    toggleCodeBlock()
   } else {
     document.execCommand(command)
   }

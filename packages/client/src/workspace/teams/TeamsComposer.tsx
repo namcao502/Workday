@@ -235,7 +235,7 @@ export function TeamsComposer({
       />
       <div
         ref={editorRef}
-        className="max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-xl bg-surface-secondary p-2 text-sm outline-none focus:bg-field-focus"
+        className="max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-xl bg-surface-secondary p-2 text-sm outline-none focus:bg-field-focus [&_pre]:my-1 [&_pre]:rounded-lg [&_pre]:bg-surface [&_pre]:p-2 [&_pre]:font-mono [&_pre]:text-xs"
         role="textbox"
         aria-multiline="true"
         aria-label={label}

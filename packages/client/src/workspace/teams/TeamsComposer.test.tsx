@@ -109,3 +109,17 @@ it('an uncertain send asks before sending again with confirm', async () => {
   })
   expect(onSend.mock.calls[1]?.[2]).toBe(true)
 })
+
+it('the code block button turns the line into a pre, and pressing it inside one undoes it', () => {
+  const exec = vi.fn(() => true)
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- execCommand is the editor API under test
+  document.execCommand = exec
+  const editor = renderComposer('reply', vi.fn())
+  type(editor, 'let a = 1')
+  fireEvent.click(screen.getByRole('button', { name: 'Insert code block' }))
+  expect(exec).toHaveBeenLastCalledWith('formatBlock', false, 'pre')
+  editor.innerHTML = '<pre>let a = 1</pre>'
+  window.getSelection()?.collapse(editor.querySelector('pre')?.firstChild ?? editor, 2)
+  fireEvent.click(screen.getByRole('button', { name: 'Insert code block' }))
+  expect(exec).toHaveBeenLastCalledWith('formatBlock', false, 'p')
+})
