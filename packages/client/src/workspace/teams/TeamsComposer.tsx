@@ -1,3 +1,4 @@
+import { At } from '@gravity-ui/icons'
 import { Button, Input } from '@heroui/react'
 import {
   isEmptyHtml,
@@ -215,7 +216,6 @@ export function TeamsComposer({
       <TeamsComposerToolbar
         disabled={sending}
         onFormat={applyFormat}
-        onMention={startMention}
         onLinkOpen={() => {
           const editor = editorRef.current
           linkRangeRef.current =
@@ -278,6 +278,21 @@ export function TeamsComposer({
         </ul>
       )}
       <div className="flex flex-wrap items-center gap-2">
+        <Button
+          isIconOnly
+          variant="secondary"
+          size="sm"
+          aria-label={t('Tag someone', 'Tag người')}
+          isDisabled={sending}
+          onMouseDown={(event) => {
+            event.preventDefault()
+          }}
+          onPress={startMention}
+        >
+          <span title={t('Tag someone', 'Tag người')} className="flex">
+            <At />
+          </span>
+        </Button>
         <Button
           variant="primary"
           size="sm"

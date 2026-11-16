@@ -1,12 +1,21 @@
+import {
+  Bold,
+  Italic,
+  Link,
+  ListOl,
+  ListUl,
+  QuoteOpen,
+  Strikethrough,
+  Underline,
+} from '@gravity-ui/icons'
 import { Button, Input } from '@heroui/react'
-import { useState } from 'react'
+import { useState, type ComponentType, type SVGProps } from 'react'
 import { t } from '../../i18n.js'
 import { isWebUrl, type FormatCommand } from './teamsComposerDom.js'
 
 interface TeamsComposerToolbarProps {
   readonly disabled: boolean
   readonly onFormat: (command: FormatCommand) => void
-  readonly onMention: () => void
   readonly onLinkOpen: () => void // the editor saves its selection before the prompt takes the focus
   readonly onLink: (url: string) => void
 }
@@ -14,17 +23,31 @@ interface TeamsComposerToolbarProps {
 interface FormatButton {
   readonly command: FormatCommand
   readonly label: string
-  readonly text: string
+  readonly Icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
-function formatButtons(): readonly FormatButton[] {
+// The WPF composer's order and tooltips: text style, then lists and quote, then the link.
+function formatGroups(): readonly (readonly FormatButton[])[] {
   return [
-    { command: 'bold', label: t('Bold', 'Đậm'), text: 'B' },
-    { command: 'italic', label: t('Italic', 'Nghiêng'), text: 'I' },
-    { command: 'underline', label: t('Underline', 'Gạch chân'), text: 'U' },
-    { command: 'strikeThrough', label: t('Strikethrough', 'Gạch ngang'), text: 'S' },
-    { command: 'insertUnorderedList', label: t('List', 'Danh sách'), text: '•' },
-    { command: 'blockquote', label: t('Quote', 'Trích dẫn'), text: '"' },
+    [
+      { command: 'bold', label: t('Bold (Ctrl+B)', 'Đậm (Ctrl+B)'), Icon: Bold },
+      { command: 'italic', label: t('Italic (Ctrl+I)', 'Nghiêng (Ctrl+I)'), Icon: Italic },
+      {
+        command: 'underline',
+        label: t('Underline (Ctrl+U)', 'Gạch chân (Ctrl+U)'),
+        Icon: Underline,
+      },
+      {
+        command: 'strikeThrough',
+        label: t('Strikethrough', 'Gạch ngang'),
+        Icon: Strikethrough,
+      },
+    ],
+    [
+      { command: 'insertUnorderedList', label: t('Bulleted list', 'Danh sách'), Icon: ListUl },
+      { command: 'insertOrderedList', label: t('Numbered list', 'Danh sách số'), Icon: ListOl },
+      { command: 'blockquote', label: t('Quote', 'Trích dẫn'), Icon: QuoteOpen },
+    ],
   ]
 }
 
@@ -32,7 +55,6 @@ function formatButtons(): readonly FormatButton[] {
 export function TeamsComposerToolbar({
   disabled,
   onFormat,
-  onMention,
   onLinkOpen,
   onLink,
 }: TeamsComposerToolbarProps): React.JSX.Element {
@@ -53,26 +75,33 @@ export function TeamsComposerToolbar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5">
-      {formatButtons().map((button) => (
-        <Button
-          key={button.command}
-          isIconOnly
-          variant="secondary"
-          size="sm"
-          aria-label={button.label}
-          isDisabled={disabled}
-          onMouseDown={(event) => {
-            event.preventDefault()
-          }}
-          onPress={() => {
-            onFormat(button.command)
-          }}
-        >
-          {button.text}
-        </Button>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {formatGroups().map((group) => (
+        <div key={group[0]?.command} className="flex items-center gap-0.5">
+          {group.map(({ command, label, Icon }) => (
+            <Button
+              key={command}
+              isIconOnly
+              variant="secondary"
+              size="sm"
+              aria-label={label}
+              isDisabled={disabled}
+              onMouseDown={(event) => {
+                event.preventDefault()
+              }}
+              onPress={() => {
+                onFormat(command)
+              }}
+            >
+              <span title={label} className="flex">
+                <Icon />
+              </span>
+            </Button>
+          ))}
+        </div>
       ))}
       <Button
+        isIconOnly
         variant="secondary"
         size="sm"
         aria-label={t('Link', 'Liên kết')}
@@ -85,20 +114,9 @@ export function TeamsComposerToolbar({
           setLinking(true)
         }}
       >
-        {t('Link', 'Liên kết')}
-      </Button>
-      <Button
-        isIconOnly
-        variant="secondary"
-        size="sm"
-        aria-label={t('Mention', 'Nhắc tên')}
-        isDisabled={disabled}
-        onMouseDown={(event) => {
-          event.preventDefault()
-        }}
-        onPress={onMention}
-      >
-        @
+        <span title={t('Link', 'Liên kết')} className="flex">
+          <Link />
+        </span>
       </Button>
       {linking ? (
         <span className="inline-flex items-center gap-1">

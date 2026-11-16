@@ -194,7 +194,13 @@ export function loadMessage(message: TeamsMessage): LoadedDraft {
 // execCommand is deprecated but is the only way to format a contentEditable.
 /* eslint-disable @typescript-eslint/no-deprecated */
 export type FormatCommand =
-  'bold' | 'italic' | 'underline' | 'strikeThrough' | 'insertUnorderedList' | 'blockquote'
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'strikeThrough'
+  | 'insertUnorderedList'
+  | 'insertOrderedList'
+  | 'blockquote'
 
 export function applyFormat(command: FormatCommand): void {
   if (typeof document.execCommand !== 'function') {
