@@ -1,7 +1,17 @@
 // Turns a Claude Code transcript (JSONL lines) into chat rows. Pure: the server reads the file.
 
 import type { ChatRequest } from './agentRequests.js'
-import type { AgentMode } from './ports/claudeAgent.js'
+import type { AgentCatalog, AgentMode, AgentUsage } from './ports/claudeAgent.js'
+
+export interface ToolEdit {
+  readonly oldText: string // empty for a Write
+  readonly newText: string
+}
+
+export interface ChatTodo {
+  readonly text: string
+  readonly status: 'pending' | 'in_progress' | 'completed'
+}
 
 export interface ChatMessage {
   readonly id: number // line byte offset * 100 + block index, stable while the file grows
@@ -11,7 +21,11 @@ export interface ChatMessage {
   readonly toolDetail: string | null
   readonly isError: boolean
   readonly at: string | null
+  readonly uuid: string | null // a prompt's id, the point a file rewind goes back to
   readonly status: 'running' | 'background' | null
+  readonly output: string | null // the tool's result text, cut to MAX_OUTPUT_LENGTH
+  readonly edit: ToolEdit | null // what an Edit or Write changed
+  readonly todos: readonly ChatTodo[] | null // the list a TodoWrite set
 }
 
 export interface ChatView {
@@ -22,12 +36,19 @@ export interface ChatView {
   readonly running: boolean
   readonly mode: AgentMode
   readonly model: string | null
+  readonly contextTokens: number | null // prompt size of the last reply, from the transcript
+  readonly branch: string | null // filled by the route from git
+  readonly added: number
+  readonly removed: number
+  readonly catalog: AgentCatalog | null // models and slash commands; null until a session has run
+  readonly usage: AgentUsage | null // read from a live session; null before the first reading
 }
 
 type Json = Readonly<Record<string, unknown>>
 
 const MAX_DETAIL_LENGTH = 120
 const MAX_NOTICE_LENGTH = 1500
+const MAX_OUTPUT_LENGTH = 3000
 const DETAIL_KEYS = [
   'file_path',
   'notebook_path',
@@ -158,6 +179,43 @@ function resultText(block: unknown): string {
     .join('\n')
 }
 
+function cut(text: string, max: number): string {
+  return text.length <= max
+    ? text
+    : `${text.slice(0, max)}
+...`
+}
+
+function toolEdit(name: string | null, input: unknown): ToolEdit | null {
+  if (name === 'Edit') {
+    const newText = str(input, 'new_string')
+    return newText === null
+      ? null
+      : {
+          oldText: cut(str(input, 'old_string') ?? '', MAX_OUTPUT_LENGTH),
+          newText: cut(newText, MAX_OUTPUT_LENGTH),
+        }
+  }
+  const content = name === 'Write' ? str(input, 'content') : null
+  return content === null ? null : { oldText: '', newText: cut(content, MAX_OUTPUT_LENGTH) }
+}
+
+const TODO_STATUSES: ReadonlySet<string> = new Set(['pending', 'in_progress', 'completed'])
+
+function toolTodos(name: string | null, input: unknown): readonly ChatTodo[] | null {
+  const list = name === 'TodoWrite' && isJson(input) ? input['todos'] : null
+  if (!Array.isArray(list)) {
+    return null
+  }
+  return list.flatMap((item): ChatTodo[] => {
+    const text = str(item, 'content')
+    const status = str(item, 'status')
+    return text === null || status === null || !TODO_STATUSES.has(status)
+      ? []
+      : [{ text, status: status as ChatTodo['status'] }]
+  })
+}
+
 function make(
   id: number,
   role: ChatMessage['role'],
@@ -172,7 +230,11 @@ function make(
     toolDetail: null,
     isError: false,
     at,
+    uuid: null,
     status: null,
+    output: null,
+    edit: null,
+    todos: null,
     ...extra,
   }
 }
@@ -223,13 +285,14 @@ export function parseTranscript(
   const backgroundToolIds = new Set<string>()
   const offsetByUuid = new Map<string, number>()
   let lastPromptOffset = -1
+  let currentUuid: string | null = null
 
   function addUserText(text: string | null, id: number, at: string | null): void {
     const shown = text === null ? null : userText(text)
     if (shown !== null) {
       // Claude writes the Stop marker as a user line; it is not something the person typed.
       const role = shown.startsWith(INTERRUPT_MARKER) ? 'notice' : 'user'
-      messages.push(make(id, role, at, { text: shown }))
+      messages.push(make(id, role, at, { text: shown, uuid: role === 'user' ? currentUuid : null }))
     }
   }
 
@@ -242,7 +305,9 @@ export function parseTranscript(
     content.forEach((block, blockIndex) => {
       const blockType = str(block, 'type')
       const id = idStart + blockIndex
-      if (blockType === 'text') {
+      if (!isAssistant && blockType === 'image') {
+        addUserText('[Image]', id, at)
+      } else if (blockType === 'text') {
         const text = str(block, 'text')
         if (!isAssistant) {
           addUserText(text, id, at)
@@ -258,11 +323,14 @@ export function parseTranscript(
             backgroundToolIds.add(toolUseId)
           }
         }
+        const toolName = str(block, 'name')
         messages.push(
           make(id, 'tool', at, {
-            toolName: str(block, 'name'),
+            toolName,
             toolDetail: toolDetail(input, cwd),
             status: 'running',
+            edit: toolEdit(toolName, input),
+            todos: toolTodos(toolName, input),
           }),
         )
       } else if (!isAssistant && blockType === 'tool_result') {
@@ -274,10 +342,12 @@ export function parseTranscript(
           const isBackground =
             backgroundToolIds.has(toolUseId) || resultText(block).startsWith('Async agent launched')
           const isError = flag(block, 'is_error')
+          const output = resultText(block).trim()
           messages[index] = {
             ...tool,
             isError,
             status: isBackground && !isError ? 'background' : null,
+            output: output === '' ? null : cut(output, MAX_OUTPUT_LENGTH),
           }
         }
       }
@@ -329,6 +399,7 @@ export function parseTranscript(
     const idStart = offset * 100
     const at = str(root, 'timestamp')
     const uuid = str(root, 'uuid')
+    currentUuid = uuid
     if (uuid !== null) {
       offsetByUuid.set(uuid, offset)
     }
@@ -390,6 +461,39 @@ export function parseTranscript(
     }
   })
   return messages
+}
+
+export interface TranscriptUsage {
+  readonly model: string | null
+  readonly contextTokens: number | null
+}
+
+// The model and prompt size of the last main-thread reply; synthetic (error) replies carry no usage.
+export function transcriptUsage(lines: readonly string[]): TranscriptUsage {
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(lines[index] ?? '')
+    } catch {
+      continue
+    }
+    if (!isJson(parsed) || str(parsed, 'type') !== 'assistant' || flag(parsed, 'isSidechain')) {
+      continue
+    }
+    const message = parsed['message']
+    const usage = isJson(message) ? message['usage'] : null
+    const model = str(message, 'model')
+    if (!isJson(usage) || model === null || model === '<synthetic>') {
+      continue
+    }
+    const tokens =
+      num(usage, 'input_tokens') +
+      num(usage, 'cache_read_input_tokens') +
+      num(usage, 'cache_creation_input_tokens') +
+      num(usage, 'output_tokens')
+    return { model, contextTokens: tokens === 0 ? null : tokens }
+  }
+  return { model: null, contextTokens: null }
 }
 
 // True only for an absolute .jsonl path under projectsRoot (separators and case normalized on Windows).

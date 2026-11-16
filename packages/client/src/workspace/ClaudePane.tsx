@@ -86,7 +86,7 @@ export function ClaudePane({
           className="flex min-h-0 flex-1"
           hidden={!active || name !== selected}
         >
-          <ChatView session={name} shown={active && name === selected} />
+          <ChatView session={name} tabId={tab.id} shown={active && name === selected} />
         </div>
       ))}
     </div>

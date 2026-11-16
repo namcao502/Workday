@@ -106,6 +106,16 @@ describe('AgentSession', () => {
     expect(session.state.finished).toBe(false)
   })
 
+  it('a prompt sent mid-turn keeps working until its own turn ends', () => {
+    const { session, agent } = build()
+    session.send('one')
+    session.send('two')
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(session.state).toMatchObject({ working: true, finished: false })
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(session.state).toMatchObject({ working: false, finished: true })
+  })
+
   it('exited denies open requests and the next send starts a new process', async () => {
     const { session, agent, savedIds } = build()
     session.send('hi')

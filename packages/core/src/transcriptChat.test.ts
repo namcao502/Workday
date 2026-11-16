@@ -178,3 +178,43 @@ describe('isAcceptedPath', () => {
     expect(isAcceptedPath('/home/me/.claude/projects/../s.jsonl', root, 'other')).toBe(false)
   })
 })
+
+describe('tool details', () => {
+  it('keeps an Edit, a Write and a result text for the chat to expand', () => {
+    const rows = parse([
+      toolUse('e', 'Edit', { file_path: 'a.ts', old_string: 'x', new_string: 'y' }),
+      toolResult('e', { content: 'edited' }),
+      toolUse('w', 'Write', { file_path: 'b.ts', content: 'hello' }),
+    ])
+    expect(rows[0]?.edit).toEqual({ oldText: 'x', newText: 'y' })
+    expect(rows[0]?.output).toBe('edited')
+    expect(rows[1]?.edit).toEqual({ oldText: '', newText: 'hello' })
+    expect(rows[1]?.output).toBeNull()
+  })
+
+  it('reads the list of a TodoWrite and drops items with an unknown status', () => {
+    const rows = parse([
+      toolUse('t', 'TodoWrite', {
+        todos: [
+          { content: 'a', status: 'completed', activeForm: 'A' },
+          { content: 'b', status: 'in_progress', activeForm: 'B' },
+          { content: 'c', status: 'weird', activeForm: 'C' },
+        ],
+      }),
+    ])
+    expect(rows[0]?.todos).toEqual([
+      { text: 'a', status: 'completed' },
+      { text: 'b', status: 'in_progress' },
+    ])
+  })
+})
+
+describe('prompt ids', () => {
+  it('gives a typed prompt its uuid and no other row one', () => {
+    const rows = parse([
+      user('hello', { uuid: 'u-1' }),
+      assistant([{ type: 'text', text: 'hi' }], { uuid: 'a-1' }),
+    ])
+    expect(rows.map((row) => row.uuid)).toEqual(['u-1', null])
+  })
+})

@@ -13,6 +13,11 @@ import type {
   AgentEvent,
   AgentMode,
   AgentSessionHandle,
+  AgentCatalog,
+  AgentImage,
+  AgentRewind,
+  AgentUsage,
+  UsageWindow,
   AgentStartOptions,
   ClaudeAgent,
 } from '@workday/core'
@@ -24,7 +29,7 @@ export interface SdkAgentDeps {
 }
 
 interface PromptQueue {
-  readonly push: (text: string) => void
+  readonly push: (text: string, images: readonly AgentImage[]) => void
   readonly end: () => void
   readonly messages: AsyncIterable<SDKUserMessage>
 }
@@ -50,6 +55,20 @@ function errorMessage(error: unknown): string {
 }
 
 // Prompts sent before the SDK first pulls wait in the buffer, each yielded exactly once.
+type PromptContent = SDKUserMessage['message']['content']
+
+// Plain text stays a string; images go first, each as a base64 block, with the text after them.
+function promptContent(text: string, images: readonly AgentImage[]): PromptContent {
+  if (images.length === 0) {
+    return text
+  }
+  const blocks = images.map((image) => ({
+    type: 'image' as const,
+    source: { type: 'base64' as const, media_type: image.mediaType, data: image.data },
+  }))
+  return text === '' ? blocks : [...blocks, { type: 'text' as const, text }]
+}
+
 function createPromptQueue(): PromptQueue {
   let buffer: readonly SDKUserMessage[] = []
   let ended = false
@@ -75,11 +94,13 @@ function createPromptQueue(): PromptQueue {
     }
   }
   return {
-    push: (text) => {
+    push: (text, images) => {
       const message: SDKUserMessage = {
         type: 'user',
-        message: { role: 'user', content: text },
+        message: { role: 'user', content: promptContent(text, images) },
         parent_tool_use_id: null,
+        // Our own id: the transcript line carries it, and a file rewind goes back to it.
+        uuid: randomUUID(),
         session_id: '',
       }
       buffer = [...buffer, message]
@@ -113,6 +134,17 @@ function toEvent(message: SDKMessage, startMode: AgentMode): AgentEvent | null {
     return { type: 'message' }
   }
   return null
+}
+
+interface RawWindow {
+  readonly utilization: number | null
+  readonly resets_at: string | null
+}
+
+function toWindow(raw: RawWindow | null | undefined): UsageWindow | null {
+  return raw === null || raw === undefined || raw.utilization === null
+    ? null
+    : { percent: raw.utilization, resetsAt: raw.resets_at }
 }
 
 function toPermissionResult(
@@ -162,6 +194,8 @@ function start(deps: SdkAgentDeps, options: AgentStartOptions): AgentSessionHand
       settingSources: ['user', 'project', 'local'],
       ...(options.resume === null ? {} : { resume: options.resume }),
       continue: options.continueLatest,
+      enableFileCheckpointing: true,
+      ...(options.model === null ? {} : { model: options.model }),
       canUseTool,
       stderr: (data) => {
         deps.logError('Claude stderr', data)
@@ -192,11 +226,51 @@ function start(deps: SdkAgentDeps, options: AgentStartOptions): AgentSessionHand
   void run()
 
   return {
-    send: (text) => {
-      prompts.push(text)
+    send: (text, images = []) => {
+      prompts.push(text, images)
     },
     interrupt: async () => {
       await session.interrupt()
+    },
+    usage: async () => {
+      const [context, plan] = await Promise.all([
+        session.getContextUsage({ detail: 'summary' }),
+        session.usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET({ skipBehaviors: true }),
+      ])
+      const usage: AgentUsage = {
+        contextPercent: context.percentage,
+        usage: toWindow(plan.rate_limits?.seven_day),
+      }
+      return usage
+    },
+    catalog: async () => {
+      const [models, commands] = await Promise.all([
+        session.supportedModels(),
+        session.supportedCommands(),
+      ])
+      const catalog: AgentCatalog = {
+        models: models.map((model) => ({ value: model.value, label: model.displayName })),
+        commands: commands.map((command) => ({
+          name: command.name,
+          description: command.description,
+          hint: command.argumentHint,
+        })),
+      }
+      return catalog
+    },
+    setModel: async (model) => {
+      await session.setModel(model)
+    },
+    rewind: async (messageId, dryRun) => {
+      const result = await session.rewindFiles(messageId, { dryRun })
+      const rewind: AgentRewind = {
+        canRewind: result.canRewind,
+        error: result.error ?? null,
+        files: result.filesChanged?.length ?? 0,
+        insertions: result.insertions ?? 0,
+        deletions: result.deletions ?? 0,
+      }
+      return rewind
     },
     setMode: async (mode) => {
       await session.setPermissionMode(mode)

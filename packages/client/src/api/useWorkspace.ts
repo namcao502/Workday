@@ -99,6 +99,16 @@ export function useFiles(tabId: string): UseQueryResult<readonly FilesGroupView[
   return useQuery({ queryKey: ['workspace-files', tabId, 'files'], queryFn: () => getFiles(tabId) })
 }
 
+// The @file menu reads the file list only once a "@" is typed.
+export function useFilePaths(tabId: string, enabled: boolean): readonly string[] {
+  const { data } = useQuery({
+    queryKey: ['workspace-files', tabId, 'files'],
+    queryFn: () => getFiles(tabId),
+    enabled,
+  })
+  return (data ?? []).flatMap((group) => group.paths)
+}
+
 export function useFileContent(
   tabId: string,
   group: string,

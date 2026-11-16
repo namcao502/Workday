@@ -3,6 +3,10 @@ import type {
   AgentEvent,
   AgentMode,
   AgentSessionHandle,
+  AgentCatalog,
+  AgentImage,
+  AgentRewind,
+  AgentUsage,
   AgentStartOptions,
   AgentToolCall,
   ClaudeAgent,
@@ -22,8 +26,11 @@ export class FakeAgentHandle implements AgentSessionHandle {
 
   constructor(readonly options: AgentStartOptions) {}
 
-  send(text: string): void {
+  readonly sentImages: (readonly AgentImage[])[] = []
+
+  send(text: string, images: readonly AgentImage[] = []): void {
     this.sent.push(text)
+    this.sentImages.push(images)
   }
 
   interrupt(): Promise<void> {
@@ -33,6 +40,27 @@ export class FakeAgentHandle implements AgentSessionHandle {
 
   setMode(mode: AgentMode): Promise<void> {
     this.modes.push(mode)
+    return Promise.resolve()
+  }
+
+  usage(): Promise<AgentUsage> {
+    return Promise.resolve({ contextPercent: null, usage: null })
+  }
+
+  catalog(): Promise<AgentCatalog> {
+    return Promise.resolve({ models: [], commands: [] })
+  }
+
+  readonly rewinds: { messageId: string; dryRun: boolean }[] = []
+  readonly models: string[] = []
+
+  rewind(messageId: string, dryRun: boolean): Promise<AgentRewind> {
+    this.rewinds.push({ messageId, dryRun })
+    return Promise.resolve({ canRewind: true, error: null, files: 2, insertions: 5, deletions: 1 })
+  }
+
+  setModel(model: string): Promise<void> {
+    this.models.push(model)
     return Promise.resolve()
   }
 

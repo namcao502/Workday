@@ -8,6 +8,10 @@ import {
   type AgentEvent,
   type AgentMode,
   type AgentSessionHandle,
+  type AgentCatalog,
+  type AgentImage,
+  type AgentRewind,
+  type AgentUsage,
   type AgentToolCall,
   type ChatAnswer,
   type ChatRequest,
@@ -37,6 +41,7 @@ export interface AgentSessionDeps {
   readonly mode: () => AgentMode // config default for a new process
   readonly onChange: () => void
   readonly onAttention: () => void // running / working / finished / wait changed
+  readonly onCatalog?: (catalog: AgentCatalog) => void // the service keeps the last one for idle sessions
   readonly onSessionId: (cwd: string, sessionId: string) => void
 }
 
@@ -46,6 +51,8 @@ export interface AgentSessionState {
   readonly finished: boolean // a turn ended since the user last looked
   readonly mode: AgentMode
   readonly model: string | null
+  readonly usage: AgentUsage | null
+  readonly catalog: AgentCatalog | null
   readonly sessionId: string | null
   readonly cwd: string | null
   readonly requests: readonly ChatRequest[]
@@ -70,6 +77,10 @@ export class AgentSession {
   private runningMode: AgentMode = 'default'
   private nextMode: AgentMode | null = null // set while stopped, used by the next start
   private model: string | null = null
+  private usage: AgentUsage | null = null
+  private catalog: AgentCatalog | null = null
+  private nextModel: string | null = null // set while stopped, used by the next start
+  private turns = 0 // prompts sent whose turn has not ended; a prompt sent mid-turn queues behind it
   private sessionId: string | null = null
   private cwd: string | null = null
   private pending: readonly PendingRequest[] = []
@@ -84,18 +95,21 @@ export class AgentSession {
       ...this.progress,
       mode: this.handle === null ? (this.nextMode ?? this.deps.mode()) : this.runningMode,
       model: this.model,
+      usage: this.usage,
+      catalog: this.catalog,
       sessionId: this.sessionId,
       cwd: this.cwd,
       requests: this.pending.map((item) => item.request),
     }
   }
 
-  send(text: string): void {
+  send(text: string, images: readonly AgentImage[] = []): void {
     if (this.disposed) {
       throw new WorkspaceStartError('sessionNotFound')
     }
     const handle = this.handle ?? this.start()
-    handle.send(text)
+    handle.send(text, images)
+    this.turns += 1
     this.update({ running: true, working: true, finished: false })
   }
 
@@ -126,6 +140,43 @@ export class AgentSession {
     await handle.setMode(mode)
     if (handle === this.handle) {
       this.runningMode = mode
+      this.deps.onChange()
+    }
+  }
+
+  // A rewind needs the live process and no turn running; otherwise it is refused with a reason.
+  async rewind(messageId: string, dryRun: boolean): Promise<AgentRewind> {
+    const refuse = (error: string): AgentRewind => ({
+      canRewind: false,
+      error,
+      files: 0,
+      insertions: 0,
+      deletions: 0,
+    })
+    if (this.handle === null) {
+      return refuse('notRunning')
+    }
+    if (this.progress.working) {
+      return refuse('working')
+    }
+    try {
+      return await this.handle.rewind(messageId, dryRun)
+    } catch (error: unknown) {
+      return refuse(error instanceof Error ? error.message : 'failed')
+    }
+  }
+
+  async setModel(model: string): Promise<void> {
+    const handle = this.handle
+    if (handle === null) {
+      this.nextModel = model
+      this.model = model
+      this.deps.onChange()
+      return
+    }
+    await handle.setModel(model)
+    if (handle === this.handle) {
+      this.model = model
       this.deps.onChange()
     }
   }
@@ -161,6 +212,7 @@ export class AgentSession {
       mode,
       resume,
       continueLatest: resume === null && this.deps.continueLatest(cwd),
+      model: this.nextModel,
       onEvent: (event) => {
         if (isCurrent()) {
           this.onEvent(cwd, event)
@@ -184,6 +236,8 @@ export class AgentSession {
         this.runningMode = event.mode
         this.deps.onSessionId(cwd, event.sessionId)
         this.deps.onChange()
+        void this.refreshUsage()
+        void this.refreshCatalog()
         return
       case 'mode':
         this.runningMode = event.mode
@@ -193,15 +247,52 @@ export class AgentSession {
         this.deps.onChange()
         return
       case 'turnEnded':
-        this.update({ working: false, finished: true })
+        this.turns = Math.max(0, this.turns - 1)
+        this.update(this.turns === 0 ? { working: false, finished: true } : {})
         this.deps.onChange()
+        void this.refreshUsage()
         return
       case 'exited':
         this.handle = null
         // A restart keeps the mode the user last chose, not the config default.
         this.nextMode = this.runningMode
+        this.nextModel = this.model
         this.end()
         return
+    }
+  }
+
+  private async refreshCatalog(): Promise<void> {
+    const handle = this.handle
+    if (handle === null) {
+      return
+    }
+    try {
+      const catalog = await handle.catalog()
+      if (handle === this.handle) {
+        this.catalog = catalog
+        this.deps.onCatalog?.(catalog)
+        this.deps.onChange()
+      }
+    } catch {
+      // The picker and the slash menu just stay empty.
+    }
+  }
+
+  // A failed reading keeps the last one; the status line is a convenience, not worth an error.
+  private async refreshUsage(): Promise<void> {
+    const handle = this.handle
+    if (handle === null) {
+      return
+    }
+    try {
+      const usage = await handle.usage()
+      if (handle === this.handle) {
+        this.usage = usage
+        this.deps.onChange()
+      }
+    } catch {
+      // see above
     }
   }
 
@@ -239,6 +330,7 @@ export class AgentSession {
   // The process is gone: every open request is denied so no SDK call is left hanging.
   private end(): void {
     const pending = this.pending
+    this.turns = 0
     this.update({ running: false, working: false }, [])
     for (const item of pending) {
       item.resolve(SESSION_ENDED)

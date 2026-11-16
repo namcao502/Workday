@@ -8,6 +8,9 @@ import {
   openTicket,
   waitOfRequests,
   worktreeKeyOf,
+  type AgentCatalog,
+  type AgentImage,
+  type AgentRewind,
   type AgentMode,
   type ChatAnswer,
   type ChatView,
@@ -27,6 +30,7 @@ import { readChat } from './chatReader.js'
 import { buildFileGroups, type FileGroup } from './fileGroups.js'
 import {
   folderHasTranscripts,
+  latestTranscriptId,
   isGuid,
   projectFolder,
   transcriptExists,
@@ -89,6 +93,7 @@ export class WorkspaceService {
   private config: WorkspaceConfig
   private queue: Promise<unknown> = Promise.resolve()
   private readonly sessions = new Map<string, AgentSession>()
+  private lastCatalog: AgentCatalog | null = null // models and commands of the last live session
   private readonly waits = new Map<string, WaitReason>() // last wait per session, for onWait
   private readonly platform: 'win32' | 'other'
   private readonly environment: Readonly<Record<string, string | undefined>>
@@ -244,7 +249,7 @@ export class WorkspaceService {
     this.disposeSessions([...this.sessions.keys()])
   }
 
-  // Null for an unknown session; no messages until a session id (from init or saved) names a transcript.
+  // Null for an unknown session; messages come from the session id (init or saved), else the latest transcript of a main ticket session.
   chat(name: string): ChatView | null {
     if (this.tabOf(name) === undefined) {
       return null
@@ -258,14 +263,31 @@ export class WorkspaceService {
       session?.state.working === true,
     )
     if (session === undefined) {
-      return { ...view, mode: START_MODE }
+      return { ...view, mode: START_MODE, catalog: this.lastCatalog }
     }
-    const { requests, running, mode, model } = session.state
-    return { ...view, requests, running, mode, model }
+    const { requests, running, mode, model, usage, catalog } = session.state
+    // A live session reports the model at init; before that the transcript's last reply names it.
+    return {
+      ...view,
+      requests,
+      running,
+      mode,
+      model: model ?? view.model,
+      usage,
+      catalog: catalog ?? this.lastCatalog,
+    }
+  }
+
+  // The folder a session works in, for the git facts under the composer; null for an unknown session.
+  sessionDirectory(name: string): string | null {
+    if (this.tabOf(name) === undefined) {
+      return null
+    }
+    return this.sessions.get(name)?.state.cwd ?? this.idleDirectory(name)
   }
 
   // An open request blocks a new prompt: the user answers it first.
-  send(name: string, text: string): SendOutcome {
+  send(name: string, text: string, images: readonly AgentImage[] = []): SendOutcome {
     const session = this.session(name)
     if (session === null) {
       return 'notFound'
@@ -274,7 +296,7 @@ export class WorkspaceService {
       return 'waiting'
     }
     try {
-      session.send(text)
+      session.send(text, images)
       return 'sent'
     } catch (error: unknown) {
       if (error instanceof WorkspaceStartError) {
@@ -320,6 +342,20 @@ export class WorkspaceService {
   }
 
   // False for an unknown session; a stopped one keeps the mode for its next start.
+  async rewind(name: string, messageId: string, dryRun: boolean): Promise<AgentRewind | null> {
+    const session = this.session(name)
+    return session === null ? null : session.rewind(messageId, dryRun)
+  }
+
+  async setModel(name: string, model: string): Promise<boolean> {
+    const session = this.session(name)
+    if (session === null) {
+      return false
+    }
+    await session.setModel(model)
+    return true
+  }
+
   async setMode(name: string, mode: AgentMode): Promise<boolean> {
     const session = this.session(name)
     if (session === null) {
@@ -345,6 +381,9 @@ export class WorkspaceService {
       resumeId: (cwd) => this.resumeId(name, cwd),
       continueLatest: (cwd) => this.continueLatest(name, cwd),
       mode: () => START_MODE,
+      onCatalog: (catalog) => {
+        this.lastCatalog = catalog
+      },
       onChange: () => {
         this.deps.events.broadcast({ type: 'chat.changed' })
       },
@@ -428,10 +467,12 @@ export class WorkspaceService {
 
   // Only the main session of a ticket picks up the latest transcript of its worktree.
   private continueLatest(name: string, cwd: string): boolean {
+    return this.isMainTicketSession(name) && folderHasTranscripts(this.projectsRoot(), cwd)
+  }
+
+  private isMainTicketSession(name: string): boolean {
     const tab = this.tabOf(name)
-    return (
-      tab?.kind === 'ticket' && tab.id === name && folderHasTranscripts(this.projectsRoot(), cwd)
-    )
+    return tab?.kind === 'ticket' && tab.id === name
   }
 
   private transcriptPath(
@@ -442,7 +483,11 @@ export class WorkspaceService {
     if (cwd === null) {
       return null
     }
-    const id = sessionId ?? this.savedSessionId(name, cwd)
+    // A main ticket session not started yet shows the transcript `continue` will pick up on its first prompt.
+    const id =
+      sessionId ??
+      this.savedSessionId(name, cwd) ??
+      (this.isMainTicketSession(name) ? latestTranscriptId(this.projectsRoot(), cwd) : null)
     if (id === null || !isGuid(id)) {
       return null
     }

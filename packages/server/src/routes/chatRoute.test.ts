@@ -59,6 +59,41 @@ describe('chat routes', () => {
     expect(testApp.agent.last().sent).toEqual(['café\nline 2'])
   })
 
+  it('sends an image alone and rejects a malformed or foreign image', async () => {
+    const { testApp } = await setup()
+    const image = { mediaType: 'image/png', data: 'iVBORw0KGgo=' }
+    const bad = await post(testApp, 'prompt', {
+      text: '',
+      images: [{ ...image, mediaType: 'text/html' }],
+    })
+    expect(bad.statusCode).toBe(400)
+    const notBase64 = await post(testApp, 'prompt', {
+      text: 'x',
+      images: [{ ...image, data: '<b>' }],
+    })
+    expect(notBase64.statusCode).toBe(400)
+    expect(testApp.agent.handles).toEqual([])
+    const reply = await post(testApp, 'prompt', { text: '', images: [image] })
+    expect(reply.json()).toEqual({ ok: true })
+    expect(testApp.agent.last().sentImages).toEqual([[image]])
+  })
+
+  it('rewinds files only for a live idle session and validates the body', async () => {
+    const { testApp } = await setup()
+    const messageId = '0f8fad5b-d9cb-469f-a165-70867728950e'
+    const idle = await post(testApp, 'rewind', { messageId, dryRun: true })
+    expect(idle.json()).toMatchObject({ canRewind: false, error: 'notRunning' })
+    await post(testApp, 'prompt', { text: 'one' })
+    const busy = await post(testApp, 'rewind', { messageId, dryRun: true })
+    expect(busy.json()).toMatchObject({ canRewind: false, error: 'working' })
+    testApp.agent.last().emit({ type: 'turnEnded', ok: true })
+    const preview = await post(testApp, 'rewind', { messageId, dryRun: true })
+    expect(preview.json()).toMatchObject({ canRewind: true, files: 2, insertions: 5 })
+    expect(testApp.agent.last().rewinds).toEqual([{ messageId, dryRun: true }])
+    const bad = await post(testApp, 'rewind', { messageId: 'not-a-uuid', dryRun: false })
+    expect(bad.statusCode).toBe(400)
+  })
+
   it('answers 404 for an unknown session', async () => {
     const { testApp } = await setup()
     const chat = await testApp.app.inject({
@@ -127,7 +162,11 @@ describe('chat routes', () => {
     const { testApp, devRepoPath } = await setup()
     const url = '/api/workspace/sessions/claude/chat'
     const empty = await testApp.app.inject({ url, headers: LOOPBACK_HEADERS })
-    expect(empty.json<ChatView>()).toMatchObject({ messages: [], running: false, mode: 'bypassPermissions' })
+    expect(empty.json<ChatView>()).toMatchObject({
+      messages: [],
+      running: false,
+      mode: 'bypassPermissions',
+    })
 
     const folder = join(testApp.homeDir, '.claude', 'projects', claudeProjectDirName(devRepoPath))
     mkdirSync(folder, { recursive: true })

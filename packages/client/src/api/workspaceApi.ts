@@ -1,4 +1,6 @@
 import type {
+  AgentImage,
+  AgentRewind,
   ChangeGroupView,
   ChatAnswer,
   ChatView,
@@ -175,8 +177,40 @@ function sessionPath(session: string, suffix: string): string {
   return `/api/workspace/sessions/${encodeURIComponent(session)}/${suffix}`
 }
 
-export function sendPrompt(session: string, text: string): Promise<void> {
-  return expectOkWithCode(sessionPath(session, 'prompt'), { text })
+export function sendPrompt(
+  session: string,
+  text: string,
+  images: readonly AgentImage[] = [],
+): Promise<void> {
+  return expectOkWithCode(sessionPath(session, 'prompt'), { text, images })
+}
+
+export function setSessionModel(session: string, model: string): Promise<void> {
+  return expectOk('POST', sessionPath(session, 'model'), { model })
+}
+
+function isRewind(value: unknown): value is AgentRewind {
+  return (
+    isRecord(value) &&
+    typeof value['canRewind'] === 'boolean' &&
+    typeof value['files'] === 'number' &&
+    typeof value['insertions'] === 'number' &&
+    typeof value['deletions'] === 'number'
+  )
+}
+
+// A dry run previews what would change; the real call puts the files back.
+export async function rewindFiles(
+  session: string,
+  messageId: string,
+  dryRun: boolean,
+): Promise<AgentRewind> {
+  const path = sessionPath(session, 'rewind')
+  const raw = await send('POST', path, { messageId, dryRun })
+  if (!raw.ok || !isRewind(raw.body)) {
+    throw new ApiError(raw.status, path, null)
+  }
+  return raw.body
 }
 
 export function interruptSession(session: string): Promise<void> {

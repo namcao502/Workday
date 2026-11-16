@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { claudeProjectDirName, isClaudeSessionVariable } from '@workday/core'
 
@@ -32,6 +32,21 @@ export function projectFolder(projectsRoot: string, cwd: string): string {
 
 export function transcriptExists(projectsRoot: string, cwd: string, sessionId: string): boolean {
   return existsSync(join(projectFolder(projectsRoot, cwd), `${sessionId.toLowerCase()}.jsonl`))
+}
+
+// The id of the most recently written transcript in the folder: the one `continue` picks up. Null without any.
+export function latestTranscriptId(projectsRoot: string, cwd: string): string | null {
+  const folder = projectFolder(projectsRoot, cwd)
+  try {
+    const newest = readdirSync(folder)
+      .filter((name) => name.endsWith('.jsonl'))
+      .map((name) => ({ name, modified: statSync(join(folder, name)).mtimeMs }))
+      .sort((left, right) => right.modified - left.modified)[0]
+    const id = newest?.name.slice(0, -'.jsonl'.length)
+    return id !== undefined && isGuid(id) ? id : null
+  } catch {
+    return null
+  }
 }
 
 export function folderHasTranscripts(projectsRoot: string, cwd: string): boolean {

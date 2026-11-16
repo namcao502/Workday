@@ -38,14 +38,64 @@ export interface AgentStartOptions {
   readonly mode: AgentMode
   readonly resume: string | null // session id
   readonly continueLatest: boolean
+  readonly model: string | null // chosen while stopped; null keeps Claude's default
   readonly onEvent: (event: AgentEvent) => void
   // Resolves when the user answers; the adapter denies open calls on close.
   // `signal` aborts when the SDK drops the call.
   readonly onToolCall: (call: AgentToolCall, signal: AbortSignalLike) => Promise<AgentDecision>
 }
 
+export interface UsageWindow {
+  readonly percent: number // 0-100 of the window used
+  readonly resetsAt: string | null // ISO 8601
+}
+
+// What the status line under the chat shows: the context window and the plan usage.
+export interface AgentUsage {
+  readonly contextPercent: number | null
+  readonly usage: UsageWindow | null // the plan's weekly window, what the terminal calls Usage
+}
+
+export interface AgentModel {
+  readonly value: string // what setModel takes
+  readonly label: string
+}
+
+export interface AgentCommand {
+  readonly name: string // without the leading slash
+  readonly description: string
+  readonly hint: string // argument hint, e.g. "<file>"; empty when none
+}
+
+// What a live session offers: the models to switch to and the slash commands to type.
+export interface AgentCatalog {
+  readonly models: readonly AgentModel[]
+  readonly commands: readonly AgentCommand[]
+}
+
+export type AgentImageType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'
+
+export interface AgentImage {
+  readonly mediaType: AgentImageType
+  readonly data: string // base64
+}
+
+// A file rewind, or the preview of one (dryRun).
+export interface AgentRewind {
+  readonly canRewind: boolean
+  readonly error: string | null
+  readonly files: number
+  readonly insertions: number
+  readonly deletions: number
+}
+
 export interface AgentSessionHandle {
-  send(text: string): void
+  send(text: string, images?: readonly AgentImage[]): void
+  usage(): Promise<AgentUsage>
+  catalog(): Promise<AgentCatalog>
+  setModel(model: string): Promise<void>
+  // Puts the files back to how they were when the user message with this id was sent.
+  rewind(messageId: string, dryRun: boolean): Promise<AgentRewind>
   interrupt(): Promise<void>
   setMode(mode: AgentMode): Promise<void>
   close(): void

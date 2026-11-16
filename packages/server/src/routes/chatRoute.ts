@@ -1,9 +1,12 @@
-import type { AgentMode, ChatAnswer } from '@workday/core'
+import type { AgentImage, AgentImageType, AgentMode, ChatAnswer } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import { isRecord } from '../jsonFile.js'
+import { readGitStatus } from '../workspace/gitStatus.js'
 import type { WorkspaceService } from '../workspace/workspaceService.js'
 
 export const MAX_PROMPT_LENGTH = 100_000
+const MAX_MODEL_LENGTH = 100
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const AGENT_MODES: ReadonlySet<string> = new Set([
   'default',
   'acceptEdits',
@@ -21,7 +24,48 @@ function promptText(body: unknown): string | null {
     return null
   }
   const text = raw.normalize('NFC').replaceAll('\r\n', '\n')
-  return text.trim() === '' || text.length > MAX_PROMPT_LENGTH ? null : text
+  return text.length > MAX_PROMPT_LENGTH ? null : text
+}
+
+const IMAGE_TYPES: ReadonlySet<string> = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+])
+const MAX_IMAGES = 5
+const MAX_IMAGE_BASE64_LENGTH = 7_000_000 // about 5 MB of image
+export const PROMPT_BODY_LIMIT = MAX_IMAGES * MAX_IMAGE_BASE64_LENGTH + MAX_PROMPT_LENGTH + 10_000
+
+function isImageType(value: unknown): value is AgentImageType {
+  return typeof value === 'string' && IMAGE_TYPES.has(value)
+}
+
+// Null when the field is present but malformed; no field is an empty list.
+export function parseImages(body: unknown): readonly AgentImage[] | null {
+  const raw = isRecord(body) ? body['images'] : undefined
+  if (raw === undefined) {
+    return []
+  }
+  if (!Array.isArray(raw) || raw.length > MAX_IMAGES) {
+    return null
+  }
+  const images: AgentImage[] = []
+  for (const item of raw as unknown[]) {
+    const mediaType = isRecord(item) ? item['mediaType'] : undefined
+    const data = isRecord(item) ? item['data'] : undefined
+    if (
+      !isImageType(mediaType) ||
+      typeof data !== 'string' ||
+      data === '' ||
+      data.length > MAX_IMAGE_BASE64_LENGTH ||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(data)
+    ) {
+      return null
+    }
+    images.push({ mediaType, data })
+  }
+  return images
 }
 
 function isAgentMode(value: unknown): value is AgentMode {
@@ -70,23 +114,34 @@ export function parseChatAnswer(body: unknown): ChatAnswer | null {
 
 // Local-only like the other workspace routes: none declares config.access.
 export function registerChatRoutes(app: FastifyInstance, workspace: WorkspaceService): void {
-  app.get<{ Params: { name: string } }>('/api/workspace/sessions/:name/chat', (request, reply) => {
-    const chat = workspace.chat(request.params.name)
-    return chat === null ? reply.code(404).send(SESSION_NOT_FOUND) : chat
-  })
+  app.get<{ Params: { name: string } }>(
+    '/api/workspace/sessions/:name/chat',
+    async (request, reply) => {
+      const chat = workspace.chat(request.params.name)
+      if (chat === null) {
+        return reply.code(404).send(SESSION_NOT_FOUND)
+      }
+      const cwd = workspace.sessionDirectory(request.params.name)
+      return cwd === null ? chat : { ...chat, ...(await readGitStatus(cwd)) }
+    },
+  )
 
   app.post<{ Params: { name: string } }>(
     '/api/workspace/sessions/:name/prompt',
+    { bodyLimit: PROMPT_BODY_LIMIT },
     (request, reply) => {
       const { name } = request.params
       if (!workspace.hasSession(name)) {
         return reply.code(404).send(SESSION_NOT_FOUND)
       }
       const text = promptText(request.body)
-      if (text === null) {
-        return reply.code(400).send({ error: 'Body must be { text: 1..100000 characters }' })
+      const images = parseImages(request.body)
+      if (text === null || images === null || (text.trim() === '' && images.length === 0)) {
+        return reply.code(400).send({
+          error: 'Body must be { text: up to 100000 characters, images?: up to 5 base64 images }',
+        })
       }
-      const outcome = workspace.send(name, text)
+      const outcome = workspace.send(name, text, images)
       if (outcome === 'sent') {
         return OK
       }
@@ -118,6 +173,32 @@ export function registerChatRoutes(app: FastifyInstance, workspace: WorkspaceSer
         return reply.code(400).send({ error: 'Body must be { mode: AgentMode }' })
       }
       const found = await workspace.setMode(name, mode)
+      return found ? OK : reply.code(404).send(SESSION_NOT_FOUND)
+    },
+  )
+
+  app.post<{ Params: { name: string } }>(
+    '/api/workspace/sessions/:name/rewind',
+    async (request, reply) => {
+      const body = request.body
+      const messageId = isRecord(body) ? body['messageId'] : undefined
+      const dryRun = isRecord(body) ? body['dryRun'] : undefined
+      if (typeof messageId !== 'string' || !UUID.test(messageId) || typeof dryRun !== 'boolean') {
+        return reply.code(400).send({ error: 'Body must be { messageId: uuid, dryRun: boolean }' })
+      }
+      const result = await workspace.rewind(request.params.name, messageId, dryRun)
+      return result === null ? reply.code(404).send(SESSION_NOT_FOUND) : result
+    },
+  )
+
+  app.post<{ Params: { name: string } }>(
+    '/api/workspace/sessions/:name/model',
+    async (request, reply) => {
+      const model = isRecord(request.body) ? request.body['model'] : undefined
+      if (typeof model !== 'string' || model.trim() === '' || model.length > MAX_MODEL_LENGTH) {
+        return reply.code(400).send({ error: 'Body must be { model: string }' })
+      }
+      const found = await workspace.setModel(request.params.name, model.trim())
       return found ? OK : reply.code(404).send(SESSION_NOT_FOUND)
     },
   )
