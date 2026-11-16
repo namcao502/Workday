@@ -14,7 +14,12 @@ const CONFIG: JiraConfig = {
   maxResults: 50,
   etaFieldId: 'customfield_10735',
   devPriorityFieldId: 'customfield_11111',
-  statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+  statusFlow: {
+    preWorkStatuses: [],
+    reworkStatuses: [],
+    readyToTestPath: [],
+    developerStatuses: [],
+  },
   suggestions: null,
 }
 
@@ -70,6 +75,7 @@ describe('getAssignedTickets', () => {
         'issuetype',
         'updated',
         'parent',
+        'issuelinks',
         'customfield_10735',
         'customfield_11111',
       ],
@@ -91,6 +97,7 @@ describe('getAssignedTickets', () => {
       timeSpentSeconds: 5400,
       updated: '2026-10-19T10:15:30.123+0700',
       parentKey: null,
+      linkedKeys: [],
     })
   })
 
@@ -268,7 +275,10 @@ function queued(...responses: Response[]): { tracker: JiraTracker; fetchMock: Fe
   return { tracker: new JiraTracker(CONFIG, 'secret-token', fetchMock), fetchMock }
 }
 
-function callOf(fetchMock: FetchMock, index: number): { method: string; url: string; body: string } {
+function callOf(
+  fetchMock: FetchMock,
+  index: number,
+): { method: string; url: string; body: string } {
   const call = fetchMock.mock.calls[index]
   const body = call?.[1]?.body
   return {
@@ -283,7 +293,10 @@ describe('transition', () => {
     '{"transitions":[{"id":"9","to":{"name":"PR & Code Review"}},{"id":"11","to":{"name":"Ready To Test"}}]}'
 
   it('posts the id of the transition to the target status', async () => {
-    const { tracker, fetchMock } = queued(respond(200, TRANSITIONS), new Response(null, { status: 204 }))
+    const { tracker, fetchMock } = queued(
+      respond(200, TRANSITIONS),
+      new Response(null, { status: 204 }),
+    )
 
     expect(await tracker.transition('MDP-1', 'Ready to Test')).toBe(true)
 
@@ -325,7 +338,11 @@ describe('assignToMe', () => {
   })
 
   it('puts my account id on an unassigned ticket', async () => {
-    const { tracker, fetchMock } = queued(me(), respond(200, '{"fields":{"assignee":null}}'), new Response(null, { status: 204 }))
+    const { tracker, fetchMock } = queued(
+      me(),
+      respond(200, '{"fields":{"assignee":null}}'),
+      new Response(null, { status: 204 }),
+    )
 
     expect(await tracker.assignToMe('MDP-1')).toBeNull()
     expect(callOf(fetchMock, 2)).toEqual({
@@ -368,5 +385,71 @@ describe('searchEpicTickets', () => {
         dueDate: '2026-10-19',
       },
     ])
+  })
+})
+
+describe('ticket content and changelog', () => {
+  it('getTicketContent_reads_fields_and_attachment_names', async () => {
+    const issue = {
+      key: 'MDP-1',
+      fields: {
+        summary: 'Title',
+        description: {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Do it' }] }],
+        },
+        attachment: [{ filename: 'a.png' }, { filename: 'b.pdf' }],
+        duedate: '2026-10-30',
+        customfield_10735: '2026-10-28',
+        customfield_11111: 2,
+      },
+    }
+    const { tracker, fetchMock } = trackerReturning(200, JSON.stringify(issue))
+    const content = await tracker.getTicketContent('MDP-1')
+    expect(sentUrl(fetchMock)).toBe(
+      `${BASE_URL}/rest/api/3/issue/MDP-1?fields=summary,description,attachment,duedate,customfield_10735,customfield_11111`,
+    )
+    expect(content).toEqual({
+      summary: 'Title',
+      description: 'Do it',
+      attachments: 'a.png\nb.pdf',
+      dueDate: '2026-10-30',
+      eta: '2026-10-28',
+      devPriority: 2,
+    })
+  })
+
+  it('getTicketContent_returns_null_on_404', async () => {
+    const { tracker } = trackerReturning(404, '{}')
+    expect(await tracker.getTicketContent('MDP-9')).toBeNull()
+  })
+
+  it('getChangeHistories_maps_authors_and_field_ids', async () => {
+    const page = {
+      total: 1,
+      values: [
+        {
+          created: '2026-10-19T10:15:30.123+0700',
+          author: { accountId: 'acc-1', displayName: 'Minh Dinh' },
+          items: [{ fieldId: 'description' }, { fieldId: 'customfield_10735' }],
+        },
+        { created: 'garbage', items: [] },
+      ],
+    }
+    const { tracker } = trackerReturning(200, JSON.stringify(page))
+    expect(await tracker.getChangeHistories('MDP-1')).toEqual([
+      {
+        created: '2026-10-19T03:15:30.123Z',
+        authorAccountId: 'acc-1',
+        authorName: 'Minh Dinh',
+        fieldIds: ['description', 'customfield_10735'],
+      },
+    ])
+  })
+
+  it('myAccountId_reads_myself', async () => {
+    const { tracker, fetchMock } = trackerReturning(200, '{"accountId":"acc-me"}')
+    expect(await tracker.myAccountId()).toBe('acc-me')
+    expect(sentUrl(fetchMock)).toBe(`${BASE_URL}/rest/api/3/myself`)
   })
 })

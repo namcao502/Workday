@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import type { JiraConfig } from '@workday/core'
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
+import { join } from 'node:path'
 import { saveBoard } from '../boardStore.js'
+import { writeJsonAtomic } from '../jsonFile.js'
 import { boardWith, makeTicket } from '../testing/fakes.js'
 import { buildTestApp, LOOPBACK_HEADERS, newDataDir } from '../testing/testApp.js'
 
@@ -78,5 +80,56 @@ describe('board routes', () => {
     expect(done.statusCode).toBe(200)
     expect(done.json()).toMatchObject({ rows: [{ ticket: { key: 'MDP-1' }, section: 'done' }] })
     expect(unknownAction.statusCode).toBe(404)
+  })
+})
+
+describe('ticket update routes', () => {
+  const viewed = {
+    summary: 'Old',
+    description: '',
+    attachments: '',
+    dueDate: null,
+    eta: null,
+    devPriority: null,
+  }
+  const current = { ...viewed, summary: 'New' }
+
+  it('the viewed route marks the shown content and the update then reads as null', async () => {
+    const dataDir = newDataDir()
+    await saveBoard(dataDir, boardWith({ new: { 'MDP-1': makeTicket('MDP-1') } }))
+    await writeJsonAtomic(join(dataDir, 'ticket-updates.json'), {
+      'MDP-1': { viewed, current, updated: 'u', changedBy: 'An', changedAt: '2026-11-16T03:00:00.000Z' },
+    })
+    const { app } = await buildTestApp({ dataDir })
+    openApps.push(app)
+    const request = { headers: LOOPBACK_HEADERS }
+
+    const before = await app.inject({ url: '/api/tickets/MDP-1/update', ...request })
+    const marked = await app.inject({
+      method: 'POST',
+      url: '/api/tickets/MDP-1/update/viewed',
+      payload: { shown: current },
+      ...request,
+    })
+    const after = await app.inject({ url: '/api/tickets/MDP-1/update', ...request })
+
+    expect(before.json()).toEqual({
+      update: { fields: ['summary'], viewed, current, changedBy: 'An', changedAt: '2026-11-16T03:00:00.000Z' },
+    })
+    expect(marked.json()).toEqual({ ok: true })
+    expect(after.json()).toEqual({ update: null })
+  })
+
+  it('a bad key or body is 400', async () => {
+    const { app } = await buildTestApp()
+    openApps.push(app)
+    const post = (url: string, payload: unknown): Promise<LightMyRequestResponse> =>
+      app.inject({ method: 'POST', url, headers: LOOPBACK_HEADERS, payload: payload as object })
+
+    const badKey = await post('/api/tickets/nope/update/viewed', { shown: viewed })
+    const badBody = await post('/api/tickets/MDP-1/update/viewed', { shown: { summary: 1 } })
+    const badGet = await app.inject({ url: '/api/tickets/nope/update', headers: LOOPBACK_HEADERS })
+
+    expect([badKey.statusCode, badBody.statusCode, badGet.statusCode]).toEqual([400, 400, 400])
   })
 })

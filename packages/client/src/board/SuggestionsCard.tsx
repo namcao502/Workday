@@ -133,7 +133,7 @@ export function SuggestionsCard({
           }}
         />
       )}
-      <ul className="m-0 list-none p-0">
+      <ul className="m-0 flex list-none flex-col gap-1 p-0">
         {items.slice(0, shown).map((suggestion) => {
           const { ticket } = suggestion
           const href =
@@ -144,10 +144,7 @@ export function SuggestionsCard({
             </Chip>
           )
           return (
-            <li
-              key={ticket.key}
-              className="flex items-center gap-3 border-b border-separator py-2 last:border-b-0"
-            >
+            <li key={ticket.key} className="flex items-center gap-3 rounded-xl px-2 py-2">
               <TodoIcon
                 tone={suggestion.urgent ? 'warning' : 'accent'}
                 icon={suggestion.urgent ? '!' : '+'}

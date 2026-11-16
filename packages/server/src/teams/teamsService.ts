@@ -53,7 +53,7 @@ type Outcome = { readonly ok: true } | { readonly ok: false; readonly error: App
 
 const NOT_CONFIGURED: TeamsSettings = {
   chat: null,
-  config: { watchedChannels: [], postLeadName: null, postGreeting: null },
+  config: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
   devRepoPath: null,
   repoLabels: {},
   timeZone: 'UTC',

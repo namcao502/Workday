@@ -18,7 +18,8 @@ import {
   shownConversationId,
   StatePanel,
 } from './TeamsPanels.js'
-import { TeamsEditBox, TeamsReplyBox } from './TeamsComposeParts.js'
+import { TeamsBugReplyCard } from './TeamsBugReplyCard.js'
+import { TeamsEditBox, TeamsReplyBox, type LoadedReply } from './TeamsComposeParts.js'
 import { TeamsPostCard } from './TeamsPostCard.js'
 import { outcomeOf, type SendAction } from './teamsSend.js'
 import { TeamsThread } from './TeamsThread.js'
@@ -45,6 +46,7 @@ export function TeamsView({
   const [writing, setWriting] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [loadedReply, setLoadedReply] = useState<LoadedReply | null>(null)
   const { data: view, isError, isFetching } = useTeamsRead(ticket, selected, { visible, writing })
   useMarkTeamsSeen(ticket, view, visible)
   const hasPending = view !== undefined && view.pending.length !== 0
@@ -111,13 +113,13 @@ export function TeamsView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-separator py-1.5">
+      <div className="flex flex-wrap items-center gap-2 py-1.5">
         {options.length === 0 ? null : (
           <ConversationSelect options={options} value={id} onChange={setSelected} />
         )}
         {view.state === 'thread' ? (
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onPress={() => {
               window.open(view.deepLink, '_blank', 'noopener')
@@ -127,7 +129,7 @@ export function TeamsView({
           </Button>
         ) : null}
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onPress={() => {
             void queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
@@ -182,7 +184,21 @@ export function TeamsView({
         />
       ) : null}
       {view.state === 'thread' ? (
-        <div className="border-t border-separator py-2" data-testid="teams-compose-slot">
+        <div className="flex flex-col gap-2 py-2" data-testid="teams-compose-slot">
+          {view.bugReplies.map((reply) => (
+            <TeamsBugReplyCard
+              key={reply.fix.bugKey}
+              reply={reply}
+              locked={writing}
+              onUse={(chosen) => {
+                setLoadedReply((current) => ({
+                  id: (current?.id ?? 0) + 1,
+                  html: chosen.replyHtml,
+                  mentions: chosen.mentions,
+                }))
+              }}
+            />
+          ))}
           <TeamsReplyBox
             ticket={ticket}
             conversationId={view.conversationId}
@@ -191,11 +207,12 @@ export function TeamsView({
             label={label}
             locked={writing}
             send={send}
+            loaded={loadedReply}
           />
         </div>
       ) : null}
       {view.state === 'notPosted' ? (
-        <div className="border-t border-separator py-2" data-testid="teams-compose-slot">
+        <div className="py-2" data-testid="teams-compose-slot">
           <TeamsPostCard ticket={ticket} view={view} label={label} locked={writing} send={send} />
         </div>
       ) : null}

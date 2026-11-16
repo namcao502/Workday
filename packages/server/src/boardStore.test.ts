@@ -29,6 +29,7 @@ function ticket(key: string, overrides: Partial<Ticket> = {}): Ticket {
     timeSpentSeconds: 3600,
     updated: '2026-11-01T10:00:00.000+0700',
     parentKey: null,
+    linkedKeys: [],
     ...overrides,
   }
 }
@@ -63,5 +64,15 @@ describe('boardStore', () => {
     writeFileSync(file, JSON.stringify({ ...EMPTY_BOARD, new: { 'MDP-1': { key: 'MDP-1' } } }))
     expect(loadBoard(directory)).toEqual(EMPTY_BOARD)
     expect(existsSync(`${file}.bad`)).toBe(true)
+  })
+
+  it('loads a ticket saved before linkedKeys existed with no links', () => {
+    const legacy: Record<string, unknown> = { ...ticket('MDP-1') }
+    delete legacy['linkedKeys']
+    writeFileSync(
+      join(directory, 'board.json'),
+      JSON.stringify({ ...EMPTY_BOARD, new: { 'MDP-1': legacy } }),
+    )
+    expect(loadBoard(directory).new['MDP-1']?.linkedKeys).toEqual([])
   })
 })

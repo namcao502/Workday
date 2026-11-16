@@ -60,7 +60,7 @@ export function WeekNav({
       </div>
       <Button
         isIconOnly
-        variant="ghost"
+        variant="secondary"
         size="sm"
         aria-label={t('Previous week', 'Tuần trước')}
         isDisabled={reading}
@@ -72,7 +72,7 @@ export function WeekNav({
       </Button>
       <Button
         isIconOnly
-        variant="ghost"
+        variant="secondary"
         size="sm"
         aria-label={t('Next week', 'Tuần sau')}
         isDisabled={reading}
@@ -82,7 +82,7 @@ export function WeekNav({
       >
         <ChevronRight />
       </Button>
-      <Button variant="ghost" size="sm" isDisabled={reading} onPress={onReread}>
+      <Button variant="secondary" size="sm" isDisabled={reading} onPress={onReread}>
         <ArrowRotateRight />
         {t('Read again', 'Đọc lại')}
       </Button>

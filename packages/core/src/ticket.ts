@@ -10,6 +10,7 @@ export interface Ticket {
   readonly timeSpentSeconds: number | null
   readonly updated: string | null
   readonly parentKey: string | null
+  readonly linkedKeys: readonly string[] // keys of Jira issue links, Jira's order
 }
 
 export type DueUrgency = 'none' | 'dueSoon' | 'overdue'
@@ -85,6 +86,8 @@ export function ticketEquals(left: Ticket, right: Ticket): boolean {
     left.issueType === right.issueType &&
     left.timeSpentSeconds === right.timeSpentSeconds &&
     left.updated === right.updated &&
-    left.parentKey === right.parentKey
+    left.parentKey === right.parentKey &&
+    left.linkedKeys.length === right.linkedKeys.length &&
+    left.linkedKeys.every((key, index) => key === right.linkedKeys[index])
   )
 }

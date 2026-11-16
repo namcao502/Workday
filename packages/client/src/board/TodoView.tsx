@@ -3,11 +3,13 @@ import type { BoardRow, TodoGroup, TodoItem } from '@workday/core'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
+import { errorText } from '../errors.js'
 import { actionErrorText, useRepoLabels, useWorkActions } from '../api/useWork.js'
 import { t, type Language } from '../i18n.js'
 import { navigateToWorkspace } from '../shell/pages.js'
 import { KeyPill } from './KeyPill.js'
 import type { RowWorkspace } from './RowMenu.js'
+import { TicketUpdateDialog } from './TicketUpdateDialog.js'
 import { TodoRow, type TodoButton } from './TodoRow.js'
 import { todoText } from './todoText.js'
 
@@ -27,7 +29,11 @@ const ICONS: Readonly<Record<TodoItem['kind'], string>> = {
   prReview: 'R',
   prBlocked: '!',
   prComments: '#',
+  jiraUpdated: 'J',
   jiraDone: '✓',
+  dbReview: 'D',
+  qcBugReply: 'Q',
+  qcBug: 'Q',
   overdue: '!',
 }
 
@@ -91,6 +97,7 @@ export function TodoView({
   const actions = useWorkActions()
   const repoLabels = useRepoLabels()
   const [message, setMessage] = useState<string | null>(null)
+  const [changesKey, setChangesKey] = useState<string | null>(null)
   const ticketOf = (key: string): BoardRow['ticket'] | undefined =>
     rows.find((row) => row.ticket.key === key)?.ticket
 
@@ -100,6 +107,27 @@ export function TodoView({
       await call()
     } catch (error: unknown) {
       setMessage(actionErrorText(error))
+    }
+  }
+
+  async function fixBug(key: string): Promise<void> {
+    setMessage(null)
+    try {
+      const result = await actions.fixBug(key)
+      if (!result.ok) {
+        setMessage(errorText(result.error))
+      }
+    } catch (error: unknown) {
+      setMessage(actionErrorText(error))
+    }
+  }
+
+  async function copySql(sql: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(sql)
+      setMessage(t('SQL copied', 'Đã sao chép SQL'))
+    } catch {
+      setMessage(t('Could not copy the SQL', 'Không sao chép được SQL'))
     }
   }
 
@@ -187,6 +215,68 @@ export function TodoView({
                 },
               },
             ]
+      case 'dbReview': {
+        const { sql, conversationKey } = item.approval
+        const copy: TodoButton = {
+          id: 'copy',
+          label: t('Copy SQL', 'Sao chép SQL'),
+          disabled: sql === '',
+          onClick: () => {
+            void copySql(sql)
+          },
+        }
+        const done: TodoButton = {
+          id: 'done',
+          label: t('Done', 'Xong'),
+          onClick: () => {
+            void run(() => actions.dbReviewDone(conversationKey))
+          },
+        }
+        return canAct ? [copy, done] : [copy]
+      }
+      case 'jiraUpdated':
+        return [
+          ...(canAct
+            ? [
+                {
+                  id: 'seen',
+                  label: t('Seen', 'Đã xem'),
+                  onClick: () => {
+                    void run(() => actions.ticketUpdateSeen(item.ticketKey))
+                  },
+                },
+              ]
+            : []),
+          {
+            id: 'changes',
+            label: t('View changes', 'Xem thay đổi'),
+            onClick: () => {
+              setChangesKey(item.ticketKey)
+            },
+          },
+        ]
+      case 'qcBug':
+        return canAct
+          ? [
+              {
+                id: 'fix',
+                label: t('Fix', 'Sửa'),
+                onClick: () => {
+                  void fixBug(item.ticketKey)
+                },
+              },
+            ]
+          : []
+      case 'qcBugReply':
+        return [
+          {
+            id: 'reply',
+            label: t('Reply', 'Trả lời'),
+            onClick: () => {
+              navigateToWorkspace(item.parentKey, null, '')
+            },
+          },
+        ]
       case 'overdue':
         return workspace === undefined ? [] : [overdueButton(item.ticketKey, workspace)]
     }
@@ -202,12 +292,10 @@ export function TodoView({
       {groups.map((group, index) => (
         <section
           key={group.ticketKey ?? `group-${String(index)}`}
-          className={`rounded-lg border-l-3 bg-surface px-3 py-1 ${
-            group.neededNow ? 'border-l-accent' : 'border-l-transparent'
-          }`}
+          className={`rounded-2xl px-3 py-1 ${group.neededNow ? 'bg-accent-soft' : 'bg-surface'}`}
         >
           <GroupHeader ticketKey={group.ticketKey} rows={rows} />
-          <ul className="m-0 list-none p-0">
+          <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
             {group.items.map((item, itemIndex) => {
               const text = todoText(item, { ticketOf, repoLabels, language, timeZone })
               return (
@@ -224,6 +312,15 @@ export function TodoView({
           </ul>
         </section>
       ))}
+      {changesKey === null ? null : (
+        <TicketUpdateDialog
+          ticketKey={changesKey}
+          canAct={canAct}
+          onClose={() => {
+            setChangesKey(null)
+          }}
+        />
+      )}
     </div>
   )
 }

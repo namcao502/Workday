@@ -1,4 +1,11 @@
-import { repoLabel, type DevDeploy, type Ticket, type TicketPr, type TodoItem } from '@workday/core'
+import {
+  noticeText,
+  repoLabel,
+  type DevDeploy,
+  type Ticket,
+  type TicketPr,
+  type TodoItem,
+} from '@workday/core'
 import { formatClock, formatDateOnly, t, type Language } from '../i18n.js'
 
 export type TodoTone = 'accent' | 'success' | 'danger' | 'warning' | 'muted' | 'orange' | 'ready'
@@ -138,6 +145,47 @@ export function todoText(item: TodoItem, context: TodoTextContext): TodoTextPart
         title: t(
           `${String(item.count)} new PR ${plural(item.count, 'comment', 'comments')}`,
           `${String(item.count)} comment PR mới`,
+        ),
+        detail: summary,
+        tone: 'accent',
+      }
+    case 'dbReview':
+      return {
+        title: t(
+          `${item.ticketKey}: DB change approved by ${item.approval.approverName}. Run the SQL on dev, then scaffold.`,
+          `${item.ticketKey}: DB đã được ${item.approval.approverName} duyệt. Chạy SQL trên dev rồi scaffold.`,
+        ),
+        detail: summary,
+        tone: 'warning',
+      }
+    case 'qcBug':
+      return {
+        title: t(
+          `${item.ticketKey}: QC bug on ${item.parentKey}`,
+          `${item.ticketKey}: bug QC trên ${item.parentKey}`,
+        ),
+        detail: summary,
+        tone: 'danger',
+      }
+    case 'qcBugReply':
+      return {
+        title: t(
+          `${item.ticketKey} is fixed - answer QC on ${item.parentKey}`,
+          `${item.ticketKey} đã sửa xong - trả lời QC trên ${item.parentKey}`,
+        ),
+        detail: item.fix.summary,
+        tone: 'accent',
+      }
+    case 'jiraUpdated':
+      return {
+        title: noticeText(
+          {
+            type: 'ticketUpdated',
+            key: item.ticketKey,
+            fields: item.fields,
+            changedBy: item.changedBy,
+          },
+          context.language,
         ),
         detail: summary,
         tone: 'accent',

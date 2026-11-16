@@ -1,21 +1,28 @@
-import { buildTodos, groupTodos, type BoardState, type TeamsThread } from '@workday/core'
+import { buildTodos, groupTodos, type BoardState, type BugFix, type TeamsThread } from '@workday/core'
 import { describe, expect, it } from 'vitest'
 import type { NoticeInput } from '../notices/noticeService.js'
-import { ME, teamsMessage, threadOf } from '../testing/fakeTeams.js'
+import { ME, NOON, teamsMessage, threadOf } from '../testing/fakeTeams.js'
 import { boardWith, makeTicket } from '../testing/fakes.js'
 import { indexedOwnPost, serviceRig } from '../testing/teamsServiceRig.js'
+import { EMPTY_TEAMS_STATE, type TeamsState } from './teamsStore.js'
 import { TeamsWatcher } from './teamsWatcher.js'
 
 const KEY = 'MDP-1|c1;messageid=r1'
 const OTHER = 'someone'
 
-function rig() {
-  const base = serviceRig(['c1'], indexedOwnPost('c1', 'r1'))
+const DB_CHANNEL = { teamName: 'team', channelName: 'c1' }
+
+function rig(options: { dbReview?: boolean; state?: TeamsState; started?: boolean } = {}) {
+  const { dbReview = false, state = EMPTY_TEAMS_STATE, started = true } = options
+  const base = serviceRig(['c1'], indexedOwnPost('c1', 'r1'), state)
   const added: NoticeInput[] = []
   const read: string[] = []
   const events: unknown[] = []
   const scheduler = { starts: [] as number[], stops: 0 }
-  const board: BoardState = boardWith({ inProgress: { 'MDP-1': makeTicket('MDP-1') } })
+  const board: BoardState = boardWith({
+    inProgress: started ? { 'MDP-1': makeTicket('MDP-1') } : {},
+  })
+  const fixes: BugFix[] = []
   const watcher = new TeamsWatcher({
     lookup: base.service.lookup,
     board: { snapshot: () => board },
@@ -37,6 +44,8 @@ function rig() {
         scheduler.stops += 1
       },
     },
+    dbReviewChannel: () => (dbReview ? DB_CHANNEL : null),
+    readBugFixes: () => Promise.resolve([...fixes]),
     logError: () => undefined,
   })
   base.service.onSignedIn(() => {
@@ -45,7 +54,7 @@ function rig() {
   const setReplies = (...replies: ReturnType<typeof teamsMessage>[]): void => {
     base.teams.threads.set('c1|r1', threadOf('c1', 'r1', ...replies))
   }
-  return { ...base, watcher, added, read, events, scheduler, board, setReplies }
+  return { ...base, watcher, added, read, events, scheduler, board, setReplies, fixes }
 }
 
 function reply(id: string, minutes: number, mention = false): ReturnType<typeof teamsMessage> {
@@ -117,6 +126,10 @@ describe('TeamsWatcher.check', () => {
         deploys: {},
         waits: [],
         teams: h.watcher.items(),
+        dbReviews: [],
+        ticketUpdates: {},
+        qcBugs: [],
+        bugFixes: [],
       }),
     )
     expect(groups.map((group) => [group.ticketKey, group.neededNow])).toEqual([['MDP-1', true]])
@@ -190,5 +203,196 @@ describe('TeamsWatcher.check', () => {
     await h.service.signIn()
 
     expect(h.scheduler.starts).toEqual([2])
+  })
+})
+
+function approve(minutes: number): ReturnType<typeof teamsMessage> {
+  return teamsMessage('a1', {
+    senderId: OTHER,
+    senderName: 'Lead',
+    minutes,
+    content: 'approve',
+  })
+}
+
+describe('TeamsWatcher DB review', () => {
+  it('raises one dbReviewApproved notice and one to-do for an approved thread', async () => {
+    const h = rig({ dbReview: true })
+    h.setReplies(approve(5))
+
+    await h.watcher.check()
+    await h.watcher.check()
+
+    expect(h.added).toHaveLength(1)
+    expect(h.added[0]).toMatchObject({
+      topic: 'teams',
+      tone: 'info',
+      place: `teams:${KEY}`,
+      target: { kind: 'teams', key: 'MDP-1', conversationId: 'c1' },
+      event: { type: 'dbReviewApproved', key: 'MDP-1', approver: 'Lead' },
+    })
+    expect(h.watcher.dbReviewApprovals()).toMatchObject([
+      { ticketKey: 'MDP-1', conversationKey: KEY, approverName: 'Lead', sql: 'body' },
+    ])
+    expect(h.saved.state.dbReviewNotifiedAt[KEY]).toBe(approve(5).sentAt)
+    // The approval to-do replaces the "Lead wrote" one.
+    expect(h.watcher.items()).toEqual([])
+    expect(h.events).toContainEqual({ type: 'work.changed' })
+  })
+
+  it('does not notify twice for the same approval, but does for a newer one', async () => {
+    const h = rig({ dbReview: true })
+    h.setReplies(approve(5))
+    await h.watcher.check()
+    h.setReplies(approve(5), teamsMessage('m3', { minutes: 8, content: 'e update' }))
+    await h.watcher.check()
+
+    expect(h.added).toHaveLength(1)
+  })
+
+  it('markDbReviewDone removes the to-do and survives a restart', async () => {
+    const h = rig({ dbReview: true })
+    h.setReplies(approve(5))
+    await h.watcher.check()
+    h.events.length = 0
+
+    await h.watcher.markDbReviewDone(KEY)
+
+    expect(h.watcher.dbReviewApprovals()).toEqual([])
+    expect(h.saved.state.dbReviewDoneAt[KEY]).toBe(approve(5).sentAt)
+    expect(h.events).toContainEqual({ type: 'work.changed' })
+    const restarted = rig({ dbReview: true, state: h.saved.state })
+    restarted.setReplies(approve(5))
+    await restarted.watcher.check()
+    expect(restarted.watcher.dbReviewApprovals()).toEqual([])
+    expect(restarted.added).toEqual([])
+  })
+
+  it('computes nothing without a dbReviewChannel', async () => {
+    const h = rig()
+    h.setReplies(approve(5))
+
+    await h.watcher.check()
+
+    expect(h.watcher.dbReviewApprovals()).toEqual([])
+    expect(h.added.map((input) => input.event.type)).not.toContain('dbReviewApproved')
+  })
+})
+
+const QC = '8:orgid:00000000-0000-0000-0000-000000000002'
+
+function qcSays(id: string, minutes: number): ReturnType<typeof teamsMessage> {
+  return teamsMessage(id, { senderId: QC, senderName: 'Helena QC', minutes, content: 'bug' })
+}
+
+function iAnswered(id: string, minutes: number): ReturnType<typeof teamsMessage> {
+  return teamsMessage(id, { minutes, content: 'da e fix MDP-9 r nha' })
+}
+
+function fixOf(bugKey = 'MDP-9'): BugFix {
+  return {
+    bugKey,
+    parentKey: 'MDP-1',
+    summary: 'Fix',
+    description: 'done',
+    pullRequests: [],
+    draftWrittenAt: new Date(NOON.getTime() - 30 * 60_000).toISOString(),
+  }
+}
+
+function chatThread(...messages: ReturnType<typeof teamsMessage>[]): TeamsThread {
+  return { conversationId: 'chat1', rootId: '', messages, isChat: true }
+}
+
+describe('TeamsWatcher QC bug fixes', () => {
+  it('no to-do for a fix before its first read', async () => {
+    const h = rig()
+    h.fixes.push(fixOf())
+    h.setReplies(qcSays('q1', 5))
+    expect(h.watcher.bugFixesToAnswer()).toEqual([])
+
+    await h.watcher.check()
+
+    expect(h.watcher.bugFixesToAnswer()).toEqual([fixOf()])
+    expect(h.events).toContainEqual({ type: 'work.changed' })
+  })
+
+  it('no to-do when the reply is already sent', async () => {
+    const h = rig()
+    h.fixes.push(fixOf())
+    h.setReplies(qcSays('q1', 5), iAnswered('r1', 10))
+
+    await h.watcher.check()
+
+    expect(h.watcher.bugFixesToAnswer()).toEqual([])
+    expect(h.added).toEqual([])
+  })
+
+  it('watcher_marks_a_fix_replied_from_any_thread', async () => {
+    const h = rig()
+    h.fixes.push(fixOf())
+    h.setReplies(qcSays('q1', 5))
+    h.teams.chats.push({ id: 'chat1', topic: 'MDP-1 talk' })
+    h.teams.chatThreads.set('chat1', chatThread(qcSays('k1', 6), iAnswered('k2', 12)))
+
+    await h.watcher.check()
+    // The post still has no reply, but that does not undo the chat's.
+    await h.watcher.check()
+
+    expect(h.watcher.bugFixesToAnswer()).toEqual([])
+    expect(h.added).toEqual([])
+  })
+
+  it('watcher_raises_qcBugFixed_once', async () => {
+    const h = rig()
+    h.fixes.push(fixOf())
+    h.setReplies(qcSays('q1', 5))
+    h.teams.chats.push({ id: 'chat1', topic: 'MDP-1 talk' })
+    h.teams.chatThreads.set('chat1', chatThread(qcSays('k1', 20)))
+
+    await h.watcher.check()
+    await h.watcher.check()
+
+    const fixed = h.added.filter((input) => input.event.type === 'qcBugFixed')
+    expect(fixed).toHaveLength(1)
+    // QC spoke last in the chat, so that is the conversation to answer in.
+    expect(fixed[0]).toMatchObject({
+      topic: 'teams',
+      event: { type: 'qcBugFixed', key: 'MDP-9', parentKey: 'MDP-1' },
+      target: { kind: 'teams', key: 'MDP-1', conversationId: 'chat1' },
+      place: 'teams:MDP-1|chat1',
+    })
+  })
+
+  it('watcher_reads_the_parent_thread_of_a_waiting_fix', async () => {
+    const h = rig({ started: false })
+    h.setReplies(qcSays('q1', 5))
+    await h.watcher.check()
+    expect(h.watcher.items()).toEqual([])
+
+    h.fixes.push(fixOf())
+    await h.watcher.check()
+
+    expect(h.watcher.bugFixesToAnswer()).toEqual([fixOf()])
+    expect(h.watcher.items()).toHaveLength(1)
+  })
+
+  it('replyCardFor lists the unanswered fixes with the reply that tags QC', async () => {
+    const h = rig()
+    h.fixes.push(fixOf('MDP-9'), fixOf('MDP-8'))
+    const thread = threadOf('c1', 'r1', qcSays('q1', 5))
+    h.setReplies(qcSays('q1', 5))
+    await h.watcher.check()
+    h.added.length = 0
+
+    const cards = h.watcher.replyCardFor('MDP-1', thread, ME)
+
+    expect(cards.map((card) => card.fix.bugKey)).toEqual(['MDP-8', 'MDP-9'])
+    expect(cards[0]?.replyHtml).toContain('<span data-mention="0">@Helena QC</span>')
+    expect(cards[0]?.mentions).toEqual([{ text: '@Helena QC', mri: QC, displayName: 'Helena QC' }])
+    // An answer naming MDP-9 closes only that fix.
+    const answered = h.watcher.replyCardFor('MDP-1', threadOf('c1', 'r1', iAnswered('r1', 9)), ME)
+    expect(answered.map((card) => card.fix.bugKey)).toEqual(['MDP-8'])
+    expect(h.watcher.bugFixesToAnswer().map((fix) => fix.bugKey)).toEqual(['MDP-8'])
   })
 })

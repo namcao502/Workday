@@ -23,6 +23,7 @@ import {
 } from '@workday/core'
 import type { EventSink } from '../events.js'
 import type { RecordJob } from '../schedules/jobRuns.js'
+import { loggableKeys } from '../workspace/bugFixes.js'
 import { isFullySuccessful, logEntry, sheetStep, type LogTarget } from './logEntry.js'
 import { checkTickets, MineCache, type BoardKeys } from './ticketCheck.js'
 import { readCoverage, reviewOf } from './weekReader.js'
@@ -42,6 +43,8 @@ export interface TimesheetServiceDeps {
   readonly saveQueue: (queue: readonly QueueEntry[]) => Promise<void>
   readonly events: EventSink
   readonly board: BoardKeys
+  // QC bug key -> its parent: a bug's time is logged on the parent. Without it no key is mapped.
+  readonly qcBugParents?: () => ReadonlyMap<string, string>
   readonly now: () => Date
   readonly settings: TimesheetSettings
   // Called after each new lastRun, e.g. to push it to phones.
@@ -137,7 +140,7 @@ export class TimesheetService {
       if (minutes !== null && sum(minutes) > WORK_MINUTES) {
         return { ok: false, error: { code: 'overEightHours' } }
       }
-      const outcome = addTickets(this.queue, date, tickets, minutes)
+      const outcome = addTickets(this.queue, date, this.loggable(tickets, minutes), minutes)
       if (!('queue' in outcome)) {
         return { ok: false, error: { code: outcome.status } }
       }
@@ -230,7 +233,8 @@ export class TimesheetService {
       return HRM_CLOSED
     }
     const { sheet, hours } = this.settings
-    const entry = { date: request.date, tickets: request.tickets, minutes: request.minutes }
+    const tickets = this.loggable(request.tickets, request.minutes)
+    const entry = { date: request.date, tickets, minutes: request.minutes }
     return { ok: true, outcome: await logEntry(sheet, hours, entry, request.target) }
   }
 
@@ -405,6 +409,14 @@ export class TimesheetService {
         ? `${String(summary.logged)} logged, ${String(summary.kept.length)} kept for retry`
         : summary.kind,
     })
+  }
+
+  // Dropping duplicates would misalign explicit minutes, so with minutes keys are only replaced.
+  private loggable(tickets: readonly string[], minutes: readonly number[] | null): readonly string[] {
+    const parents = this.deps.qcBugParents?.() ?? new Map<string, string>()
+    return minutes === null
+      ? loggableKeys(tickets, parents)
+      : tickets.map((ticket) => parents.get(ticket) ?? ticket)
   }
 
   private now(): string {

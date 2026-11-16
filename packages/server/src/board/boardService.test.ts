@@ -35,9 +35,13 @@ let saved: BoardState[] = []
 let saveFails = false
 let errors: string[] = []
 
-function createService(initialState: BoardState): BoardService {
+function createService(
+  initialState: BoardState,
+  afterPoll?: () => Promise<void>,
+): BoardService {
   return new BoardService({
     initialState,
+    ...(afterPoll === undefined ? {} : { afterPoll }),
     save: (state) => {
       if (saveFails) {
         return Promise.reject(new Error('disk full'))
@@ -67,6 +71,36 @@ beforeEach(() => {
   saved = []
   saveFails = false
   errors = []
+})
+
+describe('BoardService afterPoll', () => {
+  it('runs after a successful poll and a failing hook neither fails nor blocks it', async () => {
+    let runs = 0
+    const service = createService(boardWith(), () => {
+      runs += 1
+      return Promise.reject(new Error('checker broke'))
+    })
+
+    await service.poll()
+
+    expect(runs).toBe(1)
+    expect(service.view().lastPoll?.ok).toBe(true)
+    await Promise.resolve()
+    expect(errors).toContain('The ticket update check failed')
+  })
+
+  it('does not run after a failed poll', async () => {
+    let runs = 0
+    const service = createService(boardWith(), () => {
+      runs += 1
+      return Promise.resolve()
+    })
+    tracker.assigned = () => Promise.reject(new Error('Jira search failed'))
+
+    await service.poll()
+
+    expect(runs).toBe(0)
+  })
 })
 
 describe('BoardService poll', () => {

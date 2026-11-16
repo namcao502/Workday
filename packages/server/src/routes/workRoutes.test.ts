@@ -25,6 +25,7 @@ describe('work routes', () => {
       post(local, '/api/work/reviews/api/abc/hide'),
       post(local, '/api/work/suggestions/nope/take'),
       post(local, '/api/work/suggestions/nope/hide'),
+      post(local, '/api/work/bugs/nope/fix'),
     ])
     const noAdo = await post(local, '/api/work/comments/MDP-1/seen')
 
@@ -33,7 +34,7 @@ describe('work routes', () => {
       adoConnected: false,
       suggestions: null,
     })
-    expect(replies.map((reply) => reply.statusCode)).toEqual([400, 400, 400, 400, 400])
+    expect(replies.map((reply) => reply.statusCode)).toEqual([400, 400, 400, 400, 400, 400])
     expect(replies[0].json()).toEqual({ ok: false, error: { code: 'invalidKey' } })
     expect(noAdo.statusCode).toBe(409)
     expect(noAdo.json()).toEqual({ ok: false, error: { code: 'adoNotConfigured' } })
@@ -50,8 +51,20 @@ describe('work routes', () => {
     })
     const read = await remote.app.inject({ url: '/api/work', headers: remoteHeaders(token) })
     const write = await post(remote, '/api/work/suggestions/MDP-1/hide', remoteHeaders(token))
+    const fix = await post(remote, '/api/work/bugs/MDP-9/fix', remoteHeaders(token))
 
     expect(read.statusCode).toBe(200)
     expect(write.statusCode).toBe(403)
+    expect(fix.statusCode).toBe(403)
+  })
+
+  it('fix_rejects_a_key_that_is_not_a_bug', async () => {
+    const local = await buildTestApp()
+    openApps.push(local.app)
+
+    const reply = await post(local, '/api/work/bugs/MDP-9/fix')
+
+    expect(reply.statusCode).toBe(404)
+    expect(reply.json()).toEqual({ ok: false, error: { code: 'notABug' } })
   })
 })

@@ -16,6 +16,7 @@ function row(key: string, section: BoardRow['section'], overrides: Partial<Ticke
       timeSpentSeconds: null,
       updated: null,
       parentKey: null,
+      linkedKeys: [],
       ...overrides,
     },
     section,

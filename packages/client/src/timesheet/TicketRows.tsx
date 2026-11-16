@@ -134,7 +134,7 @@ export function TicketRows({
               {onRemove === undefined ? null : (
                 <Button
                   isIconOnly
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   aria-label={t(`Remove ${row.key}`, `Bỏ ${row.key}`)}
                   onPress={() => {
@@ -150,7 +150,7 @@ export function TicketRows({
                 <span>{t('Not your ticket', 'Không phải ticket của anh')}</span>
                 {check.suggestedKey === null || onUseKey === undefined ? null : (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     onPress={() => {
                       if (check.suggestedKey !== null) {

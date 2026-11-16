@@ -235,7 +235,7 @@ export function TeamsComposer({
       />
       <div
         ref={editorRef}
-        className="max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-xl border border-field-border bg-field-background p-2 text-sm outline-none focus:border-field-border-focus"
+        className="max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-xl bg-surface-secondary p-2 text-sm outline-none focus:bg-field-focus"
         role="textbox"
         aria-multiline="true"
         aria-label={label}
@@ -289,7 +289,7 @@ export function TeamsComposer({
           {submitLabel}
         </Button>
         {onCancel === undefined ? null : (
-          <Button variant="ghost" size="sm" onPress={onCancel}>
+          <Button variant="secondary" size="sm" onPress={onCancel}>
             {t('Cancel', 'Hủy')}
           </Button>
         )}

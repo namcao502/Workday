@@ -76,7 +76,7 @@ export function TeamsMessageRow({
             {message.files.map((file) => (
               <Button
                 key={file.url}
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onPress={() => {
                   window.open(file.url, '_blank', 'noopener')
@@ -109,12 +109,12 @@ export function TeamsMessageRow({
           </div>
         )}
       </div>
-      <div className="absolute -top-2.5 right-1 hidden items-center gap-0.5 rounded-xl border border-separator bg-overlay p-0.5 shadow-overlay group-focus-within:flex group-hover:flex">
+      <div className="absolute -top-2.5 right-1 hidden items-center gap-0.5 rounded-xl bg-overlay p-0.5 shadow-overlay group-focus-within:flex group-hover:flex">
         {QUICK_REACTION_KEYS.map((key) => (
           <Button
             key={key}
             isIconOnly
-            variant="ghost"
+            variant="secondary"
             size="sm"
             aria-label={t(`React ${key}`, `Phản ứng ${key}`)}
             isDisabled={locked}
@@ -125,17 +125,17 @@ export function TeamsMessageRow({
             <TeamsEmoji reaction={key} />
           </Button>
         ))}
-        <Button variant="ghost" size="sm" onPress={onAskClaude}>
+        <Button variant="secondary" size="sm" onPress={onAskClaude}>
           {t('Ask Claude', 'Hỏi Claude')}
         </Button>
         {own && isEditable(message) ? (
-          <Button variant="ghost" size="sm" onPress={onEdit}>
+          <Button variant="secondary" size="sm" onPress={onEdit}>
             {t('Edit', 'Sửa')}
           </Button>
         ) : null}
         {own ? (
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onPress={() => {
               setConfirming(true)

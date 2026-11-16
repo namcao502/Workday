@@ -1,5 +1,7 @@
 import type {
   BoardState,
+  ChangeHistory,
+  TicketContent,
   DeployBuild,
   EpicTicket,
   HoursLog,
@@ -31,6 +33,7 @@ export function makeTicket(key: string, overrides: Partial<Ticket> = {}): Ticket
     timeSpentSeconds: null,
     updated: null,
     parentKey: null,
+    linkedKeys: [],
     ...overrides,
   }
 }
@@ -96,6 +99,25 @@ export class FakeTracker implements TicketTracker {
       return Promise.reject(new Error('Jira search failed'))
     }
     return Promise.resolve(new Set(keys.filter((key) => this.mine.has(key))))
+  }
+
+  readonly contents = new Map<string, TicketContent>()
+  histories: readonly ChangeHistory[] = []
+  accountId = 'acc-me'
+
+  getTicketContent(key: string): Promise<TicketContent | null> {
+    return Promise.resolve(this.contents.get(key) ?? null)
+  }
+
+  readonly historyCalls: string[] = []
+
+  getChangeHistories(key: string): Promise<readonly ChangeHistory[]> {
+    this.historyCalls.push(key)
+    return Promise.resolve(this.histories)
+  }
+
+  myAccountId(): Promise<string> {
+    return Promise.resolve(this.accountId)
   }
 
   ticketUrl(key: string): string {

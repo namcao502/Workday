@@ -21,17 +21,20 @@ import type { SchedulesSource } from './schedules/schedulesView.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
 import { registerTeamsRoutes } from './routes/teamsRoutes.js'
 import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
+import { registerCleanupRoutes } from './routes/cleanupRoutes.js'
 import { registerChatRoutes } from './routes/chatRoute.js'
 import { registerWorkRoutes } from './routes/workRoutes.js'
 import { registerWorkspaceFilesRoutes } from './routes/workspaceFilesRoutes.js'
 import { registerWorkspaceRoutes } from './routes/workspaceRoutes.js'
 import { allowedHostHeaders, isAllowedHost, remoteHostHeaders } from './security/allowedHosts.js'
+import type { TicketUpdateService } from './jira/ticketUpdates.js'
 import type { SettingsService } from './settings/settingsService.js'
 import type { SuggestionService } from './suggestions/suggestionService.js'
 import type { TeamsService } from './teams/teamsService.js'
 import type { TeamsWatcher } from './teams/teamsWatcher.js'
 import type { TimesheetService } from './timesheet/timesheetService.js'
 import type { WorkspaceService } from './workspace/workspaceService.js'
+import type { WorktreeCleanupService } from './workspace/worktreeCleanup.js'
 
 const SOCKET_MAX_PAYLOAD = 1024 * 1024
 
@@ -49,7 +52,9 @@ export interface AppDeps {
   events: EventHub
   remote: RemoteService
   notices: NoticeService
+  ticketUpdates: TicketUpdateService
   workspace: WorkspaceService
+  cleanup: WorktreeCleanupService
   teams: TeamsService
   teamsWatcher: TeamsWatcher
   insights: ReportReader
@@ -82,13 +87,14 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerEventsRoute(app, deps.events, allowedHosts, deps.remote)
   registerRemoteRoutes(app, deps.remote)
   registerPushRoutes(app, deps.remote, deps.settings)
-  registerBoardRoutes(app, deps.board, deps.prs)
+  registerBoardRoutes(app, deps.board, deps.prs, deps.ticketUpdates)
   registerWorkRoutes(app, deps)
   registerNoticeRoutes(app, deps.notices)
   registerSettingsRoutes(app, deps.settings)
   registerTimesheetRoutes(app, deps.timesheet)
   registerWorkspaceRoutes(app, deps.workspace)
   registerWorkspaceFilesRoutes(app, deps.workspace)
+  registerCleanupRoutes(app, deps.cleanup)
   registerChatRoutes(app, deps.workspace)
   registerTeamsRoutes(app, deps.teams, deps.teamsWatcher)
   registerInsightsRoutes(app, deps.insights, () => deps.settings.timeZone)

@@ -15,6 +15,9 @@ export interface TeamsState {
   readonly seenAt: Readonly<Record<string, string>>
   readonly notifiedAt: Readonly<Record<string, string>>
   readonly postedAt: Readonly<Record<string, string>>
+  // conversationKey -> the approvedAt the user was told of / marked done.
+  readonly dbReviewNotifiedAt: Readonly<Record<string, string>>
+  readonly dbReviewDoneAt: Readonly<Record<string, string>>
   readonly baselineDone: boolean
   readonly people: readonly TeamsPerson[]
 }
@@ -23,6 +26,8 @@ export const EMPTY_TEAMS_STATE: TeamsState = {
   seenAt: {},
   notifiedAt: {},
   postedAt: {},
+  dbReviewNotifiedAt: {},
+  dbReviewDoneAt: {},
   baselineDone: false,
   people: [],
 }
@@ -73,17 +78,29 @@ export function parseTeamsState(raw: unknown): TeamsState | null {
     return null
   }
   const { seenAt, notifiedAt, postedAt, people, baselineDone } = raw
+  const dbReviewNotifiedAt = raw['dbReviewNotifiedAt'] ?? {}
+  const dbReviewDoneAt = raw['dbReviewDoneAt'] ?? {}
   if (
     !isTextMap(seenAt) ||
     !isTextMap(notifiedAt) ||
     !isTextMap(postedAt) ||
+    !isTextMap(dbReviewNotifiedAt) ||
+    !isTextMap(dbReviewDoneAt) ||
     !Array.isArray(people) ||
     !people.every(isPerson) ||
     (baselineDone !== undefined && typeof baselineDone !== 'boolean')
   ) {
     return null
   }
-  return { seenAt, notifiedAt, postedAt, baselineDone: baselineDone === true, people }
+  return {
+    seenAt,
+    notifiedAt,
+    postedAt,
+    dbReviewNotifiedAt,
+    dbReviewDoneAt,
+    baselineDone: baselineDone === true,
+    people,
+  }
 }
 
 export function loadPostIndex(dataDir: string): TeamsPostIndex {

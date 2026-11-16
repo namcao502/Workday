@@ -6,10 +6,10 @@ import type { NoticeAlerts } from './useNotices.js'
 
 export const TOAST_MS = 6000
 
-const TONE_BORDER: Readonly<Record<Notice['tone'], string>> = {
-  info: 'border-l-accent',
-  success: 'border-l-success',
-  error: 'border-l-danger',
+const TONE_BACKGROUND: Readonly<Record<Notice['tone'], string>> = {
+  info: 'bg-accent-soft',
+  success: 'bg-success-soft',
+  error: 'bg-danger-soft',
 }
 
 function Toast({
@@ -30,7 +30,7 @@ function Toast({
   }, [notice.id, expire])
   return (
     <Card
-      className={`w-80 max-w-[92vw] flex-row items-start gap-0 border-l-4 p-0 ${TONE_BORDER[notice.tone]}`}
+      className={`w-80 max-w-[92vw] flex-row items-start gap-0 p-0 ${TONE_BACKGROUND[notice.tone]}`}
     >
       <button
         type="button"

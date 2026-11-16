@@ -1,6 +1,7 @@
-import type { BoardAction } from '@workday/core'
+import { isTicketKey, pendingFields, type BoardAction } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import type { BoardService } from '../board/boardService.js'
+import { isTicketContent, type TicketUpdateService } from '../jira/ticketUpdates.js'
 import { isRecord } from '../jsonFile.js'
 import type { PrService } from '../prs/prService.js'
 
@@ -16,8 +17,49 @@ export function registerBoardRoutes(
   app: FastifyInstance,
   board: BoardService,
   prs: PrService,
+  ticketUpdates: TicketUpdateService,
 ): void {
   app.get('/api/board', BOARD_VIEW, () => board.view())
+
+  // null when nothing waits: no entry, or everything in it was viewed.
+  app.get<{ Params: { key: string } }>(
+    '/api/tickets/:key/update',
+    BOARD_VIEW,
+    async (request, reply) => {
+      const { key } = request.params
+      if (!isTicketKey(key)) {
+        return reply.code(400).send({ error: 'Invalid ticket key' })
+      }
+      const entry = ticketUpdates.view()[key]
+      if (entry === undefined || pendingFields(entry).length === 0) {
+        return { update: null }
+      }
+      return {
+        update: {
+          fields: pendingFields(entry),
+          viewed: entry.viewed,
+          current: entry.current,
+          changedBy: entry.changedBy,
+          changedAt: entry.changedAt,
+        },
+      }
+    },
+  )
+
+  app.post<{ Params: { key: string } }>(
+    '/api/tickets/:key/update/viewed',
+    BOARD_ACT,
+    async (request, reply) => {
+      const { key } = request.params
+      const body: unknown = request.body
+      const shown = isRecord(body) ? body['shown'] : undefined
+      if (!isTicketKey(key) || !isTicketContent(shown)) {
+        return reply.code(400).send({ error: 'Body must be { shown: TicketContent }' })
+      }
+      await ticketUpdates.markViewed(key, shown)
+      return { ok: true }
+    },
+  )
 
   app.post('/api/board/check', BOARD_ACT, async (_request, reply) => {
     if (!board.isConnected()) {

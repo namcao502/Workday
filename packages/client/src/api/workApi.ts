@@ -1,6 +1,6 @@
-import type { ReadyToTestOutcome, TakeOutcome, WorkView } from '@workday/core'
+import type { AppError, ReadyToTestOutcome, TakeOutcome, WorkView } from '@workday/core'
 import { isRecord } from '../json.js'
-import { ApiError, isPlainCode, send, type RawResponse } from './client.js'
+import { ApiError, isPlainCode, readError, send, type RawResponse } from './client.js'
 
 function isWorkView(value: unknown): value is WorkView {
   return isRecord(value) && Array.isArray(value['groups']) && isRecord(value['prs'])
@@ -69,4 +69,16 @@ export async function takeSuggestion(key: string): Promise<TakeOutcome> {
 
 export async function hideSuggestion(key: string): Promise<void> {
   await post(`/api/work/suggestions/${encodeURIComponent(key)}/hide`)
+}
+
+export type FixBugResult = { readonly ok: true } | { readonly ok: false; readonly error: AppError }
+
+// A refusal is a result, not a throw: parentWorktreeMissing carries the parent's key for the message.
+export async function fixBug(key: string): Promise<FixBugResult> {
+  const path = `/api/work/bugs/${encodeURIComponent(key)}/fix`
+  const raw = await send('POST', path)
+  if (raw.ok && isRecord(raw.body) && raw.body['ok'] === true) {
+    return { ok: true }
+  }
+  return { ok: false, error: readError(raw, path) }
 }

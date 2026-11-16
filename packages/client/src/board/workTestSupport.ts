@@ -40,6 +40,7 @@ export function boardRow(
       timeSpentSeconds: null,
       updated: null,
       parentKey: null,
+      linkedKeys: [],
     },
     section,
     dueUrgency: 'none',

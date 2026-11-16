@@ -208,7 +208,7 @@ export function NoticesSection({
         </thead>
         <tbody>
           {TOPICS.map((topic) => (
-            <tr key={topic} className="border-t border-separator">
+            <tr key={topic}>
               <th scope="row" className="py-2 text-left font-normal">
                 {topicName(topic)}
               </th>

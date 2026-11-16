@@ -148,7 +148,12 @@ export function PairPage({
             }}
           >
             <Label>{t('Code', 'Mã')}</Label>
-            <Input variant="secondary" maxLength={CODE_LENGTH} autoCapitalize="characters" autoComplete="off" />
+            <Input
+              variant="secondary"
+              maxLength={CODE_LENGTH}
+              autoCapitalize="characters"
+              autoComplete="off"
+            />
           </TextField>
           <TextField fullWidth value={name} onChange={setName}>
             <Label>{t('Device name', 'Tên thiết bị')}</Label>

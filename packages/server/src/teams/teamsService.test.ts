@@ -160,7 +160,12 @@ describe('TeamsService.read', () => {
     const { service } = serviceRig(['c1'])
     service.configure({
       chat: null,
-      config: { watchedChannels: [], postLeadName: null, postGreeting: null },
+      config: {
+        watchedChannels: [],
+        postLeadName: null,
+        postGreeting: null,
+        dbReviewChannel: null,
+      },
       devRepoPath: null,
       repoLabels: {},
       timeZone: 'UTC',

@@ -58,7 +58,7 @@ export function TeamsComposerToolbar({
         <Button
           key={button.command}
           isIconOnly
-          variant="ghost"
+          variant="secondary"
           size="sm"
           aria-label={button.label}
           isDisabled={disabled}
@@ -73,7 +73,7 @@ export function TeamsComposerToolbar({
         </Button>
       ))}
       <Button
-        variant="ghost"
+        variant="secondary"
         size="sm"
         aria-label={t('Link', 'Liên kết')}
         isDisabled={disabled}
@@ -89,7 +89,7 @@ export function TeamsComposerToolbar({
       </Button>
       <Button
         isIconOnly
-        variant="ghost"
+        variant="secondary"
         size="sm"
         aria-label={t('Mention', 'Nhắc tên')}
         isDisabled={disabled}
@@ -122,7 +122,7 @@ export function TeamsComposerToolbar({
             {t('Add link', 'Thêm liên kết')}
           </Button>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onPress={() => {
               setLinking(false)

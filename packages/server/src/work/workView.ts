@@ -7,17 +7,21 @@ import {
   readyToTestSteps,
   type AzureDevOpsConfig,
   type BoardState,
+  type BugFix,
+  type DbReviewApproval,
   type JiraConfig,
   type SessionView,
   type TeamsAttentionItem,
   type StatusFlow,
   type Suggestion,
   type TicketPr,
+  type TicketUpdate,
   type TodoWait,
   type WorkspaceTab,
   type WorkView,
 } from '@workday/core'
 import type { PrState } from '../prs/prService.js'
+import type { QcBug } from '../workspace/bugFixes.js'
 
 export interface WorkViewInput {
   readonly board: BoardState
@@ -34,6 +38,10 @@ export interface WorkViewInput {
     readonly items: readonly Suggestion[]
   } | null
   readonly teams: readonly TeamsAttentionItem[]
+  readonly dbReviews: readonly DbReviewApproval[]
+  readonly ticketUpdates: Readonly<Record<string, TicketUpdate>>
+  readonly qcBugs: readonly QcBug[]
+  readonly bugFixes: readonly BugFix[]
 }
 
 const NO_FLOW: StatusFlow = {
@@ -79,6 +87,10 @@ export function buildWorkView(input: WorkViewInput): WorkView {
       deploys: prs.deploys,
       waits: waitsOf(input.sessions, input.tabs),
       teams: input.teams,
+      dbReviews: input.dbReviews,
+      ticketUpdates: input.ticketUpdates,
+      qcBugs: input.qcBugs,
+      bugFixes: input.bugFixes,
     }),
   )
   const ticketPrs: Record<string, readonly TicketPr[]> = {}

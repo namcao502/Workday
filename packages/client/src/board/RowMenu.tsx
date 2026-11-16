@@ -90,7 +90,7 @@ export function RowMenu(props: RowMenuProps): React.JSX.Element | null {
     <Dropdown>
       <Button
         isIconOnly
-        variant="ghost"
+        variant="secondary"
         size="sm"
         aria-label={t(`Actions for ${ticketKey}`, `Thao tác cho ${ticketKey}`)}
       >

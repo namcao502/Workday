@@ -74,7 +74,7 @@ export function TeamsPostCard({
         }}
       />
       <Button
-        variant="ghost"
+        variant="secondary"
         size="sm"
         onPress={() => {
           setFrozen(null)

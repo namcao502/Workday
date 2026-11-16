@@ -105,6 +105,7 @@ describe('noticeChannels', () => {
 
 describe('noticeText', () => {
   const events: readonly NoticeEvent[] = [
+    { type: 'qcBugFixed', key: 'MDP-9323', parentKey: 'MDP-9310' },
     { type: 'claudeWait', subject: 'MDP-1', wait: 'permission' },
     { type: 'claudeWait', subject: 'MDP-1', wait: 'finished' },
     { type: 'claudeWait', subject: 'MDP-1', wait: 'question' },
@@ -127,6 +128,24 @@ describe('noticeText', () => {
     { type: 'suggestionsUrgent', keys: ['MDP-2', 'MDP-3'] },
   ]
 
+  it('names the changed fields of a ticketUpdated event, with the editor when known', () => {
+    const event: NoticeEvent = {
+      type: 'ticketUpdated',
+      key: 'MDP-1',
+      fields: ['summary', 'dueDate', 'eta', 'devPriority'],
+      changedBy: null,
+    }
+    expect(noticeText(event, 'en')).toBe('MDP-1 was updated in Jira: title, Due, ETA, P')
+    expect(noticeText(event, 'vi')).toBe('MDP-1 được cập nhật trên Jira: tiêu đề, Due, ETA, P')
+    const byAn = { ...event, fields: ['description', 'attachments'], changedBy: 'An' } as const
+    expect(noticeText(byAn, 'en')).toBe(
+      'MDP-1 was updated in Jira: description, attachments (by An)',
+    )
+    expect(noticeText(byAn, 'vi')).toBe(
+      'MDP-1 được cập nhật trên Jira: mô tả, file đính kèm (bởi An)',
+    )
+  })
+
   it('has an English and a Vietnamese sentence for every event type', () => {
     for (const event of events) {
       const english = noticeText(event, 'en')
@@ -135,6 +154,16 @@ describe('noticeText', () => {
       expect(vietnamese.trim(), event.type).not.toBe('')
       expect(vietnamese, event.type).not.toBe(english)
     }
+  })
+
+  it('words a fixed QC bug in English and Vietnamese', () => {
+    const event: NoticeEvent = { type: 'qcBugFixed', key: 'MDP-9323', parentKey: 'MDP-9310' }
+    expect(noticeText(event, 'en')).toBe(
+      "MDP-9323 is fixed - answer QC on MDP-9310's Teams thread.",
+    )
+    expect(noticeText(event, 'vi')).toBe(
+      'MDP-9323 đã sửa xong - trả lời QC trên thread Teams của MDP-9310.',
+    )
   })
 
   it('words a merged PR like the C# app', () => {

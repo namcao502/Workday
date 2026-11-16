@@ -14,6 +14,7 @@ export function makeTicket(key: string, overrides: Partial<Ticket> = {}): Ticket
     timeSpentSeconds: null,
     updated: null,
     parentKey: null,
+    linkedKeys: [],
     ...overrides,
   }
 }

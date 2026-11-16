@@ -1,4 +1,4 @@
-import type { TeamsMessage, TeamsPerson } from '@workday/core'
+import type { TeamsMention, TeamsMessage, TeamsPerson } from '@workday/core'
 import { editMessage, replyToThread } from '../../api/teamsApi.js'
 import { t } from '../../i18n.js'
 import { TeamsComposer } from './TeamsComposer.js'
@@ -13,6 +13,13 @@ interface ReplyBoxProps {
   readonly label: string
   readonly locked: boolean
   readonly send: SendAction
+  readonly loaded?: LoadedReply | null // a prepared reply; a new one remounts the composer
+}
+
+export interface LoadedReply {
+  readonly id: number
+  readonly html: string
+  readonly mentions: readonly TeamsMention[]
 }
 
 export function TeamsReplyBox({
@@ -23,11 +30,14 @@ export function TeamsReplyBox({
   label,
   locked,
   send,
+  loaded = null,
 }: ReplyBoxProps): React.JSX.Element {
   return (
     <TeamsComposer
-      key={conversationId}
+      key={`${conversationId}:${String(loaded?.id ?? 0)}`}
       mode="reply"
+      initialHtml={loaded?.html ?? ''}
+      initialMentions={loaded?.mentions ?? []}
       people={people}
       label={label}
       submitLabel={t('Send', 'Gửi')}

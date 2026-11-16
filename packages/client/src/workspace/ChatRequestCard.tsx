@@ -234,7 +234,7 @@ function PermissionCard({ request, onAnswer, busy }: ChatRequestCardProps): Reac
           </Button>
         ) : null}
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           isDisabled={busy}
           onPress={() => {
@@ -276,7 +276,7 @@ function PlanCard({ request, onAnswer, busy }: ChatRequestCardProps): React.JSX.
           {t('Approve', 'Duyệt')}
         </Button>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           isDisabled={busy}
           onPress={() => {

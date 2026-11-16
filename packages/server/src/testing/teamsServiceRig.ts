@@ -15,13 +15,14 @@ export interface ServiceRig {
 export function serviceRig(
   channelIds: readonly string[],
   initialIndex: TeamsPostIndex = {},
+  initialState: TeamsState = EMPTY_TEAMS_STATE,
 ): ServiceRig {
   const teams = new FakeTeams()
   channelIds.forEach((id) => {
     teams.addChannel(id)
   })
   const clock = { now: NOON }
-  const saved = { index: initialIndex, state: EMPTY_TEAMS_STATE, fail: false }
+  const saved = { index: initialIndex, state: initialState, fail: false }
   const service = new TeamsService({
     initialIndex,
     saveIndex: (index) => {
@@ -31,7 +32,7 @@ export function serviceRig(
       saved.index = index
       return Promise.resolve()
     },
-    initialState: EMPTY_TEAMS_STATE,
+    initialState,
     saveState: (state) => {
       if (saved.fail) {
         return Promise.reject(new Error('disk full'))
@@ -52,6 +53,7 @@ export function serviceRig(
       watchedChannels: channelIds.map((id) => `team > ${id}`),
       postLeadName: null,
       postGreeting: null,
+      dbReviewChannel: null,
     },
     devRepoPath: null,
     repoLabels: {},

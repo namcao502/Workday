@@ -8,7 +8,7 @@ import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
 import { Section } from '../ui/Section.js'
 import { TextField } from '../ui/TextField.js'
-import { formFromTeams, teamsFromForm, type TeamsForm } from './teamsForm.js'
+import { dbReviewIncomplete, formFromTeams, teamsFromForm, type TeamsForm } from './teamsForm.js'
 
 const STATUS_KEY = ['teams', 'status'] as const
 
@@ -37,6 +37,16 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
   }
 
   async function runSave(): Promise<void> {
+    if (dbReviewIncomplete(form)) {
+      setStatus({
+        ok: false,
+        text: t(
+          'Fill both Database Review fields, or leave both empty',
+          'Điền cả hai ô Database Review, hoặc để trống cả hai',
+        ),
+      })
+      return
+    }
     setBusy(true)
     try {
       await save({ teams: teamsFromForm(form) })
@@ -102,6 +112,30 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
         value={form.postGreeting}
         onChange={(value) => {
           change({ postGreeting: value })
+        }}
+      />
+      <TextField
+        id="teams-db-review-team"
+        label={t('Database Review team', 'Team Database Review')}
+        hint={t(
+          'Where schema changes go for approval. Empty = no DB review to-dos',
+          'Nơi gửi thay đổi schema để duyệt. Để trống = không có to-do DB review',
+        )}
+        value={form.dbReviewTeam}
+        onChange={(value) => {
+          change({ dbReviewTeam: value })
+        }}
+      />
+      <TextField
+        id="teams-db-review-channel"
+        label={t('Database Review channel', 'Kênh Database Review')}
+        hint={t(
+          'Must also be one of the watched channels',
+          'Cũng phải nằm trong các kênh theo dõi',
+        )}
+        value={form.dbReviewChannel}
+        onChange={(value) => {
+          change({ dbReviewChannel: value })
         }}
       />
       <div className="flex flex-wrap items-center gap-2">

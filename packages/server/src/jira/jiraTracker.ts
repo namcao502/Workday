@@ -1,5 +1,7 @@
 import {
   isTicketKey,
+  type ChangeHistory,
+  type TicketContent,
   type EpicTicket,
   type JiraConfig,
   type Ticket,
@@ -11,14 +13,18 @@ import { retryTransient } from '../retry.js'
 import {
   findTransitionId,
   parseAssignee,
+  parseChangelogPage,
   parseEpicTickets,
   parseIssue,
+  parseTicketContent,
   parseSearchResponse,
   type JiraFieldIds,
 } from './parseJira.js'
 
 const REQUEST_TIMEOUT_MILLISECONDS = 30_000
 const EPIC_FIELDS: readonly string[] = ['summary', 'status', 'issuetype', 'priority', 'duedate']
+const CONTENT_FIELDS: readonly string[] = ['summary', 'description', 'attachment', 'duedate']
+const CHANGELOG_PAGE_SIZE = 100
 const BASE_FIELDS: readonly string[] = [
   'summary',
   'duedate',
@@ -27,6 +33,7 @@ const BASE_FIELDS: readonly string[] = [
   'issuetype',
   'updated',
   'parent',
+  'issuelinks',
 ]
 
 export class JiraTracker implements TicketTracker {
@@ -101,6 +108,39 @@ export class JiraTracker implements TicketTracker {
     }
     const body: unknown = await response.json()
     return parseIssue(body, this.fieldIds)
+  }
+
+  async getTicketContent(key: string): Promise<TicketContent | null> {
+    const fieldList = [...CONTENT_FIELDS, ...this.customFieldIds()].join(',')
+    const path = `/rest/api/3/issue/${encodeURIComponent(key)}?fields=${fieldList}`
+    const response = await retryTransient(() => this.send('GET', path))
+    if (response.status === 404) {
+      return null
+    }
+    if (!response.ok) {
+      throw new Error(`Jira content lookup failed with status ${String(response.status)}`)
+    }
+    return parseTicketContent(await response.json(), this.fieldIds)
+  }
+
+  // The newest page of the changelog (Jira lists it oldest first), so a long-lived ticket costs a second request.
+  async getChangeHistories(key: string): Promise<readonly ChangeHistory[]> {
+    const path = `/rest/api/3/issue/${encodeURIComponent(key)}/changelog?maxResults=${String(CHANGELOG_PAGE_SIZE)}&startAt=`
+    const first = parseChangelogPage(await this.getRequiredJson(`${path}0`))
+    if (first.total <= CHANGELOG_PAGE_SIZE) {
+      return first.histories
+    }
+    const startAt = first.total - CHANGELOG_PAGE_SIZE
+    return parseChangelogPage(await this.getRequiredJson(`${path}${String(startAt)}`)).histories
+  }
+
+  async myAccountId(): Promise<string> {
+    const body = await this.getRequiredJson('/rest/api/3/myself')
+    const accountId = isRecord(body) ? body['accountId'] : undefined
+    if (typeof accountId !== 'string' || accountId === '') {
+      throw new Error('Jira /myself returned no accountId')
+    }
+    return accountId
   }
 
   // The keys of those among `keys` that match the configured "mine" JQL.
@@ -197,6 +237,20 @@ export class JiraTracker implements TicketTracker {
       throw new Error(`Jira assign failed with status ${String(assigned.status)}`)
     }
     return null
+  }
+
+  private customFieldIds(): readonly string[] {
+    return [this.config.etaFieldId, this.config.devPriorityFieldId].filter(
+      (fieldId): fieldId is string => fieldId !== null,
+    )
+  }
+
+  private async getRequiredJson(path: string): Promise<unknown> {
+    const response = await retryTransient(() => this.send('GET', path))
+    if (!response.ok) {
+      throw new Error(`Jira request failed with status ${String(response.status)}`)
+    }
+    return response.json()
   }
 
   private send(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown): Promise<Response> {

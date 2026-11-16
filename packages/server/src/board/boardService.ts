@@ -38,6 +38,8 @@ export interface BoardServiceDeps {
   readonly settings: BoardSettings
   readonly now?: () => Date
   readonly recordJob?: RecordJob
+  // Runs after a successful poll was applied; not awaited by the poll, a failure is only logged.
+  readonly afterPoll?: (tracker: TicketTracker, jira: JiraConfig) => Promise<void>
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -65,6 +67,7 @@ export class BoardService {
   private readonly events: EventSink
   private readonly now: () => Date
   private readonly recordJob: RecordJob | undefined
+  private readonly afterPoll: BoardServiceDeps['afterPoll']
   private readonly logError: (message: string, error: unknown) => void
 
   constructor(deps: BoardServiceDeps) {
@@ -74,6 +77,7 @@ export class BoardService {
     this.events = deps.events
     this.now = deps.now ?? (() => new Date())
     this.recordJob = deps.recordJob
+    this.afterPoll = deps.afterPoll
     this.logError = deps.logError ?? logToConsole
   }
 
@@ -257,15 +261,33 @@ export class BoardService {
         return
       }
       const live = await this.fetchLive(tracker, offPoll)
-      await this.enqueue(async () => {
-        if (this.settings.tracker === tracker) {
-          await this.commit(applyLiveTickets(this.state, live))
-          this.recordPoll(true, startedAt)
+      const applied = await this.enqueue(async () => {
+        if (this.settings.tracker !== tracker) {
+          return false
         }
+        await this.commit(applyLiveTickets(this.state, live))
+        this.recordPoll(true, startedAt)
+        return true
       })
+      if (applied) {
+        this.startAfterPoll(tracker, jira)
+      }
     } catch (error: unknown) {
       this.logError('Saving the polled board failed', error)
       await this.recordPollIfCurrent(tracker, false, startedAt)
+    }
+  }
+
+  private startAfterPoll(tracker: TicketTracker, jira: JiraConfig): void {
+    if (this.afterPoll === undefined) {
+      return
+    }
+    try {
+      this.afterPoll(tracker, jira).catch((error: unknown) => {
+        this.logError('The ticket update check failed', error)
+      })
+    } catch (error: unknown) {
+      this.logError('The ticket update check failed', error)
     }
   }
 

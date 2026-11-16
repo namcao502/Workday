@@ -19,6 +19,7 @@ import { PollScheduler } from './board/pollScheduler.js'
 import { loadBoard, saveBoard } from './boardStore.js'
 import { DEFAULT_OFF_MARKER } from './config.js'
 import { EventHub } from './events.js'
+import { loadTicketUpdates, saveTicketUpdates, TicketUpdateService } from './jira/ticketUpdates.js'
 import { createInsights } from './insights/createInsights.js'
 import type { ReportReader } from './insights/reportReader.js'
 import { claudeWaitNotice } from './notices/claudeWaitNotice.js'
@@ -47,12 +48,14 @@ import { loadSuggestionState, saveSuggestionState } from './suggestions/suggesti
 import { runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
+import { qcBugsOf, readBugFixes } from './workspace/bugFixes.js'
 import { TimesheetService } from './timesheet/timesheetService.js'
 import { defaultClaudeExecutable, sessionEnvironment } from './workspace/launchEnvironment.js'
 import type { SpawnEditor } from './workspace/openInEditor.js'
 import { createSdkAgent } from './workspace/sdkAgent.js'
 import { WorkspaceService } from './workspace/workspaceService.js'
 import { loadWorkspace, saveWorkspace } from './workspace/workspaceStore.js'
+import { WorktreeCleanupService } from './workspace/worktreeCleanup.js'
 import {
   createWorktree,
   type WorktreeOptions,
@@ -104,7 +107,9 @@ export interface Services {
   readonly events: EventHub
   readonly remote: RemoteService
   readonly notices: NoticeService
+  readonly ticketUpdates: TicketUpdateService
   readonly workspace: WorkspaceService
+  readonly cleanup: WorktreeCleanupService
   readonly prs: PrService
   readonly suggestions: SuggestionService
   readonly teams: TeamsService
@@ -128,12 +133,14 @@ export function createServices(options: ServicesOptions): Services {
   const recordJob: RecordJob = (job, run) => {
     jobRuns.record(job, run)
   }
-  const board = new BoardService({
+  const board: BoardService = new BoardService({
     initialState: loadBoard(dataDir),
     save: (state) => saveBoard(dataDir, state),
     events,
     settings: { jira: config.jira, tracker: null, timeZone: config.timeZone },
     recordJob,
+    afterPoll: (tracker, jira) =>
+      ticketUpdates.check(tracker, { eta: jira.etaFieldId, devPriority: jira.devPriorityFieldId }),
     ...logError,
   })
   const remote = new RemoteService({
@@ -152,6 +159,7 @@ export function createServices(options: ServicesOptions): Services {
     saveQueue: (queue) => saveQueue(dataDir, queue),
     events,
     board,
+    qcBugParents: () => new Map(qcBugsOf(board.snapshot()).map((item) => [item.bug.key, item.parentKey])),
     now: () => new Date(),
     settings: {
       sheet: null,
@@ -181,6 +189,14 @@ export function createServices(options: ServicesOptions): Services {
     push: (area, message) => remote.push.sendToArea(area, message),
     pushLocal: (message) => remote.push.sendToLocal(message),
     settings: () => ({ prefs: settings.notices, language: settings.language }),
+    logError: reportError,
+  })
+  const ticketUpdates: TicketUpdateService = new TicketUpdateService({
+    initial: loadTicketUpdates(dataDir),
+    save: (updates) => saveTicketUpdates(dataDir, updates),
+    events,
+    notices,
+    board,
     logError: reportError,
   })
   const scanRunner = new ScanRunner({
@@ -276,6 +292,15 @@ export function createServices(options: ServicesOptions): Services {
     notices,
     events,
     scheduler: teamsScheduler,
+    dbReviewChannel: () => settings.teamsConfig.dbReviewChannel,
+    readBugFixes: async () => {
+      const devRepo = settings.view().config.workspace.devRepoPath
+      return devRepo === null
+        ? []
+        : readBugFixes(qcBugsOf(board.snapshot()), devRepo, new Date(), (message) => {
+            reportError(message, null)
+          })
+    },
     recordJob,
     logError: reportError,
   })
@@ -321,6 +346,15 @@ export function createServices(options: ServicesOptions): Services {
     workspace,
     ...logError,
   })
+  const cleanup = new WorktreeCleanupService({
+    config: () => settings.view().config.workspace,
+    tracking: () => prs.state().tracking,
+    inProgressKeys: () => new Set(Object.keys(board.snapshot().inProgress)),
+    runningKeys: () => workspace.runningTicketKeys(),
+    logError: (message) => {
+      reportError(message, null)
+    },
+  })
   const insights = createInsights({
     dataDir,
     homeDir,
@@ -352,7 +386,9 @@ export function createServices(options: ServicesOptions): Services {
     events,
     remote,
     notices,
+    ticketUpdates,
     workspace,
+    cleanup,
     prs,
     suggestions,
     teams,

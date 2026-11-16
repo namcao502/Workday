@@ -1,17 +1,21 @@
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
-import type { ReadyToTestOutcome, TakeOutcome, WorkView } from '@workday/core'
+import type { ReadyToTestOutcome, TakeOutcome, TicketContent, WorkView } from '@workday/core'
 import { useMemo } from 'react'
-import { ApiError, queryKeys } from './client.js'
+import { ApiError, isPlainCode, queryKeys } from './client.js'
 import { useAccess } from './useMe.js'
 import { useSettings } from './useSettings.js'
 import {
   getWork,
   hideReview,
+  fixBug,
   hideSuggestion,
   markCommentsSeen,
   moveToReadyToTest,
   takeSuggestion,
+  type FixBugResult,
 } from './workApi.js'
+import { markDbReviewDone } from './teamsApi.js'
+import { getTicketUpdate, markTicketUpdateViewed } from './ticketUpdateApi.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
 
@@ -34,12 +38,32 @@ export function actionErrorText(error: unknown): string {
   return t('Could not reach the Workday server', 'Không kết nối được tới Workday server')
 }
 
+async function dbReviewDoneChecked(conversationKey: string): Promise<void> {
+  const result = await markDbReviewDone(conversationKey)
+  if (!result.ok) {
+    const { code } = result.error
+    throw new ApiError(400, '/api/teams/db-review/done', isPlainCode(code) ? code : null)
+  }
+}
+
 export interface WorkActions {
   readonly readyToTest: (key: string) => Promise<ReadyToTestOutcome>
   readonly commentsSeen: (key: string) => Promise<void>
   readonly hideReview: (repository: string, pullRequestId: number) => Promise<void>
   readonly take: (key: string) => Promise<TakeOutcome>
   readonly hideSuggestion: (key: string) => Promise<void>
+  readonly dbReviewDone: (conversationKey: string) => Promise<void>
+  readonly ticketUpdateViewed: (key: string, shown: TicketContent) => Promise<void>
+  readonly ticketUpdateSeen: (key: string) => Promise<void>
+  readonly fixBug: (key: string) => Promise<FixBugResult>
+}
+
+// Marks the content Jira shows now as viewed; nothing to do when no update is pending.
+async function seenWithCurrent(key: string): Promise<void> {
+  const update = await getTicketUpdate(key)
+  if (update !== null) {
+    await markTicketUpdateViewed(key, update.current)
+  }
 }
 
 // Each call refetches the view itself, so the UI does not wait for the work.changed event.
@@ -57,6 +81,10 @@ export function useWorkActions(): WorkActions {
       hideReview: (repository, id) => refetched(hideReview(repository, id)),
       take: (key) => refetched(takeSuggestion(key)),
       hideSuggestion: (key) => refetched(hideSuggestion(key)),
+      dbReviewDone: (conversationKey) => refetched(dbReviewDoneChecked(conversationKey)),
+      ticketUpdateViewed: (key, shown) => refetched(markTicketUpdateViewed(key, shown)),
+      ticketUpdateSeen: (key) => refetched(seenWithCurrent(key)),
+      fixBug: (key) => refetched(fixBug(key)),
     }
   }, [queryClient])
 }

@@ -31,6 +31,8 @@ export const queryKeys = {
   timesheetVisited: ['timesheet-visited'],
   work: ['work'],
   workspace: ['workspace'],
+  // Under the `workspace` root, so a workspace.changed event refetches an open cleanup list too.
+  workspaceCleanup: ['workspace', 'cleanup'],
   workspaceWarning: ['workspace-warning'],
 } as const
 
@@ -132,7 +134,7 @@ function readDetail(raw: RawResponse): string | null {
   return typeof detail === 'string' ? detail : null
 }
 
-type KeyedCode = 'notFound' | 'alreadyOnBoard'
+type KeyedCode = 'notFound' | 'alreadyOnBoard' | 'parentWorktreeMissing'
 export type PlainCode = Exclude<AppError['code'], KeyedCode>
 
 const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
@@ -148,7 +150,7 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'tscNoToken',
   'tscDateMismatch',
   'tscFailed',
-  'chromeMissing',
+  'browserMissing',
   'browserBusy',
   'hrmRejected',
   'hrmUnreachable',
@@ -177,6 +179,8 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'claudeNotRunning',
   'claudeWaiting',
   'insightsFailed',
+  'notABug',
+  'busy',
 ])
 
 export function isPlainCode(code: unknown): code is PlainCode {
@@ -190,6 +194,9 @@ function toAppError(error: Record<string, unknown>, raw: RawResponse, path: stri
   }
   if ((code === 'notFound' || code === 'alreadyOnBoard') && typeof key === 'string') {
     return { code, key }
+  }
+  if (code === 'parentWorktreeMissing' && typeof error['parentKey'] === 'string') {
+    return { code, parentKey: error['parentKey'] }
   }
   throw new ApiError(raw.status, path)
 }

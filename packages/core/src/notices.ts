@@ -1,6 +1,7 @@
 import type { WaitReason } from './claudeAttention.js'
 import type { ScanOutcome } from './api.js'
 import type { PrVote } from './prTracking.js'
+import type { TicketField } from './ticketChanges.js'
 
 export type NoticeTopic =
   'claude' | 'pr' | 'jira' | 'teams' | 'teamsMention' | 'suggestions' | 'knowledge' | 'other'
@@ -42,6 +43,14 @@ export type NoticeEvent =
       readonly title: string
       readonly sender: string
       readonly mention: boolean
+    }
+  | { readonly type: 'qcBugFixed'; readonly key: string; readonly parentKey: string }
+  | { readonly type: 'dbReviewApproved'; readonly key: string; readonly approver: string }
+  | {
+      readonly type: 'ticketUpdated'
+      readonly key: string
+      readonly fields: readonly TicketField[]
+      readonly changedBy: string | null
     }
 
 export type NoticeTarget =
@@ -209,6 +218,39 @@ function deployText(event: NoticeEvent, vi: boolean): string | null {
   }
 }
 
+function fieldName(field: TicketField, vi: boolean): string {
+  switch (field) {
+    case 'summary':
+      return vi ? 'tiêu đề' : 'title'
+    case 'description':
+      return vi ? 'mô tả' : 'description'
+    case 'attachments':
+      return vi ? 'file đính kèm' : 'attachments'
+    case 'dueDate':
+      return 'Due'
+    case 'eta':
+      return 'ETA'
+    case 'devPriority':
+      return 'P'
+  }
+}
+
+function ticketUpdatedText(
+  key: string,
+  fields: readonly TicketField[],
+  changedBy: string | null,
+  vi: boolean,
+): string {
+  const names = fields.map((field) => fieldName(field, vi)).join(', ')
+  const text = vi
+    ? `${key} được cập nhật trên Jira: ${names}`
+    : `${key} was updated in Jira: ${names}`
+  if (changedBy === null) {
+    return text
+  }
+  return vi ? `${text} (bởi ${changedBy})` : `${text} (by ${changedBy})`
+}
+
 function scanBadText(outcome: ScanOutcome, vi: boolean): string {
   switch (outcome) {
     case 'stopped':
@@ -261,6 +303,16 @@ export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
       return vi
         ? `${event.sender} nhắn trong ${event.key} (${event.title}).`
         : `${event.sender} wrote in ${event.key} (${event.title}).`
+    case 'qcBugFixed':
+      return vi
+        ? `${event.key} đã sửa xong - trả lời QC trên thread Teams của ${event.parentKey}.`
+        : `${event.key} is fixed - answer QC on ${event.parentKey}'s Teams thread.`
+    case 'dbReviewApproved':
+      return vi
+        ? `${event.key}: DB đã được ${event.approver} duyệt. Chạy SQL trên dev rồi scaffold.`
+        : `${event.key}: DB change approved by ${event.approver}. Run the SQL on dev, then scaffold.`
+    case 'ticketUpdated':
+      return ticketUpdatedText(event.key, event.fields, event.changedBy, vi)
     default:
       return ''
   }

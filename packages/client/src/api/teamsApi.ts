@@ -70,6 +70,10 @@ export function markTeamsSeen(ticket: string, conversationId: string): Promise<T
   return write(ticketPath(ticket, 'seen'), { conversationId })
 }
 
+export function markDbReviewDone(conversationKey: string): Promise<TeamsWrite> {
+  return write('/api/teams/db-review/done', { conversationKey })
+}
+
 // Teams images need the signed-in session, so the browser loads them through the server.
 export function teamsImageSrc(url: string): string {
   return `/api/teams/image?url=${encodeURIComponent(url)}`

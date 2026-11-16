@@ -423,6 +423,13 @@ function numberOrNull(value: unknown): number | null {
   return typeof value === 'number' ? value : null
 }
 
+// The WPF stores the links as one comma-joined string.
+function linkedKeysOf(value: unknown): readonly string[] {
+  return typeof value === 'string'
+    ? value.split(',').map((key) => key.trim()).filter((key) => key !== '')
+    : []
+}
+
 // The WPF Jira models use PascalCase keys; a record without a valid Key is no ticket.
 function ticketOf(raw: unknown): Ticket | null {
   if (!isJson(raw) || typeof raw['Key'] !== 'string' || !isTicketKey(raw['Key'])) {
@@ -440,6 +447,7 @@ function ticketOf(raw: unknown): Ticket | null {
     timeSpentSeconds: numberOrNull(raw['TimeSpentSeconds']),
     updated: textOrNull(raw['Updated']),
     parentKey: textOrNull(raw['ParentKey']),
+    linkedKeys: linkedKeysOf(raw['LinkedKeys']),
   }
 }
 

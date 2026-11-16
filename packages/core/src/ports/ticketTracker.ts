@@ -1,4 +1,5 @@
 import type { Ticket } from '../ticket.js'
+import type { ChangeHistory, TicketContent } from '../ticketChanges.js'
 import type { EpicTicket } from '../ticketSuggestions.js'
 
 export type TrackerValidation =
@@ -10,6 +11,9 @@ export interface TicketTracker {
   getAssignedTickets(): Promise<Readonly<Record<string, Ticket>>> // throws on failure
   getTicket(key: string): Promise<Ticket | null> // null = missing or not visible; other failures throw
   filterMine(keys: readonly string[]): Promise<ReadonlySet<string>> // throws on failure
+  getTicketContent(key: string): Promise<TicketContent | null> // null = missing or not visible; other failures throw
+  getChangeHistories(key: string): Promise<readonly ChangeHistory[]> // throws on failure
+  myAccountId(): Promise<string> // throws on failure
   ticketUrl(key: string): string
   transition(key: string, status: string): Promise<boolean> // false = no transition leads there; HTTP failure throws
   assignToMe(key: string): Promise<string | null> // null = assigned to me now (or already); else the holder's name

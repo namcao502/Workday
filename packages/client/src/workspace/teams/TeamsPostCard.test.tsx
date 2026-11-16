@@ -15,6 +15,7 @@ function view(posted: boolean): NotPosted {
     draft: { subject: 'MDP-1 Title', body: 'text', bodyHtml: '<p>text<script>x</script></p>' },
     posted,
     pending: [],
+    bugReplies: [],
   }
 }
 

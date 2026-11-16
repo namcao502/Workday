@@ -1,3 +1,5 @@
+import type { DbReviewApproval } from './api.js'
+import type { BugFix } from './bugReply.js'
 import type { BoardState } from './board.js'
 import type { WaitReason } from './claudeAttention.js'
 import type { DevDeploy } from './devDeploys.js'
@@ -14,6 +16,7 @@ import { isWithDeveloper, readyToTestSteps } from './readyToTest.js'
 import type { StatusFlow } from './statusFlow.js'
 import type { TeamsAttentionItem } from './teamsAttention.js'
 import { dueUrgency, isStatusDone, type Ticket } from './ticket.js'
+import { pendingFields, type TicketField, type TicketUpdate } from './ticketChanges.js'
 
 // The order of the union is the order on screen.
 export type TodoItem =
@@ -25,6 +28,16 @@ export type TodoItem =
       readonly wait: WaitReason
     }
   | { readonly kind: 'teamsMessage'; readonly ticketKey: string; readonly item: TeamsAttentionItem }
+  | { readonly kind: 'dbReview'; readonly ticketKey: string; readonly approval: DbReviewApproval }
+  | { readonly kind: 'qcBugReply'; readonly ticketKey: string; readonly parentKey: string; readonly fix: BugFix }
+  | { readonly kind: 'qcBug'; readonly ticketKey: string; readonly parentKey: string }
+  | {
+      readonly kind: 'jiraUpdated'
+      readonly ticketKey: string
+      readonly section: 'new' | 'inProgress'
+      readonly fields: readonly TicketField[]
+      readonly changedBy: string | null
+    }
   | {
       readonly kind: 'readyToTest'
       readonly ticketKey: string
@@ -62,6 +75,11 @@ export interface TodoInput {
   readonly deploys: Readonly<Record<string, DevDeploy>>
   readonly waits: readonly TodoWait[]
   readonly teams: readonly TeamsAttentionItem[]
+  readonly dbReviews: readonly DbReviewApproval[]
+  readonly ticketUpdates: Readonly<Record<string, TicketUpdate>>
+  readonly qcBugs: readonly { readonly bug: Ticket; readonly parentKey: string }[]
+  // The fixes still waiting for an answer; the server works out which.
+  readonly bugFixes: readonly BugFix[]
 }
 
 export interface TodoGroup {
@@ -73,6 +91,10 @@ export interface TodoGroup {
 const KIND_ORDER: readonly TodoKind[] = [
   'claudeWaiting',
   'teamsMessage',
+  'dbReview',
+  'qcBugReply',
+  'qcBug',
+  'jiraUpdated',
   'readyToTest',
   'prReview',
   'prBlocked',
@@ -81,7 +103,13 @@ const KIND_ORDER: readonly TodoKind[] = [
   'overdue',
 ]
 
-const NEEDED_NOW: ReadonlySet<TodoKind> = new Set(['claudeWaiting', 'prBlocked', 'overdue'])
+const NEEDED_NOW: ReadonlySet<TodoKind> = new Set([
+  'claudeWaiting',
+  'qcBugReply',
+  'qcBug',
+  'prBlocked',
+  'overdue',
+])
 
 function compareText(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0
@@ -150,6 +178,32 @@ function commentTodos(input: TodoInput): readonly TodoItem[] {
     }))
 }
 
+// Only New and In progress tickets are watched; the newest change first, one without a time last.
+function updatedTodos(input: TodoInput): readonly TodoItem[] {
+  const todos: { readonly at: string; readonly item: TodoItem }[] = []
+  for (const [key, update] of Object.entries(input.ticketUpdates)) {
+    const fields = pendingFields(update)
+    const section = Object.hasOwn(input.board.inProgress, key)
+      ? 'inProgress'
+      : Object.hasOwn(input.board.new, key)
+        ? 'new'
+        : null
+    if (fields.length !== 0 && section !== null) {
+      const item: TodoItem = {
+        kind: 'jiraUpdated',
+        ticketKey: key,
+        section,
+        fields,
+        changedBy: update.changedBy,
+      }
+      todos.push({ at: update.changedAt ?? '', item })
+    }
+  }
+  return todos
+    .sort((a, b) => compareText(b.at, a.at) || compareText(ticketKeyOf(a.item) ?? '', ticketKeyOf(b.item) ?? ''))
+    .map((todo) => todo.item)
+}
+
 // Claude blocked on a permission or a question first; a finished turn can wait a little.
 function claudeTodos(waits: readonly TodoWait[]): readonly TodoItem[] {
   return [...waits]
@@ -161,7 +215,7 @@ function claudeTodos(waits: readonly TodoWait[]): readonly TodoItem[] {
     .map((wait): TodoItem => ({ kind: 'claudeWaiting', ...wait }))
 }
 
-// Port of DashboardDataBuilder.Build (to-do part) and DashboardTodos.Build, minus QC bugs and Jira updates.
+// Port of DashboardDataBuilder.Build (to-do part) and DashboardTodos.Build, with the QC bugs.
 export function buildTodos(input: TodoInput): readonly TodoItem[] {
   const started = byDue(input.board.inProgress)
   const done = byDue(input.board.done)
@@ -183,8 +237,13 @@ export function buildTodos(input: TodoInput): readonly TodoItem[] {
       }
     }
   }
+  // A bug still New is one to fix, read against this board; its overdue row would only repeat it.
+  const bugsToFix = [...input.qcBugs]
+    .filter((qcBug) => Object.hasOwn(input.board.new, qcBug.bug.key))
+    .sort((a, b) => compareText(a.bug.key, b.bug.key))
+  const bugKeys = new Set(bugsToFix.map((qcBug) => qcBug.bug.key))
   overdue('inProgress', started)
-  overdue('new', pending)
+  overdue('new', pending.filter((ticket) => !bugKeys.has(ticket.key)))
   todos.push(...blockedPrTodos(input, [...started, ...done]))
   // Oldest first: the teammate has waited longest on it.
   const unseen = Object.values(input.reviews)
@@ -194,9 +253,22 @@ export function buildTodos(input: TodoInput): readonly TodoItem[] {
     todos.push({ kind: 'prReview', review })
   }
   todos.push(...commentTodos(input))
+  todos.push(...updatedTodos(input))
   // Oldest first, like reviews: that message has waited longest.
   for (const item of [...input.teams].sort((a, b) => compareText(a.sentAt, b.sentAt))) {
     todos.push({ kind: 'teamsMessage', ticketKey: item.ticketKey, item })
+  }
+  // The approved schema change blocks the ticket's code until its SQL runs on dev; oldest first.
+  for (const approval of [...input.dbReviews].sort((a, b) =>
+    compareText(a.approvedAt, b.approvedAt),
+  )) {
+    todos.push({ kind: 'dbReview', ticketKey: approval.ticketKey, approval })
+  }
+  for (const qcBug of bugsToFix) {
+    todos.push({ kind: 'qcBug', ticketKey: qcBug.bug.key, parentKey: qcBug.parentKey })
+  }
+  for (const fix of [...input.bugFixes].sort((a, b) => compareText(a.bugKey, b.bugKey))) {
+    todos.push({ kind: 'qcBugReply', ticketKey: fix.bugKey, parentKey: fix.parentKey, fix })
   }
   return todos.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind))
 }
@@ -234,14 +306,15 @@ function groupByTicket(todos: readonly TodoItem[]): readonly (readonly TodoItem[
 
 // A group goes first when any of its rows is needed now; both halves keep the input order.
 export function groupTodos(todos: readonly TodoItem[]): readonly TodoGroup[] {
-  const groups = groupByTicket(todos).map(
-    (items): TodoGroup => ({
-      ticketKey: items[0] === undefined ? null : ticketKeyOf(items[0]),
-      items,
-      neededNow: items.some(isNeededNow),
-    }),
-  )
-  return [...groups.filter((group) => group.neededNow), ...groups.filter((group) => !group.neededNow)]
+  const groups = groupByTicket(todos).map((items): TodoGroup => ({
+    ticketKey: items[0] === undefined ? null : ticketKeyOf(items[0]),
+    items,
+    neededNow: items.some(isNeededNow),
+  }))
+  return [
+    ...groups.filter((group) => group.neededNow),
+    ...groups.filter((group) => !group.neededNow),
+  ]
 }
 
 // "<ticket or session>|<kind>" per needed-now row; a group's key is its ticket, else its Claude session.

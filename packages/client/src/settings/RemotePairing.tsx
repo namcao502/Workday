@@ -84,7 +84,7 @@ export function RemotePairing({
           </p>
           <span title={t('Click to copy', 'Bấm để sao chép')}>
             <Button
-              variant="ghost"
+              variant="secondary"
               size="sm"
               onPress={() => {
                 void navigator.clipboard.writeText(link)

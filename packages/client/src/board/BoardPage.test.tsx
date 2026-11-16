@@ -33,6 +33,7 @@ function row(
       timeSpentSeconds: null,
       updated: null,
       parentKey: null,
+      linkedKeys: [],
       ...overrides,
     },
     section,

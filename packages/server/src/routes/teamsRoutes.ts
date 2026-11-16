@@ -82,6 +82,17 @@ export function registerTeamsRoutes(
     }
   })
 
+  // Before /api/teams/:key so the fixed path wins; the conversation key comes from the work view.
+  app.post('/api/teams/db-review/done', async (request, reply) => {
+    const body = isRecord(request.body) ? request.body : {}
+    const conversationKey = text(body, 'conversationKey')
+    if (conversationKey === null) {
+      return bad(reply, 'The body is not valid')
+    }
+    await watcher.markDbReviewDone(conversationKey)
+    return { ok: true }
+  })
+
   app.get<{ Params: { key: string }; Querystring: { conversation?: string } }>(
     '/api/teams/:key',
     async (request, reply) => {
@@ -91,7 +102,9 @@ export function registerTeamsRoutes(
       }
       try {
         const view = await teams.read(key, request.query.conversation ?? '')
-        return { ...view, pending: watcher.pendingIds(key) }
+        const bugReplies =
+          view.state === 'thread' ? watcher.replyCardFor(key, view.thread, view.myId) : []
+        return { ...view, pending: watcher.pendingIds(key), bugReplies }
       } catch (error: unknown) {
         return reply.code(502).send({ ok: false, error: teamsError(error) })
       }

@@ -42,7 +42,7 @@ function DeviceName({
     return (
       <span title={t('Click to rename', 'Bấm để đổi tên')}>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onPress={() => {
             setDraft(device.name)
@@ -99,7 +99,7 @@ function DeviceRow({
   }
 
   return (
-    <li className="flex flex-col gap-2 border-b border-separator py-3">
+    <li className="flex flex-col gap-2 rounded-xl bg-surface-secondary p-3">
       <div className="flex flex-wrap items-center gap-2">
         <DeviceName
           device={device}
@@ -198,7 +198,7 @@ export function RemoteDevices(props: RemoteDevicesProps): React.JSX.Element {
     )
   }
   return (
-    <ul className="flex flex-col">
+    <ul className="flex flex-col gap-2">
       {props.devices.map((device) => (
         <DeviceRow key={device.id} {...props} device={device} />
       ))}

@@ -20,6 +20,11 @@ function isNullableNumber(value: unknown): value is number | null {
   return value === null || typeof value === 'number'
 }
 
+// A board.json written before linked keys existed has none; that reads as no links.
+function isLinkedKeys(value: unknown): value is readonly string[] | undefined {
+  return value === undefined || (Array.isArray(value) && value.every((key) => typeof key === 'string'))
+}
+
 function parseTicket(raw: unknown): Ticket | null {
   if (
     !isRecord(raw) ||
@@ -33,7 +38,8 @@ function parseTicket(raw: unknown): Ticket | null {
     !isNullableText(raw['issueType']) ||
     !isNullableNumber(raw['timeSpentSeconds']) ||
     !isNullableText(raw['updated']) ||
-    !isNullableText(raw['parentKey'])
+    !isNullableText(raw['parentKey']) ||
+    !isLinkedKeys(raw['linkedKeys'])
   ) {
     return null
   }
@@ -49,6 +55,7 @@ function parseTicket(raw: unknown): Ticket | null {
     timeSpentSeconds: raw['timeSpentSeconds'],
     updated: raw['updated'],
     parentKey: raw['parentKey'],
+    linkedKeys: raw['linkedKeys'] ?? [],
   }
 }
 

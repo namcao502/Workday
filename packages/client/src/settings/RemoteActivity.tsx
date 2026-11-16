@@ -39,10 +39,7 @@ export function RemoteActivity({
           </thead>
           <tbody>
             {activity.map((entry) => (
-              <tr
-                key={`${entry.at}-${entry.deviceId}-${entry.route}`}
-                className="border-t border-separator"
-              >
+              <tr key={`${entry.at}-${entry.deviceId}-${entry.route}`}>
                 <td className="py-1">{formatShortDate(new Date(entry.at), language, timeZone)}</td>
                 <td className="py-1">{entry.deviceName}</td>
                 <td className="py-1">{`${entry.method} ${entry.route}`}</td>

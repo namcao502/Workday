@@ -23,7 +23,7 @@ function Banner({ status, text, withSettings }: BannerProps): React.JSX.Element 
       </Alert.Content>
       {withSettings === true ? (
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onPress={() => {
             navigateTo('settings')

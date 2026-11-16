@@ -79,7 +79,7 @@ export function NoticeBell(): React.JSX.Element | null {
   return (
     <Popover isOpen={open} onOpenChange={setOpen}>
       <Badge.Anchor>
-        <Button isIconOnly variant="ghost" aria-label={t('Notices', 'Thông báo')}>
+        <Button isIconOnly variant="secondary" aria-label={t('Notices', 'Thông báo')}>
           <Bell width={20} height={20} aria-hidden="true" />
         </Button>
         {view.unread === 0 ? null : (
@@ -96,7 +96,7 @@ export function NoticeBell(): React.JSX.Element | null {
             </Popover.Heading>
             <Button
               size="sm"
-              variant="ghost"
+              variant="secondary"
               isDisabled={view.unread === 0}
               onPress={() => {
                 void actions.readAll()

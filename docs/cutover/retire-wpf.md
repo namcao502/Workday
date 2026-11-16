@@ -10,8 +10,11 @@ Một dòng mỗi tính năng. "Cần kiểm" nghĩa là chưa đối chiếu đ
 | To-do (Claude chờ, Teams, bug QC, PR bị chặn), gợi ý ticket | Có | Board |
 | Theo dõi PR Azure DevOps, Ready to Test | Có | Board |
 | Timesheet: queue, log TSC + HRM, tự log 18:00, Log OFF, tuần | Có | Trang Timesheet |
-| Workspace: terminal PowerShell / `claude`, phiên Claude, Changes, Files | Có | Trang Workspace (`node-pty`) |
-| Chat Claude view | Có | Workspace |
+| Workspace: phiên Claude, Changes, Files | Có | Trang Workspace |
+| Terminal PowerShell / `claude` trong PTY | Bỏ | Thay bằng chat Claude trên Agent SDK, không còn terminal |
+| Chat Claude (gửi, dừng, duyệt quyền / câu hỏi / plan) | Có | Workspace |
+| Chat Claude: rewind, completion `/` và `@`, dán ảnh, find bar, xem ảnh | Chưa có | Xem `docs/wpf-parity/` |
+| Agent alerts (token, compact, lỗi API) | Chưa có | |
 | Teams: đọc / trả lời thread, chat, bài đăng PR, nhắc | Có | Trang Teams |
 | Insights: giờ HRM, token Claude, commit, xuất CSV / markdown | Có | Trang Insights |
 | Schedules, knowledge scan, lịch sử job | Có | Trang Schedules |
@@ -21,10 +24,13 @@ Một dòng mỗi tính năng. "Cần kiểm" nghĩa là chưa đối chiếu đ
 | Quyền thiết bị Off / View / Act | Có | `config.access` |
 | Media player, âm lượng, giữ máy thức | Bỏ | Không port |
 | UI zoom, theme, ngôn ngữ | Bỏ (trình duyệt tự zoom) | Đặt lại ngôn ngữ trong Settings |
-| Dọn worktree (Worktree cleanup) | Cần kiểm | |
-| DB review notice | Cần kiểm | |
-| Dev deploys, rebuild / watchdog của app | Cần kiểm | Thay bằng systemd / Task Scheduler |
-| Guide trong Settings | Cần kiểm | |
+| Bug QC (Start / Fix, trả lời QC trong thread cha) | Chưa có | `todos.ts` ghi rõ bỏ phần này |
+| Báo ticket đổi trong Jira + so sánh cũ / mới | Chưa có | |
+| DB review (nhận "approve", lấy SQL từ thread) | Chưa có | |
+| Dọn worktree (Worktree cleanup) | Chưa có | |
+| Guide trong Settings | Chưa có | |
+| Dev deploys (to-do) | Có | `core/src/devDeploys.ts` |
+| Rebuild / watchdog của app | Bỏ | Thay bằng systemd / Task Scheduler |
 | Export / Import credentials `.nwcred` | Thay bằng `npm run import-wpf` | |
 
 ## Các bước

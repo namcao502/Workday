@@ -1,11 +1,15 @@
 import { isTicketKey, todayIn } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import type { BoardService } from '../board/boardService.js'
+import type { TicketUpdateService } from '../jira/ticketUpdates.js'
 import type { PrService } from '../prs/prService.js'
 import type { SettingsService } from '../settings/settingsService.js'
 import type { SuggestionService } from '../suggestions/suggestionService.js'
+import type { TimesheetService } from '../timesheet/timesheetService.js'
 import type { TeamsWatcher } from '../teams/teamsWatcher.js'
 import { buildWorkView } from '../work/workView.js'
+import { qcBugsOf } from '../workspace/bugFixes.js'
+import { BugFixer } from '../workspace/fixBug.js'
 import type { WorkspaceService } from '../workspace/workspaceService.js'
 
 const BOARD_VIEW = { config: { access: { area: 'board', level: 'view' } } } as const
@@ -18,6 +22,8 @@ export interface WorkRouteDeps {
   readonly workspace: WorkspaceService
   readonly suggestions: SuggestionService
   readonly teamsWatcher: TeamsWatcher
+  readonly ticketUpdates: TicketUpdateService
+  readonly timesheet: TimesheetService
 }
 
 function fail(reply: FastifyReply, status: number, code: string): FastifyReply {
@@ -29,7 +35,15 @@ export function registerWorkRoutes(
   deps: WorkRouteDeps,
   logError: (message: string, error: unknown) => void = console.error,
 ): void {
-  const { board, prs, settings, workspace, suggestions, teamsWatcher } = deps
+  const { board, prs, settings, workspace, suggestions, teamsWatcher, ticketUpdates, timesheet } =
+    deps
+  const bugFixer = new BugFixer({
+    board,
+    workspace,
+    timesheet,
+    devRepoPath: () => settings.view().config.workspace.devRepoPath,
+    logError,
+  })
 
   app.get('/api/work', BOARD_VIEW, () => {
     const { config } = settings.view()
@@ -46,6 +60,10 @@ export function registerWorkRoutes(
       tabs,
       suggestions: suggestions.view(),
       teams: teamsWatcher.items(),
+      dbReviews: teamsWatcher.dbReviewApprovals(),
+      ticketUpdates: ticketUpdates.view(),
+      qcBugs: qcBugsOf(board.snapshot()),
+      bugFixes: teamsWatcher.bugFixesToAnswer(),
     })
   })
 
@@ -120,6 +138,22 @@ export function registerWorkRoutes(
       }
     },
   )
+
+  // Hands the QC bug to its parent's Claude session; a refusal changes nothing.
+  app.post<{ Params: { key: string } }>('/api/work/bugs/:key/fix', BOARD_ACT, async (request, reply) => {
+    const { key } = request.params
+    if (!isTicketKey(key)) {
+      return fail(reply, 400, 'invalidKey')
+    }
+    const outcome = await bugFixer.fix(key)
+    if (!outcome.ok && outcome.error.code === 'notABug') {
+      return reply.code(404).send(outcome)
+    }
+    if (!outcome.ok && outcome.error.code === 'busy') {
+      return reply.code(409).send(outcome)
+    }
+    return outcome
+  })
 
   app.post<{ Params: { key: string } }>(
     '/api/work/suggestions/:key/hide',

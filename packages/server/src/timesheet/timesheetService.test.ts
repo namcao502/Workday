@@ -29,6 +29,7 @@ function setup(
     queue?: readonly QueueEntry[]
     now?: string
     boardKeys?: readonly string[]
+    bugParents?: ReadonlyMap<string, string>
     settings?: Partial<TimesheetSettings>
     logError?: (message: string, error: unknown) => void
   } = {},
@@ -55,6 +56,7 @@ function setup(
       knownKeys: () => boardKeys,
       summaryOf: (key) => (boardKeys.has(key) ? `Board ${key}` : null),
     },
+    qcBugParents: () => options.bugParents ?? new Map(),
     now: () => clock.now,
     logError: options.logError ?? (() => undefined),
     settings: {
@@ -375,5 +377,22 @@ describe('TimesheetService queue', () => {
       [],
     ])
     expect(events).toEqual(Array.from({ length: 4 }, () => ({ type: 'timesheet.changed' })))
+  })
+})
+
+describe('TimesheetService QC bugs', () => {
+  it('log_maps_a_bug_key_to_its_parent', async () => {
+    const { service, sheet } = setup({
+      now: WEDNESDAY_10AM,
+      bugParents: new Map([['MDP-9', 'MDP-1']]),
+    })
+
+    await service.addToQueue('2026-11-11', ['MDP-9', 'MDP-1', 'MDP-2'], null)
+    await service.log({ date: '2026-11-11', tickets: ['MDP-9'], minutes: null, target: 'tsc' })
+
+    expect(service.view().queue).toEqual([entry('2026-11-11', 'MDP-1', 'MDP-2')])
+    expect(sheet.writes).toHaveLength(1)
+    expect(JSON.stringify(sheet.writes)).toContain('MDP-1')
+    expect(JSON.stringify(sheet.writes)).not.toContain('MDP-9')
   })
 })

@@ -36,6 +36,7 @@ function thread(messages: readonly TeamsMessage[], pending: readonly string[] = 
     people: [],
     deepLink: 'https://teams.example/l/1',
     pending,
+    bugReplies: [],
   }
 }
 

@@ -48,7 +48,11 @@ function input(overrides: Partial<WorkViewInput> = {}): WorkViewInput {
     sessions: [],
     tabs: [],
     suggestions: null,
+    dbReviews: [],
     teams: [],
+    ticketUpdates: {},
+    qcBugs: [],
+    bugFixes: [],
     ...overrides,
   }
 }
@@ -81,12 +85,44 @@ describe('buildWorkView', () => {
     const off = buildWorkView(input({ suggestions: items }))
     const on = buildWorkView(
       input({
-        jira: { ...JIRA, suggestions: { epicJql: 'e', epicTitlePrefix: 'p', candidatesJql: 'c', mineJql: 'm', selectedStatus: null } },
+        jira: {
+          ...JIRA,
+          suggestions: {
+            epicJql: 'e',
+            epicTitlePrefix: 'p',
+            candidatesJql: 'c',
+            mineJql: 'm',
+            selectedStatus: null,
+          },
+        },
         suggestions: items,
       }),
     )
 
     expect(off.suggestions).toBeNull()
     expect(on.suggestions).toEqual(items)
+  })
+
+  it('shows a to-do for a QC bug to fix and for a fix to answer', () => {
+    const bug = makeTicket('MDP-9', { issueType: 'Bug', linkedKeys: ['MDP-1'] })
+    const fix = {
+      bugKey: 'MDP-8',
+      parentKey: 'MDP-1',
+      summary: 's',
+      description: '',
+      pullRequests: [],
+      draftWrittenAt: '2026-11-15T00:00:00.000Z',
+    }
+    const view = buildWorkView(
+      input({
+        board: boardWith({ inProgress: { 'MDP-1': makeTicket('MDP-1') }, new: { 'MDP-9': bug } }),
+        qcBugs: [{ bug, parentKey: 'MDP-1' }],
+        bugFixes: [fix],
+      }),
+    )
+
+    const kinds = view.groups.flatMap((group) => group.items.map((item) => item.kind))
+    expect(kinds).toContain('qcBug')
+    expect(kinds).toContain('qcBugReply')
   })
 })

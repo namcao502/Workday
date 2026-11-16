@@ -15,7 +15,7 @@ async function teamsApp(): Promise<TestApp> {
   openApps.push(testApp.app)
   testApp.teamsChat.addChannel('c1')
   await testApp.services.settings.update({
-    teams: { watchedChannels: ['team > c1'], postLeadName: null, postGreeting: null },
+    teams: { watchedChannels: ['team > c1'], postLeadName: null, postGreeting: null, dbReviewChannel: null },
   })
   return testApp
 }
@@ -26,7 +26,7 @@ describe('teams routes', () => {
     openApps.push(testApp.app)
     const before = await testApp.app.inject({ url: '/api/teams/status', headers: LOOPBACK_HEADERS })
     await testApp.services.settings.update({
-      teams: { watchedChannels: ['team > c1'], postLeadName: null, postGreeting: null },
+      teams: { watchedChannels: ['team > c1'], postLeadName: null, postGreeting: null, dbReviewChannel: null },
     })
     const after = await testApp.app.inject({ url: '/api/teams/status', headers: LOOPBACK_HEADERS })
 
@@ -40,7 +40,10 @@ describe('teams routes', () => {
     const read = await app.inject({ url: '/api/teams/MDP-1', headers: LOOPBACK_HEADERS })
     const wrong = await app.inject({ url: '/api/teams/mdp1', headers: LOOPBACK_HEADERS })
 
-    expect(read.json<{ state: string }>().state).toBe('notPosted')
+    expect(read.json<{ state: string; bugReplies: unknown[] }>()).toMatchObject({
+      state: 'notPosted',
+      bugReplies: [],
+    })
     expect(wrong.statusCode).toBe(400)
     expect(wrong.json()).toEqual({ ok: false, error: { code: 'invalidKey' } })
   })

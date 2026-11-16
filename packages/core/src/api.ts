@@ -2,7 +2,6 @@ import type { DeviceRights } from './remoteAccess.js'
 import type { StatusFlow } from './statusFlow.js'
 import type { BoardSection } from './board.js'
 import type { WaitReason } from './claudeAttention.js'
-import type { AgentMode } from './ports/claudeAgent.js'
 import type { DueUrgency, Ticket } from './ticket.js'
 import type { WorkspaceTab } from './workspaceTabs.js'
 import type { QueueEntry } from './timesheetQueue.js'
@@ -11,6 +10,7 @@ import type { WeekReviewItem } from './weekReview.js'
 import type { NoticePrefs, Notice } from './notices.js'
 import type { TicketPr } from './prTracking.js'
 import type { Suggestion } from './ticketSuggestions.js'
+import type { BugReply } from './bugReply.js'
 import type { TeamsThread } from './teamsChat.js'
 import type { TeamsPerson } from './teamsCompose.js'
 import type { TodoGroup } from './todos.js'
@@ -81,13 +81,29 @@ export interface WorkspaceConfig {
   readonly startPrompt: string | null // "ship {key}"; null = plain claude
   readonly claudeExecutable: string | null // null = ~/.local/bin/claude(.exe), else PATH
   readonly localOnlyPaths: readonly string[] // never listed in Changes
-  readonly permissionMode: AgentMode // mode a new chat session starts in
+}
+
+/** Where a schema change goes for the lead's approval; it must also be a watched channel. */
+export interface DbReviewChannel {
+  readonly teamName: string
+  readonly channelName: string
 }
 
 export interface TeamsConfig {
   readonly watchedChannels: readonly string[] // "Team > Channel"; first = default post channel; [] = Teams off
   readonly postLeadName: string | null
   readonly postGreeting: string | null // "a {lead}, da "
+  readonly dbReviewChannel: DbReviewChannel | null // null = no DB review to-dos
+}
+
+/** The lead approved the user's schema change; the to-do stays until the SQL is marked done. */
+export interface DbReviewApproval {
+  readonly ticketKey: string
+  readonly conversationKey: string
+  readonly channelId: string
+  readonly approverName: string
+  readonly approvedAt: string // ISO
+  readonly sql: string
 }
 
 export type ScanDay = 'daily' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
@@ -135,7 +151,7 @@ export type AppError =
         | 'tscNoToken'
         | 'tscDateMismatch'
         | 'tscFailed'
-        | 'chromeMissing'
+        | 'browserMissing'
         | 'browserBusy'
         | 'hrmRejected'
         | 'hrmUnreachable'
@@ -164,8 +180,11 @@ export type AppError =
         | 'claudeNotRunning'
         | 'claudeWaiting' // a permission or question is open: the Enter would answer it
         | 'insightsFailed'
+        | 'notABug'
+        | 'busy'
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
+  | { readonly code: 'parentWorktreeMissing'; readonly parentKey: string }
 
 export type JiraTokenSource = 'env' | 'file' | null
 
@@ -411,6 +430,13 @@ export type DiffView =
     }
   | { readonly kind: 'binary' }
 
+// One level of the folder picker: the folders under `path`; the roots (drives) when path is ''.
+export interface FolderListing {
+  readonly path: string
+  readonly parent: string | null // null at the top; '' = the roots
+  readonly folders: readonly { readonly name: string; readonly path: string }[]
+}
+
 export interface FilesGroupView {
   readonly id: string
   readonly label: string
@@ -477,8 +503,11 @@ export type TeamsConversationView =
       readonly deepLink: string
     }
 
-// The read plus the conversation ids of the ticket with a message waiting.
-export type TeamsReadView = TeamsConversationView & { readonly pending: readonly string[] }
+// The read, the conversation ids of the ticket with a message waiting, and the QC bug fixes to answer in the thread.
+export type TeamsReadView = TeamsConversationView & {
+  readonly pending: readonly string[]
+  readonly bugReplies: readonly BugReply[]
+}
 
 export type TeamsWriteResult =
   | { readonly ok: true; readonly id: string | null }
@@ -536,3 +565,51 @@ export interface ScanLogChunk {
   readonly text: string
   readonly next: number // the byte offset to read from next
 }
+
+export type CleanupVerdict = 'ready' | 'check' | 'keep' | 'noWorktree'
+
+// The server sends codes and numbers only; the client words them.
+export type CleanupReason =
+  | {
+      readonly code:
+        | 'inspectFailed'
+        | 'sessionRunning'
+        | 'broken'
+        | 'localConfig'
+        | 'inProgress'
+        | 'abandoned'
+        | 'mainMergedPrOpen'
+        | 'notMerged'
+    }
+  | { readonly code: 'unpushed' | 'dirty'; readonly count: number }
+  | { readonly code: 'otherBranch'; readonly branch: string }
+
+export interface CleanupRow {
+  readonly ticketKey: string
+  readonly repositories: readonly string[] // folder names of the repos holding a worktree of the ticket
+  readonly verdict: CleanupVerdict
+  readonly reasons: readonly CleanupReason[]
+  readonly dirtyFiles: number // what Remove must echo back
+  readonly slimBytes: number // what Slim docs would delete
+  readonly isMined: boolean // the knowledge scan mined the ticket
+  readonly isMerged: boolean
+}
+
+export interface CleanupView {
+  readonly rows: readonly CleanupRow[]
+}
+
+export type CleanupError =
+  | {
+      readonly code:
+        | 'invalidKey'
+        | 'workspaceNotConfigured'
+        | 'stateChanged' // the dirty count differs from the one the client confirmed
+        | 'hasWorktree' // Slim docs only runs once the worktrees are gone
+        | 'ioFailed'
+    }
+  | { readonly code: 'kept'; readonly reasons: readonly CleanupReason[] }
+  | { readonly code: 'worktreeUnreadable' | 'worktreeFailed'; readonly repository: string }
+
+export type CleanupOutcome =
+  { readonly ok: true } | { readonly ok: false; readonly error: CleanupError }
