@@ -52,10 +52,10 @@ export function BoardTable({
   work,
 }: BoardListProps): React.JSX.Element {
   const th = 'px-3 py-2 text-left text-xs font-normal text-muted'
-  const td = 'border-t border-separator px-3 py-2'
+  const td = 'px-3 py-2'
   return (
     <Card className="overflow-hidden p-0">
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full text-sm">
         <thead>
           <tr>
             <th className={th}>{t('Key', 'Mã')}</th>
@@ -69,11 +69,7 @@ export function BoardTable({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr
-              key={row.ticket.key}
-              data-ticket-key={row.ticket.key}
-              className="hover:bg-surface-secondary"
-            >
+            <tr key={row.ticket.key} data-ticket-key={row.ticket.key}>
               <td className={`${td} whitespace-nowrap`}>
                 <KeyPill ticketKey={row.ticket.key} url={row.url} />
               </td>

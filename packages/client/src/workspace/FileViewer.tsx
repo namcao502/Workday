@@ -5,6 +5,9 @@ import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { rawFileUrl } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
+import { CopyBlock } from '../ui/CopyBlock.js'
+import { CopyButton } from '../ui/CopyButton.js'
+import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
 import { Segmented } from '../ui/Segmented.js'
 
 interface FileViewerProps {
@@ -39,25 +42,32 @@ function resolveRelative(from: string, href: string): string | null {
   return parts.join('/')
 }
 
-function SourceView({ text }: { readonly text: string }): React.JSX.Element {
+interface SourceViewProps {
+  readonly text: string
+  readonly withCopy: boolean // false when the caller already shows a copy button for the whole file
+}
+
+// Each line is a number column and a text column; a long line wraps inside the text column.
+function SourceView({ text, withCopy }: SourceViewProps): React.JSX.Element {
   const lines = useMemo(() => text.split('\n'), [text])
-  return (
+  const code = (
     <pre className="code-view">
       {lines.map((line, index) => (
         <span className="code-line" key={index}>
           <span className="code-number">{index + 1}</span>
-          {line}
-          {'\n'}
+          <span className="code-text">{line}</span>
         </span>
       ))}
     </pre>
   )
+  return withCopy ? <CopyBlock text={text}>{code}</CopyBlock> : code
 }
 
 function MarkdownView(props: FileViewerProps & { readonly text: string }): React.JSX.Element {
   const { tabId, group, path, knownPaths, onSelectPath, text } = props
   const known = useMemo(() => new Set(knownPaths), [knownPaths])
   const components: Components = {
+    ...COPY_BLOCKS,
     a: ({ href, children }) => {
       if (href !== undefined && REMOTE_LINK.test(href)) {
         return (
@@ -104,18 +114,21 @@ function MarkdownWithSource(props: FileViewerProps & { readonly text: string }):
   const [source, setSource] = useState(false)
   return (
     <>
-      <Segmented
-        label={t('View mode', 'Chế độ xem')}
-        value={source ? 'source' : 'rendered'}
-        options={[
-          { value: 'source', label: t('Source', 'Mã nguồn') },
-          { value: 'rendered', label: t('Rendered', 'Hiển thị') },
-        ]}
-        onChange={(value) => {
-          setSource(value === 'source')
-        }}
-      />
-      {source ? <SourceView text={props.text} /> : <MarkdownView {...props} />}
+      <div className="flex items-center justify-between gap-2 pb-1">
+        <Segmented
+          label={t('View mode', 'Chế độ xem')}
+          value={source ? 'source' : 'rendered'}
+          options={[
+            { value: 'source', label: t('Source', 'Mã nguồn') },
+            { value: 'rendered', label: t('Rendered', 'Hiển thị') },
+          ]}
+          onChange={(value) => {
+            setSource(value === 'source')
+          }}
+        />
+        <CopyButton text={props.text} />
+      </div>
+      {source ? <SourceView text={props.text} withCopy={false} /> : <MarkdownView {...props} />}
     </>
   )
 }
@@ -124,7 +137,7 @@ export function FileViewer(props: FileViewerProps): React.JSX.Element {
   const { content, tabId, group, path, onOpenInEditor } = props
   switch (content.kind) {
     case 'text':
-      return <SourceView text={content.text} />
+      return <SourceView text={content.text} withCopy />
     case 'markdown':
       return <MarkdownWithSource {...props} text={content.text} />
     case 'image':

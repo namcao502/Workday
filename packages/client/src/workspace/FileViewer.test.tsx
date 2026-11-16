@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { FileContentView } from '@workday/core'
 import { expect, it, vi } from 'vitest'
 import { FileViewer } from './FileViewer.js'
@@ -72,4 +72,25 @@ it('shows the source with line numbers', () => {
 it('offers VS Code for a file that is too large', () => {
   renderViewer({ kind: 'tooLarge' })
   expect(screen.getByRole('button', { name: /VS Code/ })).toBeTruthy()
+})
+
+it('copies the whole source of a text file and of a markdown file', () => {
+  const writeText = vi.fn(() => Promise.resolve())
+  vi.stubGlobal('navigator', { clipboard: { writeText } })
+  renderViewer({ kind: 'text', text: 'one\ntwo' }, 'docs/x.txt')
+  fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+  expect(writeText).toHaveBeenLastCalledWith('one\ntwo')
+  cleanup()
+  renderViewer({ kind: 'markdown', text: '# Title\n\n```\ncode\n```' })
+  const buttons = screen.getAllByRole('button', { name: 'Copy' })
+  expect(buttons).toHaveLength(2)
+  fireEvent.click(buttons[0] as HTMLElement)
+  expect(writeText).toHaveBeenLastCalledWith('# Title\n\n```\ncode\n```')
+  vi.unstubAllGlobals()
+})
+
+it('a markdown file in source mode shows a single copy button', () => {
+  renderViewer({ kind: 'markdown', text: '# Title' })
+  fireEvent.click(screen.getByRole('radio', { name: 'Source' }))
+  expect(screen.getAllByRole('button', { name: 'Copy' })).toHaveLength(1)
 })

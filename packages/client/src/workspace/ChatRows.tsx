@@ -3,6 +3,7 @@ import type { ChatMessage } from '@workday/core'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { t } from '../i18n.js'
+import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
 
 const COLLAPSE_FROM = 4
 
@@ -36,6 +37,7 @@ export function groupRows(messages: readonly ChatMessage[]): readonly Row[] {
 
 // react-markdown drops raw HTML unless a plugin allows it, and none does.
 const COMPONENTS: Components = {
+  ...COPY_BLOCKS,
   a: ({ href, children }) => (
     <a href={href} target="_blank" rel="noreferrer noopener">
       {children}
@@ -56,7 +58,7 @@ export function ChatMarkdown({ text }: { readonly text: string }): React.JSX.Ele
 function ToolLine({ message }: { readonly message: ChatMessage }): React.JSX.Element {
   return (
     <div
-      className={`flex flex-wrap items-center gap-1 font-mono text-xs whitespace-pre-wrap ${message.isError ? 'text-danger' : 'text-muted'}`}
+      className={`flex flex-wrap items-center gap-1 rounded-lg bg-surface-secondary px-2 py-1 font-mono text-xs whitespace-pre-wrap ${message.isError ? 'text-danger' : 'text-muted'}`}
       data-error={message.isError}
     >
       <span className="font-semibold">{message.toolName ?? ''}</span>

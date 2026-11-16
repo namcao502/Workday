@@ -24,7 +24,7 @@ function StatsTable({ title, headers, rows }: StatsTableProps): React.JSX.Elemen
         <p className="text-sm text-muted">{EMPTY_CELL}</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full text-sm">
             <thead>
               <tr>
                 {headers.map((header) => (
@@ -42,10 +42,7 @@ function StatsTable({ title, headers, rows }: StatsTableProps): React.JSX.Elemen
               {rows.map((cells, index) => (
                 <tr key={`${String(index)}-${cells.join('|')}`}>
                   {cells.map((cell, cellIndex) => (
-                    <td
-                      key={headers[cellIndex]}
-                      className="border-t border-separator px-3 py-2 align-top"
-                    >
+                    <td key={headers[cellIndex]} className="px-3 py-2 align-top">
                       {cell}
                     </td>
                   ))}

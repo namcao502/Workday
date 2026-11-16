@@ -33,16 +33,27 @@
 .code-view {
   font-family: monospace;
   margin: 0;
-  white-space: pre-wrap;
+  min-width: 0;
+}
+
+.code-line {
+  display: flex;
 }
 
 .code-number {
   color: var(--muted);
-  display: inline-block;
+  flex: none;
   padding-right: 10px;
   text-align: right;
   user-select: none;
   width: 3em;
+}
+
+.code-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .markdown-view img,

@@ -49,11 +49,11 @@ export function ReportTable({
   onSelect,
 }: ReportTableProps): React.JSX.Element {
   const th = 'whitespace-nowrap px-3 py-2 text-left text-xs font-medium text-muted'
-  const td = 'border-t border-separator px-3 py-2 align-top'
+  const td = 'px-3 py-2 align-top'
   const num = `${td} whitespace-nowrap text-right`
   return (
     <Card className="overflow-x-auto p-0">
-      <table className="w-full min-w-[960px] border-collapse text-sm">
+      <table className="w-full min-w-[960px] text-sm">
         <thead>
           <tr>
             {headers().map((header) => (
@@ -67,24 +67,22 @@ export function ReportTable({
           {report.rows.map((row) => {
             const url = urlFor(row.ticketKey)
             return (
-              <tr
-                key={row.ticketKey}
-                className="cursor-pointer hover:bg-surface-secondary aria-selected:bg-surface-secondary"
-                aria-selected={row.ticketKey === selectedKey}
-                tabIndex={0}
-                onClick={() => {
-                  onSelect(row.ticketKey)
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    onSelect(row.ticketKey)
-                  }
-                }}
-              >
+              <tr key={row.ticketKey} data-selected={row.ticketKey === selectedKey}>
                 <td className={td}>
                   {url === null ? row.ticketKey : <KeyPill ticketKey={row.ticketKey} url={url} />}
                 </td>
-                <td className={`${td} max-w-xs`}>{row.facts.summary ?? EMPTY_CELL}</td>
+                <td className={`${td} max-w-xs`}>
+                  <button
+                    type="button"
+                    className="w-full cursor-pointer text-left"
+                    aria-pressed={row.ticketKey === selectedKey}
+                    onClick={() => {
+                      onSelect(row.ticketKey)
+                    }}
+                  >
+                    {row.facts.summary ?? EMPTY_CELL}
+                  </button>
+                </td>
                 <td className={td}>{row.facts.status ?? EMPTY_CELL}</td>
                 <td className={num}>{hoursCell(row, report.hoursRead)}</td>
                 <td className={num}>{numberCell(row.sessions)}</td>

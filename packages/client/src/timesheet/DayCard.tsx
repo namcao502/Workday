@@ -215,16 +215,19 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
     <Card
       role="group"
       aria-label={header}
-      className={`cursor-pointer gap-2 p-3 ${selected ? 'ring-2 ring-accent' : ''}`}
-      onClick={(event: React.MouseEvent) => {
-        const inside = event.target instanceof Element ? event.target : null
-        if (inside?.closest('button, input, [data-hours-bar]') === null) {
-          props.onSelect(day.date)
-        }
-      }}
+      className={`gap-2 p-3 ${selected ? 'bg-accent-soft' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className={`font-semibold ${today ? 'text-accent' : ''}`}>{header}</span>
+        <button
+          type="button"
+          className={`cursor-pointer text-left font-semibold ${today ? 'text-accent' : ''}`}
+          aria-pressed={selected}
+          onClick={() => {
+            props.onSelect(day.date)
+          }}
+        >
+          {header}
+        </button>
         {label === '' ? null : (
           <Chip size="sm" color={STATE_COLOR[day.state]}>
             {label}
