@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { TeamsPerson } from '@workday/core'
+import type { TeamsDraft, TeamsPerson } from '@workday/core'
 import { expect, it, vi } from 'vitest'
 import { TeamsComposer, type ComposeMode, type TeamsComposerProps } from './TeamsComposer.js'
 
@@ -122,4 +122,53 @@ it('the code block button turns the line into a pre, and pressing it inside one 
   window.getSelection()?.collapse(editor.querySelector('pre')?.firstChild ?? editor, 2)
   fireEvent.click(screen.getByRole('button', { name: 'Insert code block' }))
   expect(exec).toHaveBeenLastCalledWith('formatBlock', false, 'p')
+})
+
+it('a pasted image is shown in the text and sent as a marker plus the image', async () => {
+  class LoadedImage {
+    onload: (() => void) | null = null
+    naturalWidth = 640
+    naturalHeight = 480
+    set src(_value: string) {
+      queueMicrotask(() => this.onload?.())
+    }
+  }
+  vi.stubGlobal('Image', LoadedImage)
+  const drafts: TeamsDraft[] = []
+  const onSend: TeamsComposerProps['onSend'] = (draft) => {
+    drafts.push(draft)
+    return Promise.resolve({ ok: true })
+  }
+  const editor = renderComposer('reply', onSend)
+  const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'shot.png', {
+    type: 'image/png',
+  })
+  fireEvent.paste(editor, { clipboardData: { files: [file], getData: () => '' } })
+  await waitFor(() => {
+    expect(editor.querySelector('img[data-local-image]')).not.toBeNull()
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => {
+    expect(drafts).toHaveLength(1)
+  })
+  expect(drafts[0]?.html).toBe('<img data-image="0">')
+  expect(drafts[0]?.images).toHaveLength(1)
+  expect(drafts[0]?.images?.[0]).toMatchObject({
+    contentType: 'image/png',
+    fileName: 'shot.png',
+    width: 640,
+    height: 480,
+  })
+  vi.unstubAllGlobals()
+})
+
+it('refuses an image that is not PNG, JPEG or GIF', async () => {
+  const editor = renderComposer('reply', vi.fn())
+  fireEvent.paste(editor, {
+    clipboardData: {
+      files: [new File(['x'], 'a.webp', { type: 'image/webp' })],
+      getData: () => '',
+    },
+  })
+  expect(await screen.findByText(/a\.webp is not a PNG, JPEG or GIF/)).toBeInTheDocument()
 })

@@ -2,6 +2,7 @@ import {
   paragraphsFromText,
   shortName,
   type TeamsDraft,
+  type TeamsDraftImage,
   type TeamsMention,
   type TeamsMessage,
   type TeamsPerson,
@@ -145,7 +146,41 @@ export function chipBefore(editor: HTMLElement): HTMLElement | null {
 }
 
 // The editor's HTML with the chips renumbered 0..n-1 in document order, plus the mentions they point at.
-export function draftFromEditor(editor: HTMLElement, known: readonly TeamsMention[]): TeamsDraft {
+const LOCAL_IMAGE_ATTRIBUTE = 'data-local-image'
+
+export interface PickedImage {
+  readonly id: number
+  readonly dataUrl: string
+  readonly data: string // base64
+  readonly contentType: string
+  readonly fileName: string
+  readonly width: number
+  readonly height: number
+}
+
+// A picked image shown in the text at the caret; the draft swaps it for a marker.
+export function insertImage(editor: HTMLElement, image: PickedImage): void {
+  const element = document.createElement('img')
+  element.setAttribute(LOCAL_IMAGE_ATTRIBUTE, String(image.id))
+  element.setAttribute('src', image.dataUrl)
+  element.setAttribute('alt', image.fileName)
+  element.setAttribute('contenteditable', 'false')
+  element.className = 'my-1 inline-block max-h-40 max-w-full rounded-lg'
+  const range = currentRange(editor) ?? document.createRange()
+  if (!editor.contains(range.commonAncestorContainer)) {
+    range.selectNodeContents(editor)
+    range.collapse(false)
+  }
+  range.deleteContents()
+  range.insertNode(element)
+  placeCaretAfter(element)
+}
+
+export function draftFromEditor(
+  editor: HTMLElement,
+  known: readonly TeamsMention[],
+  pictures: readonly PickedImage[] = [],
+): TeamsDraft {
   const clone = editor.cloneNode(true) as HTMLElement
   const mentions: TeamsMention[] = []
   for (const chip of clone.querySelectorAll(`span[${MENTION_ATTRIBUTE}]`)) {
@@ -158,7 +193,22 @@ export function draftFromEditor(editor: HTMLElement, known: readonly TeamsMentio
       mentions.push(mention)
     }
   }
-  return { html: clone.innerHTML, mentions }
+  const images: TeamsDraftImage[] = []
+  for (const element of clone.querySelectorAll(`img[${LOCAL_IMAGE_ATTRIBUTE}]`)) {
+    const picked = pictures.find(
+      (image) => String(image.id) === element.getAttribute(LOCAL_IMAGE_ATTRIBUTE),
+    )
+    if (picked === undefined) {
+      element.remove()
+      continue
+    }
+    const marker = document.createElement('img')
+    marker.setAttribute('data-image', String(images.length))
+    element.replaceWith(marker)
+    const { data, contentType, fileName, width, height } = picked
+    images.push({ data, contentType, fileName, width, height })
+  }
+  return { html: clone.innerHTML, mentions, images }
 }
 
 // Sanitized HTML into the editor; the chips become non-editable again.

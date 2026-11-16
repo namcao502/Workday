@@ -91,6 +91,7 @@ describe('buildBody', () => {
       html:
         '<p>a <strong>b</strong> <em>c</em></p>head<p>d</p>' +
         '<a href="https://x.io/y?a=1&amp;b=2" title="https://x.io/y?a=1&amp;b=2">link</a><ul><li>one</li></ul><br>',
+      amsReferences: [],
       mentionsJson: null,
     })
   })
@@ -133,7 +134,7 @@ describe('buildBody', () => {
       mentions: [bot],
     })
 
-    expect(body).toEqual({ html: '<p>BotGonePlain</p>', mentionsJson: null })
+    expect(body).toEqual({ html: '<p>BotGonePlain</p>', mentionsJson: null, amsReferences: [] })
   })
 
   it('keeps only http links and the editable tags', () => {
@@ -226,5 +227,42 @@ describe('buildBody on hostile input stays linear', () => {
     const large = fastestMs(() => buildBody({ html: build(20_000), mentions }))
     expect(large).toBeLessThan(small * 10 + 50)
     expect(large).toBeLessThan(2_000)
+  })
+})
+
+describe('buildBody images', () => {
+  const image = {
+    data: 'AAAA',
+    contentType: 'image/png',
+    fileName: 'a.png',
+    width: 2000,
+    height: 500,
+  }
+
+  it('writes an AMS image for a marker, scaled to 1000 px, and lists its object id', () => {
+    const body = buildBody(
+      { html: '<p>see</p><img data-image="0">', mentions: [], images: [image] },
+      ['0-x-1'],
+    )
+    expect(body?.amsReferences).toEqual(['0-x-1'])
+    expect(body?.html).toContain('src="https://as-api.asm.skype.com/v1/objects/0-x-1/views/imgo"')
+    expect(body?.html).toContain('width="1000" height="250"')
+  })
+
+  it('sends a message that is only an image, and ignores a marker with no upload or a repeat', () => {
+    const only = buildBody({ html: '<img data-image="0">', mentions: [], images: [image] }, [
+      '0-x-1',
+    ])
+    expect(only).not.toBeNull()
+    const twice = buildBody(
+      {
+        html: '<img data-image="0"><img data-image="0"><img data-image="3">',
+        mentions: [],
+        images: [image],
+      },
+      ['0-x-1'],
+    )
+    expect(twice?.amsReferences).toEqual(['0-x-1'])
+    expect(buildBody({ html: '<img src="http://evil/x.png">', mentions: [] })).toBeNull()
   })
 })

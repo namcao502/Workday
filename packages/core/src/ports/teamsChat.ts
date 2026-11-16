@@ -1,14 +1,13 @@
 import type { TeamsMessageBody } from '../teamsCompose.js'
-import type {
-  TeamsChannel,
-  TeamsGroupChat,
-  TeamsMessagePage,
-  TeamsThread,
-} from '../teamsChat.js'
+import type { TeamsChannel, TeamsGroupChat, TeamsMessagePage, TeamsThread } from '../teamsChat.js'
 
 export interface TeamsImage {
   readonly bytes: Uint8Array
   readonly contentType: string
+}
+
+export interface TeamsImageUpload extends TeamsImage {
+  readonly fileName: string
 }
 
 export interface TeamsChat {
@@ -28,13 +27,10 @@ export interface TeamsChat {
     body: TeamsMessageBody,
   ): Promise<void>
   deleteMessage(conversationId: string, messageId: string): Promise<void>
-  setReaction(
-    conversationId: string,
-    messageId: string,
-    key: string,
-    add: boolean,
-  ): Promise<void>
+  setReaction(conversationId: string, messageId: string, key: string, add: boolean): Promise<void>
   image(url: string): Promise<TeamsImage>
+  // Uploads to the object store, readable in the conversation; returns the object id for amsreferences.
+  uploadImage(conversationId: string, image: TeamsImageUpload): Promise<string>
   invalidateSession(): void
 }
 

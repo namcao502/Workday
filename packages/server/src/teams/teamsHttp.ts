@@ -20,6 +20,7 @@ export interface TeamsRequest {
   readonly url: string
   readonly token: 'chat' | 'aggregator'
   readonly json?: unknown
+  readonly bytes?: Uint8Array // a binary body (an upload), sent as application/octet-stream
   readonly asBrowser?: boolean // the object store wants the browser's own headers
 }
 
@@ -83,7 +84,7 @@ export class TeamsHttp {
         response = await this.fetchFunction(request.url, {
           method: request.method,
           headers: headersFor(request, session),
-          body: request.json === undefined ? null : JSON.stringify(request.json),
+          body: request.bytes ?? (request.json === undefined ? null : JSON.stringify(request.json)),
           redirect: options.followRedirects === false ? 'manual' : 'follow',
           signal: AbortSignal.timeout(options.timeoutMilliseconds ?? REQUEST_TIMEOUT_MILLISECONDS),
         })
@@ -121,6 +122,9 @@ function headersFor(request: TeamsRequest, session: TeamsSession): Record<string
   }
   if (request.json !== undefined) {
     headers['Content-Type'] = 'application/json'
+  }
+  if (request.bytes !== undefined) {
+    headers['Content-Type'] = 'application/octet-stream'
   }
   if (request.asBrowser === true) {
     headers['User-Agent'] = session.userAgent

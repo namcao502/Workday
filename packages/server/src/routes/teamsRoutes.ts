@@ -1,4 +1,11 @@
-import { isTicketKey, type TeamsDraft, type TeamsMention } from '@workday/core'
+import {
+  isTicketKey,
+  MAX_IMAGES,
+  MAX_IMAGE_BYTES,
+  type TeamsDraft,
+  type TeamsDraftImage,
+  type TeamsMention,
+} from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { isRecord } from '../jsonFile.js'
 import type { TeamsService } from '../teams/teamsService.js'
@@ -7,6 +14,8 @@ import { teamsError, type WriteOutcome } from '../teams/teamsWrites.js'
 
 const MAX_TEXT_LENGTH = 200_000
 const MAX_MENTIONS = 50
+const MAX_IMAGE_BASE64_LENGTH = Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 4
+const WRITE_BODY_LIMIT = MAX_IMAGES * MAX_IMAGE_BASE64_LENGTH + MAX_TEXT_LENGTH + 10_000
 const IMAGE_CACHE = 'private, max-age=86400'
 const IMAGE_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 
@@ -43,7 +52,39 @@ function draftOf(body: Body): TeamsDraft | null {
     return null
   }
   const mentions = list.map(mention)
-  return mentions.every((item) => item !== null) ? { html: raw['html'], mentions } : null
+  const images = draftImages(raw['images'])
+  return mentions.every((item) => item !== null) && images !== null
+    ? { html: raw['html'], mentions, images }
+    : null
+}
+
+function draftImage(raw: unknown): TeamsDraftImage | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const { data, contentType, fileName, width, height } = raw
+  return typeof data === 'string' &&
+    data.length <= MAX_IMAGE_BASE64_LENGTH &&
+    typeof contentType === 'string' &&
+    typeof fileName === 'string' &&
+    typeof width === 'number' &&
+    typeof height === 'number' &&
+    Number.isFinite(width) &&
+    Number.isFinite(height)
+    ? { data, contentType, fileName, width, height }
+    : null
+}
+
+// No field is no images; the bytes are checked in decodeImages before anything is uploaded.
+function draftImages(raw: unknown): readonly TeamsDraftImage[] | null {
+  if (raw === undefined) {
+    return []
+  }
+  if (!Array.isArray(raw) || raw.length > MAX_IMAGES) {
+    return null
+  }
+  const images = (raw as unknown[]).map(draftImage)
+  return images.every((item) => item !== null) ? images : null
 }
 
 function bad(reply: FastifyReply, message: string): FastifyReply {
@@ -116,14 +157,18 @@ export function registerTeamsRoutes(
     path: string,
     run: (key: string, body: Body) => Promise<WriteOutcome> | null,
   ): void {
-    app.post<KeyRequest>(`/api/teams/:key/${path}`, async (request, reply) => {
-      const { key } = request.params
-      if (!isTicketKey(key)) {
-        return reply.code(400).send({ ok: false, error: { code: 'invalidKey' } })
-      }
-      const pending = isRecord(request.body) ? run(key, request.body) : null
-      return pending === null ? bad(reply, 'The body is not valid') : answer(reply, await pending)
-    })
+    app.post<KeyRequest>(
+      `/api/teams/:key/${path}`,
+      { bodyLimit: WRITE_BODY_LIMIT },
+      async (request, reply) => {
+        const { key } = request.params
+        if (!isTicketKey(key)) {
+          return reply.code(400).send({ ok: false, error: { code: 'invalidKey' } })
+        }
+        const pending = isRecord(request.body) ? run(key, request.body) : null
+        return pending === null ? bad(reply, 'The body is not valid') : answer(reply, await pending)
+      },
+    )
   }
 
   writeRoute('post', (key, body) => {

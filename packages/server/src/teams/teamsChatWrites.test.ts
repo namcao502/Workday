@@ -6,7 +6,7 @@ import type { TeamsSession, TeamsSniffer, TeamsSniffResult } from './teamsSessio
 const CHAT_BASE = 'https://teams.test/api/chatsvc/apac/v1/users/ME/'
 const IMAGE_URL = 'https://as-api.asm.skype.com/v1/objects/0-jhb-d4-abc/views/imgo'
 const NOW = Date.UTC(2026, 10, 1)
-const BODY: TeamsMessageBody = { html: '<p>hi</p>', mentionsJson: null }
+const BODY: TeamsMessageBody = { html: '<p>hi</p>', mentionsJson: null, amsReferences: [] }
 
 function session(expiresAt = NOW + 3_600_000): TeamsSession {
   return {

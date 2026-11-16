@@ -3,6 +3,7 @@ import {
   type TeamsChannel,
   type TeamsGroupChat,
   type TeamsImage,
+  type TeamsImageUpload,
   type TeamsMessage,
   type TeamsMessageBody,
   type TeamsMessagePage,
@@ -143,6 +144,13 @@ export class FakeTeams implements TeamsGateway {
   setReaction(conversationId: string, messageId: string, key: string, add: boolean): Promise<void> {
     this.reactions.push([conversationId, messageId, key, add])
     return Promise.resolve()
+  }
+
+  readonly uploads: { conversationId: string; fileName: string; size: number }[] = []
+
+  uploadImage(conversationId: string, image: TeamsImageUpload): Promise<string> {
+    this.uploads.push({ conversationId, fileName: image.fileName, size: image.bytes.byteLength })
+    return Promise.resolve(`0-test-d1-${String(this.uploads.length)}`)
   }
 
   image(url: string): Promise<TeamsImage> {

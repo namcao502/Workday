@@ -23,6 +23,44 @@ function postedRig(): ReturnType<typeof serviceRig> {
   return rig
 }
 
+// The 8-byte PNG signature plus a few bytes, base64.
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]).toString(
+  'base64',
+)
+const PICTURE = { data: PNG, contentType: 'image/png', fileName: 'shot.png', width: 40, height: 20 }
+
+describe('TeamsWrites images', () => {
+  it('uploads each image for the channel, then posts the message with its object ids', async () => {
+    const { teams, service } = serviceRig(['c1'])
+    const withImage: TeamsDraft = {
+      html: '<p>see</p><img data-image="0">',
+      mentions: [],
+      images: [PICTURE],
+    }
+
+    const result = await service.write.post('MDP-1', { ...POST, draft: withImage })
+
+    expect(result).toEqual({ ok: true, id: 'sent-1' })
+    expect(teams.uploads).toEqual([{ conversationId: 'c1', fileName: 'shot.png', size: 11 }])
+    expect(teams.sent[0]?.body.amsReferences).toEqual(['0-test-d1-1'])
+    expect(teams.sent[0]?.body.html).toContain('views/imgo')
+  })
+
+  it('refuses bytes that are not an image, and sends nothing', async () => {
+    const { teams, service } = serviceRig(['c1'])
+    const fake = { ...PICTURE, data: Buffer.from('<html>').toString('base64') }
+
+    const result = await service.write.post('MDP-1', {
+      ...POST,
+      draft: { html: '<img data-image="0">', mentions: [], images: [fake] },
+    })
+
+    expect(result).toBe('invalid')
+    expect(teams.uploads).toEqual([])
+    expect(teams.sent).toEqual([])
+  })
+})
+
 describe('TeamsWrites', () => {
   it('posts, records postedAt and indexes the new post', async () => {
     const { teams, service, saved } = serviceRig(['c1'])

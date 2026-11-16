@@ -1,4 +1,4 @@
-import { At } from '@gravity-ui/icons'
+import { At, Picture } from '@gravity-ui/icons'
 import { Button, Input } from '@heroui/react'
 import {
   isEmptyHtml,
@@ -9,6 +9,7 @@ import {
 } from '@workday/core'
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../../i18n.js'
+import { imageFiles, imageProblem, pickImage } from './teamsComposerImages.js'
 import { TeamsComposerToolbar } from './TeamsComposerToolbar.js'
 import {
   applyFormat,
@@ -17,12 +18,14 @@ import {
   currentRange,
   draftFromEditor,
   insertChip,
+  insertImage,
   insertPlainText,
   makeChip,
   matchPeople,
   mentionTrigger,
   setEditorHtml,
   type FormatCommand,
+  type PickedImage,
   type MentionTrigger,
 } from './teamsComposerDom.js'
 
@@ -66,6 +69,9 @@ export function TeamsComposer({
   const editorRef = useRef<HTMLDivElement>(null)
   const mentionsRef = useRef<readonly TeamsMention[]>(initialMentions)
   const linkRangeRef = useRef<Range | null>(null)
+  const imagesRef = useRef<readonly PickedImage[]>([])
+  const nextImageId = useRef(1)
+  const fileInput = useRef<HTMLInputElement>(null)
   const [subject, setSubject] = useState(initialSubject)
   const [trigger, setTrigger] = useState<MentionTrigger | null>(null)
   const [active, setActive] = useState(0)
@@ -102,6 +108,31 @@ export function TeamsComposer({
     onChange?.()
   }
 
+  async function addImages(files: readonly File[]): Promise<void> {
+    const editor = editorRef.current
+    if (editor === null) {
+      return
+    }
+    for (const file of files) {
+      const refused = imageProblem(file, imagesRef.current.length)
+      if (refused !== null) {
+        setProblem(refused)
+        continue
+      }
+      try {
+        const id = nextImageId.current
+        nextImageId.current += 1
+        const picked = await pickImage(file, id)
+        imagesRef.current = [...imagesRef.current, picked]
+        insertImage(editor, picked)
+        setProblem(null)
+        onChange?.()
+      } catch {
+        setProblem(t('Could not read the image.', 'Không đọc được ảnh.'))
+      }
+    }
+  }
+
   function startMention(): void {
     const editor = editorRef.current
     if (editor === null) {
@@ -117,8 +148,8 @@ export function TeamsComposer({
     if (editor === null || sending || locked) {
       return
     }
-    const draft = draftFromEditor(editor, mentionsRef.current)
-    if (isEmptyHtml(draft.html)) {
+    const draft = draftFromEditor(editor, mentionsRef.current, imagesRef.current)
+    if (isEmptyHtml(draft.html) && (draft.images ?? []).length === 0) {
       return
     }
     setSending(true)
@@ -130,6 +161,7 @@ export function TeamsComposer({
         if (mode !== 'edit') {
           editor.innerHTML = ''
           mentionsRef.current = []
+          imagesRef.current = []
           setSubject('')
         }
       } else {
@@ -247,9 +279,24 @@ export function TeamsComposer({
         }}
         onClick={refreshTrigger}
         onKeyDown={onKeyDown}
+        onDragOver={(event) => {
+          if (mode !== 'edit' && event.dataTransfer.types.includes('Files')) {
+            event.preventDefault()
+          }
+        }}
+        onDrop={(event) => {
+          const files = imageFiles(event.dataTransfer.files)
+          if (mode !== 'edit' && files.length !== 0) {
+            event.preventDefault()
+            void addImages(files)
+          }
+        }}
         onPaste={(event) => {
           event.preventDefault()
-          if (editorRef.current !== null) {
+          const files = imageFiles(event.clipboardData.files)
+          if (mode !== 'edit' && files.length !== 0) {
+            void addImages(files)
+          } else if (editorRef.current !== null) {
             insertPlainText(editorRef.current, event.clipboardData.getData('text/plain'))
             onChange?.()
           }
@@ -278,6 +325,36 @@ export function TeamsComposer({
         </ul>
       )}
       <div className="flex flex-wrap items-center gap-2">
+        {mode === 'edit' ? null : (
+          <>
+            <input
+              ref={fileInput}
+              type="file"
+              hidden
+              multiple
+              accept="image/png,image/jpeg,image/gif"
+              aria-label={t('Choose images', 'Chọn ảnh')}
+              onChange={(event) => {
+                void addImages([...(event.target.files ?? [])])
+                event.target.value = ''
+              }}
+            />
+            <Button
+              isIconOnly
+              variant="secondary"
+              size="sm"
+              aria-label={t('Add an image', 'Thêm ảnh')}
+              isDisabled={sending}
+              onPress={() => {
+                fileInput.current?.click()
+              }}
+            >
+              <span title={t('Add an image', 'Thêm ảnh')} className="flex">
+                <Picture />
+              </span>
+            </Button>
+          </>
+        )}
         <Button
           isIconOnly
           variant="secondary"

@@ -9,15 +9,25 @@ export interface TeamsMention {
   readonly displayName: string
 }
 
-/** html carries `<span data-mention="i">` markers that point into mentions. */
+export interface TeamsDraftImage {
+  readonly data: string // base64
+  readonly contentType: string
+  readonly fileName: string
+  readonly width: number
+  readonly height: number
+}
+
+/** html carries `<span data-mention="i">` markers into mentions and `<img data-image="i">` markers into images. */
 export interface TeamsDraft {
   readonly html: string
   readonly mentions: readonly TeamsMention[]
+  readonly images?: readonly TeamsDraftImage[]
 }
 
 export interface TeamsMessageBody {
   readonly html: string
   readonly mentionsJson: string | null
+  readonly amsReferences: readonly string[] // object ids of the images in html
 }
 
 export interface TeamsPerson {
@@ -26,6 +36,12 @@ export interface TeamsPerson {
 }
 
 export const MAX_PEOPLE = 300
+export const MAX_IMAGES = 10
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+export const MAX_TOTAL_IMAGE_BYTES = 20 * 1024 * 1024
+const MAX_IMAGE_SIDE = 1000
+const AMS_OBJECTS_URL = 'https://as-api.asm.skype.com/v1/objects'
+const AMS_IMAGE_ITEM_TYPE = 'http://schema.skype.com/AMSImage'
 
 const MENTION_ITEM_TYPE = 'http://schema.skype.com/Mention'
 const PERSON_MRI = /^8:orgid:[0-9a-f-]{36}$/
@@ -276,6 +292,39 @@ function appendMentionSpan(
   }
 }
 
+// Longest side at most MAX_IMAGE_SIDE, never below 1 px.
+export function displaySize(width: number, height: number): { width: number; height: number } {
+  const longest = Math.max(width, height)
+  const scale = longest <= MAX_IMAGE_SIDE ? 1 : MAX_IMAGE_SIDE / longest
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  }
+}
+
+// The AMS object an uploaded image became, once per marker; an unknown or repeated marker writes nothing.
+function appendImage(
+  output: string[],
+  references: string[],
+  attributes: string,
+  draft: TeamsDraft,
+  uploaded: readonly string[],
+): void {
+  const marker = getAttribute(attributes, 'data-image')
+  const index = marker !== null && DIGITS.test(marker) ? Number(marker) : -1
+  const objectId = uploaded[index]
+  const image = draft.images?.[index]
+  if (objectId === undefined || image === undefined || references.includes(objectId)) {
+    return
+  }
+  const { width, height } = displaySize(image.width, image.height)
+  const id = escapeHtml(objectId)
+  output.push(
+    `<img itemtype="${AMS_IMAGE_ITEM_TYPE}" src="${AMS_OBJECTS_URL}/${id}/views/imgo" width="${String(width)}" height="${String(height)}" id="${id}" itemscope="" alt="image">`,
+  )
+  references.push(objectId)
+}
+
 function appendLink(output: string[], open: OpenTags, attributes: string): void {
   const href = htmlDecode(getAttribute(attributes, 'href') ?? '').trim()
   const isWebLink = /^https?:\/\//i.test(href)
@@ -292,12 +341,17 @@ function appendText(output: string[], open: OpenTags, raw: string): void {
 }
 
 /** The security boundary for a sent message: null when nothing is left after the whitelist. */
-export function buildBody(draft: TeamsDraft): TeamsMessageBody | null {
+/** uploaded[i] is the AMS object id of draft.images[i]. */
+export function buildBody(
+  draft: TeamsDraft,
+  uploaded: readonly string[] = [],
+): TeamsMessageBody | null {
   const { html, mentions } = draft
   const lower = html.toLowerCase()
   const output: string[] = []
   const open = new OpenTags()
   const posted: Record<string, string>[] = []
+  const references: string[] = []
   let cursor = 0
   for (const tag of tokenizeTags(html)) {
     if (tag.index < cursor) {
@@ -314,6 +368,8 @@ export function buildBody(draft: TeamsDraft): TeamsMessageBody | null {
       }
     } else if (name === 'br') {
       output.push('<br>')
+    } else if (name === 'img') {
+      appendImage(output, references, attributes, draft, uploaded)
     } else if (name === 'span') {
       cursor = appendMentionSpan(
         output,
@@ -340,8 +396,12 @@ export function buildBody(draft: TeamsDraft): TeamsMessageBody | null {
   }
   open.closeFrom(output, 0)
   const body = withoutTrailingEmptyParagraphs(output.join(''))
-  if (isEmptyHtml(body)) {
+  if (isEmptyHtml(body) && references.length === 0) {
     return null
   }
-  return { html: body, mentionsJson: posted.length === 0 ? null : JSON.stringify(posted) }
+  return {
+    html: body,
+    mentionsJson: posted.length === 0 ? null : JSON.stringify(posted),
+    amsReferences: references,
+  }
 }

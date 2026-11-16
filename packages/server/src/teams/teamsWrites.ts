@@ -14,6 +14,7 @@ import {
   type TeamsWriteResult,
 } from '@workday/core'
 import type { TeamsGateway } from './teamsChatClient.js'
+import { bodyWithImages } from './teamsImages.js'
 import type { TeamsLookup } from './teamsLookup.js'
 
 // 'invalid': the request itself is wrong (empty after the whitelist, a key Teams does not take); the route answers 400.
@@ -78,15 +79,16 @@ export class TeamsWrites {
 
   post(ticketKey: string, request: PostRequest): Promise<WriteOutcome> {
     return this.run(ticketKey, 'post', async (chat) => {
-      const body = buildBody(request.draft)
       const subject = request.subject.trim()
-      if (body === null || subject === '') {
-        return 'invalid'
-      }
       const channels = await this.lookup.channels(chat)
-      if (!channels.some((tc) => tc.id === request.channelId)) {
+      if (subject === '' || !channels.some((tc) => tc.id === request.channelId)) {
         return 'invalid'
       }
+      const outcome = await bodyWithImages(chat, request.channelId, request.draft)
+      if (outcome.kind === 'invalid') {
+        return 'invalid'
+      }
+      const { body } = outcome
       const place = `${ticketKey}|post`
       const content = `${subject}\n${body.html}`
       const warned =
@@ -104,16 +106,17 @@ export class TeamsWrites {
 
   reply(ticketKey: string, request: ReplyRequest): Promise<WriteOutcome> {
     return this.run(ticketKey, 'reply', async (chat) => {
-      const body = buildBody(request.draft)
-      if (body === null) {
-        return 'invalid'
-      }
       const thread = await this.lookup.resolveThread(chat, ticketKey, request.conversationId)
       const rootMatches =
         thread?.isChat === true || request.rootId === null || request.rootId === thread?.rootId
       if (thread === null || !rootMatches) {
         return FAILED
       }
+      const outcome = await bodyWithImages(chat, thread.conversationId, request.draft)
+      if (outcome.kind === 'invalid') {
+        return 'invalid'
+      }
+      const { body } = outcome
       const place = `${ticketKey}|${request.conversationId}|reply`
       if (this.uncertain.get(place) === body.html && !request.confirm) {
         return UNCERTAIN

@@ -10,17 +10,20 @@ import {
   type TeamsChat,
   type TeamsGroupChat,
   type TeamsImage,
+  type TeamsImageUpload,
   type TeamsMessage,
   type TeamsMessageBody,
   type TeamsMessagePage,
   type TeamsThread,
 } from '@workday/core'
+import { isRecord } from '../jsonFile.js'
 import { retryTransient } from '../retry.js'
 import { isChatListLink, parseArrivalTime } from './parseTeams.js'
 import { TeamsHttp, TeamsHttpError, TeamsNoResponse, type TeamsRequest } from './teamsHttp.js'
 import type { TeamsSession, TeamsSniffer } from './teamsSession.js'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const AMS_OBJECTS_URL = 'https://as-api.asm.skype.com/v1/objects'
 const MAX_CHAT_LIST_PAGES = 3
 const MESSAGE_VIEW = 'view=msnp24Equivalent&pageSize=200'
 const CHAT_TARGET_TYPES =
@@ -57,7 +60,7 @@ function messageJson(body: TeamsMessageBody, subject: string | null): Record<str
     content: body.html,
     messagetype: 'RichText/Html',
     contenttype: 'text',
-    amsreferences: [],
+    amsreferences: body.amsReferences,
     properties: { importance: '', subject, mentions: body.mentionsJson, formatVariant: 'TEAMS' },
   }
 }
@@ -256,6 +259,35 @@ export class TeamsChatClient implements TeamsChat {
       throw new Error('The Teams image is too large')
     }
     return { bytes: await readLimited(response, MAX_IMAGE_BYTES), contentType }
+  }
+
+  // Two requests, as Teams web does: create the object (readable by the conversation), then put the bytes.
+  async uploadImage(conversationId: string, image: TeamsImageUpload): Promise<string> {
+    const created = await this.sendWrite(() => ({
+      method: 'POST',
+      url: AMS_OBJECTS_URL,
+      token: 'chat',
+      asBrowser: true,
+      json: {
+        type: 'pish/image',
+        permissions: { [conversationId]: ['read'] },
+        filename: image.fileName,
+      },
+    }))
+    const raw: unknown = await created.json()
+    const objectId = isRecord(raw) && typeof raw['id'] === 'string' ? raw['id'] : ''
+    if (objectId === '') {
+      throw new Error('Teams did not return an id for the uploaded image')
+    }
+    const put = await this.sendWrite(() => ({
+      method: 'PUT',
+      url: `${AMS_OBJECTS_URL}/${encodeURIComponent(objectId)}/content/imgpsh`,
+      token: 'chat',
+      asBrowser: true,
+      bytes: image.bytes,
+    }))
+    await put.body?.cancel().catch(() => undefined)
+    return objectId
   }
 
   private async readMessages(path: string): Promise<readonly TeamsMessage[]> {
