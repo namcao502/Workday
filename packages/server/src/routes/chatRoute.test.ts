@@ -127,7 +127,7 @@ describe('chat routes', () => {
     const { testApp, devRepoPath } = await setup()
     const url = '/api/workspace/sessions/claude/chat'
     const empty = await testApp.app.inject({ url, headers: LOOPBACK_HEADERS })
-    expect(empty.json<ChatView>()).toMatchObject({ messages: [], running: false, mode: 'default' })
+    expect(empty.json<ChatView>()).toMatchObject({ messages: [], running: false, mode: 'bypassPermissions' })
 
     const folder = join(testApp.homeDir, '.claude', 'projects', claudeProjectDirName(devRepoPath))
     mkdirSync(folder, { recursive: true })

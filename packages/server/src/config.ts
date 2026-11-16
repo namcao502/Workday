@@ -5,9 +5,9 @@ import {
   parseTime,
   SCAN_DAYS,
   SCAN_LIMIT_HOURS,
-  type AgentMode,
   type KnowledgeScanConfig,
   type AzureDevOpsConfig,
+  type DbReviewChannel,
   type HrmConfig,
   type JiraConfig,
   type JiraTokenSource,
@@ -205,7 +205,18 @@ export function parseTeams(raw: unknown): TeamsConfig {
     watchedChannels,
     postLeadName: textOrNull(record['postLeadName']),
     postGreeting: textOrNull(record['postGreeting']),
+    dbReviewChannel: parseDbReviewChannel(record['dbReviewChannel']),
   }
+}
+
+// Both names are needed; anything else means no DB review channel.
+function parseDbReviewChannel(raw: unknown): DbReviewChannel | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const teamName = textOrNull(raw['teamName'])?.trim() ?? ''
+  const channelName = textOrNull(raw['channelName'])?.trim() ?? ''
+  return teamName === '' || channelName === '' ? null : { teamName, channelName }
 }
 
 // Null when the command, day, time or limit is not valid, so a bad file or request never half-applies.
@@ -369,17 +380,6 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
   }
 }
 
-const AGENT_MODES: ReadonlySet<string> = new Set([
-  'default',
-  'acceptEdits',
-  'plan',
-  'bypassPermissions',
-])
-
-function agentModeOf(value: unknown): AgentMode {
-  return typeof value === 'string' && AGENT_MODES.has(value) ? (value as AgentMode) : 'default'
-}
-
 // A missing or wrong-typed field takes its default; never null.
 export function parseWorkspace(raw: unknown): WorkspaceConfig {
   if (!isRecord(raw)) {
@@ -391,7 +391,6 @@ export function parseWorkspace(raw: unknown): WorkspaceConfig {
     startPrompt: textOrNull(raw['startPrompt']),
     claudeExecutable: textOrNull(raw['claudeExecutable']),
     localOnlyPaths: stringList(raw['localOnlyPaths']).filter((path) => path !== ''),
-    permissionMode: agentModeOf(raw['permissionMode']),
   }
 }
 
@@ -429,7 +428,6 @@ export const DEFAULT_WORKSPACE: WorkspaceConfig = {
   startPrompt: null,
   claudeExecutable: null,
   localOnlyPaths: [],
-  permissionMode: 'default',
 }
 
 const DEFAULT_CONFIG: WorkdayConfig = {
@@ -444,7 +442,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   remote: null,
   workspace: DEFAULT_WORKSPACE,
   azureDevOps: null,
-  teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
+  teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
   notices: {},
   knowledgeScan: null,
 }

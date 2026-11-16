@@ -46,7 +46,7 @@ describe('loadConfig', () => {
       remote: null,
       workspace: DEFAULT_WORKSPACE,
       azureDevOps: null,
-      teams: { watchedChannels: [], postLeadName: null, postGreeting: null },
+      teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
       notices: {},
       knowledgeScan: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
@@ -60,27 +60,23 @@ describe('loadConfig', () => {
         startPrompt: 5,
         localOnlyPaths: ['a', 2],
         chatView: true,
-        permissionMode: 'plan',
       },
     })
     expect(loadConfig(directory).workspace).toEqual({
       ...DEFAULT_WORKSPACE,
       devRepoPath: 'C:\\repo',
       localOnlyPaths: ['a'],
-      permissionMode: 'plan',
     })
     writeConfig({ workspace: 'junk' })
     expect(loadConfig(directory).workspace).toEqual(DEFAULT_WORKSPACE)
   })
 
-  it('a config file with chatView and no permissionMode loads with permissionMode default', () => {
+  it('a config file with chatView loads with the workspace defaults', () => {
     writeConfig({ workspace: { devRepoPath: 'C:\repo', chatView: true } })
     expect(loadConfig(directory).workspace).toEqual({
       ...DEFAULT_WORKSPACE,
       devRepoPath: 'C:\repo',
     })
-    writeConfig({ workspace: { permissionMode: 'bogus' } })
-    expect(loadConfig(directory).workspace.permissionMode).toBe('default')
   })
 
   it('takes the default of a field that is missing or of the wrong type', () => {
@@ -403,13 +399,20 @@ describe('teams config', () => {
         watchedChannels: ['Team A > General', 'no separator', 7],
         postLeadName: 'Lead',
         postGreeting: '',
+        dbReviewChannel: { teamName: ' MDP ', channelName: 'Database Review' },
       },
     })
     expect(loadConfig(directory).teams).toEqual({
       watchedChannels: ['Team A > General'],
       postLeadName: 'Lead',
       postGreeting: null,
+      dbReviewChannel: { teamName: 'MDP', channelName: 'Database Review' },
     })
+  })
+
+  it('config reads a dbReviewChannel missing a name as null', () => {
+    writeConfig({ teams: { dbReviewChannel: { teamName: 'MDP', channelName: ' ' } } })
+    expect(loadConfig(directory).teams.dbReviewChannel).toBeNull()
   })
 
   it('config turns Teams off when the block is missing', () => {

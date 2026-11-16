@@ -17,7 +17,6 @@ function saved(): SettingsView {
       workspace: {
         ...base.config.workspace,
         devRepoPath: 'C:\\Repos\\Dev',
-        permissionMode: 'default',
       },
     },
   }
@@ -43,19 +42,13 @@ it('Save sends the workspace block with trimmed values and lines', async () => {
     startPrompt: 'ship {key}',
     claudeExecutable: null,
     localOnlyPaths: ['.claude/', '.env.local'],
-    permissionMode: 'default',
   })
   expect(await screen.findByText('Saved')).toBeInTheDocument()
 })
 
-it('the workspace settings save the default permission mode', async () => {
-  const fetchMock = stubFetch(() => jsonResponse(saved()))
-  renderWithQuery(<WorkspaceSection settings={saved()} />)
-  fireEvent.click(screen.getByRole('button', { name: /Default permission mode/ }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Accept edits' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-  await waitFor(() => {
-    expect(fetchMock).toHaveBeenCalled()
-  })
-  expect(sentJson(fetchMock)['workspace']).toMatchObject({ permissionMode: 'acceptEdits' })
+it('the Clean up worktrees button opens the cleanup dialog', async () => {
+  stubFetch(() => jsonResponse({ rows: [], errors: [] }))
+  renderWithQuery(<WorkspaceSection settings={settingsView()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Clean up worktrees' }))
+  expect(await screen.findByRole('dialog')).toBeInTheDocument()
 })

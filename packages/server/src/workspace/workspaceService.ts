@@ -7,6 +7,7 @@ import {
   isAcceptedPath,
   openTicket,
   waitOfRequests,
+  worktreeKeyOf,
   type AgentMode,
   type ChatAnswer,
   type ChatView,
@@ -34,6 +35,8 @@ import { openInVsCode, spawnEditor, type SpawnEditor } from './openInEditor.js'
 import { TicketLauncher, type TicketLauncherDeps } from './ticketLauncher.js'
 import { WorkspaceStartError, type WorkspaceStartCode } from './workspaceStartError.js'
 import { MAX_RECENT_FOLDERS, type WorkspaceState } from './workspaceStore.js'
+// Every chat session starts with permissions bypassed; the user chose that over a per-session mode picker.
+const START_MODE: AgentMode = 'bypassPermissions'
 
 export interface WorkspaceServiceDeps {
   readonly config: WorkspaceConfig
@@ -143,6 +146,22 @@ export class WorkspaceService {
     return this.config.localOnlyPaths
   }
 
+  // Tickets with a running session: a ticket tab's, or any session whose folder sits in that ticket's worktree.
+  runningTicketKeys(): ReadonlySet<string> {
+    const keys = new Set<string>()
+    for (const [name, session] of this.sessions) {
+      if (!session.state.running) {
+        continue
+      }
+      const tab = this.tabOf(name)
+      const key = tab?.kind === 'ticket' ? tab.id : worktreeKeyOf(session.state.cwd ?? '')
+      if (key !== null) {
+        keys.add(key)
+      }
+    }
+    return keys
+  }
+
   // Running sessions keep their folder; the next start uses the new dev repo.
   configure(config: WorkspaceConfig): void {
     this.config = config
@@ -239,7 +258,7 @@ export class WorkspaceService {
       session?.state.working === true,
     )
     if (session === undefined) {
-      return { ...view, mode: this.config.permissionMode }
+      return { ...view, mode: START_MODE }
     }
     const { requests, running, mode, model } = session.state
     return { ...view, requests, running, mode, model }
@@ -325,7 +344,7 @@ export class WorkspaceService {
       directory: () => this.directoryOf(name),
       resumeId: (cwd) => this.resumeId(name, cwd),
       continueLatest: (cwd) => this.continueLatest(name, cwd),
-      mode: () => this.config.permissionMode,
+      mode: () => START_MODE,
       onChange: () => {
         this.deps.events.broadcast({ type: 'chat.changed' })
       },

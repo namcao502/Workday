@@ -1,11 +1,11 @@
 import type { SettingsView } from '@workday/core'
-import { Button, Label } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { useState } from 'react'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
 import { Section } from '../ui/Section.js'
 import { TextField } from '../ui/TextField.js'
-import { ModeSelect } from '../workspace/ModeSelect.js'
+import { CleanupDialog } from '../workspace/CleanupDialog.js'
 import { formFromWorkspace, workspaceFromForm, type WorkspaceForm } from './workspaceForm.js'
 
 export function WorkspaceSection({
@@ -18,6 +18,7 @@ export function WorkspaceSection({
     formFromWorkspace(settings.config.workspace),
   )
   const [busy, setBusy] = useState(false)
+  const [cleaning, setCleaning] = useState(false)
   const [status, setStatus] = useState<{ readonly ok: boolean; readonly text: string } | null>(null)
 
   function change(changes: Partial<WorkspaceForm>): void {
@@ -105,22 +106,6 @@ export function WorkspaceSection({
           change({ localOnlyPaths: value })
         }}
       />
-      <div className="flex flex-col gap-1">
-        <Label>{t('Default permission mode', 'Chế độ quyền mặc định')}</Label>
-        <ModeSelect
-          label={t('Default permission mode', 'Chế độ quyền mặc định')}
-          value={form.permissionMode}
-          onChange={(permissionMode) => {
-            change({ permissionMode })
-          }}
-        />
-        <p className="text-sm text-muted">
-          {t(
-            'The mode a new Claude chat session starts in',
-            'Chế độ một phiên chat Claude mới bắt đầu',
-          )}
-        </p>
-      </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="primary"
@@ -132,12 +117,28 @@ export function WorkspaceSection({
         >
           {t('Save', 'Lưu')}
         </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onPress={() => {
+            setCleaning(true)
+          }}
+        >
+          {t('Clean up worktrees', 'Dọn worktree')}
+        </Button>
       </div>
       {status === null ? null : (
         <p className={status.ok ? 'text-sm text-success' : 'text-sm text-danger'} role="status">
           {status.text}
         </p>
       )}
+      {cleaning ? (
+        <CleanupDialog
+          onClose={() => {
+            setCleaning(false)
+          }}
+        />
+      ) : null}
     </Section>
   )
 }

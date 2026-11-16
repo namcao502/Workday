@@ -3,6 +3,7 @@ import type { OpenOutcome, StartOutcome } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { isRecord } from '../jsonFile.js'
 import { isDirectory } from '../workspace/agentSession.js'
+import { listFolders } from '../workspace/folderBrowser.js'
 import type { WorkspaceOutcome, WorkspaceService } from '../workspace/workspaceService.js'
 
 const SESSION_NOT_FOUND = { ok: false, error: { code: 'sessionNotFound' } } as const
@@ -34,6 +35,15 @@ export function registerWorkspaceRoutes(app: FastifyInstance, workspace: Workspa
   }
 
   app.get('/api/workspace', () => workspace.view())
+
+  // The folder picker's one level; no path = the home folder, an empty path = the drives.
+  app.get<{ Querystring: { path?: string } }>('/api/workspace/folders', (request, response) => {
+    const { path } = request.query
+    if (path !== undefined && path !== '' && !(isAbsolute(path) && isDirectory(path))) {
+      return response.code(400).send({ error: 'path must be an absolute folder path' })
+    }
+    return listFolders(path ?? null)
+  })
 
   app.post('/api/workspace/terminals', async (request, response) => {
     const folder = parseFolder(request.body)

@@ -1,10 +1,10 @@
 import type {
-  AgentMode,
   ChangeGroupView,
   ChatAnswer,
   ChatView,
   DiffView,
   FileContentView,
+  FolderListing,
   FilesGroupView,
   OpenOutcome,
   StartOutcome,
@@ -122,6 +122,15 @@ export async function getDiff(tabId: string, group: string, path: string): Promi
   return body as DiffView
 }
 
+export async function getFolders(path: string | null): Promise<FolderListing> {
+  const query = path === null ? '' : `?path=${encodeURIComponent(path)}`
+  const body = await getJson(
+    `/api/workspace/folders${query}`,
+    (value) => isRecord(value) && Array.isArray(value['folders']),
+  )
+  return body as FolderListing
+}
+
 export async function getFiles(tabId: string): Promise<readonly FilesGroupView[]> {
   const body = await getJson(tabPath(tabId, 'files'), Array.isArray)
   return body as readonly FilesGroupView[]
@@ -172,10 +181,6 @@ export function sendPrompt(session: string, text: string): Promise<void> {
 
 export function interruptSession(session: string): Promise<void> {
   return expectOk('POST', sessionPath(session, 'interrupt'))
-}
-
-export function setSessionMode(session: string, mode: AgentMode): Promise<void> {
-  return expectOk('POST', sessionPath(session, 'mode'), { mode })
 }
 
 export function answerRequest(session: string, id: string, answer: ChatAnswer): Promise<void> {

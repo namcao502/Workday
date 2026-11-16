@@ -3,12 +3,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { ChatAnswer } from '@workday/core'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { chatKey, useChat } from '../api/useWorkspace.js'
-import { answerRequest, setSessionMode } from '../api/workspaceApi.js'
+import { answerRequest } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { ChatComposer } from './ChatComposer.js'
 import { ChatRequestCard } from './ChatRequestCard.js'
 import { ChatRows } from './ChatRows.js'
-import { ModeSelect } from './ModeSelect.js'
 
 const BOTTOM_SLACK_PX = 24
 
@@ -55,14 +54,7 @@ export function ChatView({ session, shown = true }: ChatViewProps): React.JSX.El
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-separator px-2 py-1">
-        <ModeSelect
-          label={t('Permission mode', 'Chế độ quyền')}
-          value={chat.data?.mode ?? 'default'}
-          onChange={(mode) => {
-            void settle(() => setSessionMode(session, mode))
-          }}
-        />
+      <div className="flex flex-wrap items-center gap-2 px-2 py-1">
         {model === null ? null : <span className="text-xs text-muted">{model}</span>}
         {working ? (
           <span className="ml-auto flex items-center gap-1 text-xs text-muted" role="status">

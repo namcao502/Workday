@@ -1,0 +1,107 @@
+import { Folder } from '@gravity-ui/icons'
+import { Button, Modal, Spinner } from '@heroui/react'
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { getFolders } from '../api/workspaceApi.js'
+import { t } from '../i18n.js'
+
+interface FolderPickerDialogProps {
+  readonly startPath: string | null // null = the home folder
+  readonly onChoose: (folder: string) => void
+  readonly onClose: () => void
+}
+
+// A folder picker over the server's disk: step into folders, then choose the one shown.
+export function FolderPickerDialog({
+  startPath,
+  onChoose,
+  onClose,
+}: FolderPickerDialogProps): React.JSX.Element {
+  const [path, setPath] = useState<string | null>(startPath)
+  const listing = useQuery({ queryKey: ['folders', path], queryFn: () => getFolders(path) })
+  const current = listing.data
+  const title = t('Choose a folder', 'Chọn thư mục')
+  return (
+    <Modal.Backdrop
+      isOpen
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose()
+        }
+      }}
+    >
+      <Modal.Container>
+        <Modal.Dialog aria-label={title} className="sm:max-w-xl">
+          <Modal.CloseTrigger />
+          <Modal.Header>
+            <Modal.Heading>{title}</Modal.Heading>
+          </Modal.Header>
+          <Modal.Body className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                isDisabled={current?.parent === undefined || current.parent === null}
+                onPress={() => {
+                  if (current?.parent !== undefined && current.parent !== null) {
+                    setPath(current.parent)
+                  }
+                }}
+              >
+                {t('Up', 'Lên trên')}
+              </Button>
+              <p className="min-w-0 flex-1 truncate text-sm text-muted" title={current?.path}>
+                {current === undefined
+                  ? ''
+                  : current.path === ''
+                    ? t('This computer', 'Máy tính này')
+                    : current.path}
+              </p>
+            </div>
+            <div className="flex max-h-80 min-h-40 flex-col gap-1 overflow-y-auto">
+              {listing.isError ? (
+                <p className="text-sm text-danger">
+                  {t('The folder could not be read', 'Không đọc được thư mục')}
+                </p>
+              ) : current === undefined ? (
+                <Spinner size="sm" aria-label={t('Loading...', 'Đang tải...')} />
+              ) : current.folders.length === 0 ? (
+                <p className="text-sm text-muted">{t('No subfolders', 'Không có thư mục con')}</p>
+              ) : (
+                current.folders.map((folder) => (
+                  <button
+                    key={folder.path}
+                    type="button"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-surface-secondary"
+                    onClick={() => {
+                      setPath(folder.path)
+                    }}
+                  >
+                    <Folder width={16} height={16} aria-hidden="true" />
+                    <span className="truncate">{folder.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onPress={onClose}>
+              {t('Cancel', 'Hủy')}
+            </Button>
+            <Button
+              variant="primary"
+              isDisabled={current === undefined || current.path === ''}
+              onPress={() => {
+                if (current !== undefined && current.path !== '') {
+                  onChoose(current.path)
+                }
+              }}
+            >
+              {t('Choose this folder', 'Chọn thư mục này')}
+            </Button>
+          </Modal.Footer>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
+  )
+}

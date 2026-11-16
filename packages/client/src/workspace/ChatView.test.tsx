@@ -118,17 +118,11 @@ it('Stop shows while working and calls interrupt', async () => {
   })
 })
 
-it('changing the mode posts it', async () => {
-  const fetchMock = stubChat({ model: 'claude-opus' })
+it('shows no permission mode picker', async () => {
+  stubChat({ model: 'claude-opus' })
   renderWithQuery(<ChatView session="claude" />)
   expect(await screen.findByText('claude-opus')).toBeInTheDocument()
-  fireEvent.click(await screen.findByRole('button', { name: /Permission mode/ }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Plan' }))
-  await waitFor(() => {
-    expect(posts(fetchMock)).toEqual([
-      { url: '/api/workspace/sessions/claude/mode', body: { mode: 'plan' } },
-    ])
-  })
+  expect(screen.queryByRole('button', { name: /Permission mode/ })).not.toBeInTheDocument()
 })
 
 it('a 409 on send shows the start error text', async () => {
