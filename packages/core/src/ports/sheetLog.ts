@@ -1,5 +1,5 @@
 // The TSC workbook. Every method resolves; failures come back as values.
-export type SheetFailure = 'noToken' | 'dateMismatch' | 'chromeMissing' | 'browserBusy' | 'failed'
+export type SheetFailure = 'noToken' | 'dateMismatch' | 'browserMissing' | 'browserBusy' | 'failed'
 
 export interface SheetError {
   readonly failure: SheetFailure

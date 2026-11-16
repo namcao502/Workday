@@ -14,12 +14,12 @@ import {
 export type LogTarget = 'both' | 'tsc' | 'hrm'
 
 type SheetErrorCode =
-  'tscNoToken' | 'tscDateMismatch' | 'chromeMissing' | 'browserBusy' | 'tscFailed'
+  'tscNoToken' | 'tscDateMismatch' | 'browserMissing' | 'browserBusy' | 'tscFailed'
 
 const SHEET_ERROR_CODES: Readonly<Record<SheetFailure, SheetErrorCode>> = {
   noToken: 'tscNoToken',
   dateMismatch: 'tscDateMismatch',
-  chromeMissing: 'chromeMissing',
+  browserMissing: 'browserMissing',
   browserBusy: 'browserBusy',
   failed: 'tscFailed',
 }

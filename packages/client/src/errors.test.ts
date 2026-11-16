@@ -27,7 +27,7 @@ const CODES: readonly AppError['code'][] = [
   'tscNoToken',
   'tscDateMismatch',
   'tscFailed',
-  'chromeMissing',
+  'browserMissing',
   'browserBusy',
   'hrmRejected',
   'hrmUnreachable',
@@ -37,12 +37,19 @@ const CODES: readonly AppError['code'][] = [
   'forbidden',
   'pairingClosed',
   'wrongCode',
+  'notABug',
+  'busy',
+  'parentWorktreeMissing',
 ]
 
 it('errorText has English and Vietnamese text for every AppError code', () => {
   for (const code of CODES) {
     const error: AppError =
-      code === 'notFound' || code === 'alreadyOnBoard' ? { code, key: 'A-1' } : { code }
+      code === 'notFound' || code === 'alreadyOnBoard'
+        ? { code, key: 'A-1' }
+        : code === 'parentWorktreeMissing'
+          ? { code, parentKey: 'A-1' }
+          : { code }
     setLanguage('en')
     const english = errorText(error)
     setLanguage('vi')

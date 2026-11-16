@@ -1,5 +1,6 @@
 import type { SheetError, SheetWrite, TscConfig } from '@workday/core'
 import { chromium, type BrowserContext, type Page } from 'playwright-core'
+import { BROWSER_CHANNEL } from '../browserChannel.js'
 import type { BrowserLock } from './browserLock.js'
 import type { TokenSource } from './graphSheetLog.js'
 import { hasAllScope, jwtScopes, pickBroadestToken } from './jwt.js'
@@ -21,13 +22,14 @@ function sleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
 
-// A launch failure naming Chrome as missing becomes chromeMissing; anything else stays failed.
+// A launch failure naming the browser as missing becomes browserMissing; anything else stays failed.
 function explain(error: unknown): SheetError {
   const detail = error instanceof Error ? error.message : String(error)
   const lower = detail.toLowerCase()
   const missing =
-    lower.includes('chrome') && (lower.includes('not found') || lower.includes('distribution'))
-  return { failure: missing ? 'chromeMissing' : 'failed', detail }
+    lower.includes(BROWSER_CHANNEL) &&
+    (lower.includes('not found') || lower.includes('distribution'))
+  return { failure: missing ? 'browserMissing' : 'failed', detail }
 }
 
 // The only module that drives a browser: sniffs a Graph token, checks the saved session, signs in.
@@ -124,7 +126,7 @@ export class PlaywrightTokenSource implements TokenSource {
     let context: BrowserContext | null = null
     try {
       context = await chromium.launchPersistentContext(this.profileDir, {
-        channel: 'chrome',
+        channel: BROWSER_CHANNEL,
         headless: !visible,
         serviceWorkers: 'block',
         args: ['--disable-blink-features=AutomationControlled'],

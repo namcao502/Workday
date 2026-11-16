@@ -93,9 +93,9 @@ it('Sign in to TSC disables the button while it runs', async () => {
   renderWithQuery(<TimesheetSection settings={connected('file')} />)
   fireEvent.click(screen.getByRole('button', { name: 'Sign in to TSC' }))
   expect(screen.getByRole('button', { name: 'Sign in to TSC' })).toBeDisabled()
-  finish(jsonResponse({ ok: false, error: { code: 'chromeMissing' }, detail: 'no chrome' }))
-  const message = await screen.findByText('Google Chrome is not installed')
-  expect(message).toHaveAttribute('title', 'no chrome')
+  finish(jsonResponse({ ok: false, error: { code: 'browserMissing' }, detail: 'no browser' }))
+  const message = await screen.findByText('Microsoft Edge is not installed')
+  expect(message).toHaveAttribute('title', 'no browser')
   expect(screen.getByRole('button', { name: 'Sign in to TSC' })).toBeEnabled()
 })
 

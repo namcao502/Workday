@@ -43,8 +43,8 @@ export function errorText(error: AppError): string {
       )
     case 'tscFailed':
       return t('Writing to TSC failed', 'Ghi vào TSC thất bại')
-    case 'chromeMissing':
-      return t('Google Chrome is not installed', 'Chưa cài Google Chrome')
+    case 'browserMissing':
+      return t('Microsoft Edge is not installed', 'Chưa cài Microsoft Edge')
     case 'browserBusy':
       return t('The browser is busy with another task', 'Trình duyệt đang bận việc khác')
     case 'hrmRejected':
@@ -111,6 +111,18 @@ export function errorText(error: AppError): string {
       return t('Teams request failed', 'Yêu cầu Teams thất bại')
     case 'claudeNotRunning':
       return t('Claude is not running in that session', 'Claude không chạy trong phiên này')
+    case 'notABug':
+      return t(
+        'That ticket is not a QC bug of one of your tickets',
+        'Ticket này không phải bug QC của ticket của bạn',
+      )
+    case 'busy':
+      return t('That is already running', 'Việc này đang chạy')
+    case 'parentWorktreeMissing':
+      return t(
+        `${error.parentKey} has no worktree yet; start or open it first`,
+        `${error.parentKey} chưa có worktree; hãy bắt đầu hoặc mở nó trước`,
+      )
     case 'claudeWaiting':
       return t(
         'Claude is waiting for your answer; answer it, then try again',

@@ -135,7 +135,7 @@ export function registerTimesheetRoutes(app: FastifyInstance, timesheet: Timeshe
     if (!isDate(monday) || weekdayOf(monday) !== MONDAY || typeof allowSniff !== 'boolean') {
       return badRequest(reply, '{ monday, allowSniff }')
     }
-    // A remote read never opens Chrome on the PC, whatever the body asks.
+    // A remote read never opens a browser on the PC, whatever the body asks.
     const canSniff = request.isRemote ? false : allowSniff
     // The result arrives through timesheet.changed; the read can open a browser and take a while.
     timesheet.readWeek(monday, canSniff).catch((error: unknown) => {

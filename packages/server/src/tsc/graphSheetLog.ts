@@ -210,7 +210,7 @@ export class GraphSheetLog implements SheetLog {
     if (!allowSniff) {
       return Promise.resolve(NO_TOKEN)
     }
-    // One shared promise: concurrent callers wait for the same sniff, so Chrome opens once.
+    // One shared promise: concurrent callers wait for the same sniff, so the browser opens once.
     this.sniffing ??= this.sniffToken().finally(() => {
       this.sniffing = null
     })

@@ -332,16 +332,16 @@ describe('GraphSheetLog token', () => {
 
   it('a sniff error comes back as the write failure', async () => {
     const tokens = fakeTokens()
-    tokens.sniff.mockResolvedValue({ failure: 'chromeMissing', detail: 'no chrome' })
+    tokens.sniff.mockResolvedValue({ failure: 'browserMissing', detail: 'no browser' })
     const log = new GraphSheetLog(CONFIG, tokens.source, null, fakeGraph({}).fetchFn)
     expect(await log.writeOff(DATE)).toEqual({
       ok: false,
-      failure: 'chromeMissing',
-      detail: 'no chrome',
+      failure: 'browserMissing',
+      detail: 'no browser',
     })
     expect(await log.readTickets([DATE], { allowSniff: true })).toEqual({
       kind: 'failed',
-      detail: 'no chrome',
+      detail: 'no browser',
     })
   })
 })

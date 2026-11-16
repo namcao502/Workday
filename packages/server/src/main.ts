@@ -29,7 +29,7 @@ async function main(): Promise<void> {
   }
 
   const port = readPort(config.port)
-  // One lock for every rebuilt sheet adapter: the browser profile allows a single Chrome.
+  // One lock for every rebuilt sheet adapter: the browser profile allows a single browser.
   const browserLock = new BrowserLock()
   const browserProfileDir = join(dataDir, TSC_BROWSER_FOLDER)
   const services = createServices({

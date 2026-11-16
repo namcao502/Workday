@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { chromium, type BrowserContext, type Page } from 'playwright-core'
+import { BROWSER_CHANNEL } from '../browserChannel.js'
 import type { BrowserLock } from '../tsc/browserLock.js'
 import {
   hasBothTokens,
@@ -20,9 +21,9 @@ const SIGN_IN_POLL_MILLISECONDS = 2_000
 
 export type LaunchContext = (profileDir: string, visible: boolean) => Promise<BrowserContext>
 
-function launchChrome(profileDir: string, visible: boolean): Promise<BrowserContext> {
+function launchBrowser(profileDir: string, visible: boolean): Promise<BrowserContext> {
   return chromium.launchPersistentContext(profileDir, {
-    channel: 'chrome',
+    channel: BROWSER_CHANNEL,
     headless: !visible,
     serviceWorkers: 'block',
     args: ['--disable-blink-features=AutomationControlled'],
@@ -43,7 +44,7 @@ export class PlaywrightTeamsSniffer implements TeamsSniffer {
   constructor(
     private readonly profileDir: string,
     private readonly lock: BrowserLock,
-    private readonly launch: LaunchContext = launchChrome,
+    private readonly launch: LaunchContext = launchBrowser,
     private readonly now: () => number = Date.now,
   ) {}
 
