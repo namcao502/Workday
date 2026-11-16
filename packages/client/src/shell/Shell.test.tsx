@@ -1,6 +1,7 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { Shell } from './Shell.js'
+import { badgeText } from './Sidebar.js'
 import { connectedSettings, queued, timesheetView } from '../timesheet/timesheetTestSupport.js'
 import {
   jsonResponse,
@@ -22,7 +23,7 @@ it('the sidebar shows the six pages and marks the current one', () => {
   const names = within(sidebar)
     .getAllByRole('button')
     .map((button) => button.textContent)
-  expect(names).toEqual(['Tickets', 'Workspace', 'Timesheet', 'Insights', 'Schedules', 'Settings'])
+  expect(names).toEqual(['Tickets', 'Workspace', 'Timesheet', 'Insights', 'Settings'])
   expect(within(sidebar).getByRole('button', { name: 'Timesheet' })).toHaveAttribute(
     'aria-current',
     'page',
@@ -30,6 +31,20 @@ it('the sidebar shows the six pages and marks the current one', () => {
   expect(within(sidebar).getByRole('button', { name: 'Tickets' })).not.toHaveAttribute(
     'aria-current',
   )
+})
+
+it('the menu button folds the sidebar to icons and remembers it', () => {
+  localStorage.clear()
+  stubMatchMedia(false)
+  stubFetch(() => jsonResponse({}, 500))
+  renderWithQuery(<Shell page="timesheet" />)
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse or expand the menu' }))
+  const sidebar = screen.getByRole('navigation', { name: 'Pages' })
+  expect(within(sidebar).getByRole('button', { name: 'Timesheet' }).textContent).toBe('')
+  expect(localStorage.getItem('workday.sidebarCollapsed')).toBe('1')
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse or expand the menu' }))
+  expect(within(sidebar).getByRole('button', { name: 'Timesheet' }).textContent).toBe('Timesheet')
+  localStorage.clear()
 })
 
 it('below 720px the tab bar replaces the sidebar', () => {
@@ -84,7 +99,7 @@ it('locally every page and action stays available', async () => {
   renderWithQuery(<Shell page="tickets" />)
   expect(
     within(screen.getByRole('navigation', { name: 'Pages' })).getAllByRole('button'),
-  ).toHaveLength(6)
+  ).toHaveLength(5)
   expect(await screen.findByRole('button', { name: /Check now/ })).toBeInTheDocument()
 })
 
@@ -140,4 +155,10 @@ it('the selected sidebar item has aria-current and an accent background', () => 
   })
   expect(item).toHaveAttribute('aria-current', 'page')
   expect(item).toHaveClass('bg-accent-soft')
+})
+
+it('the badge text caps at 99+', () => {
+  expect(badgeText(7)).toBe('7')
+  expect(badgeText(99)).toBe('99')
+  expect(badgeText(100)).toBe('99+')
 })

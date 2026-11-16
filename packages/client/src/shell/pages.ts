@@ -2,14 +2,13 @@ import type { RemoteArea } from '@workday/core'
 import type { Access } from '../api/useMe.js'
 import { t } from '../i18n.js'
 
-export type PageId = 'tickets' | 'workspace' | 'timesheet' | 'insights' | 'schedules' | 'settings'
+export type PageId = 'tickets' | 'workspace' | 'timesheet' | 'insights' | 'settings'
 
 export const PAGE_IDS: readonly PageId[] = [
   'tickets',
   'workspace',
   'timesheet',
   'insights',
-  'schedules',
   'settings',
 ]
 
@@ -25,8 +24,6 @@ export function pageLabel(page: PageId): string {
       return t('Timesheet', 'Bảng công')
     case 'insights':
       return t('Insights', 'Thống kê')
-    case 'schedules':
-      return t('Schedules', 'Lịch chạy')
     case 'settings':
       return t('Settings', 'Cài đặt')
   }
@@ -42,7 +39,7 @@ export function navigateTo(page: PageId): void {
   window.location.hash = `#/${page}`
 }
 
-// Workspace, Insights and Schedules have no remote area, so a remote device never sees them.
+// Workspace and Insights have no remote area, so a remote device never sees them.
 const PAGE_AREAS: Partial<Record<PageId, RemoteArea>> = { tickets: 'board', timesheet: 'timesheet' }
 
 export function pageVisible(page: PageId, access: Access): boolean {

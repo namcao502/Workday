@@ -1,5 +1,6 @@
 import type { NoticeTarget } from '@workday/core'
 import { navigateTo, navigateToWorkspace } from '../shell/pages.js'
+import { navigateToSettings } from '../settings/settingsGroups.js'
 
 const SCROLL_DELAY_MS = 100
 
@@ -23,7 +24,7 @@ export function openNoticeTarget(target: NoticeTarget | null, remote: boolean): 
   if (target.kind === 'url') {
     window.open(target.url, '_blank', 'noopener')
   } else if (target.kind === 'schedules' && !remote) {
-    navigateTo('schedules')
+    navigateToSettings('work')
   } else if (target.kind === 'workspace' && !remote) {
     navigateToWorkspace(target.tab, target.session)
   } else if (target.kind === 'teams' && !remote) {

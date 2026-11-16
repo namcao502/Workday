@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { JobRun, KnowledgeScanConfig, ScanRun, SchedulesView } from '@workday/core'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, settingsView, stubFetch } from '../testSupport.js'
-import { SchedulesPage } from './SchedulesPage.js'
+import { SchedulesSection } from './SchedulesSection.js'
 import { LOG_POLL_MS } from './useSchedules.js'
 
 const CONFIG: KnowledgeScanConfig = {
@@ -70,9 +70,9 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('schedules page marks bad runs seen on open', async () => {
+it('schedules section marks bad runs seen on open', async () => {
   const fetchMock = serve(view([scanRun({ outcome: 'failed' })]))
-  renderWithQuery(<SchedulesPage />)
+  renderWithQuery(<SchedulesSection />)
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith('/api/schedules/scan/seen', { method: 'POST' })
   })
@@ -80,7 +80,7 @@ it('schedules page marks bad runs seen on open', async () => {
 
 it('changing the day saves the knowledge scan config', async () => {
   const fetchMock = serve(view([scanRun()]))
-  renderWithQuery(<SchedulesPage />)
+  renderWithQuery(<SchedulesSection />)
   fireEvent.click(await screen.findByRole('radio', { name: 'Fri' }))
   await waitFor(() => {
     const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT')
@@ -93,7 +93,7 @@ it('changing the day saves the knowledge scan config', async () => {
 
 it('run now asks first', async () => {
   const fetchMock = serve(view([scanRun()]))
-  renderWithQuery(<SchedulesPage />)
+  renderWithQuery(<SchedulesSection />)
   fireEvent.click(await screen.findByRole('button', { name: 'Run now' }))
   const runCalls = (): number =>
     fetchMock.mock.calls.filter(([url]) => url === '/api/schedules/scan/run').length
@@ -111,7 +111,7 @@ it("a running scan's log is read on from the last offset", async () => {
     [`${base}0`]: { text: 'first\n', next: 6 },
     [`${base}6`]: { text: 'second\n', next: 13 },
   })
-  renderWithQuery(<SchedulesPage />)
+  renderWithQuery(<SchedulesSection />)
   await waitFor(() => {
     expect(screen.getByLabelText('Run log').textContent).toBe('first\n')
   })
@@ -140,7 +140,7 @@ it('jobs card shows the last result and the next run', async () => {
     },
   ]
   serve(view([], runs))
-  renderWithQuery(<SchedulesPage />)
+  renderWithQuery(<SchedulesSection />)
   const row = (await screen.findByText('Jira check')).closest('li')
   expect(row?.textContent).toContain('4 tickets polled')
   expect(row?.textContent).toContain('Next')

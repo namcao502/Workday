@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { BoardPage } from '../board/BoardPage.js'
+import { HeaderSlotContext } from '../ui/HeaderSlot.js'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
 import { useNow, useTimesheetView } from '../api/useTimesheet.js'
@@ -6,7 +8,6 @@ import { useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
 import { InsightsPage } from '../insights/InsightsPage.js'
 import { DevicePage } from '../remote/DevicePage.js'
-import { SchedulesPage } from '../schedules/SchedulesPage.js'
 import { useSchedulesView } from '../schedules/useSchedules.js'
 import { SettingsPage } from '../settings/SettingsPage.js'
 import { TimesheetPage } from '../timesheet/TimesheetPage.js'
@@ -19,6 +20,7 @@ import { TabBar } from './TabBar.js'
 import { TopBar } from './TopBar.js'
 import { navigateTo, visiblePages, type PageId } from './pages.js'
 import { useNarrow } from './useNarrow.js'
+import { useSidebarCollapsed } from './useSidebarCollapsed.js'
 import { zonedClock } from '@workday/core'
 
 interface ShellProps {
@@ -38,9 +40,6 @@ function PageContent({ page }: ShellProps): React.JSX.Element {
   }
   if (page === 'workspace') {
     return <WorkspacePage />
-  }
-  if (page === 'schedules') {
-    return <SchedulesPage />
   }
   return <InsightsPage />
 }
@@ -63,6 +62,8 @@ function useWaitingSessions(): number {
 
 export function Shell({ page: requested }: ShellProps): React.JSX.Element {
   const narrow = useNarrow()
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed()
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null)
   const pages = visiblePages(useAccess())
   // A hash to a hidden page shows the first visible one.
   const page = pages.includes(requested) ? requested : (pages[0] ?? 'settings')
@@ -78,16 +79,19 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
           current={page}
           onSelect={navigateTo}
           attention={attention}
-          schedulesDot={schedulesDot}
+          settingsBadge={schedulesDot ? 1 : 0}
           pages={pages}
           workspaceBadge={waiting}
           boardBadge={todoAttention}
+          collapsed={collapsed}
         />
       )}
-      <div className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-14' : ''}`}>
-        <TopBar />
+      <div className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-20' : ''}`}>
+        <TopBar onToggleMenu={narrow ? undefined : toggleCollapsed} slotRef={setHeaderSlot} />
         <main className="min-h-0 flex-1 overflow-auto">
-          <PageContent page={page} />
+          <HeaderSlotContext.Provider value={headerSlot}>
+            <PageContent page={page} />
+          </HeaderSlotContext.Provider>
         </main>
       </div>
       {narrow ? (

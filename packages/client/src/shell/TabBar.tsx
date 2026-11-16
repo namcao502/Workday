@@ -20,7 +20,7 @@ export function TabBar({
 }: TabBarProps): React.JSX.Element {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-20 flex border-t border-border bg-surface"
+      className="fixed inset-x-2 bottom-2 z-20 flex rounded-2xl bg-surface shadow-surface"
       aria-label={t('Tabs', 'Thẻ')}
     >
       {pages.map((page) => {
@@ -32,7 +32,7 @@ export function TabBar({
             key={page}
             type="button"
             className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[11px] ${
-              selected ? 'text-accent' : 'text-muted'
+              selected ? 'text-accent' : 'text-muted hover:text-foreground'
             }`}
             aria-current={selected ? 'page' : undefined}
             onClick={() => {
