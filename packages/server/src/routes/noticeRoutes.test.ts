@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildRemoteApp, pairDevice, remoteHeaders } from '../testing/remoteTestApp.js'
 import { buildTestApp, LOOPBACK_HEADERS, type TestApp } from '../testing/testApp.js'
 
@@ -18,6 +18,34 @@ async function localApp(): Promise<TestApp> {
 async function post(testApp: TestApp, url: string, payload: object = {}) {
   return await testApp.app.inject({ method: 'POST', url, headers: LOOPBACK_HEADERS, payload })
 }
+
+describe('notice routes and Teams', () => {
+  const TEAMS_NOTICE = {
+    topic: 'teamsMention',
+    tone: 'info',
+    event: { type: 'teamsMessage', key: 'MDP-1', title: 'T', sender: 'Minh', mention: true },
+    target: { kind: 'teams', key: 'MDP-1', conversationId: 'c1' },
+    place: 'teams:k1',
+  } as const
+
+  it('reading a Teams notice, or all notices, also marks its conversation seen', async () => {
+    const testApp = await localApp()
+    const seen = vi.spyOn(testApp.services.teamsWatcher, 'seen').mockResolvedValue()
+    const first = await testApp.services.notices.add(TEAMS_NOTICE)
+    await testApp.services.notices.add({
+      ...TEAMS_NOTICE,
+      target: { ...TEAMS_NOTICE.target, key: 'MDP-2', conversationId: 'c2' },
+      place: 'teams:k2',
+    })
+
+    await post(testApp, `/api/notices/${String(first.id)}/read`)
+    expect(seen).toHaveBeenCalledTimes(1)
+    expect(seen).toHaveBeenLastCalledWith('MDP-1', 'c1')
+    await post(testApp, '/api/notices/read-all')
+    expect(seen).toHaveBeenCalledTimes(2)
+    expect(seen).toHaveBeenLastCalledWith('MDP-2', 'c2')
+  })
+})
 
 describe('notice routes', () => {
   it('notice routes reject a non-numeric id and an empty place with 400', async () => {

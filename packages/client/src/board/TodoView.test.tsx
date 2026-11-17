@@ -137,6 +137,40 @@ it("a teams to-do opens the ticket's Teams view", async () => {
   expect(window.location.hash).toBe('#/workspace/MDP-1?teams=c1')
 })
 
+it('Seen on a teams to-do marks the conversation read', async () => {
+  const teamsGroup: TodoGroup = {
+    ticketKey: 'MDP-1',
+    neededNow: true,
+    items: [
+      {
+        kind: 'teamsMessage',
+        ticketKey: 'MDP-1',
+        item: {
+          title: 'Team > Chan',
+          senderName: 'Minh',
+          sentAt: '2026-11-01T08:00:00Z',
+          mentionsMe: true,
+          conversationId: 'c1',
+          ticketKey: 'MDP-1',
+          conversationKey: 'k1',
+          chatId: null,
+        },
+      },
+    ],
+  }
+  const posted: string[] = []
+  stubBackend([teamsGroup], (url) => {
+    posted.push(url)
+    return jsonResponse({ ok: true })
+  })
+  renderWithQuery(<BoardPage />)
+  await openTodoView()
+  fireEvent.click(await screen.findByRole('button', { name: 'Seen' }))
+  await waitFor(() => {
+    expect(posted).toEqual(['/api/teams/MDP-1/seen'])
+  })
+})
+
 const JIRA_GROUP: TodoGroup = {
   ticketKey: 'MDP-1',
   neededNow: false,

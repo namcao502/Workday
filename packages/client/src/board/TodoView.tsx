@@ -214,6 +214,13 @@ export function TodoView({
                   navigateToWorkspace(item.ticketKey, null, item.item.conversationId)
                 },
               },
+              {
+                id: 'seen',
+                label: t('Seen', 'Đã xem'),
+                onClick: () => {
+                  void run(() => actions.teamsSeen(item.ticketKey, item.item.conversationId))
+                },
+              },
             ]
       case 'dbReview': {
         const { sql, conversationKey } = item.approval

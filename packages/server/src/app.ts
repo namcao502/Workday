@@ -89,7 +89,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerPushRoutes(app, deps.remote, deps.settings)
   registerBoardRoutes(app, deps.board, deps.prs, deps.ticketUpdates)
   registerWorkRoutes(app, deps)
-  registerNoticeRoutes(app, deps.notices)
+  registerNoticeRoutes(app, deps.notices, deps.teamsWatcher)
   registerSettingsRoutes(app, deps.settings)
   registerTimesheetRoutes(app, deps.timesheet)
   registerWorkspaceRoutes(app, deps.workspace)

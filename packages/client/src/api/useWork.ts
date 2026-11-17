@@ -14,7 +14,7 @@ import {
   takeSuggestion,
   type FixBugResult,
 } from './workApi.js'
-import { markDbReviewDone } from './teamsApi.js'
+import { markDbReviewDone, markTeamsSeen } from './teamsApi.js'
 import { getTicketUpdate, markTicketUpdateViewed } from './ticketUpdateApi.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
@@ -49,6 +49,7 @@ async function dbReviewDoneChecked(conversationKey: string): Promise<void> {
 export interface WorkActions {
   readonly readyToTest: (key: string) => Promise<ReadyToTestOutcome>
   readonly commentsSeen: (key: string) => Promise<void>
+  readonly teamsSeen: (key: string, conversationId: string) => Promise<void>
   readonly hideReview: (repository: string, pullRequestId: number) => Promise<void>
   readonly take: (key: string) => Promise<TakeOutcome>
   readonly hideSuggestion: (key: string) => Promise<void>
@@ -85,6 +86,8 @@ export function useWorkActions(): WorkActions {
       ticketUpdateViewed: (key, shown) => refetched(markTicketUpdateViewed(key, shown)),
       ticketUpdateSeen: (key) => refetched(seenWithCurrent(key)),
       fixBug: (key) => refetched(fixBug(key)),
+      teamsSeen: (key, conversationId) =>
+        refetched(markTeamsSeen(key, conversationId).then(() => undefined)),
     }
   }, [queryClient])
 }
