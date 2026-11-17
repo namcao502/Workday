@@ -53,7 +53,7 @@ export class GraphSheetLog implements SheetLog {
   ) {}
 
   writeTickets(date: string, text: string): Promise<SheetWrite> {
-    return this.write(date, async (workbook, sheet, cells) => {
+    return this.write(date, text, async (workbook, sheet, cells) => {
       for (const cell of cells) {
         const current = await workbook.readCell(sheet, cell)
         if (current === text) {
@@ -69,7 +69,7 @@ export class GraphSheetLog implements SheetLog {
   }
 
   writeOff(date: string): Promise<SheetWrite> {
-    return this.write(date, async (workbook, sheet, cells) => {
+    return this.write(date, this.config.offMarker, async (workbook, sheet, cells) => {
       for (const cell of cells) {
         if ((await workbook.readCell(sheet, cell)) !== this.config.offMarker) {
           await workbook.writeCell(sheet, cell, this.config.offMarker)
@@ -121,8 +121,10 @@ export class GraphSheetLog implements SheetLog {
   }
 
   // Aborts with dateMismatch before any cell is touched when column B is not the expected date.
+  // After a write the cells are read back in a new session: a write that did not stick is a failure.
   private async write(
     date: string,
+    expected: string,
     apply: (workbook: GraphWorkbook, sheet: string, cells: readonly string[]) => Promise<void>,
   ): Promise<SheetWrite> {
     const token = await this.acquireToken(true)
@@ -132,7 +134,7 @@ export class GraphSheetLog implements SheetLog {
     try {
       const sheet = worksheetFor(date, this.config.worksheetPattern)
       const cells = cellsForDate(date, this.config.columns, this.config.headerRows)
-      return await this.inSession(token, async (workbook) => {
+      const written = await this.inSession(token, async (workbook) => {
         const mismatch = await this.dateMismatch(workbook, sheet, date)
         if (mismatch !== null) {
           return { ok: false, failure: 'dateMismatch', detail: mismatch } as const
@@ -140,6 +142,19 @@ export class GraphSheetLog implements SheetLog {
         await apply(workbook, sheet, cells)
         return { ok: true } as const
       })
+      if (!written.ok) {
+        return written
+      }
+      const wrong = await this.inSession(token, (workbook) =>
+        this.cellsNotHolding(workbook, sheet, cells, expected),
+      )
+      return wrong.length === 0
+        ? written
+        : {
+            ok: false,
+            failure: 'failed',
+            detail: `Read back after writing: ${wrong.join('; ')}.`,
+          }
     } catch (error: unknown) {
       this.forgetRefusedToken(error)
       return { ok: false, failure: 'failed', detail: messageOf(error) }
@@ -183,6 +198,23 @@ export class GraphSheetLog implements SheetLog {
         ? `Date check could not read ${address} (empty).`
         : `Date check failed: ${address} shows "${read}", expected "${expected}".`
     return `${why} Aborting to avoid wrong-day logging.`
+  }
+
+  // One line per cell that does not show the expected text.
+  private async cellsNotHolding(
+    workbook: GraphWorkbook,
+    sheet: string,
+    cells: readonly string[],
+    expected: string,
+  ): Promise<readonly string[]> {
+    const wrong: string[] = []
+    for (const cell of cells) {
+      const read = await workbook.readCell(sheet, cell)
+      if (read !== expected.trim()) {
+        wrong.push(`${cell} shows "${read}", expected "${expected}"`)
+      }
+    }
+    return wrong
   }
 
   private async firstFilled(

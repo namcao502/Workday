@@ -32,6 +32,7 @@ interface FakeGraph {
   readonly calls: Recorded[]
   readonly cells: Map<string, string>
   failPatch: boolean
+  readonly dropped: Set<string> // cells whose PATCH answers ok but is not kept
 }
 
 function fakeGraph(initial: Record<string, string>): FakeGraph {
@@ -41,6 +42,7 @@ function fakeGraph(initial: Record<string, string>): FakeGraph {
     calls,
     cells,
     failPatch: false,
+    dropped: new Set<string>(),
     fetchFn: (input, init) => {
       const url = urlOf(input)
       const method = init?.method ?? 'GET'
@@ -64,7 +66,9 @@ function fakeGraph(initial: Record<string, string>): FakeGraph {
           return Promise.resolve(new Response('boom', { status: 500 }))
         }
         const parsed = JSON.parse(body ?? '{}') as { values: string[][] }
-        cells.set(address, parsed.values[0]?.[0] ?? '')
+        if (!graph.dropped.has(address)) {
+          cells.set(address, parsed.values[0]?.[0] ?? '')
+        }
         return Promise.resolve(Response.json({}))
       }
       return Promise.resolve(new Response(null, { status: 200 }))
@@ -143,6 +147,32 @@ describe('GraphSheetLog writes', () => {
     const valueWrites = graph.calls.filter((c) => c.method === 'PATCH' && !c.url.endsWith('/fill'))
     expect(valueWrites).toHaveLength(1)
     expect(graph.cells.get('J7')).toBe('OFF')
+  })
+
+  it('writeTickets reads the cells back in a new session and passes when they hold the text', async () => {
+    const graph = fakeGraph({ B7: '1/5/2026' })
+    const log = new GraphSheetLog(CONFIG, fakeTokens().source, null, graph.fetchFn)
+    expect(await log.writeTickets(DATE, 'ABC-1, ABC-2')).toEqual({ ok: true })
+    expect(methods(graph, '/createSession')).toEqual(['POST', 'POST'])
+    expect(methods(graph, '/closeSession')).toEqual(['POST', 'POST'])
+  })
+
+  it('writeTickets fails when a cell does not keep what was written', async () => {
+    const graph = fakeGraph({ B7: '1/5/2026' })
+    graph.dropped.add('J7')
+    const log = new GraphSheetLog(CONFIG, fakeTokens().source, null, graph.fetchFn)
+    const result = await log.writeTickets(DATE, 'ABC-1')
+    expect(result).toMatchObject({ ok: false, failure: 'failed' })
+    expect((result as SheetError).detail).toBe(
+      'Read back after writing: J7 shows "", expected "ABC-1".',
+    )
+  })
+
+  it('writeOff fails when the marker did not stick', async () => {
+    const graph = fakeGraph({ B7: '1/5/2026' })
+    graph.dropped.add('M7')
+    const log = new GraphSheetLog(CONFIG, fakeTokens().source, null, graph.fetchFn)
+    expect(await log.writeOff(DATE)).toMatchObject({ ok: false, failure: 'failed' })
   })
 
   it('the session is closed even when a write fails', async () => {
