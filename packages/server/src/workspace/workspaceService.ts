@@ -5,6 +5,7 @@ import {
   closeSession,
   closeTab,
   isAcceptedPath,
+  moveTab,
   openTicket,
   waitOfRequests,
   worktreeKeyOf,
@@ -236,6 +237,17 @@ export class WorkspaceService {
     })
   }
 
+  // 'ok' also when the tab is already there.
+  moveTab(id: string, index: number): Promise<WorkspaceOutcome> {
+    return this.enqueue(async () => {
+      if (this.findTab(id) === undefined) {
+        return 'notFound'
+      }
+      await this.commit({ ...this.state, ...moveTab(this.state, id, index) }, true)
+      return 'ok'
+    })
+  }
+
   seen(name: string): void {
     this.sessions.get(name)?.seen()
     this.deps.onSeen?.(name)
@@ -276,6 +288,13 @@ export class WorkspaceService {
       usage,
       catalog: catalog ?? this.lastCatalog,
     }
+  }
+
+  // What Claude answered in a session, oldest first; empty for an unknown session or one with no transcript.
+  assistantTexts(name: string): readonly string[] {
+    return (this.chat(name)?.messages ?? []).flatMap((message) =>
+      message.role === 'assistant' && message.text !== null ? [message.text] : [],
+    )
   }
 
   // The folder a session works in, for the git facts under the composer; null for an unknown session.

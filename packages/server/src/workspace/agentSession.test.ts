@@ -106,6 +106,15 @@ describe('AgentSession', () => {
     expect(session.state.finished).toBe(false)
   })
 
+  it('a turn nobody prompted (a background task reporting) does not set finished again', () => {
+    const { session, agent } = build()
+    session.send('hi')
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    session.seen()
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(session.state).toMatchObject({ working: false, finished: false })
+  })
+
   it('a prompt sent mid-turn keeps working until its own turn ends', () => {
     const { session, agent } = build()
     session.send('one')

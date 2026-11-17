@@ -177,3 +177,21 @@ describe('timesheet routes', () => {
     expect(testApp.services.timesheet.view().week).toMatchObject({ monday: '2026-11-09' })
   })
 })
+
+describe('day suggestions route', () => {
+  it('refuses a bad date and answers an empty list when no repo is set up', async () => {
+    const testApp = await timesheetApp()
+
+    const bad = await testApp.app.inject({
+      url: '/api/timesheet/day-suggestions?date=nope',
+      headers: LOOPBACK_HEADERS,
+    })
+    const none = await testApp.app.inject({
+      url: '/api/timesheet/day-suggestions?date=2026-11-10',
+      headers: LOOPBACK_HEADERS,
+    })
+
+    expect(bad.statusCode).toBe(400)
+    expect(none.json()).toEqual([])
+  })
+})

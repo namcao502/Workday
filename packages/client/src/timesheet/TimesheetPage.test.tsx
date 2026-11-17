@@ -77,7 +77,7 @@ it('a queued day past the run reads Retry', async () => {
   expect(within(day).getByText('Past the auto-log time, not logged yet')).toBeInTheDocument()
 })
 
-it('the first visit reads this week with allowSniff, the previous week without', async () => {
+it('the first visit reads this week without a sniff, so no browser opens on its own', async () => {
   const fetchMock = backend(timesheetView())
   renderWithQuery(<TimesheetPage />)
   await screen.findByRole('group', { name: /MON 9/ })
@@ -86,7 +86,7 @@ it('the first visit reads this week with allowSniff, the previous week without',
   })
   expect(bodyOf(fetchMock, '/api/timesheet/week')).toEqual({
     monday: '2026-11-09',
-    allowSniff: true,
+    allowSniff: false,
   })
   fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
   await waitFor(() => {
@@ -192,4 +192,65 @@ it('a timesheet act device keeps the input and Retry', async () => {
   const day = await screen.findByRole('group', { name: /WED 11/ })
   expect(within(day).getByRole('button', { name: 'Retry' })).toBeEnabled()
   expect(screen.getByRole('textbox', { name: 'Tickets' })).toBeInTheDocument()
+})
+
+it('says which parts of the week read are running, done or failed', async () => {
+  const base = timesheetView()
+  backend({
+    ...base,
+    week: {
+      ...(base.week ?? {
+        monday: '2026-11-09',
+        reading: true,
+        coverage: null,
+        review: null,
+        hrmTasks: null,
+        readAt: null,
+        steps: [],
+      }),
+      reading: true,
+      steps: [
+        { id: 'tsc', state: 'done' },
+        { id: 'hrmHours', state: 'running' },
+        { id: 'hrmTasks', state: 'pending' },
+        { id: 'jira', state: 'failed' },
+      ],
+    },
+  })
+  renderWithQuery(<TimesheetPage />)
+  expect(await screen.findByText(/Reading the week's logs:/)).toBeInTheDocument()
+  const states = [...document.querySelectorAll('[data-state]')].map((node) => [
+    node.textContent,
+    node.getAttribute('data-state'),
+  ])
+  expect(states).toEqual([
+    ['✓TSC sheet', 'done'],
+    ['HRM hours', 'running'],
+    ['-HRM tasks', 'pending'],
+    ['!Jira tickets', 'failed'],
+  ])
+})
+
+it('a worked-on ticket queues for the selected day with one press', async () => {
+  const fetchMock = backend(
+    timesheetView(),
+    [],
+    [{ ticketKey: 'MDP-7', summary: 'Seven', commits: 2, claude: true, shareMinutes: 480 }],
+  )
+  renderWithQuery(<TimesheetPage />)
+  fireEvent.click(await screen.findByRole('button', { name: /MDP-7 2 commits - Claude - 8h/ }))
+  await waitFor(() => {
+    expect(bodyOf(fetchMock, '/api/timesheet/queue')).toEqual({
+      date: '2026-11-12',
+      tickets: ['MDP-7'],
+      minutes: null,
+    })
+  })
+})
+it('a server that has no week yet is asked to read it, even when the page was visited before', async () => {
+  const fetchMock = backend(timesheetView({ week: null }))
+  renderWithQuery(<TimesheetPage />)
+  await waitFor(() => {
+    expect(callsTo(fetchMock, '/api/timesheet/week')).toBe(1)
+  })
 })

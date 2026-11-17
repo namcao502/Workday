@@ -6,10 +6,11 @@ import type { NoticeAlerts } from './useNotices.js'
 
 export const TOAST_MS = 6000
 
-const TONE_BACKGROUND: Readonly<Record<Notice['tone'], string>> = {
-  info: 'bg-accent-soft',
-  success: 'bg-success-soft',
-  error: 'bg-danger-soft',
+// The card itself is opaque like the bell's popup; the tone shows as a stripe on its left edge.
+const TONE_STRIPE: Readonly<Record<Notice['tone'], string>> = {
+  info: 'border-accent',
+  success: 'border-success',
+  error: 'border-danger',
 }
 
 function Toast({
@@ -30,7 +31,7 @@ function Toast({
   }, [notice.id, expire])
   return (
     <Card
-      className={`w-80 max-w-[92vw] flex-row items-start gap-0 p-0 ${TONE_BACKGROUND[notice.tone]}`}
+      className={`w-80 max-w-[92vw] flex-row items-start gap-0 border-l-4 bg-overlay p-0 shadow-overlay ${TONE_STRIPE[notice.tone]}`}
     >
       <button
         type="button"

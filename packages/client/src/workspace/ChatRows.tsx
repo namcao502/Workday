@@ -1,9 +1,11 @@
 import { Button, Chip, Disclosure, Spinner } from '@heroui/react'
 import type { ChatMessage, ChatTodo, ToolEdit } from '@workday/core'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { t } from '../i18n.js'
+import { copyWithListMarkers } from '../ui/copyListMarkers.js'
+import { ctrlLinkHint, openLinkOnCtrl } from '../ui/ctrlLink.js'
 import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
 
 const COLLAPSE_FROM = 4
@@ -40,29 +42,40 @@ export function groupRows(messages: readonly ChatMessage[]): readonly Row[] {
 const COMPONENTS: Components = {
   ...COPY_BLOCKS,
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer noopener">
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      title={ctrlLinkHint()}
+      onClick={openLinkOnCtrl}
+    >
       {children}
     </a>
   ),
 }
 
-export function ChatMarkdown({ text }: { readonly text: string }): React.JSX.Element {
+// Memoized by text: a refetch hands over the same strings, and parsing markdown is the costly part of a render.
+export const ChatMarkdown = memo(function ChatMarkdown({
+  text,
+}: {
+  readonly text: string
+}): React.JSX.Element {
   return (
-    <div className="markdown-view break-words text-sm">
+    <div className="markdown-view break-words text-sm" onCopy={copyWithListMarkers}>
       <Markdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
         {text}
       </Markdown>
     </div>
   )
-}
+})
 
 function EditBlock({ edit }: { readonly edit: ToolEdit }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-1 font-mono text-xs whitespace-pre-wrap">
       {edit.oldText === '' ? null : (
-        <div className="rounded-md bg-danger-soft px-2 py-1 text-danger">{edit.oldText}</div>
+        <div className="rounded-lg bg-danger-soft px-2 py-1 text-danger">{edit.oldText}</div>
       )}
-      <div className="rounded-md bg-success-soft px-2 py-1 text-success">{edit.newText}</div>
+      <div className="rounded-lg bg-success-soft px-2 py-1 text-success">{edit.newText}</div>
     </div>
   )
 }

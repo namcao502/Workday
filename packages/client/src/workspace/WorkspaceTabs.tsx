@@ -1,5 +1,5 @@
 import type { SessionView, WorkspaceTab } from '@workday/core'
-import { Badge, Button, CloseButton, Dropdown } from '@heroui/react'
+import { Button, CloseButton, Dropdown } from '@heroui/react'
 import { Plus } from '@gravity-ui/icons'
 import { useState } from 'react'
 import { t } from '../i18n.js'
@@ -92,6 +92,7 @@ interface WorkspaceTabsProps {
   readonly onSelect: (tabId: string) => void
   readonly onClose: (tab: WorkspaceTab) => void
   readonly onAddTerminal: (folder: string | null) => void
+  readonly onMove: (tabId: string, index: number) => void // drag a tab onto another to take its place
 }
 
 // The strip does not wrap or show a scrollbar; the open tab is brought into view instead.
@@ -103,23 +104,51 @@ function scrollIntoView(element: HTMLElement | null): void {
 }
 
 export function WorkspaceTabs(props: WorkspaceTabsProps): React.JSX.Element {
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
   const waiting = new Set(
     props.sessions.filter((session) => session.wait !== null).map((session) => session.name),
   )
   return (
-    <div className="flex min-w-0 items-center gap-1 pb-2">
+    <div className="flex min-w-0 items-center gap-1">
       <div
         className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
         role="tablist"
         aria-label={t('Workspace tabs', 'Thẻ không gian làm việc')}
       >
-        {props.tabs.map((tab) => {
+        {props.tabs.map((tab, index) => {
           const selected = tab.id === props.selectedId
           return (
             <div
               key={tab.id}
               ref={selected ? scrollIntoView : undefined}
-              className={`flex h-8 w-40 min-w-24 shrink items-center rounded-full pl-3.5 pr-1 text-sm transition-colors duration-150${
+              draggable
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData('text/plain', tab.id)
+                setDragging(tab.id)
+              }}
+              onDragOver={(event) => {
+                if (dragging !== null && dragging !== tab.id) {
+                  event.preventDefault()
+                  setOver(tab.id)
+                }
+              }}
+              onDrop={(event) => {
+                event.preventDefault()
+                if (dragging !== null && dragging !== tab.id) {
+                  props.onMove(dragging, index)
+                }
+                setDragging(null)
+                setOver(null)
+              }}
+              onDragEnd={() => {
+                setDragging(null)
+                setOver(null)
+              }}
+              className={`flex h-8 shrink-0 items-center min-[720px]:w-40 min-[720px]:min-w-24 min-[720px]:shrink rounded-full pl-3.5 pr-1 text-sm transition-colors duration-150${
+                over === tab.id ? ' ring-2 ring-inset ring-accent' : ''
+              }${dragging === tab.id ? ' opacity-50' : ''}${
                 selected
                   ? ' bg-accent-soft text-accent-soft-foreground'
                   : ' bg-surface-secondary text-muted hover:text-foreground'
@@ -137,7 +166,11 @@ export function WorkspaceTabs(props: WorkspaceTabsProps): React.JSX.Element {
               >
                 <span className="truncate">{tabLabel(tab)}</span>
                 {tab.sessions.some((name) => waiting.has(name)) ? (
-                  <Badge color="danger" size="sm" data-testid="tab-dot" aria-hidden="true" />
+                  <span
+                    className="size-2 flex-none rounded-full bg-danger"
+                    data-testid="tab-dot"
+                    aria-hidden="true"
+                  />
                 ) : null}
               </button>
               <CloseButton

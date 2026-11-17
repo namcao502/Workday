@@ -99,7 +99,7 @@ function DeviceRow({
   }
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl bg-surface-secondary p-3">
+    <li className="flex flex-col gap-2 rounded-2xl bg-surface-secondary p-3">
       <div className="flex flex-wrap items-center gap-2">
         <DeviceName
           device={device}

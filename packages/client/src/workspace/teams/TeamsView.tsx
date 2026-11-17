@@ -1,5 +1,6 @@
-import { Button } from '@heroui/react'
+import { Button, Spinner } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
+import { paragraphsFromText, type TeamsMessage } from '@workday/core'
 import { useEffect, useState } from 'react'
 import {
   deleteMessage,
@@ -10,7 +11,7 @@ import {
 } from '../../api/teamsApi.js'
 import { useSettings } from '../../api/useSettings.js'
 import { errorText } from '../../errors.js'
-import { t } from '../../i18n.js'
+import { formatShortDate, getLanguage, t } from '../../i18n.js'
 import {
   composeLabel,
   ConversationSelect,
@@ -20,10 +21,27 @@ import {
 } from './TeamsPanels.js'
 import { TeamsBugReplyCard } from './TeamsBugReplyCard.js'
 import { TeamsEditBox, TeamsReplyBox, type LoadedReply } from './TeamsComposeParts.js'
+import { addEcho, dropEchoes } from '../promptEchoes.js'
+import { TeamsAnalysisPanel } from './TeamsAnalysisPanel.js'
 import { TeamsPostCard } from './TeamsPostCard.js'
 import { outcomeOf, type SendAction } from './teamsSend.js'
 import { TeamsThread } from './TeamsThread.js'
 import { useMarkTeamsSeen, useTeamsRead } from './useTeams.js'
+
+// "Name is waiting since 3:05 PM" while the newest message is someone else's.
+function waitingLineOf(
+  last: TeamsMessage | undefined,
+  myId: string,
+  timeZone: string,
+): string | null {
+  if (last === undefined || last.senderId.toLowerCase() === myId.toLowerCase()) {
+    return null
+  }
+  const at = new Date(last.sentAt)
+  const language = getLanguage()
+  const when = formatShortDate(at, language, timeZone)
+  return t(`${last.senderName} is waiting since ${when}`, `${last.senderName} đang chờ từ ${when}`)
+}
 
 export interface TeamsViewProps {
   readonly ticket: string
@@ -59,11 +77,14 @@ export function TeamsView({
     setSelected(conversation)
   }, [conversation])
 
-  async function run(action: () => Promise<TeamsWrite>): Promise<void> {
+  // True when the write went through.
+  async function run(action: () => Promise<TeamsWrite>): Promise<boolean> {
     setWriting(true)
     setProblem(null)
+    let succeeded = false
     try {
       const result = await action()
+      succeeded = result.ok
       if (!result.ok) {
         setProblem(errorText(result.error))
       }
@@ -73,6 +94,7 @@ export function TeamsView({
     } finally {
       setWriting(false)
     }
+    return succeeded
   }
 
   // A composer send: the thread reads again afterwards. A lost connection counts as uncertain.
@@ -113,7 +135,7 @@ export function TeamsView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-center gap-2 py-1.5">
+      <div className="relative flex flex-wrap items-center gap-2 py-1.5">
         {options.length === 0 ? null : (
           <ConversationSelect options={options} value={id} onChange={setSelected} />
         )}
@@ -137,9 +159,18 @@ export function TeamsView({
         >
           {t('Refresh', 'Làm mới')}
         </Button>
-        <span className="min-w-0 flex-1 text-sm text-muted" role="status">
-          {problem ?? (isFetching ? t('Reading...', 'Đang đọc...') : '')}
+        {/* A fixed-size slot: the 10 s background read must not change the header's layout. */}
+        <span
+          className="absolute right-1 top-2.5 flex size-5 items-center justify-center"
+          role="status"
+        >
+          {isFetching ? <Spinner size="sm" aria-label={t('Reading...', 'Đang đọc...')} /> : null}
         </span>
+        {problem === null ? null : (
+          <span className="min-w-0 basis-full text-sm text-danger" role="alert">
+            {problem}
+          </span>
+        )}
       </div>
       <StatePanel
         view={view}
@@ -173,7 +204,21 @@ export function TeamsView({
             void run(() => reactToMessage(ticket, view.conversationId, message.id, key))
           }}
           onAskClaude={(message) => {
-            void run(() => handOffMessage(ticket, view.conversationId, message.id, firstSession))
+            // The task file and the line to Claude take a moment; the chat shows the ask at once.
+            addEcho(
+              firstSession,
+              t(
+                `Look into the Teams message from ${message.senderName}.`,
+                `Xem tin nhắn Teams của ${message.senderName}.`,
+              ),
+            )
+            void run(() =>
+              handOffMessage(ticket, view.conversationId, message.id, firstSession),
+            ).then((ok) => {
+              if (!ok) {
+                dropEchoes(firstSession)
+              }
+            })
           }}
           onEdit={(message) => {
             setEditingId(message.id)
@@ -185,6 +230,20 @@ export function TeamsView({
       ) : null}
       {view.state === 'thread' ? (
         <div className="flex flex-col gap-2 py-2" data-testid="teams-compose-slot">
+          <TeamsAnalysisPanel
+            ticket={ticket}
+            conversationId={view.conversationId}
+            lastMessageId={view.thread.messages.at(-1)?.id ?? ''}
+            session={firstSession}
+            waitingLine={waitingLineOf(view.thread.messages.at(-1), view.myId, timeZone)}
+            onUseReply={(text) => {
+              setLoadedReply((current) => ({
+                id: (current?.id ?? 0) + 1,
+                html: paragraphsFromText(text),
+                mentions: [],
+              }))
+            }}
+          />
           {view.bugReplies.map((reply) => (
             <TeamsBugReplyCard
               key={reply.fix.bugKey}

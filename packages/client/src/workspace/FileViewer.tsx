@@ -7,6 +7,9 @@ import { rawFileUrl } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { CopyBlock } from '../ui/CopyBlock.js'
 import { CopyButton } from '../ui/CopyButton.js'
+import { copyWithListMarkers } from '../ui/copyListMarkers.js'
+import { ctrlLinkHint, openLinkOnCtrl } from '../ui/ctrlLink.js'
+import { remarkBreaks } from '../ui/remarkBreaks.js'
 import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
 import { Segmented } from '../ui/Segmented.js'
 
@@ -71,7 +74,13 @@ function MarkdownView(props: FileViewerProps & { readonly text: string }): React
     a: ({ href, children }) => {
       if (href !== undefined && REMOTE_LINK.test(href)) {
         return (
-          <a href={href} target="_blank" rel="noreferrer">
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            title={ctrlLinkHint()}
+            onClick={openLinkOnCtrl}
+          >
             {children}
           </a>
         )
@@ -102,8 +111,8 @@ function MarkdownView(props: FileViewerProps & { readonly text: string }): React
     },
   }
   return (
-    <div className="markdown-view">
-      <Markdown remarkPlugins={[remarkGfm]} components={components}>
+    <div className="markdown-view" onCopy={copyWithListMarkers}>
+      <Markdown remarkPlugins={[remarkGfm, remarkBreaks]} components={components}>
         {text}
       </Markdown>
     </div>

@@ -9,6 +9,7 @@ import {
   type PrTracking,
   type TeamsChannel,
   type TeamsConfig,
+  type TeamsAnalysisView,
   type TeamsConversationView,
   type TeamsGroupChat,
   type TeamsImage,
@@ -17,6 +18,7 @@ import {
   type TeamsThread,
 } from '@workday/core'
 import type { TeamsGateway } from './teamsChatClient.js'
+import { TeamsAnalysisRunner } from './teamsAnalysisRunner.js'
 import { loadPostDraft, ticketSummary } from './teamsDraft.js'
 import { buildClaudeTask, handOff, type PromptOutcome } from './teamsHandOff.js'
 import { isLoadableImageUrl, TeamsLookup, type TeamsLookupDeps } from './teamsLookup.js'
@@ -39,8 +41,16 @@ export interface TeamsServiceDeps extends TeamsLookupDeps {
   readonly workspace: {
     promptState(name: string): PromptOutcome
     prompt(name: string, text: string): PromptOutcome
+    assistantTexts(name: string): readonly string[]
   }
   readonly tmpDir: string
+  readonly logError?: (message: string, error: unknown) => void
+}
+
+export interface AnalyzeRequest {
+  readonly conversationId: string
+  readonly mainPoint: string | null
+  readonly session: string
 }
 
 export interface HandOffRequest {
@@ -62,6 +72,7 @@ const NOT_CONFIGURED: TeamsSettings = {
 export class TeamsService {
   readonly lookup: TeamsLookup
   readonly write: TeamsWrites
+  private readonly analysis: TeamsAnalysisRunner
   private settings: TeamsSettings = NOT_CONFIGURED
   private signedIn: boolean | null = null
   private readonly signInListeners: (() => void)[] = []
@@ -69,6 +80,46 @@ export class TeamsService {
   constructor(private readonly deps: TeamsServiceDeps) {
     this.lookup = new TeamsLookup(deps)
     this.write = new TeamsWrites(this.lookup)
+    this.analysis = new TeamsAnalysisRunner({
+      workspace: deps.workspace,
+      tmpDir: deps.tmpDir,
+      now: deps.now,
+      timeZone: () => this.settings.timeZone,
+      devRepoPath: () => this.settings.devRepoPath,
+      logError: deps.logError ?? console.error,
+    })
+  }
+
+  // Sends the conversation to Claude for analysis; the answer shows up in analysisStatus.
+  async analyze(ticketKey: string, request: AnalyzeRequest): Promise<Outcome> {
+    const { chat } = this.settings
+    if (chat === null) {
+      return { ok: false, error: { code: 'teamsNotConfigured' } }
+    }
+    try {
+      const thread = await this.lookup.resolveThread(chat, ticketKey, request.conversationId)
+      if (thread === null) {
+        return { ok: false, error: { code: 'teamsFailed' } }
+      }
+      return await this.analysis.start({
+        ticketKey,
+        summary: ticketSummary(this.deps.board.snapshot(), ticketKey),
+        thread,
+        myId: await chat.myId(),
+        mainPoint: request.mainPoint,
+        session: request.session,
+      })
+    } catch (error: unknown) {
+      return { ok: false, error: teamsError(error) }
+    }
+  }
+
+  analysisStatus(
+    ticketKey: string,
+    conversationId: string,
+    lastMessageId: string,
+  ): Promise<TeamsAnalysisView> {
+    return this.analysis.status(ticketKey, conversationId, lastMessageId)
   }
 
   // True when the client or the watch list changed.
@@ -266,7 +317,7 @@ export class TeamsService {
       people: this.lookup.known,
     })
     const posted = this.lookup.postedAt(ticketKey) !== null
-    return { state: 'notPosted', options, channelId, draft, posted }
+    return { state: 'notPosted', options, channelId, draft, posted, people: this.lookup.known }
   }
 
   private threadView(

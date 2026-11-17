@@ -118,7 +118,7 @@ it('Enter sends the prompt, Shift+Enter adds a line', async () => {
 it('Stop shows while working and calls interrupt', async () => {
   const fetchMock = stubChat({ working: true })
   renderWithQuery(<ChatView session="claude" tabId="claude" />)
-  expect(await screen.findByText('Working...')).toBeInTheDocument()
+  expect(await screen.findByLabelText('Working...')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Stop' }))
@@ -341,4 +341,48 @@ it('offers no rewind while Claude is not running', async () => {
   renderWithQuery(<ChatView session="claude" tabId="claude" />)
   expect(await screen.findByText('fix it')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Rewind files to here' })).not.toBeInTheDocument()
+})
+
+function userMessage(id: number, text: string): ChatMessage {
+  return { ...tool(id), role: 'user', text, toolName: null, toolDetail: null }
+}
+
+it('Up in the empty box recalls earlier prompts, Down comes back to the draft', async () => {
+  stubChat({ messages: [userMessage(1, 'first'), userMessage(2, 'second')] })
+  renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  const box = await screen.findByRole<HTMLTextAreaElement>('textbox', {
+    name: 'Message to Claude',
+  })
+  await screen.findByText('second')
+  fireEvent.change(box, { target: { value: 'draft' } })
+  box.setSelectionRange(0, 0)
+  fireEvent.keyDown(box, { key: 'ArrowUp' })
+  expect(box).toHaveValue('second')
+  box.setSelectionRange(0, 0)
+  fireEvent.keyDown(box, { key: 'ArrowUp' })
+  expect(box).toHaveValue('first')
+  fireEvent.keyDown(box, { key: 'ArrowDown' })
+  expect(box).toHaveValue('second')
+  fireEvent.keyDown(box, { key: 'ArrowDown' })
+  expect(box).toHaveValue('draft')
+})
+
+it('shows a sent prompt at once, before the transcript has it', async () => {
+  stubChat()
+  renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  const box = await screen.findByRole('textbox', { name: 'Message to Claude' })
+  fireEvent.change(box, { target: { value: 'hello there' } })
+  fireEvent.keyDown(box, { key: 'Enter' })
+  expect(await screen.findByText('hello there')).toBeInTheDocument()
+})
+
+it('the clear button empties the box, and the spinner sits inside the box while Claude works', async () => {
+  stubChat({ working: true })
+  renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  const box = await screen.findByRole('textbox', { name: 'Message to Claude' })
+  expect(box.parentElement).toContainElement(await screen.findByLabelText('Working...'))
+  expect(screen.queryByRole('button', { name: 'Clear text' })).not.toBeInTheDocument()
+  fireEvent.change(box, { target: { value: 'draft' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Clear text' }))
+  expect(box).toHaveValue('')
 })

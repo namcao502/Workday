@@ -1,4 +1,10 @@
-import type { AppError, TeamsDraft, TeamsReadView, TeamsStatusView } from '@workday/core'
+import type {
+  AppError,
+  TeamsAnalysisView,
+  TeamsDraft,
+  TeamsReadView,
+  TeamsStatusView,
+} from '@workday/core'
 import { isRecord } from '../json.js'
 import { ApiError, hasOkFlag, isPlainCode, send } from './client.js'
 
@@ -123,4 +129,36 @@ export async function getTeamsStatus(): Promise<TeamsStatusView> {
     throw new ApiError(raw.status, path)
   }
   return raw.body as unknown as TeamsStatusView
+}
+
+export const analysisKey = (ticket: string, conversation: string): readonly string[] => [
+  'teams-analysis',
+  ticket,
+  conversation,
+]
+
+export async function getAnalysis(
+  ticket: string,
+  conversation: string,
+  lastMessageId: string,
+): Promise<TeamsAnalysisView> {
+  const query = `conversation=${encodeURIComponent(conversation)}&last=${encodeURIComponent(lastMessageId)}`
+  const path = `/api/teams/${encodeURIComponent(ticket)}/analysis?${query}`
+  const raw = await send('GET', path)
+  if (!raw.ok || !isRecord(raw.body) || typeof raw.body['kind'] !== 'string') {
+    throw new ApiError(raw.status, path)
+  }
+  return raw.body as unknown as TeamsAnalysisView
+}
+
+// Sends the conversation to Claude; the answer is read back through getAnalysis.
+export function startAnalysis(
+  ticket: string,
+  request: {
+    readonly conversationId: string
+    readonly mainPoint: string | null
+    readonly session: string
+  },
+): Promise<TeamsWrite> {
+  return write(ticketPath(ticket, 'analyze'), request)
 }

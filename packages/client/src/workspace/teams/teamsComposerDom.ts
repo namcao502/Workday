@@ -253,25 +253,79 @@ export type FormatCommand =
   | 'blockquote'
   | 'codeBlock'
 
+function anchorElement(editor: HTMLElement): Element | null {
+  const range = currentRange(editor)
+  const node = range?.startContainer ?? null
+  return node instanceof Element ? node : (node?.parentElement ?? null)
+}
+
+// A quote unwraps in place; any other block becomes a quote, and a code block turns back into text first.
+function toggleQuote(editor: HTMLElement | null): void {
+  const quote = editor === null ? null : (anchorElement(editor)?.closest('blockquote') ?? null)
+  if (quote === null) {
+    if (editor !== null && (anchorElement(editor)?.closest('pre') ?? null) !== null) {
+      document.execCommand('formatBlock', false, 'p')
+    }
+    document.execCommand('formatBlock', false, 'blockquote')
+    return
+  }
+  const range = document.createRange()
+  range.selectNodeContents(quote)
+  quote.replaceWith(...Array.from(quote.childNodes))
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+}
+
 // A caret or selection inside a <pre> turns back into a paragraph; anywhere else it becomes a code block.
-function toggleCodeBlock(): void {
-  const anchor = window.getSelection()?.anchorNode ?? null
-  const element = anchor instanceof Element ? anchor : (anchor?.parentElement ?? null)
-  const inside = element?.closest('pre') ?? null
+function toggleCodeBlock(editor: HTMLElement | null): void {
+  const inside = editor === null ? null : (anchorElement(editor)?.closest('pre') ?? null)
   document.execCommand('formatBlock', false, inside === null ? 'pre' : 'p')
 }
 
-export function applyFormat(command: FormatCommand): void {
+export function applyFormat(command: FormatCommand, editor: HTMLElement | null = null): void {
   if (typeof document.execCommand !== 'function') {
     return
   }
   if (command === 'blockquote') {
-    document.execCommand('formatBlock', false, 'blockquote')
+    toggleQuote(editor)
   } else if (command === 'codeBlock') {
-    toggleCodeBlock()
+    toggleCodeBlock(editor)
   } else {
     document.execCommand(command)
   }
+}
+
+const STATE_COMMANDS: readonly FormatCommand[] = [
+  'bold',
+  'italic',
+  'underline',
+  'strikeThrough',
+  'insertUnorderedList',
+  'insertOrderedList',
+]
+
+// The formats the caret or selection is in, so the toolbar can show which buttons are on.
+export function activeFormats(editor: HTMLElement): ReadonlySet<FormatCommand> {
+  const active = new Set<FormatCommand>()
+  if (currentRange(editor) === null) {
+    return active
+  }
+  if (typeof document.queryCommandState === 'function') {
+    for (const command of STATE_COMMANDS) {
+      if (document.queryCommandState(command)) {
+        active.add(command)
+      }
+    }
+  }
+  const element = anchorElement(editor)
+  if ((element?.closest('blockquote') ?? null) !== null) {
+    active.add('blockquote')
+  }
+  if ((element?.closest('pre') ?? null) !== null) {
+    active.add('codeBlock')
+  }
+  return active
 }
 
 // A collapsed caret gets the URL as its own link text; a selection is wrapped.

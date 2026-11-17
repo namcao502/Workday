@@ -1,5 +1,5 @@
 import type { WorkspaceTab } from '@workday/core'
-import { Badge, Button } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { useEffect, useState } from 'react'
 import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
@@ -40,7 +40,11 @@ function TeamsTabButton({
     >
       Teams
       {pending ? (
-        <Badge color="danger" size="sm" role="img" aria-label={t('New messages', 'Có tin mới')} />
+        <span
+          className="size-2 flex-none rounded-full bg-danger"
+          role="img"
+          aria-label={t('New messages', 'Có tin mới')}
+        />
       ) : null}
     </button>
   )
@@ -64,7 +68,7 @@ export function LeftPane({
   }, [teamsConversation, isTicket])
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-testid="workspace-left">
-      <div className="flex items-center gap-1.5 pb-2">
+      <div className="flex flex-wrap items-center gap-1.5 pb-2">
         <div role="tablist" className={SEGMENT_GROUP}>
           <button
             type="button"

@@ -19,6 +19,8 @@ import {
   type TicketTracker,
   type TimesheetView,
   type WeekState,
+  type WeekStep,
+  type WeekStepId,
   type ZonedClock,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
@@ -26,7 +28,7 @@ import type { RecordJob } from '../schedules/jobRuns.js'
 import { loggableKeys } from '../workspace/bugFixes.js'
 import { isFullySuccessful, logEntry, sheetStep, type LogTarget } from './logEntry.js'
 import { checkTickets, MineCache, type BoardKeys } from './ticketCheck.js'
-import { readCoverage, reviewOf } from './weekReader.js'
+import { readCoverage, reviewOf, type StepReporter } from './weekReader.js'
 
 export interface TimesheetSettings {
   readonly sheet: SheetLog | null
@@ -307,8 +309,16 @@ export class TimesheetService {
     const previous = this.week
     this.week =
       previous !== null && previous.monday === monday
-        ? { ...previous, reading: true }
-        : { monday, reading: true, coverage: null, review: null, hrmTasks: null, readAt: null }
+        ? { ...previous, reading: true, steps: this.firstSteps() }
+        : {
+            monday,
+            reading: true,
+            steps: this.firstSteps(),
+            coverage: null,
+            review: null,
+            hrmTasks: null,
+            readAt: null,
+          }
     this.broadcast()
     const run = this.weekReads.then(() => this.runWeekRead(monday, allowSniff))
     this.weekReads = run.catch(() => undefined)
@@ -354,24 +364,63 @@ export class TimesheetService {
   private async runWeekRead(monday: string, allowSniff: boolean): Promise<void> {
     const { sheet, hours, tracker, projectKey, offMarker } = this.settings
     const today = this.clock().date
-    const coverage = await readCoverage(sheet, hours, monday, today, allowSniff, this.logError)
+    const report: StepReporter = (id, state) => {
+      this.setStep(monday, id, state)
+    }
+    const coverage = await readCoverage(
+      sheet,
+      hours,
+      monday,
+      today,
+      allowSniff,
+      this.logError,
+      report,
+    )
     if (this.week === null || this.week.monday !== monday) {
       return
     }
     this.week = { ...this.week, reading: false, coverage, readAt: this.now() }
     this.broadcast()
-    const { review, hrmTasks } = await reviewOf(coverage, monday, today, {
-      hours,
-      tracker,
-      mineCache: this.mineCache,
-      board: this.deps.board,
-      projectKey,
-      offMarker,
-    })
+    const { review, hrmTasks } = await reviewOf(
+      coverage,
+      monday,
+      today,
+      {
+        hours,
+        tracker,
+        mineCache: this.mineCache,
+        board: this.deps.board,
+        projectKey,
+        offMarker,
+      },
+      report,
+    )
     if (this.week.monday === monday) {
-      this.week = { ...this.week, review, hrmTasks }
+      this.week = { ...this.week, review, hrmTasks, steps: [] }
       this.broadcast()
     }
+  }
+
+  // The parts this read will run, all waiting: what the settings leave out is not listed.
+  private firstSteps(): readonly WeekStep[] {
+    const { sheet, hours, tracker } = this.settings
+    const ids: readonly WeekStepId[] = [
+      ...(sheet === null ? [] : (['tsc'] as const)),
+      ...(hours === null ? [] : (['hrmHours', 'hrmOff', 'hrmTasks'] as const)),
+      ...(tracker === null ? [] : (['jira'] as const)),
+    ]
+    return ids.map((id) => ({ id, state: 'pending' }))
+  }
+
+  private setStep(monday: string, id: WeekStepId, state: WeekStep['state']): void {
+    if (this.week === null || this.week.monday !== monday) {
+      return
+    }
+    this.week = {
+      ...this.week,
+      steps: this.week.steps.map((step) => (step.id === id ? { id, state } : step)),
+    }
+    this.broadcast()
   }
 
   // Refreshes the week on screen after a write, without opening a browser.
@@ -412,7 +461,10 @@ export class TimesheetService {
   }
 
   // Dropping duplicates would misalign explicit minutes, so with minutes keys are only replaced.
-  private loggable(tickets: readonly string[], minutes: readonly number[] | null): readonly string[] {
+  private loggable(
+    tickets: readonly string[],
+    minutes: readonly number[] | null,
+  ): readonly string[] {
     const parents = this.deps.qcBugParents?.() ?? new Map<string, string>()
     return minutes === null
       ? loggableKeys(tickets, parents)

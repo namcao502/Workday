@@ -13,6 +13,7 @@ import { fileProblem, readAttached, sizeText, type AttachedFile } from './teamsC
 import { imageFiles, imageProblem, pickImage } from './teamsComposerImages.js'
 import { TeamsComposerToolbar } from './TeamsComposerToolbar.js'
 import {
+  activeFormats,
   applyFormat,
   applyLink,
   chipBefore,
@@ -81,6 +82,8 @@ export function TeamsComposer({
   const [sending, setSending] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
   const [uncertain, setUncertain] = useState(false)
+  const [formats, setFormats] = useState<ReadonlySet<FormatCommand>>(new Set())
+  const [linkRequest, setLinkRequest] = useState(0)
   const suggestions = trigger === null ? [] : matchPeople(people, trigger.query)
 
   useEffect(() => {
@@ -89,6 +92,28 @@ export function TeamsComposer({
     }
     // Loaded once: the caller remounts the composer to load another draft.
   }, [])
+
+  // The toolbar shows the formats at the caret; the selection is tracked only while it is inside this editor.
+  useEffect(() => {
+    function onSelectionChange(): void {
+      const editor = editorRef.current
+      if (editor !== null && currentRange(editor) !== null) {
+        setFormats(activeFormats(editor))
+      }
+    }
+    document.addEventListener('selectionchange', onSelectionChange)
+    return () => {
+      document.removeEventListener('selectionchange', onSelectionChange)
+    }
+  }, [])
+
+  function format(command: FormatCommand): void {
+    const editor = editorRef.current
+    applyFormat(command, editor)
+    if (editor !== null) {
+      setFormats(activeFormats(editor))
+    }
+  }
 
   function refreshTrigger(): void {
     const editor = editorRef.current
@@ -238,6 +263,11 @@ export function TeamsComposer({
         return
       }
     }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault()
+      setLinkRequest((count) => count + 1)
+      return
+    }
     if ((event.ctrlKey || event.metaKey) && 'biu'.includes(event.key.toLowerCase())) {
       event.preventDefault()
       const keys: Readonly<Record<string, FormatCommand>> = {
@@ -247,7 +277,7 @@ export function TeamsComposer({
       }
       const command = keys[event.key.toLowerCase()]
       if (command !== undefined) {
-        applyFormat(command)
+        format(command)
       }
       return
     }
@@ -288,7 +318,9 @@ export function TeamsComposer({
       ) : null}
       <TeamsComposerToolbar
         disabled={sending}
-        onFormat={applyFormat}
+        active={formats}
+        linkRequest={linkRequest}
+        onFormat={format}
         onLinkOpen={() => {
           const editor = editorRef.current
           linkRangeRef.current =
@@ -308,7 +340,7 @@ export function TeamsComposer({
       />
       <div
         ref={editorRef}
-        className="max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-xl bg-surface-secondary p-2 text-sm outline-none focus:bg-field-focus [&_pre]:my-1 [&_pre]:rounded-lg [&_pre]:bg-surface [&_pre]:p-2 [&_pre]:font-mono [&_pre]:text-xs"
+        className="teams-content max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-2xl bg-surface-secondary p-2 text-sm outline-none focus:bg-field-focus"
         role="textbox"
         aria-multiline="true"
         aria-label={label}
@@ -349,7 +381,7 @@ export function TeamsComposer({
           {files.map((file) => (
             <li
               key={file.id}
-              className="flex items-center gap-1 rounded-xl bg-surface-secondary py-0.5 pl-3 pr-1 text-sm"
+              className="flex items-center gap-1 rounded-lg bg-surface-secondary py-0.5 pl-3 pr-1 text-sm"
             >
               <span className="max-w-60 truncate">{file.name}</span>
               <span className="text-xs text-muted">{sizeText(file.size)}</span>
@@ -366,7 +398,7 @@ export function TeamsComposer({
       )}
       {suggestions.length === 0 ? null : (
         <ul
-          className="m-0 list-none rounded-xl bg-overlay p-1 shadow-overlay"
+          className="m-0 list-none rounded-2xl bg-overlay p-1 shadow-overlay"
           role="listbox"
           aria-label={t('People', 'Mọi người')}
         >

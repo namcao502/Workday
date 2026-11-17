@@ -75,6 +75,23 @@ describe('workspace routes', () => {
     expect(again.statusCode).toBe(404)
   })
 
+  it('PUT a tab position reorders; a bad index is 400 and an unknown tab 404', async () => {
+    const { app } = await localApp()
+    await postTerminal(app, null)
+    await postTerminal(app, null)
+    const put = (id: string, body: unknown) =>
+      app.inject({
+        method: 'PUT',
+        url: `/api/workspace/tabs/${id}/position`,
+        headers: LOOPBACK_HEADERS,
+        payload: body as object,
+      })
+    const moved = await put('claude2', { index: 0 })
+    expect(moved.json<WorkspaceView>().tabs.map((tab) => tab.id)).toEqual(['claude2', 'claude'])
+    expect((await put('claude', { index: -1 })).statusCode).toBe(400)
+    expect((await put('nope', { index: 0 })).statusCode).toBe(404)
+  })
+
   it('sessions: add, close the main one (409), close the extra one', async () => {
     const { app } = await localApp()
     await postTerminal(app, null)

@@ -89,3 +89,22 @@ export function closeTab(state: WorkspaceTabsState, tabId: string): WorkspaceTab
   }
   return { tabs: state.tabs.filter((tab) => tab.id !== tabId) }
 }
+
+// The tab ends up at `index` of the new order (clamped); the same state when nothing moves.
+export function moveTab(
+  state: WorkspaceTabsState,
+  tabId: string,
+  index: number,
+): WorkspaceTabsState {
+  const from = state.tabs.findIndex((tab) => tab.id === tabId)
+  const tab = state.tabs[from]
+  if (tab === undefined) {
+    return state
+  }
+  const others = state.tabs.filter((candidate) => candidate !== tab)
+  const to = Math.max(0, Math.min(index, others.length))
+  if (to === from) {
+    return state
+  }
+  return { tabs: [...others.slice(0, to), tab, ...others.slice(to)] }
+}

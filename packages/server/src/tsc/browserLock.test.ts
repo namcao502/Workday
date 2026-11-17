@@ -20,4 +20,16 @@ describe('BrowserLock', () => {
     expect(lock.tryAcquire()).toBeNull()
     second?.()
   })
+
+  it('preempt stops a background holder and frees the lock, but not a holder that offers no stop', async () => {
+    const lock = new BrowserLock()
+    const release = lock.tryAcquire()
+    lock.offerStop(() => {
+      release?.()
+      return Promise.resolve()
+    })
+    expect(await lock.preempt()).toBe(true)
+    expect(lock.tryAcquire()).not.toBeNull()
+    expect(await lock.preempt()).toBe(false)
+  })
 })

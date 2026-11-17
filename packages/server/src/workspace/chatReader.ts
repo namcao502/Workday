@@ -1,3 +1,4 @@
+import { statSync } from 'node:fs'
 import {
   parseTranscript,
   transcriptUsage,
@@ -38,6 +39,49 @@ function pageStart(messages: readonly ChatMessage[]): number {
   return start
 }
 
+interface ParsedTranscript {
+  readonly size: number
+  readonly modifiedMs: number
+  readonly cwd: string | null
+  readonly messages: readonly ChatMessage[]
+  readonly usage: TranscriptUsage
+}
+
+// Parsing a multi-megabyte transcript costs hundreds of ms, and every client refetch asks again: an unchanged file
+// (same size and time) is parsed once. Only the latest few sessions are kept.
+const MAX_CACHED = 8
+const parsedByPath = new Map<string, ParsedTranscript>()
+
+function parseCached(path: string, cwd: string | null): ParsedTranscript {
+  const { size, mtimeMs } = statSync(path)
+  const cached = parsedByPath.get(path)
+  if (
+    cached !== undefined &&
+    cached.size === size &&
+    cached.modifiedMs === mtimeMs &&
+    cached.cwd === cwd
+  ) {
+    return cached
+  }
+  const { lines, offsets } = readTranscriptLines(path)
+  const parsed: ParsedTranscript = {
+    size,
+    modifiedMs: mtimeMs,
+    cwd,
+    messages: parseTranscript(lines, offsets, cwd),
+    usage: transcriptUsage(lines),
+  }
+  parsedByPath.delete(path)
+  parsedByPath.set(path, parsed)
+  for (const oldest of [...parsedByPath.keys()].slice(
+    0,
+    Math.max(0, parsedByPath.size - MAX_CACHED),
+  )) {
+    parsedByPath.delete(oldest)
+  }
+  return parsed
+}
+
 // A null or unreadable path is an empty chat; the caller has already checked the path is accepted.
 export function readChat(path: string | null, cwd: string | null, working: boolean): ChatView {
   if (path === null) {
@@ -46,9 +90,9 @@ export function readChat(path: string | null, cwd: string | null, working: boole
   let parsed: readonly ChatMessage[]
   let usage: TranscriptUsage
   try {
-    const { lines, offsets } = readTranscriptLines(path)
-    parsed = parseTranscript(lines, offsets, cwd)
-    usage = transcriptUsage(lines)
+    const read = parseCached(path, cwd)
+    parsed = read.messages
+    usage = read.usage
   } catch {
     return { ...EMPTY, working }
   }

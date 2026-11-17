@@ -51,6 +51,8 @@ import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
 import { qcBugsOf, readBugFixes } from './workspace/bugFixes.js'
 import { BugFixer } from './workspace/fixBug.js'
+import { readDayActivity } from './timesheet/dayActivity.js'
+import { createDaySuggestions, type DaySuggestionsSource } from './timesheet/daySuggestions.js'
 import { TimesheetService } from './timesheet/timesheetService.js'
 import { defaultClaudeExecutable, sessionEnvironment } from './workspace/launchEnvironment.js'
 import type { SpawnEditor } from './workspace/openInEditor.js'
@@ -106,6 +108,7 @@ export interface Services {
   readonly board: BoardService
   readonly settings: SettingsService
   readonly timesheet: TimesheetService
+  readonly daySuggestions: DaySuggestionsSource
   readonly events: EventHub
   readonly remote: RemoteService
   readonly notices: NoticeService
@@ -383,6 +386,13 @@ export function createServices(options: ServicesOptions): Services {
     hrmTasks: (from, to) => timesheet.hrmTasks(from, to),
     logError: reportError,
   })
+  const daySuggestions = createDaySuggestions({
+    board: () => board.snapshot(),
+    timesheet: () => timesheet.view(),
+    config: () => settings.view().config,
+    readActivity: (activityOptions) =>
+      readDayActivity({ ...activityOptions, projectsRoot: join(homeDir, '.claude', 'projects') }),
+  })
   const schedules: SchedulesSource = {
     runner: scanRunner,
     jobRuns,
@@ -403,6 +413,7 @@ export function createServices(options: ServicesOptions): Services {
     board,
     settings,
     timesheet,
+    daySuggestions,
     events,
     remote,
     notices,

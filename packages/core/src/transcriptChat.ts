@@ -417,7 +417,14 @@ export function parseTranscript(
     const isSidechain = flag(root, 'isSidechain')
     const attachment = root['attachment']
     if (type === 'attachment' && !isSidechain && str(attachment, 'type') === 'queued_command') {
-      addUserText(str(attachment, 'prompt'), idStart, at)
+      const prompt = str(attachment, 'prompt')
+      const kind = str(isJson(attachment) ? attachment['origin'] : null, 'kind')
+      // Only what a person typed is a user row; a finished background task becomes a step.
+      if (kind === null || kind === 'human') {
+        addUserText(prompt, idStart, at)
+      } else if (kind === 'task-notification' && prompt !== null) {
+        addTaskNotification(prompt, idStart, at)
+      }
       return
     }
     if (type === 'system' && !isSidechain) {

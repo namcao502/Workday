@@ -144,7 +144,7 @@ export function SuggestionsCard({
             </Chip>
           )
           return (
-            <li key={ticket.key} className="flex items-center gap-3 rounded-xl px-2 py-2">
+            <li key={ticket.key} className="flex items-center gap-3 rounded-lg px-2 py-2">
               <TodoIcon
                 tone={suggestion.urgent ? 'warning' : 'accent'}
                 icon={suggestion.urgent ? '!' : '+'}

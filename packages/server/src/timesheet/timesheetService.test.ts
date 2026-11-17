@@ -292,6 +292,21 @@ describe('TimesheetService week', () => {
     ])
   })
 
+  it('lists the parts of a read while it runs and none once it is over', async () => {
+    const { service, sheet } = setup()
+    const gate = deferred<SheetRead>()
+    sheet.read = () => gate.promise
+    const run = service.readWeek(MONDAY, false)
+    const during = service.view().week?.steps.map((step) => step.id)
+    expect(during).toEqual(['tsc', 'hrmHours', 'hrmOff', 'hrmTasks', 'jira'])
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(service.view().week?.steps.find((step) => step.id === 'tsc')?.state).toBe('running')
+    gate.resolve({ kind: 'read', cells: {} })
+    await run
+    expect(service.view().week?.steps).toEqual([])
+  })
+
   it('a failed sheet read logs why', async () => {
     const logged: { message: string; error: unknown }[] = []
     const { service, sheet } = setup({

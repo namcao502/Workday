@@ -1,7 +1,7 @@
 import type { AgentImage, AgentImageType, AgentMode, ChatAnswer } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import { isRecord } from '../jsonFile.js'
-import { readGitStatus } from '../workspace/gitStatus.js'
+import { readGitStatusCached } from '../workspace/gitStatus.js'
 import type { WorkspaceService } from '../workspace/workspaceService.js'
 
 export const MAX_PROMPT_LENGTH = 100_000
@@ -122,7 +122,7 @@ export function registerChatRoutes(app: FastifyInstance, workspace: WorkspaceSer
         return reply.code(404).send(SESSION_NOT_FOUND)
       }
       const cwd = workspace.sessionDirectory(request.params.name)
-      return cwd === null ? chat : { ...chat, ...(await readGitStatus(cwd)) }
+      return cwd === null ? chat : { ...chat, ...(await readGitStatusCached(cwd)) }
     },
   )
 

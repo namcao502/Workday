@@ -82,7 +82,7 @@ it('teams view polls again while searching', async () => {
   expect(fetchMock.mock.calls.length).toBeGreaterThan(before)
 })
 
-it('message row sanitizes html and routes AMS images through the proxy', () => {
+it('message row sanitizes html and routes AMS images through the proxy, no popup', () => {
   const content = `<p>hi<script>alert(1)</script></p><img itemtype="http://schema.skype.com/AMSImage" src="${AMS}">`
   const open = vi.spyOn(window, 'open').mockReturnValue(null)
   const { container } = renderWithQuery(
@@ -101,11 +101,8 @@ it('message row sanitizes html and routes AMS images through the proxy', () => {
   const image = container.querySelector('.teams-content img')
   expect(image?.getAttribute('src')).toBe(`/api/teams/image?url=${encodeURIComponent(AMS)}`)
   fireEvent.click(image as Element)
-  expect(open).toHaveBeenCalledWith(
-    expect.stringContaining('/api/teams/image?url='),
-    '_blank',
-    'noopener',
-  )
+  // The image opens in the in-app viewer (TeamsThread), never in a new window.
+  expect(open).not.toHaveBeenCalled()
 })
 
 it('own message shows edit and delete; delete asks first', async () => {

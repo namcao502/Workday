@@ -75,6 +75,17 @@ export function registerWorkspaceRoutes(app: FastifyInstance, workspace: Workspa
     reply(await workspace.closeTab(request.params.id), response),
   )
 
+  app.put<{ Params: { id: string } }>(
+    '/api/workspace/tabs/:id/position',
+    async (request, response) => {
+      const index = isRecord(request.body) ? request.body['index'] : undefined
+      if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) {
+        return response.code(400).send({ error: 'Body must be { index: whole number >= 0 }' })
+      }
+      return reply(await workspace.moveTab(request.params.id, index), response)
+    },
+  )
+
   app.post<{ Params: { id: string } }>(
     '/api/workspace/tabs/:id/sessions',
     async (request, response) => reply(await workspace.addSession(request.params.id), response),

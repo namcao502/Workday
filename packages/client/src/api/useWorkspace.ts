@@ -22,17 +22,27 @@ import {
   getFiles,
   getWorkspace,
   markSeen,
+  moveTab,
 } from './workspaceApi.js'
+
+const CHAT_STALE_MS = 30_000
+const CHAT_KEEP_MS = 30 * 60_000
 
 // The Workspace is local-only, so a remote device never asks for it. Refetch on workspace.changed is in useEvents.
 export function useWorkspace(): UseQueryResult<WorkspaceView> {
   const local = useAccess().mode === 'local'
-  return useQuery({ queryKey: queryKeys.workspace, queryFn: getWorkspace, enabled: local })
+  return useQuery({
+    queryKey: queryKeys.workspace,
+    queryFn: getWorkspace,
+    enabled: local,
+    staleTime: CHAT_STALE_MS,
+  })
 }
 
 export interface WorkspaceActions {
   readonly addTerminal: (folder: string | null) => Promise<void>
   readonly closeTab: (id: string) => Promise<void>
+  readonly moveTab: (id: string, index: number) => Promise<void>
   readonly addSession: (tabId: string) => Promise<void>
   readonly closeSession: (name: string) => Promise<void>
   readonly markSeen: (name: string) => Promise<void>
@@ -53,6 +63,7 @@ export function useWorkspaceActions(): WorkspaceActions {
     return {
       addTerminal: then(addTerminal),
       closeTab: then(closeTab),
+      moveTab: then(moveTab),
       addSession: then(addSession),
       closeSession: then(closeSession),
       markSeen: then(markSeen),
@@ -127,5 +138,12 @@ export function chatKey(session: string): readonly string[] {
 
 // Refetched by the chat.changed event, not polled; only the shown session asks.
 export function useChat(session: string, active: boolean): UseQueryResult<ChatView> {
-  return useQuery({ queryKey: chatKey(session), queryFn: () => getChat(session), enabled: active })
+  // Kept a while after the page is left, so coming back shows the chat at once instead of "Loading".
+  return useQuery({
+    queryKey: chatKey(session),
+    queryFn: () => getChat(session),
+    enabled: active,
+    staleTime: CHAT_STALE_MS,
+    gcTime: CHAT_KEEP_MS,
+  })
 }

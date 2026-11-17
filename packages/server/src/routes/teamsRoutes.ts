@@ -259,6 +259,34 @@ export function registerTeamsRoutes(
     return { ok: true }
   })
 
+  // Claude's analysis of a conversation: the status for the page, and the start of a run.
+  app.get<{
+    Params: { key: string }
+    Querystring: { conversation?: string; last?: string }
+  }>('/api/teams/:key/analysis', async (request, reply) => {
+    const { key } = request.params
+    const { conversation, last } = request.query
+    if (!isTicketKey(key) || conversation === undefined || last === undefined) {
+      return bad(reply, 'The request is not valid')
+    }
+    return teams.analysisStatus(key, conversation, last)
+  })
+
+  app.post<KeyRequest>('/api/teams/:key/analyze', async (request, reply) => {
+    const { key } = request.params
+    if (!isTicketKey(key)) {
+      return reply.code(400).send({ ok: false, error: { code: 'invalidKey' } })
+    }
+    const body = isRecord(request.body) ? request.body : {}
+    const conversationId = text(body, 'conversationId')
+    const session = text(body, 'session')
+    const mainPoint = nullableText(body, 'mainPoint')
+    if (conversationId === null || session === null || mainPoint === undefined) {
+      return bad(reply, 'The body is not valid')
+    }
+    return teams.analyze(key, { conversationId, session, mainPoint })
+  })
+
   app.post<KeyRequest>('/api/teams/:key/handoff', async (request, reply) => {
     const { key } = request.params
     if (!isTicketKey(key)) {

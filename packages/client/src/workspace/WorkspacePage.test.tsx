@@ -125,3 +125,54 @@ it('switching tickets keeps each Claude session mounted instead of remounting it
   expect(screen.getByTestId('claude-session-MDP-1')).toHaveAttribute('hidden')
   expect(screen.getByTestId('claude-session-MDP-2')).not.toHaveAttribute('hidden')
 })
+
+it('dropping a tab onto another moves it to that place', async () => {
+  const fetchMock = stubWorkspace(view())
+  renderWithQuery(<WorkspacePage />)
+  const first = (await screen.findByRole('tab', { name: 'MDP-1' })).parentElement as HTMLElement
+  const second = screen.getByRole('tab', { name: 'MDP-2' }).parentElement as HTMLElement
+  const dataTransfer = { setData: vi.fn(), effectAllowed: '' }
+  fireEvent.dragStart(second, { dataTransfer })
+  fireEvent.dragOver(first, { dataTransfer })
+  fireEvent.drop(first, { dataTransfer })
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledWith('/api/workspace/tabs/MDP-2/position', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: 0 }),
+    })
+  })
+})
+
+it('opens on the tab the user left when the hash names none', async () => {
+  localStorage.setItem(
+    'workday.workspace.selection',
+    JSON.stringify({ tab: 'MDP-2', session: 'MDP-2' }),
+  )
+  stubWorkspace(view())
+  renderWithQuery(<WorkspacePage />)
+  const second = await screen.findByRole('tab', { name: 'MDP-2' })
+  expect(second).toHaveAttribute('aria-selected', 'true')
+  localStorage.clear()
+})
+
+it('asks before closing a tab even when no session is running, and a running Claude 2 too', async () => {
+  const fetchMock = stubWorkspace(
+    view({
+      sessions: [session('MDP-1', { running: false }), session('MDP-2'), session('MDP-2~2')],
+    }),
+  )
+  renderWithQuery(<WorkspacePage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Close MDP-1' }))
+  expect(await screen.findByText('Close MDP-1?')).toBeInTheDocument()
+  expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Close Claude 2' }))
+  expect(
+    await screen.findByText('Claude 2 is still running. Close it and stop it?'),
+  ).toBeInTheDocument()
+  expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+})

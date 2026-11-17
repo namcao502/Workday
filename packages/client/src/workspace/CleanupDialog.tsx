@@ -55,7 +55,7 @@ function RowItem({ row, error, busy, onAsk }: RowItemProps): React.JSX.Element {
   return (
     <li
       data-testid={`cleanup-row-${row.ticketKey}`}
-      className="flex flex-col gap-1 rounded-xl bg-surface-secondary px-3 py-2"
+      className="flex flex-col gap-1 rounded-2xl bg-surface-secondary px-3 py-2"
     >
       <div className="flex items-center gap-3">
         <span className="font-medium">{row.ticketKey}</span>

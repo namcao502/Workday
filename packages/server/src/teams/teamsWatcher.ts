@@ -31,6 +31,11 @@ import type { TeamsState } from './teamsStore.js'
 export const TEAMS_CHECK_MINUTES = 2
 const STARTED_TICKET_LIMIT = 10
 
+// After a failed check the next ones wait longer (minutes), so a broken Teams session does not open the
+// sign-in browser, and raise a Microsoft prompt, every two minutes.
+const FAILURE_WAIT_MINUTES: readonly number[] = [2, 5, 15, 30]
+const MILLISECONDS_PER_MINUTE = 60_000
+
 export interface TeamsWatcherDeps {
   readonly lookup: TeamsLookup
   readonly board: { snapshot(): BoardState }
@@ -45,6 +50,7 @@ export interface TeamsWatcherDeps {
   // The current fix drafts, read at the start of each check; without it no bug fix is watched.
   readonly readBugFixes?: () => Promise<readonly BugFix[]>
   readonly recordJob?: RecordJob
+  readonly now?: () => number
   readonly logError: (message: string, error: unknown) => void
 }
 
@@ -108,6 +114,8 @@ export class TeamsWatcher {
   // Conversations the last check read, plus ones marked seen since; their marks are never pruned.
   private readKeys: ReadonlySet<string> = new Set()
   private running = false
+  private failures = 0 // consecutive failed checks
+  private waitUntil = 0 // no check before this time (ms)
   private readonly bugReplies = new BugFixReplies()
 
   constructor(private readonly deps: TeamsWatcherDeps) {}
@@ -181,7 +189,8 @@ export class TeamsWatcher {
 
   async check(): Promise<void> {
     const chat = this.deps.lookup.chat
-    if (chat === null || this.running) {
+    const now = this.deps.now ?? Date.now
+    if (chat === null || this.running || now() < this.waitUntil) {
       return
     }
     this.running = true
@@ -207,8 +216,16 @@ export class TeamsWatcher {
         )
       } else {
         this.deps.logError('The Teams check failed', error)
+        const waitMinutes =
+          FAILURE_WAIT_MINUTES[Math.min(this.failures, FAILURE_WAIT_MINUTES.length - 1)] ?? 0
+        this.failures += 1
+        this.waitUntil = now() + waitMinutes * MILLISECONDS_PER_MINUTE
       }
     } finally {
+      if (ok) {
+        this.failures = 0
+        this.waitUntil = 0
+      }
       this.running = false
       this.broadcastIfFixesChanged(fixesBefore)
       this.deps.recordJob?.('teamsCheck', {

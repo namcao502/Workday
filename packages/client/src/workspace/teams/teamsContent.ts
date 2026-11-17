@@ -1,6 +1,7 @@
 import { fullSizeImageUrl, isAmsImageUrl, safeHtml } from '@workday/core'
 import DOMPurify from 'dompurify'
 import { teamsImageSrc } from '../../api/teamsApi.js'
+import { ctrlLinkHint } from '../../ui/ctrlLink.js'
 
 const FULL_SIZE_ATTRIBUTE = 'data-full-size'
 
@@ -22,20 +23,17 @@ export function renderTeamsHtml(content: string, isPlainText: boolean): string {
   for (const link of parsed.body.querySelectorAll('a')) {
     link.setAttribute('target', '_blank')
     link.setAttribute('rel', 'noopener noreferrer')
+    link.setAttribute('title', ctrlLinkHint())
   }
   return parsed.body.innerHTML
 }
 
-// The full-size proxy URL of a clicked preview image, or null for anything else.
-export function fullSizeProxyUrl(target: EventTarget): string | null {
-  if (!(target instanceof HTMLImageElement)) {
-    return null
-  }
-  const full = target.getAttribute(FULL_SIZE_ATTRIBUTE)
+// The full-size proxy URL of a message image, or null when Teams had no larger copy.
+export function fullImageSrc(image: HTMLImageElement): string | null {
+  const full = image.getAttribute(FULL_SIZE_ATTRIBUTE)
   return full === null ? null : teamsImageSrc(full)
 }
 
-// A stable colour per sender name.
 export function nameColor(name: string): string {
   let hash = 0
   for (const char of name) {

@@ -22,7 +22,7 @@ function FieldRow({
 }): React.JSX.Element {
   const valueClass = isLongField(field) ? 'whitespace-pre-wrap' : ''
   return (
-    <li className="flex flex-col gap-1 rounded-xl bg-surface-secondary px-3 py-2">
+    <li className="flex flex-col gap-1 rounded-2xl bg-surface-secondary px-3 py-2">
       <span className="text-xs font-medium text-muted uppercase">{fieldLabel(field)}</span>
       <div className="grid grid-cols-2 gap-3 text-sm [overflow-wrap:anywhere]">
         <div>

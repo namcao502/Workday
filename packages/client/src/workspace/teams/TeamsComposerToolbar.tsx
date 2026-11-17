@@ -10,12 +10,14 @@ import {
   Underline,
 } from '@gravity-ui/icons'
 import { Button, Input } from '@heroui/react'
-import { useState, type ComponentType, type SVGProps } from 'react'
+import { useEffect, useState, type ComponentType, type SVGProps } from 'react'
 import { t } from '../../i18n.js'
 import { isWebUrl, type FormatCommand } from './teamsComposerDom.js'
 
 interface TeamsComposerToolbarProps {
   readonly disabled: boolean
+  readonly active: ReadonlySet<FormatCommand> // the formats the caret is in
+  readonly linkRequest: number // each increase opens the link row, as the Ctrl+K shortcut does
   readonly onFormat: (command: FormatCommand) => void
   readonly onLinkOpen: () => void // the editor saves its selection before the prompt takes the focus
   readonly onLink: (url: string) => void
@@ -31,23 +33,43 @@ interface FormatButton {
 function formatGroups(): readonly (readonly FormatButton[])[] {
   return [
     [
-      { command: 'bold', label: t('Bold (Ctrl+B)', 'Đậm (Ctrl+B)'), Icon: Bold },
-      { command: 'italic', label: t('Italic (Ctrl+I)', 'Nghiêng (Ctrl+I)'), Icon: Italic },
+      {
+        command: 'bold',
+        label: t('Bold (Ctrl+B) - select text first', 'Đậm (Ctrl+B) - chọn chữ trước'),
+        Icon: Bold,
+      },
+      {
+        command: 'italic',
+        label: t('Italic (Ctrl+I) - select text first', 'Nghiêng (Ctrl+I) - chọn chữ trước'),
+        Icon: Italic,
+      },
       {
         command: 'underline',
-        label: t('Underline (Ctrl+U)', 'Gạch chân (Ctrl+U)'),
+        label: t('Underline (Ctrl+U) - select text first', 'Gạch chân (Ctrl+U) - chọn chữ trước'),
         Icon: Underline,
       },
       {
         command: 'strikeThrough',
-        label: t('Strikethrough', 'Gạch ngang'),
+        label: t('Strikethrough - select text first', 'Gạch ngang - chọn chữ trước'),
         Icon: Strikethrough,
       },
     ],
     [
-      { command: 'insertUnorderedList', label: t('Bulleted list', 'Danh sách'), Icon: ListUl },
-      { command: 'insertOrderedList', label: t('Numbered list', 'Danh sách số'), Icon: ListOl },
-      { command: 'blockquote', label: t('Quote', 'Trích dẫn'), Icon: QuoteOpen },
+      {
+        command: 'insertUnorderedList',
+        label: t('Bulleted list - press again to undo', 'Danh sách - bấm lại để bỏ'),
+        Icon: ListUl,
+      },
+      {
+        command: 'insertOrderedList',
+        label: t('Numbered list - press again to undo', 'Danh sách số - bấm lại để bỏ'),
+        Icon: ListOl,
+      },
+      {
+        command: 'blockquote',
+        label: t('Quote - press again to undo', 'Trích dẫn - bấm lại để bỏ'),
+        Icon: QuoteOpen,
+      },
     ],
   ]
 }
@@ -55,6 +77,8 @@ function formatGroups(): readonly (readonly FormatButton[])[] {
 // Buttons keep the editor's selection: mouse down is cancelled before the focus moves.
 export function TeamsComposerToolbar({
   disabled,
+  active,
+  linkRequest,
   onFormat,
   onLinkOpen,
   onLink,
@@ -62,6 +86,14 @@ export function TeamsComposerToolbar({
   const [linking, setLinking] = useState(false)
   const [url, setUrl] = useState('')
   const [invalid, setInvalid] = useState(false)
+
+  useEffect(() => {
+    if (linkRequest !== 0) {
+      onLinkOpen()
+      setLinking(true)
+    }
+    // Only a new request opens the row; the handler is not a trigger.
+  }, [linkRequest])
 
   function confirmLink(): void {
     const value = url.trim()
@@ -83,9 +115,10 @@ export function TeamsComposerToolbar({
             <Button
               key={command}
               isIconOnly
-              variant="secondary"
+              variant={active.has(command) ? 'primary' : 'secondary'}
               size="sm"
               aria-label={label}
+              aria-pressed={active.has(command)}
               isDisabled={disabled}
               onMouseDown={(event) => {
                 event.preventDefault()
@@ -103,9 +136,10 @@ export function TeamsComposerToolbar({
       ))}
       <Button
         isIconOnly
-        variant="secondary"
+        variant={active.has('codeBlock') ? 'primary' : 'secondary'}
         size="sm"
-        aria-label={t('Insert code block', 'Chèn khối code')}
+        aria-label={t('Insert code block - press again to undo', 'Chèn khối code - bấm lại để bỏ')}
+        aria-pressed={active.has('codeBlock')}
         isDisabled={disabled}
         onMouseDown={(event) => {
           event.preventDefault()
@@ -114,7 +148,10 @@ export function TeamsComposerToolbar({
           onFormat('codeBlock')
         }}
       >
-        <span title={t('Insert code block', 'Chèn khối code')} className="flex">
+        <span
+          title={t('Insert code block - press again to undo', 'Chèn khối code - bấm lại để bỏ')}
+          className="flex"
+        >
           <Code />
         </span>
       </Button>
@@ -122,7 +159,7 @@ export function TeamsComposerToolbar({
         isIconOnly
         variant="secondary"
         size="sm"
-        aria-label={t('Link', 'Liên kết')}
+        aria-label={t('Link (Ctrl+K)', 'Liên kết (Ctrl+K)')}
         isDisabled={disabled}
         onMouseDown={(event) => {
           event.preventDefault()
@@ -132,7 +169,13 @@ export function TeamsComposerToolbar({
           setLinking(true)
         }}
       >
-        <span title={t('Link', 'Liên kết')} className="flex">
+        <span
+          title={t(
+            'Link (Ctrl+K) - select text to link it, or put the caret where the link goes',
+            'Liên kết (Ctrl+K) - chọn chữ để gắn link, hoặc đặt con trỏ nơi cần chèn link',
+          )}
+          className="flex"
+        >
           <Link />
         </span>
       </Button>
@@ -141,7 +184,8 @@ export function TeamsComposerToolbar({
           <Input
             variant="secondary"
             aria-label={t('Link address', 'Địa chỉ liên kết')}
-            placeholder="https://"
+            placeholder={t('Paste a link, then Enter', 'Dán liên kết rồi nhấn Enter')}
+            autoFocus
             value={url}
             onChange={(event) => {
               setUrl(event.target.value)
@@ -151,6 +195,10 @@ export function TeamsComposerToolbar({
               if (event.key === 'Enter') {
                 event.preventDefault()
                 confirmLink()
+              } else if (event.key === 'Escape') {
+                event.stopPropagation()
+                setLinking(false)
+                setInvalid(false)
               }
             }}
           />

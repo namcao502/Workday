@@ -1,9 +1,10 @@
+import { guardHtmlLinks } from '../../ui/ctrlLink.js'
 import { Button, Card } from '@heroui/react'
 import { canReact, isEditable, QUICK_REACTION_KEYS, type TeamsMessage } from '@workday/core'
 import { useMemo, useState } from 'react'
-import { formatClock, formatShortDate, getLanguage, t } from '../../i18n.js'
+import { formatShortDate, getLanguage, t } from '../../i18n.js'
 import { ConfirmDialog } from '../../ui/ConfirmDialog.js'
-import { fullSizeProxyUrl, nameColor, renderTeamsHtml } from './teamsContent.js'
+import { nameColor, renderTeamsHtml } from './teamsContent.js'
 import { TeamsEmoji } from './TeamsEmoji.js'
 
 export interface TeamsMessageRowProps {
@@ -39,7 +40,7 @@ export function TeamsMessageRow({
   const own = sameId(message.senderId, myId)
   const sentAt = new Date(message.sentAt)
   const language = getLanguage()
-  const time = `${formatShortDate(sentAt, language, timeZone)} ${formatClock(sentAt, language, timeZone)}`
+  const time = formatShortDate(sentAt, language, timeZone)
 
   return (
     <Card className="group relative flex-row gap-2 p-3" data-message-id={message.id}>
@@ -64,10 +65,7 @@ export function TeamsMessageRow({
         <div
           className="teams-content text-sm"
           onClick={(event) => {
-            const url = fullSizeProxyUrl(event.target)
-            if (url !== null) {
-              window.open(url, '_blank', 'noopener')
-            }
+            guardHtmlLinks(event)
           }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
@@ -109,7 +107,7 @@ export function TeamsMessageRow({
           </div>
         )}
       </div>
-      <div className="absolute -top-2.5 right-1 hidden items-center gap-0.5 rounded-xl bg-overlay p-0.5 shadow-overlay group-focus-within:flex group-hover:flex">
+      <div className="absolute -top-2.5 right-1 hidden items-center gap-0.5 rounded-lg bg-overlay p-0.5 shadow-overlay group-focus-within:flex group-hover:flex">
         {QUICK_REACTION_KEYS.map((key) => (
           <Button
             key={key}

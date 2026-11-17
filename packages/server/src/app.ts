@@ -20,6 +20,7 @@ import { registerSchedulesRoutes } from './routes/schedulesRoutes.js'
 import type { SchedulesSource } from './schedules/schedulesView.js'
 import { registerSettingsRoutes } from './routes/settingsRoutes.js'
 import { registerTeamsRoutes } from './routes/teamsRoutes.js'
+import type { DaySuggestionsSource } from './timesheet/daySuggestions.js'
 import { registerTimesheetRoutes } from './routes/timesheetRoutes.js'
 import { registerCleanupRoutes } from './routes/cleanupRoutes.js'
 import { registerChatRoutes } from './routes/chatRoute.js'
@@ -49,6 +50,7 @@ export interface AppDeps {
   suggestions: SuggestionService
   settings: SettingsService
   timesheet: TimesheetService
+  daySuggestions: DaySuggestionsSource
   events: EventHub
   remote: RemoteService
   notices: NoticeService
@@ -91,7 +93,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerWorkRoutes(app, deps)
   registerNoticeRoutes(app, deps.notices, deps.teamsWatcher)
   registerSettingsRoutes(app, deps.settings)
-  registerTimesheetRoutes(app, deps.timesheet)
+  registerTimesheetRoutes(app, deps.timesheet, deps.daySuggestions)
   registerWorkspaceRoutes(app, deps.workspace)
   registerWorkspaceFilesRoutes(app, deps.workspace)
   registerCleanupRoutes(app, deps.cleanup)

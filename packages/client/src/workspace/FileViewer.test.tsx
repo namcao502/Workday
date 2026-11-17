@@ -94,3 +94,15 @@ it('a markdown file in source mode shows a single copy button', () => {
   fireEvent.click(screen.getByRole('radio', { name: 'Source' }))
   expect(screen.getAllByRole('button', { name: 'Copy' })).toHaveLength(1)
 })
+
+it('breaks the line at a single newline inside a paragraph', () => {
+  const container = renderViewer({ kind: 'markdown', text: 'first line\nsecond line' })
+  expect(container.querySelector('.markdown-view p br')).not.toBeNull()
+})
+
+it('opens a web link only on Ctrl+click', () => {
+  renderViewer({ kind: 'markdown', text: '[site](https://example.com)' })
+  const link = screen.getByRole('link', { name: 'site' })
+  expect(fireEvent.click(link)).toBe(false) // default prevented: nothing opens
+  expect(fireEvent.click(link, { ctrlKey: true })).toBe(true)
+})

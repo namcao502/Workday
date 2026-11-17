@@ -130,6 +130,16 @@ describe('WorkspaceService tabs', () => {
     expect(await service.addSession('nope')).toBe('notFound')
   })
 
+  it('moveTab reorders the tabs and saves them', async () => {
+    const { service, saved } = build(terminalState('claude'))
+    await service.addTerminal(null)
+    expect(service.view().tabs.map((tab) => tab.id)).toEqual(['claude', 'claude2'])
+    expect(await service.moveTab('claude2', 0)).toBe('ok')
+    expect(service.view().tabs.map((tab) => tab.id)).toEqual(['claude2', 'claude'])
+    expect(saved.at(-1)?.tabs.map((tab) => tab.id)).toEqual(['claude2', 'claude'])
+    expect(await service.moveTab('nope', 0)).toBe('notFound')
+  })
+
   it('closing a tab disposes its sessions', async () => {
     const { service, agent, devRepo, saved } = build({
       ...terminalState('claude', 'claude~2'),

@@ -47,6 +47,10 @@ export function closeTab(id: string): Promise<void> {
   return expectOk('DELETE', `/api/workspace/tabs/${encodeURIComponent(id)}`)
 }
 
+export function moveTab(id: string, index: number): Promise<void> {
+  return expectOk('PUT', `/api/workspace/tabs/${encodeURIComponent(id)}/position`, { index })
+}
+
 export function addSession(tabId: string): Promise<void> {
   return expectOk('POST', `/api/workspace/tabs/${encodeURIComponent(tabId)}/sessions`)
 }

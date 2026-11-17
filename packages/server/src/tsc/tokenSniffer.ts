@@ -119,6 +119,10 @@ export class PlaywrightTokenSource implements TokenSource {
     visible: boolean,
     use: (context: BrowserContext) => Promise<Result>,
   ): Promise<Result | SheetError> {
+    // A sign-in first stops a background read that holds the browser, instead of failing as busy.
+    if (visible) {
+      await this.lock.preempt()
+    }
     const release = this.lock.tryAcquire()
     if (release === null) {
       return BUSY
@@ -132,6 +136,10 @@ export class PlaywrightTokenSource implements TokenSource {
         args: ['--disable-blink-features=AutomationControlled'],
         viewport: { width: 1280, height: 800 },
       })
+      const opened = context
+      if (!visible) {
+        this.lock.offerStop(() => opened.close())
+      }
       return await use(context)
     } catch (error: unknown) {
       return explain(error)

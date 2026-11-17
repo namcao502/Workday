@@ -37,3 +37,18 @@ export async function readGitStatus(cwd: string): Promise<GitStatus> {
     ...(stat.ok ? parseShortstat(stat.stdout) : { added: 0, removed: 0 }),
   }
 }
+
+// The chat refetches on every message, and `git diff --shortstat` over a big repo takes a few hundred ms:
+// a result is reused for a few seconds, and callers that arrive meanwhile share the one running read.
+const STATUS_TTL_MS = 5_000
+const recentStatus = new Map<string, { readonly at: number; readonly status: Promise<GitStatus> }>()
+
+export function readGitStatusCached(cwd: string, now: () => number = Date.now): Promise<GitStatus> {
+  const recent = recentStatus.get(cwd)
+  if (recent !== undefined && now() - recent.at < STATUS_TTL_MS) {
+    return recent.status
+  }
+  const status = readGitStatus(cwd)
+  recentStatus.set(cwd, { at: now(), status })
+  return status
+}

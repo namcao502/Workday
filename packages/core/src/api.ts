@@ -292,9 +292,18 @@ export type RunSummary = {
     }
 )
 
+// What a week read does, in order: the TSC sheet, HRM's hours, days off and tasks, then Jira for the keys found.
+export type WeekStepId = 'tsc' | 'hrmHours' | 'hrmOff' | 'hrmTasks' | 'jira'
+
+export interface WeekStep {
+  readonly id: WeekStepId
+  readonly state: 'pending' | 'running' | 'done' | 'failed'
+}
+
 export interface WeekState {
   readonly monday: string
   readonly reading: boolean
+  readonly steps: readonly WeekStep[] // empty once the read is over
   readonly coverage: readonly DayCoverage[] | null
   readonly review: readonly WeekReviewItem[] | null
   readonly hrmTasks: readonly HrmTask[] | null
@@ -493,6 +502,7 @@ export type TeamsConversationView =
       readonly channelId: string
       readonly draft: { readonly subject: string; readonly body: string; readonly bodyHtml: string }
       readonly posted: boolean
+      readonly people: readonly TeamsPerson[] // who an @ in the post can name
     }
   | {
       readonly state: 'thread'
@@ -614,3 +624,25 @@ export type CleanupError =
 
 export type CleanupOutcome =
   { readonly ok: true } | { readonly ok: false; readonly error: CleanupError }
+
+export type TeamsIssueStatus = 'open' | 'answered' | 'fixed'
+
+export interface TeamsIssue {
+  readonly text: string
+  readonly status: TeamsIssueStatus
+}
+
+// Claude's reading of one Teams conversation: what people raised, the diagnosis, the next step and replies to pick from.
+export interface TeamsAnalysis {
+  readonly issues: readonly TeamsIssue[]
+  readonly diagnosis: string
+  readonly nextStep: string
+  readonly replies: readonly string[]
+}
+
+// running: the prompt went to Claude and no answer is back; failed: none came in time. Done may be stale (newer messages).
+export type TeamsAnalysisView =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'running' }
+  | { readonly kind: 'failed' }
+  | { readonly kind: 'done'; readonly analysis: TeamsAnalysis; readonly stale: boolean }

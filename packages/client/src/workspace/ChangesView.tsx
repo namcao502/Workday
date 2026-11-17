@@ -8,6 +8,7 @@ import { CopyPath } from '../ui/CopyPath.js'
 import { FindablePane } from '../ui/FindablePane.js'
 import { SplitView } from '../ui/SplitView.js'
 import { useStoredSplit } from '../ui/useStoredSplit.js'
+import { useListPane } from './useListPane.js'
 import { buildTree, treeOrder } from './buildTree.js'
 import { DiffView } from './DiffView.js'
 import { GroupTrees, type FileRef, type TreeGroup } from './GroupTrees.js'
@@ -49,6 +50,7 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
   )
   // A selection that left the change list falls back to the first file.
   const selected = order.find((ref) => sameRef(chosen, ref)) ?? order[0] ?? null
+  const pane = useListPane(split, selected !== null)
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent): void {
@@ -76,9 +78,9 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
           variant="secondary"
           size="sm"
           aria-label={t('Show or hide the file list', 'Ẩn / hiện danh sách file')}
-          aria-pressed={split.hidden === 'none'}
+          aria-pressed={pane.listShown}
           onPress={() => {
-            split.setHidden(split.hidden === 'none' ? 'left' : 'none')
+            pane.toggleList()
           }}
         >
           <LayoutSideContent />
@@ -99,11 +101,19 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
         className="flex-1"
         share={split.share ?? LIST_SHARE}
         onShareChange={split.setShare}
-        hidden={split.hidden}
+        hidden={pane.hidden}
         minPx={LIST_MIN_PX}
         left={
           <div className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
-            <GroupTrees groups={groups} selected={selected} onSelect={setChosen} defaultOpen />
+            <GroupTrees
+              groups={groups}
+              selected={selected}
+              onSelect={(ref) => {
+                setChosen(ref)
+                pane.picked()
+              }}
+              defaultOpen
+            />
             {data !== undefined && order.length === 0 ? (
               <p className="text-sm text-muted">{t('No changes', 'Không có thay đổi')}</p>
             ) : null}

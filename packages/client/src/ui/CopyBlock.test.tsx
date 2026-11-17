@@ -46,3 +46,10 @@ it('the open file path is a button that copies the path', async () => {
   expect(writeText).toHaveBeenCalledWith('docs/plan.md')
   expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument()
 })
+
+it('a quoted numbered list is copied with its numbers', () => {
+  const writeText = stubClipboard(() => Promise.resolve())
+  render(<ChatMarkdown text={'> 1. first\n> 2. second\n>    - nested\n> 3. third'} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+  expect(writeText).toHaveBeenCalledWith('1. first\n2. second\n  - nested\n3. third')
+})

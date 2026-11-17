@@ -83,7 +83,7 @@ export function ScanRuns({ runs, timeZone }: ScanRunsProps): React.JSX.Element {
       <div className="flex min-w-0 flex-col gap-1">
         <div className="text-sm text-muted">{runSummary(selected)}</div>
         <pre
-          className="m-0 max-h-[340px] min-h-40 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-surface-secondary px-2.5 py-2 font-mono text-sm"
+          className="m-0 max-h-[340px] min-h-40 overflow-auto whitespace-pre-wrap break-words rounded-2xl bg-surface-secondary px-2.5 py-2 font-mono text-sm"
           aria-label={t('Run log', 'Log của lần chạy')}
         >
           {log}

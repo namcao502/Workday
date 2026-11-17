@@ -1,4 +1,10 @@
-import { buildTodos, groupTodos, type BoardState, type BugFix, type TeamsThread } from '@workday/core'
+import {
+  buildTodos,
+  groupTodos,
+  type BoardState,
+  type BugFix,
+  type TeamsThread,
+} from '@workday/core'
 import { describe, expect, it } from 'vitest'
 import type { NoticeInput } from '../notices/noticeService.js'
 import { ME, NOON, teamsMessage, threadOf } from '../testing/fakeTeams.js'
@@ -12,8 +18,10 @@ const OTHER = 'someone'
 
 const DB_CHANNEL = { teamName: 'team', channelName: 'c1' }
 
-function rig(options: { dbReview?: boolean; state?: TeamsState; started?: boolean } = {}) {
-  const { dbReview = false, state = EMPTY_TEAMS_STATE, started = true } = options
+function rig(
+  options: { dbReview?: boolean; state?: TeamsState; started?: boolean; now?: () => number } = {},
+) {
+  const { dbReview = false, state = EMPTY_TEAMS_STATE, started = true, now } = options
   const base = serviceRig(['c1'], indexedOwnPost('c1', 'r1'), state)
   const added: NoticeInput[] = []
   const read: string[] = []
@@ -46,6 +54,7 @@ function rig(options: { dbReview?: boolean; state?: TeamsState; started?: boolea
     },
     dbReviewChannel: () => (dbReview ? DB_CHANNEL : null),
     readBugFixes: () => Promise.resolve([...fixes]),
+    ...(now === undefined ? {} : { now }),
     logError: () => undefined,
   })
   base.service.onSignedIn(() => {
@@ -394,5 +403,41 @@ describe('TeamsWatcher QC bug fixes', () => {
     const answered = h.watcher.replyCardFor('MDP-1', threadOf('c1', 'r1', iAnswered('r1', 9)), ME)
     expect(answered.map((card) => card.fix.bugKey)).toEqual(['MDP-8'])
     expect(h.watcher.bugFixesToAnswer().map((fix) => fix.bugKey)).toEqual(['MDP-8'])
+  })
+})
+describe('TeamsWatcher failure backoff', () => {
+  it('waits longer after each failed check and starts again after a good one', async () => {
+    let clock = 0
+    const h = rig({ now: () => clock })
+    let reads = 0
+    const myId = h.teams.myId.bind(h.teams)
+    h.teams.myId = () => {
+      reads += 1
+      return myId()
+    }
+    h.teams.readError = new Error('boom')
+    const minute = 60_000
+
+    await h.watcher.check()
+    expect(reads).toBe(1)
+    clock += 1 * minute
+    await h.watcher.check()
+    expect(reads).toBe(1)
+    clock += 1 * minute
+    await h.watcher.check()
+    expect(reads).toBe(2)
+    clock += 4 * minute
+    await h.watcher.check()
+    expect(reads).toBe(2)
+    clock += 1 * minute
+    await h.watcher.check()
+    expect(reads).toBe(3)
+
+    h.teams.readError = null
+    clock += 15 * minute
+    await h.watcher.check()
+    expect(reads).toBe(4)
+    await h.watcher.check()
+    expect(reads).toBe(5)
   })
 })

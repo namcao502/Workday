@@ -1,4 +1,4 @@
-import { Button, CloseButton, TextArea } from '@heroui/react'
+import { Button, CloseButton, Spinner, TextArea } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AgentCommand, AgentImage, AgentImageType } from '@workday/core'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -7,6 +7,7 @@ import { chatKey, useFilePaths } from '../api/useWorkspace.js'
 import { interruptSession, sendPrompt } from '../api/workspaceApi.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
+import { useNarrow } from '../shell/useNarrow.js'
 import {
   activeToken,
   applySuggestion,
@@ -53,6 +54,9 @@ interface ChatComposerProps {
   readonly tabId: string
   readonly commands: readonly AgentCommand[]
   readonly working: boolean
+  readonly onSending?: (text: string) => void // the prompt is on its way: the chat shows it at once
+  readonly onSendFailed?: () => void
+  readonly history?: readonly string[] // the user's earlier prompts, oldest first; Up recalls them
 }
 
 function failureText(error: unknown): string {
@@ -68,8 +72,12 @@ export function ChatComposer({
   tabId,
   commands,
   working,
+  history = [],
+  onSending,
+  onSendFailed,
 }: ChatComposerProps): React.JSX.Element {
   const queryClient = useQueryClient()
+  const narrow = useNarrow()
   const [text, setText] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
   const boxRef = useRef<HTMLTextAreaElement>(null)
@@ -78,6 +86,7 @@ export function ChatComposer({
   const nextImageId = useRef(1)
   const [picked, setPicked] = useState(0)
   const [closedAt, setClosedAt] = useState<string | null>(null) // the text whose menu Esc closed
+  const [recall, setRecall] = useState<{ readonly at: number; readonly draft: string } | null>(null)
 
   const token = activeToken(text, caret)
   const filePaths = useFilePaths(tabId, token?.kind === 'file')
@@ -113,12 +122,13 @@ export function ChatComposer({
     }
   }, [text])
 
-  async function run(action: () => Promise<void>): Promise<void> {
+  async function run(action: () => Promise<void>, onFail?: () => void): Promise<void> {
     try {
       await action()
       setFailure(null)
     } catch (error: unknown) {
       setFailure(failureText(error))
+      onFail?.()
     }
     await queryClient.invalidateQueries({ queryKey: chatKey(session) })
   }
@@ -128,10 +138,14 @@ export function ChatComposer({
     if (prompt === '' && images.length === 0) {
       return
     }
+    setRecall(null)
     const attached = images.map(({ mediaType, data }) => ({ mediaType, data }))
     setText('')
     setImages([])
-    void run(() => sendPrompt(session, prompt, attached))
+    if (prompt !== '') {
+      onSending?.(prompt)
+    }
+    void run(() => sendPrompt(session, prompt, attached), onSendFailed)
   }
 
   async function attach(files: readonly File[]): Promise<void> {
@@ -169,6 +183,36 @@ export function ChatComposer({
     void run(() => interruptSession(session))
   }
 
+  function showRecalled(value: string): void {
+    setText(value)
+    setCaret(value.length)
+    requestAnimationFrame(() => {
+      boxRef.current?.setSelectionRange(value.length, value.length)
+    })
+  }
+
+  // Up at the first line steps back through the earlier prompts, Down at the last line forward again to the draft.
+  function recallHistory(event: React.KeyboardEvent<HTMLTextAreaElement>): boolean {
+    const caret = event.currentTarget.selectionStart
+    const up = event.key === 'ArrowUp'
+    const onEdgeLine = !(up ? text.slice(0, caret) : text.slice(caret)).includes('\n')
+    if (event.shiftKey || !onEdgeLine || history.length === 0 || (!up && recall === null)) {
+      return false
+    }
+    const at = up
+      ? Math.max((recall?.at ?? history.length) - 1, 0)
+      : (recall?.at ?? history.length) + 1
+    event.preventDefault()
+    if (at >= history.length) {
+      showRecalled(recall?.draft ?? '')
+      setRecall(null)
+      return true
+    }
+    setRecall({ at, draft: recall?.draft ?? text })
+    showRecalled(history[at] ?? '')
+    return true
+  }
+
   function onKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>): void {
     const chosen = suggestions[current]
     if (chosen !== undefined) {
@@ -185,6 +229,11 @@ export function ChatComposer({
       }
       if (event.key === 'Escape') {
         setClosedAt(text)
+        return
+      }
+    }
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      if (recallHistory(event)) {
         return
       }
     }
@@ -210,7 +259,7 @@ export function ChatComposer({
                 type="button"
                 role="option"
                 aria-selected={index === current}
-                className={`flex w-full items-baseline gap-2 rounded-xl px-3 py-1.5 text-left text-sm ${index === current ? 'bg-accent-soft' : 'hover:bg-surface-secondary'}`}
+                className={`flex w-full items-baseline gap-2 rounded-lg px-3 py-1.5 text-left text-sm ${index === current ? 'bg-accent-soft' : 'hover:bg-surface-secondary'}`}
                 onMouseDown={(event) => {
                   event.preventDefault()
                   choose(suggestion)
@@ -234,7 +283,7 @@ export function ChatComposer({
             <li key={image.id} className="relative">
               <img
                 alt={t('Pasted image', 'Ảnh đã dán')}
-                className="size-16 rounded-xl object-cover"
+                className="size-16 rounded-lg object-cover"
                 src={`data:${image.mediaType};base64,${image.data}`}
               />
               <CloseButton
@@ -248,38 +297,64 @@ export function ChatComposer({
           ))}
         </ul>
       )}
-      <div className="flex items-end gap-2">
-        <TextArea
-          ref={boxRef}
-          fullWidth
-          variant="secondary"
-          rows={1}
-          className="resize-none overflow-y-auto"
-          aria-label={t('Message to Claude', 'Tin nhắn cho Claude')}
-          placeholder={t(
-            'Enter to send, Shift+Enter for a new line',
-            'Enter để gửi, Shift+Enter xuống dòng',
-          )}
-          value={text}
-          onChange={(event) => {
-            setText(event.target.value)
-            setCaret(event.target.selectionStart)
-            setPicked(0)
-          }}
-          onSelect={(event) => {
-            setCaret(event.currentTarget.selectionStart)
-          }}
-          onKeyDown={onKeyDown}
-          onPaste={onPaste}
-        />
+      <div className="flex items-stretch gap-2">
+        <div className="relative min-w-0 flex-1">
+          <TextArea
+            ref={boxRef}
+            fullWidth
+            variant="secondary"
+            rows={1}
+            className="block resize-none overflow-y-auto pr-14"
+            aria-label={t('Message to Claude', 'Tin nhắn cho Claude')}
+            placeholder={
+              narrow
+                ? t('Message Claude', 'Nhắn cho Claude')
+                : t(
+                    'Enter to send, Shift+Enter for a new line',
+                    'Enter để gửi, Shift+Enter xuống dòng',
+                  )
+            }
+            value={text}
+            onChange={(event) => {
+              setText(event.target.value)
+              setRecall(null)
+              setCaret(event.target.selectionStart)
+              setPicked(0)
+            }}
+            onSelect={(event) => {
+              setCaret(event.currentTarget.selectionStart)
+            }}
+            onKeyDown={onKeyDown}
+            onPaste={onPaste}
+          />
+          <div className="absolute right-2 top-0 flex h-10 items-center gap-1">
+            {text === '' ? null : (
+              <CloseButton
+                className="size-6"
+                aria-label={t('Clear text', 'Xóa nội dung')}
+                onPress={() => {
+                  setText('')
+                  setRecall(null)
+                  boxRef.current?.focus()
+                }}
+              />
+            )}
+            {working ? (
+              <span className="flex items-center" role="status">
+                <Spinner size="sm" aria-label={t('Working...', 'Đang làm việc...')} />
+              </span>
+            ) : null}
+          </div>
+        </div>
         {working ? (
-          <Button variant="danger" size="sm" onPress={stop}>
+          <Button variant="danger" size="md" className="h-auto" onPress={stop}>
             {t('Stop', 'Dừng')}
           </Button>
         ) : null}
         <Button
           variant="primary"
-          size="sm"
+          size="md"
+          className="h-auto"
           isDisabled={text.trim() === '' && images.length === 0}
           onPress={submit}
         >

@@ -119,6 +119,24 @@ async function pruneTasks(folder: string): Promise<void> {
   await Promise.all(old.map((file) => rm(file.path, { force: true }).catch(() => undefined)))
 }
 
+/** The task file in tmp/teams-tasks, keeping only the newest ones; returns its path. */
+export async function writeTaskFile(
+  deps: Pick<HandOffDeps, 'tmpDir'>,
+  fileName: string,
+  text: string,
+): Promise<string> {
+  const folder = join(deps.tmpDir, TASKS_FOLDER)
+  await mkdir(folder, { recursive: true })
+  const path = join(folder, fileName)
+  await writeFile(path, text, 'utf8')
+  await pruneTasks(folder).catch(() => undefined)
+  return path
+}
+
+export function taskStamp(now: Date): string {
+  return stampOf(now)
+}
+
 /** Writes the task file and types its line into the session; refused unless Claude runs and waits for nothing. */
 export async function handOff(
   deps: HandOffDeps,
@@ -128,11 +146,7 @@ export async function handOff(
   if (ready !== 'sent') {
     return { ok: false, error: refusal(ready) }
   }
-  const folder = join(deps.tmpDir, TASKS_FOLDER)
-  await mkdir(folder, { recursive: true })
-  const path = join(folder, `${task.ticketKey}-${stampOf(deps.now())}.md`)
-  await writeFile(path, task.text, 'utf8')
-  await pruneTasks(folder).catch(() => undefined)
+  const path = await writeTaskFile(deps, `${task.ticketKey}-${stampOf(deps.now())}.md`, task.text)
   const sent = deps.prompt(task.session, handOffLine(path))
   return sent === 'sent' ? { ok: true } : { ok: false, error: refusal(sent) }
 }

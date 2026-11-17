@@ -2,6 +2,7 @@ import { isTicketKey, weekdayOf } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { isRecord } from '../jsonFile.js'
 import type { LogTarget } from '../timesheet/logEntry.js'
+import type { DaySuggestionsSource } from '../timesheet/daySuggestions.js'
 import type { TimesheetService } from '../timesheet/timesheetService.js'
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -57,8 +58,24 @@ function badRequest(reply: FastifyReply, shape: string): FastifyReply {
   return reply.code(400).send({ error: `Body must be ${shape}` })
 }
 
-export function registerTimesheetRoutes(app: FastifyInstance, timesheet: TimesheetService): void {
+export function registerTimesheetRoutes(
+  app: FastifyInstance,
+  timesheet: TimesheetService,
+  daySuggestions: DaySuggestionsSource,
+): void {
   app.get('/api/timesheet', TIMESHEET_VIEW, () => timesheet.view())
+
+  app.get<{ Querystring: { date?: string } }>(
+    '/api/timesheet/day-suggestions',
+    TIMESHEET_VIEW,
+    async (request, reply) => {
+      const { date } = request.query
+      if (!isDate(date)) {
+        return badRequest(reply, '?date=YYYY-MM-DD')
+      }
+      return daySuggestions(date)
+    },
+  )
 
   app.post('/api/timesheet/queue', TIMESHEET_ACT, async (request, reply) => {
     const day = parseDayTickets(request.body)

@@ -56,7 +56,13 @@ async function readDraftFile(
 
 /** Markdown to HTML, then the same whitelist as a received message: the draft may hold anything. */
 export function draftHtml(markdown: string): string {
-  return safeHtml(marked.parse(markdown, { async: false }), false)
+  // A line break typed in the draft stays one (<br>), and the newlines marked puts between blocks are dropped:
+  // HTML ignores them in Teams, but the composer's pre-wrap would show them as blank lines.
+  const html = marked
+    .parse(markdown, { async: false, breaks: true })
+    .replace(/>\s*\n\s*</g, '><')
+    .trim()
+  return safeHtml(html, false)
 }
 
 export async function loadPostDraft(ticketKey: string, sources: DraftSources): Promise<PostDraft> {

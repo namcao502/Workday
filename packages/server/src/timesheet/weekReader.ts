@@ -10,10 +10,34 @@ import {
   type SheetRead,
   type TicketTracker,
   type WeekReviewItem,
+  type WeekStep,
+  type WeekStepId,
 } from '@workday/core'
 import { lookUp, type BoardKeys, type MineCache } from './ticketCheck.js'
 
 const WORKDAYS = 5
+
+// Told as each part of a week read starts and ends, so the page can say what it waits for.
+export type StepReporter = (id: WeekStepId, state: WeekStep['state']) => void
+const IGNORE_STEP: StepReporter = () => undefined
+
+// Runs one part of the read and reports it; a failure is reported and then thrown on as before.
+async function inStep<Result>(
+  report: StepReporter,
+  id: WeekStepId,
+  run: () => Promise<Result>,
+  failed: (result: Result) => boolean = () => false,
+): Promise<Result> {
+  report(id, 'running')
+  try {
+    const result = await run()
+    report(id, failed(result) ? 'failed' : 'done')
+    return result
+  } catch (error: unknown) {
+    report(id, 'failed')
+    throw error
+  }
+}
 const NO_HOURS: Readonly<Record<string, number | null>> = {}
 
 export function weekdaysOf(monday: string): readonly string[] {
@@ -46,13 +70,23 @@ export async function readCoverage(
   today: string,
   allowSniff: boolean,
   logError: (message: string, error: unknown) => void,
+  report: StepReporter = IGNORE_STEP,
 ): Promise<readonly DayCoverage[]> {
   const weekdays = weekdaysOf(monday)
   const readable = weekdays.filter((date) => date <= today)
   const [tscRead, dayHours, offDates] = await Promise.all([
-    readSheet(sheet, readable, allowSniff),
-    hours === null ? NO_HOURS : hours.dayHours(readable),
-    hours === null ? [] : hours.offDates(monday, addDays(monday, WORKDAYS - 1)),
+    sheet === null
+      ? readSheet(sheet, readable, allowSniff)
+      : inStep(
+          report,
+          'tsc',
+          () => readSheet(sheet, readable, allowSniff),
+          (read) => read.kind === 'failed',
+        ),
+    hours === null ? NO_HOURS : inStep(report, 'hrmHours', () => hours.dayHours(readable)),
+    hours === null
+      ? []
+      : inStep(report, 'hrmOff', () => hours.offDates(monday, addDays(monday, WORKDAYS - 1))),
   ])
   // The day cards only show "failed", so the reason goes to the log.
   if (tscRead.kind === 'failed') {
@@ -88,13 +122,16 @@ export interface WeekReview {
 async function sortKeys(
   keys: readonly string[],
   sources: ReviewSources,
+  report: StepReporter,
 ): Promise<{ readonly mine: ReadonlySet<string>; readonly missing: ReadonlySet<string> }> {
   const known = sources.board.knownKeys()
   const unchecked = keys.filter((key) => !known.has(key))
   const { tracker, mineCache } = sources
-  if (tracker === null || mineCache === null) {
+  if (tracker === null || mineCache === null || unchecked.length === 0) {
+    report('jira', 'done')
     return { mine: new Set([...known, ...unchecked]), missing: new Set() }
   }
+  report('jira', 'running')
   const tickets = await Promise.all(unchecked.map((key) => lookUp(tracker, key)))
   const unreachable = unchecked.filter((_, index) => tickets[index] === undefined)
   const missing = new Set(unchecked.filter((_, index) => tickets[index] === null))
@@ -109,6 +146,7 @@ async function sortKeys(
       existingMine = new Set(existing)
     }
   }
+  report('jira', 'done')
   return { mine: new Set([...known, ...unreachable, ...existingMine]), missing }
 }
 
@@ -117,20 +155,23 @@ export async function reviewOf(
   monday: string,
   today: string,
   sources: ReviewSources,
+  report: StepReporter = IGNORE_STEP,
 ): Promise<WeekReview> {
   const readDays = coverage.filter((day) => day.date <= today)
   if (readDays.length === 0) {
     return { review: [], hrmTasks: null }
   }
   const lastDay = readDays[readDays.length - 1]?.date ?? monday
-  const hrmTasks = sources.hours === null ? null : await sources.hours.tasks(monday, lastDay)
+  const { hours } = sources
+  const hrmTasks =
+    hours === null ? null : await inStep(report, 'hrmTasks', () => hours.tasks(monday, lastDay))
   const loggedKeys = [
     ...new Set([
       ...readDays.flatMap((day) => parseTicketKeys(day.tscText, sources.projectKey).tickets),
       ...(hrmTasks ?? []).map((task) => task.ticketKey.toUpperCase()),
     ]),
   ]
-  const { mine, missing } = await sortKeys(loggedKeys, sources)
+  const { mine, missing } = await sortKeys(loggedKeys, sources, report)
   const review = reviewWeek({
     week: readDays,
     hrmTasks,

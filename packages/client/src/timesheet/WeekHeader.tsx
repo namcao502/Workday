@@ -1,7 +1,15 @@
-import { Button } from '@heroui/react'
+import { Button, Spinner } from '@heroui/react'
 import { ChevronLeft, ChevronRight, ArrowRotateRight } from '@gravity-ui/icons'
-import { addDays, hrmWeekTotal, type DayCoverage, type WeekState } from '@workday/core'
+import {
+  addDays,
+  hrmWeekTotal,
+  type DayCoverage,
+  type WeekState,
+  type WeekStep,
+  type WeekStepId,
+} from '@workday/core'
 import { formatClock, formatDateOnly, t, type Language } from '../i18n.js'
+import { DONE_MARK } from './timesheetText.js'
 
 const WORKDAYS = 5
 
@@ -90,18 +98,60 @@ export function WeekNav({
   )
 }
 
+function stepLabel(id: WeekStepId): string {
+  switch (id) {
+    case 'tsc':
+      return t('TSC sheet', 'Sheet TSC')
+    case 'hrmHours':
+      return t('HRM hours', 'Giờ HRM')
+    case 'hrmOff':
+      return t('Days off', 'Ngày nghỉ')
+    case 'hrmTasks':
+      return t('HRM tasks', 'Task HRM')
+    case 'jira':
+      return t('Jira tickets', 'Ticket Jira')
+  }
+}
+
+function StepMark({ state }: { readonly state: WeekStep['state'] }): React.JSX.Element {
+  if (state === 'running') {
+    return <Spinner size="sm" aria-hidden="true" />
+  }
+  if (state === 'done') {
+    return <span className="text-success">{DONE_MARK}</span>
+  }
+  return state === 'failed' ? <span className="text-danger">!</span> : <span>-</span>
+}
+
+// What a week read is doing right now, one mark per part, so a slow read says what it waits for.
+function ReadSteps({ steps }: { readonly steps: readonly WeekStep[] }): React.JSX.Element {
+  return (
+    <span className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+      <span>{t("Reading the week's logs:", 'Đang đọc log của tuần:')}</span>
+      {steps.map((step) => (
+        <span key={step.id} className="inline-flex items-center gap-1" data-state={step.state}>
+          <StepMark state={step.state} />
+          {stepLabel(step.id)}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
   const { week, language, today } = props
   const coverage = week?.coverage ?? null
   const hrm = coverage === null ? null : hrmWeekTotal(coverage, today)
-  const status = props.reading
-    ? t("Reading the week's logs...", 'Đang đọc log của tuần...')
-    : week?.readAt != null
-      ? t(
-          `Read at ${formatClock(new Date(week.readAt), language, props.timeZone)}`,
-          `Đã đọc lúc ${formatClock(new Date(week.readAt), language, props.timeZone)}`,
-        )
-      : ''
+  const steps = week?.steps ?? []
+  let status: React.ReactNode = ''
+  if (steps.length !== 0) {
+    status = <ReadSteps steps={steps} />
+  } else if (props.reading) {
+    status = t("Reading the week's logs...", 'Đang đọc log của tuần...')
+  } else if (week?.readAt != null) {
+    const clock = formatClock(new Date(week.readAt), language, props.timeZone)
+    status = t(`Read at ${clock}`, `Đã đọc lúc ${clock}`)
+  }
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
       {hrm === null ? null : (

@@ -75,6 +75,7 @@ export class FakeTeams implements TeamsGateway {
   readonly imageCalls: string[] = []
   writeError: Error | null = null
   signedOut = false
+  readError: Error | null = null // makes the next reads fail like a broken session
   signIns = 0
 
   addChannel(id: string, teamName = 'team'): void {
@@ -82,6 +83,9 @@ export class FakeTeams implements TeamsGateway {
   }
 
   myId(): Promise<string> {
+    if (this.readError !== null) {
+      return Promise.reject(this.readError)
+    }
     return this.signedOut ? Promise.reject(new TeamsSignedOut('signed out')) : Promise.resolve(ME)
   }
 

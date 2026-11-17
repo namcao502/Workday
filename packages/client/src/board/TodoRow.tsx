@@ -54,7 +54,7 @@ interface TodoRowProps {
 // One to-do: a tinted icon, a title over a gray detail line, and the buttons at the right edge.
 export function TodoRow({ icon, tone, title, detail, buttons }: TodoRowProps): React.JSX.Element {
   return (
-    <li className="flex items-center gap-3 rounded-xl px-2 py-2">
+    <li className="flex items-center gap-3 rounded-lg px-2 py-2">
       <TodoIcon tone={tone} icon={icon} />
       <div className="min-w-0 flex-1">
         <div className="font-semibold [overflow-wrap:anywhere]">{title}</div>

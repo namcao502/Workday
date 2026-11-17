@@ -21,7 +21,7 @@ export interface CommitReadOptions {
 }
 
 // "+07:00" for the zone at noon UTC of the given day.
-function offsetOf(timeZone: string, day: string): string {
+export function offsetOf(timeZone: string, day: string): string {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
     timeZoneName: 'longOffset',
@@ -30,7 +30,7 @@ function offsetOf(timeZone: string, day: string): string {
   return name === 'GMT' ? '+00:00' : name.replace('GMT', '')
 }
 
-function nextDay(day: string): string {
+export function nextDay(day: string): string {
   return new Date(Date.parse(`${day}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
 }
 

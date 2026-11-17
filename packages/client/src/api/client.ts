@@ -5,6 +5,7 @@ import type {
   AppError,
   BoardAction,
   BoardView,
+  DaySuggestion,
   EntryOutcome,
   InsightsView,
   JiraCheckRequest,
@@ -446,4 +447,17 @@ export async function getInsights(request: InsightsRequest): Promise<InsightsVie
   const error = isRecord(raw.body) ? raw.body['error'] : undefined
   const code = isRecord(error) && isPlainCode(error['code']) ? error['code'] : null
   throw new ApiError(raw.status, path, code)
+}
+
+function isDaySuggestionList(value: unknown): value is readonly DaySuggestion[] {
+  return (
+    Array.isArray(value) &&
+    value.every((item) => isRecord(item) && typeof item['ticketKey'] === 'string')
+  )
+}
+
+// The started tickets with commits or Claude work on the date that the day does not hold yet.
+export async function getDaySuggestions(date: string): Promise<readonly DaySuggestion[]> {
+  const path = `/api/timesheet/day-suggestions?date=${encodeURIComponent(date)}`
+  return expectView(await send('GET', path), path, isDaySuggestionList)
 }

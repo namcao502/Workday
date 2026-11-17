@@ -60,6 +60,8 @@ export class PlaywrightTeamsSniffer implements TeamsSniffer {
         return { kind: 'signedOut' }
       }
       context = await this.launch(this.profileDir, false)
+      const opened = context
+      this.lock.offerStop(() => opened.close())
       const capture = watchRequests(context)
       const page = await firstPage(context)
       await page.goto(TEAMS_URL, {
@@ -91,6 +93,8 @@ export class PlaywrightTeamsSniffer implements TeamsSniffer {
 
   // The only visible browser flow: the user signs in to Teams web and the session stays in the profile.
   async signIn(): Promise<TeamsSignInResult> {
+    // The sign-in stops a background read that holds the browser instead of being refused.
+    await this.lock.preempt()
     const release = this.lock.tryAcquire()
     if (release === null) {
       return { kind: 'busy' }

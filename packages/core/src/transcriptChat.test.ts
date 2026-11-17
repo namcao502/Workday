@@ -134,6 +134,36 @@ describe('parseTranscript', () => {
     expect(rows[0]).toMatchObject({ role: 'user', text: 'q' })
   })
 
+  it('shows a queued task notification as a step, not as a user row', () => {
+    const rows = parse([
+      {
+        type: 'attachment',
+        attachment: {
+          type: 'queued_command',
+          prompt: '<task-notification><summary>Build ok</summary></task-notification>',
+          commandMode: 'task-notification',
+          origin: { kind: 'task-notification' },
+        },
+      },
+      {
+        type: 'attachment',
+        attachment: { type: 'queued_command', prompt: 'mine', origin: { kind: 'human' } },
+      },
+    ])
+    expect(rows.map((row) => row.role)).toEqual(['tool', 'user'])
+    expect(rows[0]).toMatchObject({ toolName: 'Agent', toolDetail: 'Build ok' })
+  })
+
+  it('hides a queued command of any other origin', () => {
+    const rows = parse([
+      {
+        type: 'attachment',
+        attachment: { type: 'queued_command', prompt: 'cron tick', origin: { kind: 'scheduler' } },
+      },
+    ])
+    expect(rows).toEqual([])
+  })
+
   it('shows compaction, system text and API errors as notices', () => {
     const rows = parse([
       {

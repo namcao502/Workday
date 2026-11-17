@@ -74,7 +74,7 @@ export function RemotePairing({
       {open ? (
         <div className="flex flex-col items-start gap-2">
           <p
-            className="rounded-xl bg-surface-secondary px-4 py-2 font-mono text-2xl tracking-widest"
+            className="rounded-2xl bg-surface-secondary px-4 py-2 font-mono text-2xl tracking-widest"
             aria-label={t('Pairing code', 'Mã ghép nối')}
           >
             {pairing.code}

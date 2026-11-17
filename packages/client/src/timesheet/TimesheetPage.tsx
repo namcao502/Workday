@@ -17,7 +17,9 @@ import { queryKeys, readWeek, type LogTarget } from '../api/client.js'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
 import {
+  useDaySuggestions,
   useNow,
+  useRefreshDaySuggestions,
   useRefreshTimesheet,
   useTicketChecks,
   useTimesheetView,
@@ -27,6 +29,7 @@ import { t } from '../i18n.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
 import { Page } from '../ui/Page.js'
 import { DayCard } from './DayCard.js'
+import { DaySuggestions } from './DaySuggestions.js'
 import { LogInput, type LogAction } from './LogInput.js'
 import { TimesheetBanners } from './TimesheetBanners.js'
 import { showReminder, logTimeMinutes } from './timesheetState.js'
@@ -39,17 +42,20 @@ import { WeekTotals } from './WeekTotals.js'
 const WORKDAYS = 5
 type Confirming = 'off' | 'clear' | null
 
-// One read with sniffing per app load; kept in the query cache so a test gets a fresh one.
-function useFirstRead(thisMonday: string): void {
+// One read per app load, without a sniff: a sniff opens the TSC browser and can raise a Microsoft sign-in
+// prompt on the phone. Refresh asks for the sniff. Kept in the query cache so a test gets a fresh one.
+// A server with no week at all (it restarted under an open page) is asked again, or the page would load forever.
+function useFirstRead(thisMonday: string, hasWeek: boolean): void {
   const queryClient = useQueryClient()
   useEffect(() => {
     queryClient.setQueryDefaults(queryKeys.timesheetVisited, { gcTime: Infinity })
-    if (queryClient.getQueryData(queryKeys.timesheetVisited) === true) {
+    const visited = queryClient.getQueryData(queryKeys.timesheetVisited) === true
+    if (visited && hasWeek) {
       return
     }
     queryClient.setQueryData(queryKeys.timesheetVisited, true)
-    readWeek(thisMonday, true).catch(() => undefined)
-  }, [queryClient, thisMonday])
+    readWeek(thisMonday, false).catch(() => undefined)
+  }, [queryClient, thisMonday, hasWeek])
 }
 
 interface BodyProps {
@@ -71,7 +77,12 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
   const [confirming, setConfirming] = useState<Confirming>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const columns = useColumns(gridRef)
-  useFirstRead(thisMonday)
+  useFirstRead(thisMonday, view.week !== null)
+  const daySuggestions = useDaySuggestions(date, canAct)
+  const refreshDaySuggestions = useRefreshDaySuggestions()
+  const refreshSuggestions = (): void => {
+    void refreshDaySuggestions()
+  }
 
   const projectKey = config.jira?.projectKey ?? null
   const parsed = parseTicketKeys(text, projectKey)
@@ -169,6 +180,15 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
   return (
     <Page title={t('Timesheet', 'Bảng công')} wide className="max-w-[1300px]">
       <TimesheetBanners view={view} reminder={showReminder(view, clock, timeZone)} />
+      {canAct ? (
+        <DaySuggestions
+          suggestions={daySuggestions.data ?? []}
+          busy={working !== null}
+          onAdd={(tickets, minutes) => {
+            void actions.addTyped({ date, tickets, minutes }, refreshSuggestions)
+          }}
+        />
+      ) : null}
       {canAct ? (
         <LogInput
           date={date}

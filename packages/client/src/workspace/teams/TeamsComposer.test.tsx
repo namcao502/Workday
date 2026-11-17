@@ -116,11 +116,11 @@ it('the code block button turns the line into a pre, and pressing it inside one 
   document.execCommand = exec
   const editor = renderComposer('reply', vi.fn())
   type(editor, 'let a = 1')
-  fireEvent.click(screen.getByRole('button', { name: 'Insert code block' }))
+  fireEvent.click(screen.getByRole('button', { name: /Insert code block/ }))
   expect(exec).toHaveBeenLastCalledWith('formatBlock', false, 'pre')
   editor.innerHTML = '<pre>let a = 1</pre>'
   window.getSelection()?.collapse(editor.querySelector('pre')?.firstChild ?? editor, 2)
-  fireEvent.click(screen.getByRole('button', { name: 'Insert code block' }))
+  fireEvent.click(screen.getByRole('button', { name: /Insert code block/ }))
   expect(exec).toHaveBeenLastCalledWith('formatBlock', false, 'p')
 })
 
@@ -204,4 +204,40 @@ it('refuses an empty file and offers no attach button when editing', async () =>
   cleanup()
   renderComposer('edit', vi.fn())
   expect(screen.queryByRole('button', { name: 'Attach a file' })).not.toBeInTheDocument()
+})
+
+it('the quote button wraps the line and unwraps it when pressed inside a quote', () => {
+  const exec = vi.fn(() => true)
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- execCommand is the editor API under test
+  document.execCommand = exec
+  const editor = renderComposer('reply', vi.fn())
+  type(editor, 'quoted')
+  fireEvent.click(screen.getByRole('button', { name: /^Quote/ }))
+  expect(exec).toHaveBeenLastCalledWith('formatBlock', false, 'blockquote')
+  editor.innerHTML = '<blockquote>quoted</blockquote>'
+  window.getSelection()?.collapse(editor.querySelector('blockquote')?.firstChild ?? editor, 2)
+  fireEvent.click(screen.getByRole('button', { name: /^Quote/ }))
+  expect(editor.querySelector('blockquote')).toBeNull()
+  expect(editor.textContent).toBe('quoted')
+})
+
+it('the toolbar marks the format at the caret as pressed', () => {
+  const editor = renderComposer('reply', vi.fn())
+  editor.innerHTML = '<blockquote>quoted</blockquote>'
+  window.getSelection()?.collapse(editor.querySelector('blockquote')?.firstChild ?? editor, 2)
+  fireEvent(document, new Event('selectionchange'))
+  expect(screen.getByRole('button', { name: /^Quote/ })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: /^Bulleted list/ })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+})
+
+it('Ctrl+K opens the link row with a hint', async () => {
+  const editor = renderComposer('reply', vi.fn())
+  fireEvent.keyDown(editor, { key: 'k', ctrlKey: true })
+  expect(await screen.findByRole('textbox', { name: 'Link address' })).toHaveAttribute(
+    'placeholder',
+    'Paste a link, then Enter',
+  )
 })

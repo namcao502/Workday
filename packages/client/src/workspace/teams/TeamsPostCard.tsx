@@ -46,7 +46,7 @@ export function TeamsPostCard({
       <TeamsComposer
         key={`${String(version)}:${frozen?.key ?? liveKey}`}
         mode="post"
-        people={[]}
+        people={view.people}
         label={label}
         submitLabel={t('Post', 'Đăng')}
         withSubject

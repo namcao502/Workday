@@ -1,15 +1,28 @@
-import { Button, Dropdown, Spinner } from '@heroui/react'
+import { Button, Dropdown } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { AgentModel, AgentRewind, ChatAnswer, UsageWindow } from '@workday/core'
-import { useLayoutEffect, useRef, useState } from 'react'
+import type { AgentModel, AgentRewind, ChatAnswer, ChatMessage, UsageWindow } from '@workday/core'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { chatKey, useChat } from '../api/useWorkspace.js'
 import { answerRequest, rewindFiles, setSessionModel } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { ChatComposer } from './ChatComposer.js'
 import { ChatRequestCard } from './ChatRequestCard.js'
 import { ChatRows } from './ChatRows.js'
+import { addEcho, dropEchoes, useEchoes } from './promptEchoes.js'
 
 const BOTTOM_SLACK_PX = 24
+
+// The user's own prompts, oldest first, without the repeats of a row that was sent twice in a row.
+function userPrompts(messages: readonly ChatMessage[]): readonly string[] {
+  const prompts: string[] = []
+  for (const message of messages) {
+    const text = message.role === 'user' ? (message.text ?? '').trim() : ''
+    if (text !== '' && prompts.at(-1) !== text) {
+      prompts.push(text)
+    }
+  }
+  return prompts
+}
 const TOKENS_PER_K = 1000
 
 // "Tue Nov 17, 5:00 PM" for a reset after today, "5:00 PM" for one today.
@@ -163,10 +176,19 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   const queryClient = useQueryClient()
   const [answering, setAnswering] = useState(false)
   const [rewind, setRewind] = useState<RewindState | null>(null)
+  const queued = useEchoes(session)
+  const echoBase = useRef<number | null>(null) // user rows in the transcript when the first echo arrived
   const listRef = useRef<HTMLDivElement>(null)
   const atBottom = useRef(true)
   const messages = chat.data?.messages
   const requests = chat.data?.requests
+  const userCount = (messages ?? []).filter((message) => message.role === 'user').length
+  if (queued.length !== 0 && echoBase.current === null) {
+    echoBase.current = userCount
+  }
+  const consumed = echoBase.current === null ? 0 : Math.max(userCount - echoBase.current, 0)
+  const echoed = queued.slice(consumed)
+  const prompts = useMemo(() => userPrompts(messages ?? []), [messages])
   const working = chat.data?.working === true
   const model = chat.data?.model ?? null
   const running = chat.data?.running === true
@@ -186,7 +208,15 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
     if (list !== null && atBottom.current) {
       list.scrollTop = list.scrollHeight
     }
-  }, [messages, working, requests])
+  }, [messages, working, requests, shown, echoed.length])
+
+  // The transcript has taken over the first `consumed` echoes.
+  useEffect(() => {
+    if (consumed !== 0) {
+      dropEchoes(session, consumed)
+      echoBase.current = consumed >= queued.length ? null : (echoBase.current ?? 0) + consumed
+    }
+  }, [consumed, queued.length, session])
 
   async function settle(action: () => Promise<void>): Promise<void> {
     try {
@@ -238,6 +268,10 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
         className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2"
         onScroll={(event) => {
           const list = event.currentTarget
+          // A hidden list reports 0 for everything: that says nothing about where the reader was.
+          if (list.clientHeight === 0) {
+            return
+          }
           atBottom.current =
             list.scrollHeight - list.scrollTop - list.clientHeight < BOTTOM_SLACK_PX
         }}
@@ -266,9 +300,17 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
           messages={messages ?? []}
           {...(running && !working ? { onRewind: startRewind } : {})}
         />
+        {echoed.map((text, index) => (
+          <div
+            key={`echo-${String(index)}-${text}`}
+            className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap"
+          >
+            {text}
+          </div>
+        ))}
         {resumable ? (
           <p
-            className="rounded-xl bg-surface-secondary px-3 py-2 text-center text-xs text-muted"
+            className="rounded-2xl bg-surface-secondary px-3 py-2 text-center text-xs text-muted"
             role="status"
           >
             {t(
@@ -302,6 +344,13 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
         tabId={tabId}
         commands={chat.data?.catalog?.commands ?? []}
         working={working}
+        history={prompts}
+        onSending={(text) => {
+          addEcho(session, text)
+        }}
+        onSendFailed={() => {
+          dropEchoes(session)
+        }}
       />
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 pb-1 text-xs text-muted">
         {model === null ? null : (
@@ -331,12 +380,6 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
         {usage === null || usage.usage === null ? null : <UsageStat window={usage.usage} />}
         {mode === 'bypassPermissions' ? (
           <span>{t('Bypass permissions on', 'Đang bỏ qua quyền')}</span>
-        ) : null}
-        {working ? (
-          <span className="ml-auto flex items-center gap-1" role="status">
-            <Spinner size="sm" aria-hidden="true" />
-            {t('Working...', 'Đang làm việc...')}
-          </span>
         ) : null}
       </div>
     </div>

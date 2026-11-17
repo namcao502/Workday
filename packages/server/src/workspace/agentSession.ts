@@ -246,12 +246,15 @@ export class AgentSession {
       case 'message':
         this.deps.onChange()
         return
-      case 'turnEnded':
+      case 'turnEnded': {
+        // A turn nobody prompted (a background task reporting back) is not the user's turn to take.
+        const prompted = this.turns !== 0
         this.turns = Math.max(0, this.turns - 1)
-        this.update(this.turns === 0 ? { working: false, finished: true } : {})
+        this.update(this.turns === 0 && prompted ? { working: false, finished: true } : {})
         this.deps.onChange()
         void this.refreshUsage()
         return
+      }
       case 'exited':
         this.handle = null
         // A restart keeps the mode the user last chose, not the config default.

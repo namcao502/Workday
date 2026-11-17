@@ -4,6 +4,8 @@ import { isRecord } from '../json.js'
 import { queryKeys } from './client.js'
 
 const RECONNECT_MS = 2000
+// A running Claude session sends an event per message; each refetch re-reads the whole transcript on the server.
+const CHAT_REFETCH_MS = 700
 
 // The part of WebSocket this hook uses, so a test can pass a fake.
 export interface EventSocket {
@@ -27,6 +29,24 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
     let stopped = false
     let socket: EventSocket | null = null
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined
+    let chatTimer: ReturnType<typeof setTimeout> | undefined
+    let chatQueued = false
+
+    // The first event refetches at once; the ones inside the window collapse into one more refetch at its end.
+    function refetchChat(): void {
+      if (chatTimer !== undefined) {
+        chatQueued = true
+        return
+      }
+      void queryClient.invalidateQueries({ queryKey: ['workspace', 'chat'] })
+      chatTimer = setTimeout(() => {
+        chatTimer = undefined
+        if (chatQueued) {
+          chatQueued = false
+          refetchChat()
+        }
+      }, CHAT_REFETCH_MS)
+    }
 
     function handleMessage(event: MessageEvent): void {
       if (typeof event.data !== 'string') {
@@ -50,7 +70,7 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
       } else if (type === 'work.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.work })
       } else if (type === 'chat.changed') {
-        void queryClient.invalidateQueries({ queryKey: ['workspace', 'chat'] })
+        refetchChat()
       } else if (type === 'workspace.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.workspace })
         void queryClient.invalidateQueries({ queryKey: queryKeys.work })
@@ -71,6 +91,7 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
     return () => {
       stopped = true
       clearTimeout(reconnectTimer)
+      clearTimeout(chatTimer)
       socket?.close()
     }
   }, [queryClient, openSocket])

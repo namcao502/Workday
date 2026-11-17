@@ -4,6 +4,7 @@ import {
   addTerminal,
   closeSession,
   closeTab,
+  moveTab,
   nextSessionName,
   nextTerminalName,
   openTicket,
@@ -61,5 +62,15 @@ describe('workspace tab reducers', () => {
     const state = addTerminal(openTicket(empty, 'MDP-1'), null)
     expect(closeTab(state, 'MDP-1').tabs.map((tab) => tab.id)).toEqual(['claude'])
     expect(closeTab(state, 'nope')).toBe(state)
+  })
+
+  it('moves a tab to an index, clamps it, and keeps the state when nothing moves', () => {
+    const state = addTerminal(addTerminal(openTicket(empty, 'MDP-1'), null), null)
+    const ids = (next: WorkspaceTabsState): string[] => next.tabs.map((tab) => tab.id)
+    expect(ids(state)).toEqual(['MDP-1', 'claude', 'claude2'])
+    expect(ids(moveTab(state, 'claude2', 0))).toEqual(['claude2', 'MDP-1', 'claude'])
+    expect(ids(moveTab(state, 'MDP-1', 99))).toEqual(['claude', 'claude2', 'MDP-1'])
+    expect(moveTab(state, 'claude', 1)).toBe(state)
+    expect(moveTab(state, 'nope', 0)).toBe(state)
   })
 })

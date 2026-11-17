@@ -11,13 +11,19 @@ import {
   type WorkspaceSelection,
 } from '../shell/pages.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { useNarrow } from '../shell/useNarrow.js'
 import { Page, PageHeading } from '../ui/Page.js'
 import { SplitView } from '../ui/SplitView.js'
 import { useStoredSplit } from '../ui/useStoredSplit.js'
 import { TicketInfoBar } from './TicketInfoBar.js'
-import { ClaudePane } from './ClaudePane.js'
+import { ClaudePane, sessionLabel } from './ClaudePane.js'
 import { LeftPane } from './LeftPane.js'
-import { resolveSelection } from './selection.js'
+import {
+  rememberedSelection,
+  rememberSelection,
+  resolveSelection,
+  withRemembered,
+} from './selection.js'
 import { requestNoticePermission } from './useClaudeNotices.js'
 import { tabLabel, WorkspaceTabs } from './WorkspaceTabs.js'
 import './workspace.css'
@@ -27,6 +33,8 @@ const MIN_PANE_PX = 240
 
 function useHashSelection(): WorkspaceSelection {
   const [selection, setSelection] = useState(() => workspaceSelectionFromHash(window.location.hash))
+  // Read once: the sidebar link carries no tab, so the page opens where the user left it.
+  const [remembered] = useState(rememberedSelection)
   useEffect(() => {
     function handleHashChange(): void {
       setSelection(workspaceSelectionFromHash(window.location.hash))
@@ -36,7 +44,7 @@ function useHashSelection(): WorkspaceSelection {
       window.removeEventListener('hashchange', handleHashChange)
     }
   }, [])
-  return selection
+  return withRemembered(selection, remembered)
 }
 
 // Opening a finished session while the window has focus counts as reading it.
@@ -69,8 +77,18 @@ export function WorkspacePage(): React.JSX.Element {
   const selection = useHashSelection()
   const { warning, setWarning } = useStartWarning()
   const [closing, setClosing] = useState<WorkspaceTab | null>(null)
+  const [closingSession, setClosingSession] = useState<{
+    readonly tabId: string
+    readonly name: string
+  } | null>(null)
   const view = workspace.data
   const { tab, session } = resolveSelection(view?.tabs ?? [], selection)
+  const tabId = tab?.id ?? null
+  useEffect(() => {
+    if (tabId !== null) {
+      rememberSelection({ tab: tabId, session })
+    }
+  }, [tabId, session])
   useMarkSeen(
     view?.sessions.find((candidate) => candidate.name === session),
     actions.markSeen,
@@ -78,10 +96,18 @@ export function WorkspacePage(): React.JSX.Element {
 
   // Each tab keeps its own share and hidden pane, as in the WPF app.
   const split = useStoredSplit(tab?.id ?? '')
+  // A phone shows one pane at a time: Claude first, the files on request (not stored, the wide layout keeps its own).
+  const narrow = useNarrow()
+  const [phonePane, setPhonePane] = useState<'claude' | 'files'>('claude')
+  const hidden = narrow ? (phonePane === 'claude' ? 'left' : 'right') : split.hidden
   const showBoth = useRef(() => {})
   useEffect(() => {
     showBoth.current = () => {
-      split.setHidden('none')
+      if (narrow) {
+        setPhonePane('files')
+      } else {
+        split.setHidden('none')
+      }
     }
   })
 
@@ -125,18 +151,25 @@ export function WorkspacePage(): React.JSX.Element {
   }
 
   function showBothNow(): void {
-    split.setHidden('none')
+    if (narrow) {
+      setPhonePane(hidden === 'left' ? 'files' : 'claude')
+    } else {
+      split.setHidden('none')
+    }
   }
 
   function closeTab(target: WorkspaceTab): void {
-    const running = view?.sessions.some(
-      (candidate) => candidate.running && target.sessions.includes(candidate.name),
-    )
-    if (running === true) {
-      setClosing(target)
+    setClosing(target)
+  }
+
+  // As in the WPF app a session that is still running asks first; an idle one closes at once.
+  function closeSessionOf(paneTab: WorkspaceTab, name: string): void {
+    if (view?.sessions.some((candidate) => candidate.name === name && candidate.running) === true) {
+      setClosingSession({ tabId: paneTab.id, name })
       return
     }
-    void actions.closeTab(target.id)
+    void actions.closeSession(name)
+    navigateToWorkspace(paneTab.id)
   }
 
   function confirmClose(): void {
@@ -150,8 +183,30 @@ export function WorkspacePage(): React.JSX.Element {
   }
 
   return (
-    <section className="flex h-full min-h-0 flex-col gap-3 px-6 pb-4">
-      <PageHeading title={t('Workspace', 'Không gian làm việc')} />
+    <section className="flex h-full min-h-0 flex-col gap-3 px-3 pb-4 md:px-6">
+      <PageHeading
+        title={t('Workspace', 'Không gian làm việc')}
+        actions={
+          <div className="min-w-0 flex-1">
+            <WorkspaceTabs
+              tabs={view.tabs}
+              sessions={view.sessions}
+              selectedId={tab?.id ?? null}
+              recentFolders={view.recentFolders}
+              onSelect={(id) => {
+                navigateToWorkspace(id)
+              }}
+              onClose={closeTab}
+              onAddTerminal={(folder) => {
+                void actions.addTerminal(folder)
+              }}
+              onMove={(id, index) => {
+                void actions.moveTab(id, index)
+              }}
+            />
+          </div>
+        }
+      />
       {warning === null ? null : (
         <Alert status="warning">
           <Alert.Indicator />
@@ -169,23 +224,6 @@ export function WorkspacePage(): React.JSX.Element {
           </Button>
         </Alert>
       )}
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <WorkspaceTabs
-            tabs={view.tabs}
-            sessions={view.sessions}
-            selectedId={tab?.id ?? null}
-            recentFolders={view.recentFolders}
-            onSelect={(id) => {
-              navigateToWorkspace(id)
-            }}
-            onClose={closeTab}
-            onAddTerminal={(folder) => {
-              void actions.addTerminal(folder)
-            }}
-          />
-        </div>
-      </div>
       {tab?.kind === 'ticket' ? <TicketInfoBar ticketKey={tab.id} /> : null}
       {tab === null || session === null ? (
         <p className="text-sm text-muted">{t('No open tabs', 'Chưa có thẻ nào')}</p>
@@ -194,18 +232,21 @@ export function WorkspacePage(): React.JSX.Element {
           className="flex-1"
           share={split.share ?? DEFAULT_SHARE}
           onShareChange={split.setShare}
-          hidden={split.hidden}
+          hidden={hidden}
           minPx={MIN_PANE_PX}
           left={
-            split.hidden === 'left' ? null : (
+            hidden === 'left' ? null : (
               // Distinct keys per sibling: a key shared with ClaudePane left old panes mounted on tab switch.
               <LeftPane
                 key={`left-${tab.id}`}
                 tab={tab}
                 teamsConversation={teamsConversation}
                 toggle={
-                  split.hidden === 'right'
-                    ? { label: t('Show Claude', 'Hiện Claude'), onPress: showBothNow }
+                  hidden === 'right'
+                    ? {
+                        label: narrow ? 'Claude' : t('Show Claude', 'Hiện Claude'),
+                        onPress: showBothNow,
+                      }
                     : {
                         label: t('Hide', 'Ẩn'),
                         onPress: () => {
@@ -227,8 +268,11 @@ export function WorkspacePage(): React.JSX.Element {
                 active={active}
                 selected={shown}
                 toggle={
-                  split.hidden === 'left'
-                    ? { label: t('Show files', 'Hiện tệp'), onPress: showBothNow }
+                  hidden === 'left'
+                    ? {
+                        label: narrow ? t('Files', 'Tệp') : t('Show files', 'Hiện tệp'),
+                        onPress: showBothNow,
+                      }
                     : {
                         label: t('Hide Claude', 'Ẩn Claude'),
                         onPress: () => {
@@ -243,8 +287,7 @@ export function WorkspacePage(): React.JSX.Element {
                   void actions.addSession(paneTab.id)
                 }}
                 onClose={(name) => {
-                  void actions.closeSession(name)
-                  navigateToWorkspace(paneTab.id)
+                  closeSessionOf(paneTab, name)
                 }}
               />
             )
@@ -253,14 +296,40 @@ export function WorkspacePage(): React.JSX.Element {
       )}
       {closing === null ? null : (
         <ConfirmDialog
-          message={t(
-            `${tabLabel(closing)} has a running session. Close it?`,
-            `${tabLabel(closing)} có phiên đang chạy. Đóng nó?`,
-          )}
+          message={
+            view.sessions.some(
+              (candidate) => candidate.running && closing.sessions.includes(candidate.name),
+            )
+              ? t(
+                  `${tabLabel(closing)} has a running session. Close the tab and stop it?`,
+                  `${tabLabel(closing)} có phiên đang chạy. Đóng tab và dừng nó?`,
+                )
+              : t(`Close ${tabLabel(closing)}?`, `Đóng ${tabLabel(closing)}?`)
+          }
           confirmLabel={t(`Close ${tabLabel(closing)}`, `Đóng ${tabLabel(closing)}`)}
           onConfirm={confirmClose}
           onCancel={() => {
             setClosing(null)
+          }}
+        />
+      )}
+      {closingSession === null ? null : (
+        <ConfirmDialog
+          message={t(
+            `${sessionLabel(closingSession.name)} is still running. Close it and stop it?`,
+            `${sessionLabel(closingSession.name)} vẫn đang chạy. Đóng và dừng nó?`,
+          )}
+          confirmLabel={t(
+            `Close ${sessionLabel(closingSession.name)}`,
+            `Đóng ${sessionLabel(closingSession.name)}`,
+          )}
+          onConfirm={() => {
+            void actions.closeSession(closingSession.name)
+            navigateToWorkspace(closingSession.tabId)
+            setClosingSession(null)
+          }}
+          onCancel={() => {
+            setClosingSession(null)
           }}
         />
       )}

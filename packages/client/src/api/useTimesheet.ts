@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
-import type { TicketCheck, TimesheetView } from '@workday/core'
+import type { DaySuggestion, TicketCheck, TimesheetView } from '@workday/core'
 import { useCallback, useEffect, useState } from 'react'
-import { checkTickets, getTimesheet, queryKeys } from './client.js'
+import { checkTickets, getDaySuggestions, getTimesheet, queryKeys } from './client.js'
 
 const CHECK_DEBOUNCE_MS = 400
 const MINUTE_MS = 60_000
@@ -62,4 +62,27 @@ export function useTicketChecks(keys: readonly string[]): Readonly<Record<string
   }, [missing])
 
   return checks
+}
+
+const SUGGESTIONS_STALE_MS = 60_000
+
+// Reading git and the Claude sessions is slow, so it is not refetched on every timesheet.changed.
+export function useDaySuggestions(
+  date: string,
+  enabled: boolean,
+): UseQueryResult<readonly DaySuggestion[]> {
+  return useQuery({
+    queryKey: ['day-suggestions', date],
+    queryFn: () => getDaySuggestions(date),
+    enabled,
+    staleTime: SUGGESTIONS_STALE_MS,
+  })
+}
+
+export function useRefreshDaySuggestions(): () => Promise<void> {
+  const queryClient = useQueryClient()
+  return useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ['day-suggestions'] }),
+    [queryClient],
+  )
 }

@@ -8,6 +8,7 @@ import { CopyPath } from '../ui/CopyPath.js'
 import { FindablePane } from '../ui/FindablePane.js'
 import { SplitView } from '../ui/SplitView.js'
 import { useStoredSplit } from '../ui/useStoredSplit.js'
+import { useListPane } from './useListPane.js'
 import { FileViewer } from './FileViewer.js'
 import { GroupTrees, type FileRef } from './GroupTrees.js'
 
@@ -68,6 +69,7 @@ export function FilesView({ tabId }: FilesViewProps): React.JSX.Element {
   )
   const selected =
     chosen ?? (defaultDoc === undefined ? null : { group: DOCS_GROUP, path: defaultDoc })
+  const pane = useListPane(split, selected !== null)
   const known = groups.find((group) => group.id === selected?.group)?.paths ?? []
 
   return (
@@ -78,9 +80,9 @@ export function FilesView({ tabId }: FilesViewProps): React.JSX.Element {
           variant="secondary"
           size="sm"
           aria-label={t('Show or hide the file list', 'Ẩn / hiện danh sách file')}
-          aria-pressed={split.hidden === 'none'}
+          aria-pressed={pane.listShown}
           onPress={() => {
-            split.setHidden(split.hidden === 'none' ? 'left' : 'none')
+            pane.toggleList()
           }}
         >
           <LayoutSideContent />
@@ -91,14 +93,17 @@ export function FilesView({ tabId }: FilesViewProps): React.JSX.Element {
         className="flex-1"
         share={split.share ?? LIST_SHARE}
         onShareChange={split.setShare}
-        hidden={split.hidden}
+        hidden={pane.hidden}
         minPx={LIST_MIN_PX}
         left={
           <div className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
             <GroupTrees
               groups={groups}
               selected={selected}
-              onSelect={setChosen}
+              onSelect={(ref) => {
+                setChosen(ref)
+                pane.picked()
+              }}
               defaultOpen={false}
             />
           </div>

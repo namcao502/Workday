@@ -18,6 +18,7 @@ export function timesheetView(overrides: Partial<TimesheetView> = {}): Timesheet
     week: {
       monday: '2026-11-09',
       reading: false,
+      steps: [],
       coverage: [
         coverage('2026-11-09', { hrmHours: 8, tscText: 'MDP-1, MDP-2' }),
         coverage('2026-11-10', { isOff: true }),
@@ -64,13 +65,20 @@ export function queued(date: string, tickets: readonly string[] = ['MDP-1']): Qu
   return { date, tickets, minutes: null }
 }
 
-export function backend(timesheet: TimesheetView, checks: unknown = []): FetchMock {
+export function backend(
+  timesheet: TimesheetView,
+  checks: unknown = [],
+  daySuggestions: unknown = [],
+): FetchMock {
   return stubFetch((url, init) => {
     if (url === '/api/settings') {
       return jsonResponse(connectedSettings())
     }
     if (url === '/api/timesheet' && (init?.method ?? 'GET') === 'GET') {
       return jsonResponse(timesheet)
+    }
+    if (url.startsWith('/api/timesheet/day-suggestions')) {
+      return jsonResponse(daySuggestions)
     }
     if (url === '/api/timesheet/tickets/check') {
       return jsonResponse(checks)
