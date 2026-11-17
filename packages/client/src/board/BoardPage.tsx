@@ -139,6 +139,9 @@ export function BoardPage(): React.JSX.Element {
     activeView === 'available',
   )
 
+  // The same count as the menu dot, so the dot leads to the view that holds the work; it goes when the work is done.
+  const todoDot = activeView !== 'todo' && (work?.attention ?? 0) !== 0
+
   const typedKey = projectKey === undefined ? null : parseTicketKey(search, projectKey)
   const addableKey =
     typedKey !== null && !rows.some((row) => row.ticket.key === typedKey) ? typedKey : null
@@ -203,7 +206,7 @@ export function BoardPage(): React.JSX.Element {
           options={viewIds.map((id) => ({
             value: id,
             label: viewLabel(id, counts[id]),
-            dot: id === 'available' && availableDot,
+            dot: (id === 'available' && availableDot) || (id === 'todo' && todoDot),
           }))}
           onChange={(picked) => {
             setView(picked)

@@ -326,6 +326,31 @@ it('an unseen urgent suggestion puts a dot on Available until the view is opened
   expect(again.querySelector('[data-testid="view-dot"]')).toBeNull()
 })
 
+it('work needed now puts a dot on To do, except while To do is open', async () => {
+  stubBackend({ board: TWO_VIEWS, work: workView({ attention: 2 }) })
+  renderWithQuery(<BoardPage />)
+  const todo = await screen.findByRole('radio', { name: /^To do/ })
+  await waitFor(() => {
+    expect(todo.querySelector('[data-testid="view-dot"]')).not.toBeNull()
+  })
+  expect(
+    screen.getByRole('radio', { name: /^Working/ }).querySelector('[data-testid="view-dot"]'),
+  ).toBeNull()
+  fireEvent.click(todo)
+  await waitFor(() => {
+    expect(todo.querySelector('[data-testid="view-dot"]')).toBeNull()
+  })
+})
+
+it('no work needed now leaves To do without a dot', async () => {
+  stubBackend({ board: TWO_VIEWS, work: workView({ attention: 0 }) })
+  renderWithQuery(<BoardPage />)
+  await screen.findByText('Alpha work')
+  expect(
+    screen.getByRole('radio', { name: /^To do/ }).querySelector('[data-testid="view-dot"]'),
+  ).toBeNull()
+})
+
 it('without suggestions configured there is no Available view', async () => {
   stubBackend({ board: TWO_VIEWS })
   renderWithQuery(<BoardPage />)

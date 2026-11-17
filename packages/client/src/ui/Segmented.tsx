@@ -54,7 +54,7 @@ export function Segmented<Value extends string>({
               <span
                 data-testid="view-dot"
                 aria-hidden="true"
-                className="size-1.5 rounded-full bg-accent"
+                className="size-2 rounded-full bg-danger"
               />
             ) : null}
           </button>
