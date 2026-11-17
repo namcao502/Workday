@@ -110,6 +110,21 @@ it('a day card shows Day off, the logged hours, or Nothing logged by its state',
   expect(within(card(/FRI 13/)).getByText('not yet')).toBeInTheDocument()
 })
 
+it('pressing anywhere on a day card picks that day, but not its hours bar', async () => {
+  backend(timesheetView({ queue: [queued('2026-11-11')] }))
+  renderWithQuery(<TimesheetPage />)
+  const dateBox = await screen.findByLabelText('Date')
+  expect(dateBox).toHaveValue('2026-11-12')
+  const monday = await screen.findByRole('group', { name: /MON 9/ })
+  fireEvent.click(within(monday).getByText(/MDP-1, MDP-2/))
+  expect(dateBox).toHaveValue('2026-11-09')
+  const wednesday = card(/WED 11/)
+  fireEvent.click(within(wednesday).getByTestId('hours-bar'))
+  expect(dateBox).toHaveValue('2026-11-09')
+  fireEvent.click(within(wednesday).getByText(/Past the auto-log time/))
+  expect(dateBox).toHaveValue('2026-11-11')
+})
+
 it('a ticket that is not mine shows Use KEY and the button swaps the key in the box', async () => {
   const check = {
     key: 'MDP-6798',

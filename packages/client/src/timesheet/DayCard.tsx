@@ -206,6 +206,9 @@ const STATE_COLOR = {
   empty: 'warning',
 } as const
 
+// A press on a control or the hours bar does its own job; picking the day then would steal its focus.
+const OWN_PRESS = 'button, input, textarea, select, a, [role="slider"], [data-hours-bar]'
+
 export function DayCard(props: DayCardProps): React.JSX.Element {
   const { day, clock, language, selected } = props
   const header = dayHeader(day.date, language)
@@ -216,6 +219,11 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
       role="group"
       aria-label={header}
       className={`gap-2 p-3 ${selected ? 'bg-accent-soft' : ''}`}
+      onClick={(event) => {
+        if (!(event.target instanceof Element) || event.target.closest(OWN_PRESS) === null) {
+          props.onSelect(day.date)
+        }
+      }}
     >
       <div className="flex items-center justify-between gap-2">
         <button
