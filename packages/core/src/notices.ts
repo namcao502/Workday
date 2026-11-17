@@ -45,6 +45,15 @@ export type NoticeEvent =
       readonly mention: boolean
     }
   | { readonly type: 'qcBugFixed'; readonly key: string; readonly parentKey: string }
+  | { readonly type: 'newTickets'; readonly keys: readonly string[] }
+  | {
+      readonly type: 'qcBugLogged'
+      readonly key: string
+      readonly parentKey: string
+      readonly summary: string
+    }
+  | { readonly type: 'ticketsDone' | 'ticketsReopened'; readonly keys: readonly string[] }
+  | { readonly type: 'autoStartFailed'; readonly key: string; readonly code: string }
   | { readonly type: 'dbReviewApproved'; readonly key: string; readonly approver: string }
   | {
       readonly type: 'ticketUpdated'
@@ -264,10 +273,31 @@ function scanBadText(outcome: ScanOutcome, vi: boolean): string {
   }
 }
 
+function jiraPollText(event: NoticeEvent, vi: boolean): string | null {
+  switch (event.type) {
+    case 'newTickets':
+      return `${vi ? 'Ticket mới' : 'New ticket(s)'}: ${event.keys.join(', ')}`
+    case 'qcBugLogged':
+      return vi
+        ? `QC log bug ${event.key} cho ${event.parentKey}: ${event.summary}`
+        : `QC logged bug ${event.key} on ${event.parentKey}: ${event.summary}`
+    case 'ticketsDone':
+      return `${vi ? 'Đã Done trên Jira, đã chuyển sang Done' : 'Done in Jira, moved to Done'}: ${event.keys.join(', ')}`
+    case 'ticketsReopened':
+      return `${vi ? 'Bị trả về để làm tiếp, đã chuyển sang Đang làm' : 'Sent back for more work, moved to In progress'}: ${event.keys.join(', ')}`
+    case 'autoStartFailed':
+      return vi
+        ? `${event.key}: không tự bắt đầu được (${event.code}). Hãy bấm Start trên board.`
+        : `${event.key}: could not start it automatically (${event.code}). Start it from the board.`
+    default:
+      return null
+  }
+}
+
 // One sentence per event, the same meaning as the C# app's notices; branch is a label like "FE Portal dev".
 export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
   const vi = language === 'vi'
-  const known = prText(event, vi) ?? deployText(event, vi)
+  const known = prText(event, vi) ?? deployText(event, vi) ?? jiraPollText(event, vi)
   if (known !== null) {
     return known
   }

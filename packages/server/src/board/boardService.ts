@@ -9,6 +9,7 @@ import {
   parseTicketKey,
   reopen,
   restore,
+  pollChanges,
   startTicket,
   todayIn,
   type AddTicketResult,
@@ -19,6 +20,7 @@ import {
   type BoardView,
   type JiraConfig,
   type LastPoll,
+  type PollChanges,
   type Ticket,
   type TicketTracker,
 } from '@workday/core'
@@ -40,6 +42,8 @@ export interface BoardServiceDeps {
   readonly recordJob?: RecordJob
   // Runs after a successful poll was applied; not awaited by the poll, a failure is only logged.
   readonly afterPoll?: (tracker: TicketTracker, jira: JiraConfig) => Promise<void>
+  // Told what a poll changed, as soon as that step was applied; not awaited by the poll, a failure is only logged.
+  readonly onPollChanges?: (changes: PollChanges) => Promise<void>
   readonly logError?: (message: string, error: unknown) => void
 }
 
@@ -68,6 +72,7 @@ export class BoardService {
   private readonly now: () => Date
   private readonly recordJob: RecordJob | undefined
   private readonly afterPoll: BoardServiceDeps['afterPoll']
+  private readonly onPollChanges: BoardServiceDeps['onPollChanges']
   private readonly logError: (message: string, error: unknown) => void
 
   constructor(deps: BoardServiceDeps) {
@@ -78,6 +83,7 @@ export class BoardService {
     this.now = deps.now ?? (() => new Date())
     this.recordJob = deps.recordJob
     this.afterPoll = deps.afterPoll
+    this.onPollChanges = deps.onPollChanges
     this.logError = deps.logError ?? logToConsole
   }
 
@@ -254,18 +260,22 @@ export class BoardService {
         if (this.settings.tracker !== tracker) {
           return null
         }
+        const before = this.state
         await this.commit(applyAssignedPoll(this.state, assigned, jira.statusFlow))
-        return offPollKeys(this.state, assigned)
+        return { keys: offPollKeys(this.state, assigned), changes: pollChanges(before, this.state) }
       })
       if (offPoll === null) {
         return
       }
-      const live = await this.fetchLive(tracker, offPoll)
+      this.reportChanges(offPoll.changes)
+      const live = await this.fetchLive(tracker, offPoll.keys)
       const applied = await this.enqueue(async () => {
         if (this.settings.tracker !== tracker) {
           return false
         }
+        const before = this.state
         await this.commit(applyLiveTickets(this.state, live))
+        this.reportChanges(pollChanges(before, this.state))
         this.recordPoll(true, startedAt)
         return true
       })
@@ -276,6 +286,20 @@ export class BoardService {
       this.logError('Saving the polled board failed', error)
       await this.recordPollIfCurrent(tracker, false, startedAt)
     }
+  }
+
+  private reportChanges(changes: PollChanges): void {
+    if (
+      this.onPollChanges === undefined ||
+      (changes.newTickets.length === 0 &&
+        changes.reopened.length === 0 &&
+        changes.finished.length === 0)
+    ) {
+      return
+    }
+    this.onPollChanges(changes).catch((error: unknown) => {
+      this.logError('Reacting to the poll changes failed', error)
+    })
   }
 
   private startAfterPoll(tracker: TicketTracker, jira: JiraConfig): void {

@@ -389,6 +389,7 @@ export function parseWorkspace(raw: unknown): WorkspaceConfig {
     devRepoPath: textOrNull(raw['devRepoPath']),
     siblingRepoGlob: textOrNull(raw['siblingRepoGlob']),
     startPrompt: textOrNull(raw['startPrompt']),
+    autoStartTickets: raw['autoStartTickets'] !== false,
     claudeExecutable: textOrNull(raw['claudeExecutable']),
     localOnlyPaths: stringList(raw['localOnlyPaths']).filter((path) => path !== ''),
   }
@@ -426,6 +427,7 @@ export const DEFAULT_WORKSPACE: WorkspaceConfig = {
   devRepoPath: null,
   siblingRepoGlob: null,
   startPrompt: null,
+  autoStartTickets: true,
   claudeExecutable: null,
   localOnlyPaths: [],
 }

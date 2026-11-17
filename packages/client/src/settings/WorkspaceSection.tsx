@@ -1,5 +1,5 @@
 import type { SettingsView } from '@workday/core'
-import { Button } from '@heroui/react'
+import { Button, Switch } from '@heroui/react'
 import { useState } from 'react'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
@@ -81,6 +81,22 @@ export function WorkspaceSection({
           change({ startPrompt: value })
         }}
       />
+      <Switch
+        isSelected={form.autoStartTickets}
+        onChange={(selected) => {
+          change({ autoStartTickets: selected })
+        }}
+      >
+        <Switch.Content>
+          <Switch.Control>
+            <Switch.Thumb />
+          </Switch.Control>
+          {t(
+            'Start a newly assigned ticket by itself (worktree, start prompt, today in the queue)',
+            'Tự bắt đầu ticket mới được giao (worktree, lời nhắc, đưa vào queue hôm nay)',
+          )}
+        </Switch.Content>
+      </Switch>
       <TextField
         id="workspace-claude-executable"
         label={t('Claude executable', 'File chạy Claude')}

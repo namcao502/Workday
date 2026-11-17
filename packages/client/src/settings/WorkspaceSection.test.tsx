@@ -40,10 +40,24 @@ it('Save sends the workspace block with trimmed values and lines', async () => {
     devRepoPath: 'C:\\Repos\\Dev',
     siblingRepoGlob: '*-Angular',
     startPrompt: 'ship {key}',
+    autoStartTickets: true,
     claudeExecutable: null,
     localOnlyPaths: ['.claude/', '.env.local'],
   })
   expect(await screen.findByText('Saved')).toBeInTheDocument()
+})
+
+it('the auto start switch is saved with the workspace block', async () => {
+  const fetchMock = stubFetch(() => jsonResponse(settingsView()))
+  renderWithQuery(<WorkspaceSection settings={settingsView()} />)
+  const toggle = screen.getByRole('switch', { name: /Start a newly assigned ticket by itself/ })
+  expect(toggle).toBeChecked()
+  fireEvent.click(toggle)
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalled()
+  })
+  expect(sentJson(fetchMock)['workspace']).toMatchObject({ autoStartTickets: false })
 })
 
 it('the Clean up worktrees button opens the cleanup dialog', async () => {

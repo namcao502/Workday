@@ -4,6 +4,7 @@ export interface WorkspaceForm {
   readonly devRepoPath: string
   readonly siblingRepoGlob: string
   readonly startPrompt: string
+  readonly autoStartTickets: boolean
   readonly claudeExecutable: string
   readonly localOnlyPaths: string // one path per line
 }
@@ -13,6 +14,7 @@ export function formFromWorkspace(workspace: WorkspaceConfig): WorkspaceForm {
     devRepoPath: workspace.devRepoPath ?? '',
     siblingRepoGlob: workspace.siblingRepoGlob ?? '',
     startPrompt: workspace.startPrompt ?? '',
+    autoStartTickets: workspace.autoStartTickets,
     claudeExecutable: workspace.claudeExecutable ?? '',
     localOnlyPaths: workspace.localOnlyPaths.join('\n'),
   }
@@ -28,6 +30,7 @@ export function workspaceFromForm(form: WorkspaceForm): WorkspaceConfig {
     devRepoPath: textOrNull(form.devRepoPath),
     siblingRepoGlob: textOrNull(form.siblingRepoGlob),
     startPrompt: textOrNull(form.startPrompt),
+    autoStartTickets: form.autoStartTickets,
     claudeExecutable: textOrNull(form.claudeExecutable),
     localOnlyPaths: form.localOnlyPaths
       .split('\n')

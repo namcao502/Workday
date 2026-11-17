@@ -15,6 +15,7 @@ import type {
 } from '@workday/core'
 import { AzureDevOpsClient } from './azureDevOps/adoClient.js'
 import { BoardService } from './board/boardService.js'
+import { PollReactions } from './board/pollReactions.js'
 import { PollScheduler } from './board/pollScheduler.js'
 import { loadBoard, saveBoard } from './boardStore.js'
 import { DEFAULT_OFF_MARKER } from './config.js'
@@ -49,6 +50,7 @@ import { runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
 import { qcBugsOf, readBugFixes } from './workspace/bugFixes.js'
+import { BugFixer } from './workspace/fixBug.js'
 import { TimesheetService } from './timesheet/timesheetService.js'
 import { defaultClaudeExecutable, sessionEnvironment } from './workspace/launchEnvironment.js'
 import type { SpawnEditor } from './workspace/openInEditor.js'
@@ -141,6 +143,7 @@ export function createServices(options: ServicesOptions): Services {
     recordJob,
     afterPoll: (tracker, jira) =>
       ticketUpdates.check(tracker, { eta: jira.etaFieldId, devPriority: jira.devPriorityFieldId }),
+    onPollChanges: (changes) => pollReactions.react(changes),
     ...logError,
   })
   const remote = new RemoteService({
@@ -159,7 +162,8 @@ export function createServices(options: ServicesOptions): Services {
     saveQueue: (queue) => saveQueue(dataDir, queue),
     events,
     board,
-    qcBugParents: () => new Map(qcBugsOf(board.snapshot()).map((item) => [item.bug.key, item.parentKey])),
+    qcBugParents: () =>
+      new Map(qcBugsOf(board.snapshot()).map((item) => [item.bug.key, item.parentKey])),
     now: () => new Date(),
     settings: {
       sheet: null,
@@ -345,6 +349,22 @@ export function createServices(options: ServicesOptions): Services {
     remote,
     workspace,
     ...logError,
+  })
+  // A new ticket starts by itself unless Settings turn it off; a QC bug goes to its parent's Claude instead.
+  const bugFixer = new BugFixer({
+    board,
+    workspace,
+    timesheet,
+    devRepoPath: () => settings.view().config.workspace.devRepoPath,
+    logError: reportError,
+  })
+  const pollReactions = new PollReactions({
+    notices,
+    board,
+    autoStart: () => settings.view().config.workspace.autoStartTickets,
+    start: (key) => workspace.start(key),
+    fixBug: (key) => bugFixer.fix(key),
+    logError: reportError,
   })
   const cleanup = new WorktreeCleanupService({
     config: () => settings.view().config.workspace,

@@ -95,6 +95,25 @@ function sentBackTickets(state: BoardState, assigned: TicketMap, flow: StatusFlo
   return sentBack
 }
 
+export interface PollChanges {
+  readonly newTickets: readonly Ticket[] // newly assigned, filed under New
+  readonly reopened: readonly Ticket[] // Jira sent them back: Done -> In progress
+  readonly finished: readonly Ticket[] // Jira finished them: In progress -> Done
+}
+
+// What one step of a poll changed, read off the board before and after it.
+export function pollChanges(before: BoardState, after: BoardState): PollChanges {
+  return {
+    newTickets: Object.values(after.new).filter((ticket) => !isOnBoard(before, ticket.key)),
+    reopened: Object.values(after.inProgress).filter((ticket) =>
+      Object.hasOwn(before.done, ticket.key),
+    ),
+    finished: Object.values(after.done).filter((ticket) =>
+      Object.hasOwn(before.inProgress, ticket.key),
+    ),
+  }
+}
+
 // Port of TicketPoller.PollAsync and TicketBoard: reopen first, since the detail refresh would overwrite the status it compares.
 export function applyAssignedPoll(
   state: BoardState,

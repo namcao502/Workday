@@ -11,6 +11,7 @@ import {
   loadSecrets,
   loadTunnelToken,
   NO_SECRETS,
+  parseWorkspace,
   readFileSecrets,
   saveConfig,
   saveSecrets,
@@ -418,5 +419,17 @@ describe('teams config', () => {
   it('config turns Teams off when the block is missing', () => {
     writeConfig({})
     expect(loadConfig(directory).teams.watchedChannels).toEqual([])
+  })
+})
+
+describe('workspace auto start', () => {
+  it('is on by default and for a config written before it existed', () => {
+    expect(DEFAULT_WORKSPACE.autoStartTickets).toBe(true)
+    expect(parseWorkspace({ devRepoPath: 'C:/Dev' }).autoStartTickets).toBe(true)
+    expect(parseWorkspace({ autoStartTickets: 'no' }).autoStartTickets).toBe(true)
+  })
+
+  it('is off only when the file says false', () => {
+    expect(parseWorkspace({ autoStartTickets: false }).autoStartTickets).toBe(false)
   })
 })

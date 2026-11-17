@@ -126,7 +126,33 @@ describe('noticeText', () => {
     { type: 'ticketMissing', key: 'MDP-1' },
     { type: 'transitionFailed', key: 'MDP-1', status: 'Ready to Test' },
     { type: 'suggestionsUrgent', keys: ['MDP-2', 'MDP-3'] },
+    { type: 'newTickets', keys: ['MDP-2', 'MDP-3'] },
+    { type: 'qcBugLogged', key: 'MDP-9', parentKey: 'MDP-1', summary: 'It breaks' },
+    { type: 'ticketsDone', keys: ['MDP-2'] },
+    { type: 'ticketsReopened', keys: ['MDP-2'] },
+    { type: 'autoStartFailed', key: 'MDP-2', code: 'worktreeFailed' },
   ]
+
+  it('words the Jira poll events like the C# app', () => {
+    expect(noticeText({ type: 'newTickets', keys: ['MDP-2', 'MDP-3'] }, 'en')).toBe(
+      'New ticket(s): MDP-2, MDP-3',
+    )
+    expect(noticeText({ type: 'newTickets', keys: ['MDP-2'] }, 'vi')).toBe('Ticket mới: MDP-2')
+    const bug = {
+      type: 'qcBugLogged',
+      key: 'MDP-9',
+      parentKey: 'MDP-1',
+      summary: 'Broken',
+    } as const
+    expect(noticeText(bug, 'en')).toBe('QC logged bug MDP-9 on MDP-1: Broken')
+    expect(noticeText(bug, 'vi')).toBe('QC log bug MDP-9 cho MDP-1: Broken')
+    expect(noticeText({ type: 'ticketsDone', keys: ['MDP-2'] }, 'en')).toBe(
+      'Done in Jira, moved to Done: MDP-2',
+    )
+    expect(noticeText({ type: 'ticketsReopened', keys: ['MDP-2'] }, 'vi')).toBe(
+      'Bị trả về để làm tiếp, đã chuyển sang Đang làm: MDP-2',
+    )
+  })
 
   it('names the changed fields of a ticketUpdated event, with the editor when known', () => {
     const event: NoticeEvent = {

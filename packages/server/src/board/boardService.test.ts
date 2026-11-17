@@ -1,4 +1,4 @@
-import type { BoardState, JiraConfig, ServerEvent, Ticket } from '@workday/core'
+import type { BoardState, JiraConfig, PollChanges, ServerEvent, Ticket } from '@workday/core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { EventSink } from '../events.js'
 import { boardWith, deferred, FakeTracker, makeTicket } from '../testing/fakes.js'
@@ -38,10 +38,12 @@ let errors: string[] = []
 function createService(
   initialState: BoardState,
   afterPoll?: () => Promise<void>,
+  onPollChanges?: (changes: PollChanges) => Promise<void>,
 ): BoardService {
   return new BoardService({
     initialState,
     ...(afterPoll === undefined ? {} : { afterPoll }),
+    ...(onPollChanges === undefined ? {} : { onPollChanges }),
     save: (state) => {
       if (saveFails) {
         return Promise.reject(new Error('disk full'))
@@ -71,6 +73,61 @@ beforeEach(() => {
   saved = []
   saveFails = false
   errors = []
+})
+
+describe('BoardService onPollChanges', () => {
+  it('reports a newly assigned ticket, and a failing hook does not fail the poll', async () => {
+    const seen: PollChanges[] = []
+    const service = createService(boardWith({ seenKeys: ['MDP-1'] }), undefined, (changes) => {
+      seen.push(changes)
+      return Promise.reject(new Error('hook broke'))
+    })
+    tracker.assigned = () =>
+      Promise.resolve({ 'MDP-1': makeTicket('MDP-1'), 'MDP-2': makeTicket('MDP-2') })
+
+    await service.poll()
+
+    expect(seen.map((changes) => changes.newTickets.map((ticket) => ticket.key))).toEqual([
+      ['MDP-2'],
+    ])
+    expect(service.view().lastPoll?.ok).toBe(true)
+    await Promise.resolve()
+    expect(errors).toContain('Reacting to the poll changes failed')
+  })
+
+  it('reports nothing for the first poll, which only takes a baseline', async () => {
+    const seen: PollChanges[] = []
+    const service = createService(boardWith({ seenKeys: null }), undefined, (changes) => {
+      seen.push(changes)
+      return Promise.resolve()
+    })
+    tracker.assigned = () => Promise.resolve({ 'MDP-1': makeTicket('MDP-1') })
+
+    await service.poll()
+
+    expect(seen).toEqual([])
+  })
+
+  it('reports a started ticket Jira finished', async () => {
+    const started = makeTicket('MDP-1')
+    const seen: PollChanges[] = []
+    const service = createService(
+      boardWith({ inProgress: { 'MDP-1': started }, seenKeys: ['MDP-1'] }),
+      undefined,
+      (changes) => {
+        seen.push(changes)
+        return Promise.resolve()
+      },
+    )
+    tracker.assigned = () => Promise.resolve({})
+    tracker.live.set('MDP-1', makeTicket('MDP-1', { statusCategory: 'done', status: 'Done' }))
+
+    await service.poll()
+
+    expect(seen.flatMap((changes) => changes.finished.map((ticket) => ticket.key))).toEqual([
+      'MDP-1',
+    ])
+  })
 })
 
 describe('BoardService afterPoll', () => {

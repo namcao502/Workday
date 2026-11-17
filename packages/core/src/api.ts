@@ -79,6 +79,7 @@ export interface WorkspaceConfig {
   readonly devRepoPath: string | null
   readonly siblingRepoGlob: string | null // "*-Angular"; null = only the dev repo
   readonly startPrompt: string | null // "ship {key}"; null = plain claude
+  readonly autoStartTickets: boolean // a newly assigned ticket starts by itself at the poll that finds it
   readonly claudeExecutable: string | null // null = ~/.local/bin/claude(.exe), else PATH
   readonly localOnlyPaths: readonly string[] // never listed in Changes
 }

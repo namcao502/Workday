@@ -6,6 +6,7 @@ import {
   dismiss,
   markDone,
   offPollKeys,
+  pollChanges,
   reopen,
   restore,
   startTicket,
@@ -379,5 +380,46 @@ describe('startTicket', () => {
     expect(startTicket(inProgress, 'MDP-1')).toBe(inProgress)
     expect(startTicket(done, 'MDP-2')).toBe(done)
     expect(startTicket(inProgress, 'MDP-404')).toBe(inProgress)
+  })
+})
+
+describe('pollChanges', () => {
+  it('names a ticket that appeared under New, but not one that was already on the board', () => {
+    const known = makeTicket('MDP-1')
+    const before = boardWith({ inProgress: byKey(known), seenKeys: ['MDP-1'] })
+    const after = applyAssignedPoll(before, byKey(known, makeTicket('MDP-2')), mdpFlow)
+    const changes = pollChanges(before, after)
+    expect(changes.newTickets.map((ticket) => ticket.key)).toEqual(['MDP-2'])
+    expect(changes.reopened).toEqual([])
+    expect(changes.finished).toEqual([])
+  })
+
+  it('names nothing on the first run, which only takes a baseline', () => {
+    const before = boardWith({ seenKeys: null })
+    const after = applyAssignedPoll(before, byKey(makeTicket('MDP-1')), mdpFlow)
+    expect(pollChanges(before, after)).toEqual({ newTickets: [], reopened: [], finished: [] })
+  })
+
+  it('names a Done ticket Jira sent back as reopened', () => {
+    const stored = makeTicket('MDP-1', { status: 'Ready to Test' })
+    const before = boardWith({ done: byKey(stored), seenKeys: ['MDP-1'] })
+    const after = applyAssignedPoll(
+      before,
+      byKey(makeTicket('MDP-1', { status: 'QA Failed' })),
+      mdpFlow,
+    )
+    expect(pollChanges(before, after).reopened.map((ticket) => ticket.key)).toEqual(['MDP-1'])
+  })
+
+  it('names an in-progress ticket Jira finished, but not a new one that was finished', () => {
+    const started = makeTicket('MDP-1')
+    const pending = makeTicket('MDP-2')
+    const before = boardWith({ inProgress: byKey(started), new: byKey(pending) })
+    const live = byKey(
+      makeTicket('MDP-1', { statusCategory: 'done', status: 'Done' }),
+      makeTicket('MDP-2', { statusCategory: 'done', status: 'Done' }),
+    )
+    const after = applyLiveTickets(before, live)
+    expect(pollChanges(before, after).finished.map((ticket) => ticket.key)).toEqual(['MDP-1'])
   })
 })

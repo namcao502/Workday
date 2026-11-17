@@ -26,6 +26,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
         devRepoPath: null,
         siblingRepoGlob: null,
         startPrompt: null,
+        autoStartTickets: true,
         claudeExecutable: null,
         localOnlyPaths: [],
       },
