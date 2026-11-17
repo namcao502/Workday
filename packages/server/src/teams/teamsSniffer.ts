@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { chromium, type BrowserContext, type Page } from 'playwright-core'
 import { BROWSER_CHANNEL } from '../browserChannel.js'
+import { logBrowserLaunch } from '../browserLaunchLog.js'
 import type { BrowserLock } from '../tsc/browserLock.js'
 import {
   hasBothTokens,
@@ -59,6 +60,7 @@ export class PlaywrightTeamsSniffer implements TeamsSniffer {
       if (!existsSync(this.profileDir)) {
         return { kind: 'signedOut' }
       }
+      logBrowserLaunch(this.profileDir, 'teams', 'sniff')
       context = await this.launch(this.profileDir, false)
       const opened = context
       this.lock.offerStop(() => opened.close())
@@ -101,6 +103,7 @@ export class PlaywrightTeamsSniffer implements TeamsSniffer {
     }
     let context: BrowserContext | null = null
     try {
+      logBrowserLaunch(this.profileDir, 'teams', 'signIn')
       context = await this.launch(this.profileDir, true)
       const capture = watchRequests(context)
       const page = await firstPage(context)

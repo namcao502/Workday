@@ -1,6 +1,7 @@
 import type { SheetError, SheetWrite, TscConfig } from '@workday/core'
 import { chromium, type BrowserContext, type Page } from 'playwright-core'
 import { BROWSER_CHANNEL } from '../browserChannel.js'
+import { logBrowserLaunch } from '../browserLaunchLog.js'
 import type { BrowserLock } from './browserLock.js'
 import type { TokenSource } from './graphSheetLog.js'
 import { hasAllScope, jwtScopes, pickBroadestToken } from './jwt.js'
@@ -41,7 +42,7 @@ export class PlaywrightTokenSource implements TokenSource {
   ) {}
 
   sniff(): Promise<{ readonly token: string } | SheetError> {
-    return this.withBrowser(false, async (context) => {
+    return this.withBrowser('sniff', false, async (context) => {
       const seen = new Map<string, string>()
       context.on('request', (request) => {
         if (request.url().startsWith(GRAPH_HOST)) {
@@ -77,7 +78,7 @@ export class PlaywrightTokenSource implements TokenSource {
   }
 
   checkSession(): Promise<{ readonly signedIn: boolean } | SheetError> {
-    return this.withBrowser(false, async (context) => {
+    return this.withBrowser('checkSession', false, async (context) => {
       const page = await firstPage(context)
       await page.goto(this.config.shareUrl, {
         waitUntil: 'domcontentloaded',
@@ -88,8 +89,15 @@ export class PlaywrightTokenSource implements TokenSource {
     })
   }
 
-  async signIn(): Promise<SheetWrite> {
-    const result = await this.withBrowser(true, async (context) => {
+  // The Graph token the sheet page asks for while signed in is kept, so the first read needs no headless sniff.
+  async signIn(): Promise<SheetWrite & { readonly token?: string }> {
+    const result = await this.withBrowser('signIn', true, async (context) => {
+      const seen = new Map<string, string>()
+      context.on('request', (request) => {
+        if (request.url().startsWith(GRAPH_HOST)) {
+          void collectToken(request, seen)
+        }
+      })
       const page = await firstPage(context)
       await page.goto(this.config.shareUrl, {
         waitUntil: 'domcontentloaded',
@@ -102,12 +110,36 @@ export class PlaywrightTokenSource implements TokenSource {
           return { failure: 'failed', detail: 'Browser closed before login completed.' } as const
         }
         if (this.isSignedInAt(page.url())) {
-          return { ok: true } as const
+          // The share page may never call Graph; the pages the headless sniff uses do.
+          await this.waitForGraphToken(page, seen)
+          const token = pickBroadestToken(seen)
+          return token !== null && [...seen.values()].some(hasAllScope)
+            ? ({ ok: true, token } as const)
+            : ({ ok: true } as const)
         }
       }
       return { failure: 'failed', detail: 'Timed out waiting for login.' } as const
     })
     return 'ok' in result ? result : { ok: false, ...result }
+  }
+
+  // Visits the token pages one by one until a token with every scope has been seen.
+  private async waitForGraphToken(page: Page, seen: Map<string, string>): Promise<void> {
+    const found = (): boolean => [...seen.values()].some(hasAllScope)
+    for (const url of this.config.tokenPages) {
+      if (found()) {
+        return
+      }
+      try {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: GOTO_TIMEOUT_MILLISECONDS })
+      } catch {
+        continue
+      }
+      const deadline = Date.now() + SNIFF_WAIT_MILLISECONDS
+      while (Date.now() < deadline && !found()) {
+        await sleep(SNIFF_POLL_MILLISECONDS)
+      }
+    }
   }
 
   private isSignedInAt(url: string): boolean {
@@ -116,6 +148,7 @@ export class PlaywrightTokenSource implements TokenSource {
 
   // Takes the lock first (busy -> browserBusy) and always closes the browser and releases it.
   private async withBrowser<Result>(
+    purpose: string,
     visible: boolean,
     use: (context: BrowserContext) => Promise<Result>,
   ): Promise<Result | SheetError> {
@@ -129,6 +162,7 @@ export class PlaywrightTokenSource implements TokenSource {
     }
     let context: BrowserContext | null = null
     try {
+      logBrowserLaunch(this.profileDir, 'tsc', purpose)
       context = await chromium.launchPersistentContext(this.profileDir, {
         channel: BROWSER_CHANNEL,
         headless: !visible,

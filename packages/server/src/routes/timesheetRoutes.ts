@@ -1,5 +1,7 @@
 import { isTicketKey, weekdayOf } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
+import { logBrowserNote } from '../browserLaunchLog.js'
+import { resolveDataDir } from '../dataDir.js'
 import { isRecord } from '../jsonFile.js'
 import type { LogTarget } from '../timesheet/logEntry.js'
 import type { DaySuggestionsSource } from '../timesheet/daySuggestions.js'
@@ -154,6 +156,12 @@ export function registerTimesheetRoutes(
     }
     // A remote read never opens a browser on the PC, whatever the body asks.
     const canSniff = request.isRemote ? false : allowSniff
+    if (canSniff) {
+      // Who asked for a read that may open the TSC browser, for the browser-launches log.
+      const from = request.headers.referer ?? request.headers.origin ?? 'none'
+      const agent = (request.headers['user-agent'] ?? '').slice(0, 60)
+      logBrowserNote(resolveDataDir(), `week read with sniff asked from ${from} (${agent})`)
+    }
     // The result arrives through timesheet.changed; the read can open a browser and take a while.
     timesheet.readWeek(monday, canSniff).catch((error: unknown) => {
       request.log.error(error, 'Reading the week failed')

@@ -43,7 +43,7 @@ export function TicketInfoBar({ ticketKey }: { readonly ticketKey: string }): Re
   const facts = row === undefined ? [] : ticketFacts(row)
   return (
     <div
-      className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-surface px-3 py-2"
+      className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-surface px-3 py-2 shadow-surface"
       data-testid="ticket-info"
     >
       {row === undefined ? (

@@ -111,10 +111,9 @@
   padding: 0;
 }
 
-/* A quote, and the quoted message of a reply: set apart by a bar on the left. */
+/* A quote, and the quoted message of a reply: set apart by its tinted block. */
 .teams-content blockquote {
   background: var(--surface-secondary);
-  border-left: 3px solid var(--accent);
   border-radius: 0.5rem;
   color: var(--muted);
   margin: 0.25rem 0;

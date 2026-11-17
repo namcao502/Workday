@@ -83,6 +83,9 @@ export function backend(
     if (url === '/api/timesheet/tickets/check') {
       return jsonResponse(checks)
     }
+    if (url === '/api/settings/tsc/sign-in') {
+      return jsonResponse({ ok: true })
+    }
     if (url === '/api/timesheet/queue') {
       return jsonResponse({ ok: true })
     }

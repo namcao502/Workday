@@ -299,7 +299,7 @@ export function TodoView({
       {groups.map((group, index) => (
         <section
           key={group.ticketKey ?? `group-${String(index)}`}
-          className={`rounded-2xl px-3 py-1 ${group.neededNow ? 'bg-accent-soft' : 'bg-surface'}`}
+          className={`rounded-2xl px-3 py-1 ${group.neededNow ? 'bg-accent-soft' : 'bg-surface shadow-surface'}`}
         >
           <GroupHeader ticketKey={group.ticketKey} rows={rows} />
           <ul className="m-0 flex list-none flex-col gap-0.5 p-0">

@@ -90,9 +90,23 @@ export function WeekNav({
       >
         <ChevronRight />
       </Button>
-      <Button variant="secondary" size="sm" isDisabled={reading} onPress={onReread}>
-        <ArrowRotateRight />
-        {t('Read again', 'Đọc lại')}
+      <Button
+        variant="secondary"
+        size="sm"
+        isDisabled={reading}
+        onPress={onReread}
+        aria-label={t('Read again', 'Đọc lại')}
+      >
+        <span
+          title={t(
+            'Reads TSC again; a browser runs in the background with the saved sign-in',
+            'Đọc lại TSC; trình duyệt chạy ngầm bằng phiên đăng nhập đã lưu',
+          )}
+          className="flex items-center gap-1"
+        >
+          <ArrowRotateRight />
+          {t('Read again', 'Đọc lại')}
+        </span>
       </Button>
     </div>
   )
@@ -158,6 +172,14 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
         <span>{`HRM ${String(hrm.hours)}h / ${String(hrm.targetHours)}h`}</span>
       )}
       {coverage === null ? null : <span>{`TSC ${tscCount(coverage, today)}`}</span>}
+      {coverage?.some((day) => day.tscState === 'noToken') === true ? (
+        <span>
+          {t(
+            'TSC not read yet: Read again reads it (a browser runs in the background).',
+            'Chưa đọc TSC: bấm Đọc lại để đọc (trình duyệt chạy ngầm).',
+          )}
+        </span>
+      ) : null}
       <span className="ml-auto" aria-live="polite">
         {status}
       </span>

@@ -147,7 +147,7 @@ export function WorkspaceTabs(props: WorkspaceTabsProps): React.JSX.Element {
                 setOver(null)
               }}
               className={`flex h-8 shrink-0 items-center min-[720px]:w-40 min-[720px]:min-w-24 min-[720px]:shrink rounded-full pl-3.5 pr-1 text-sm transition-colors duration-150${
-                over === tab.id ? ' ring-2 ring-inset ring-accent' : ''
+                over === tab.id ? ' bg-default' : ''
               }${dragging === tab.id ? ' opacity-50' : ''}${
                 selected
                   ? ' bg-accent-soft text-accent-soft-foreground'

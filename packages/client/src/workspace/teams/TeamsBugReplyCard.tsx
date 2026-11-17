@@ -17,7 +17,10 @@ export function TeamsBugReplyCard({
   onUse,
 }: TeamsBugReplyCardProps): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-1.5 rounded-2xl bg-surface p-3" data-testid="teams-bug-reply">
+    <div
+      className="flex flex-col gap-1.5 rounded-2xl bg-surface p-3 shadow-surface"
+      data-testid="teams-bug-reply"
+    >
       <span className="text-sm font-medium">
         {t(`Answer QC for ${reply.fix.bugKey}`, `Trả lời QC cho ${reply.fix.bugKey}`)}
       </span>

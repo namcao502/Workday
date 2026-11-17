@@ -77,7 +77,7 @@ it('a queued day past the run reads Retry', async () => {
   expect(within(day).getByText('Past the auto-log time, not logged yet')).toBeInTheDocument()
 })
 
-it('the first visit reads this week without a sniff, so no browser opens on its own', async () => {
+it('the first visit reads this week with allowSniff, the previous week without', async () => {
   const fetchMock = backend(timesheetView())
   renderWithQuery(<TimesheetPage />)
   await screen.findByRole('group', { name: /MON 9/ })
@@ -86,7 +86,7 @@ it('the first visit reads this week without a sniff, so no browser opens on its 
   })
   expect(bodyOf(fetchMock, '/api/timesheet/week')).toEqual({
     monday: '2026-11-09',
-    allowSniff: false,
+    allowSniff: true,
   })
   fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
   await waitFor(() => {
@@ -110,7 +110,7 @@ it('a day card shows Day off, the logged hours, or Nothing logged by its state',
   expect(within(card(/FRI 13/)).getByText('not yet')).toBeInTheDocument()
 })
 
-it('pressing anywhere on a day card picks that day, but not its hours bar', async () => {
+it('pressing anywhere on a day card picks that day', async () => {
   backend(timesheetView({ queue: [queued('2026-11-11')] }))
   renderWithQuery(<TimesheetPage />)
   const dateBox = await screen.findByLabelText('Date')
@@ -119,8 +119,6 @@ it('pressing anywhere on a day card picks that day, but not its hours bar', asyn
   fireEvent.click(within(monday).getByText(/MDP-1, MDP-2/))
   expect(dateBox).toHaveValue('2026-11-09')
   const wednesday = card(/WED 11/)
-  fireEvent.click(within(wednesday).getByTestId('hours-bar'))
-  expect(dateBox).toHaveValue('2026-11-09')
   fireEvent.click(within(wednesday).getByText(/Past the auto-log time/))
   expect(dateBox).toHaveValue('2026-11-11')
 })
@@ -252,5 +250,30 @@ it('a server that has no week yet is asked to read it, even when the page was vi
   renderWithQuery(<TimesheetPage />)
   await waitFor(() => {
     expect(callsTo(fetchMock, '/api/timesheet/week')).toBe(1)
+  })
+})
+it('Read again reads with the background browser, and a day with no token says how to read it', async () => {
+  const base = timesheetView()
+  const week = base.week
+  if (week === null || week.coverage === null) {
+    throw new Error('fixture has no week')
+  }
+  const noToken = timesheetView({
+    week: {
+      ...week,
+      coverage: week.coverage.map((day) =>
+        day.tscState === 'notDue' ? day : { ...day, tscState: 'noToken' as const },
+      ),
+    },
+  })
+  const fetchMock = backend(noToken)
+  renderWithQuery(<TimesheetPage />)
+  expect(await screen.findByText(/TSC not read yet: Read again reads it/)).toBeInTheDocument()
+  fireEvent.click(await screen.findByRole('button', { name: 'Read again' }))
+  await waitFor(() => {
+    expect(bodyOf(fetchMock, '/api/timesheet/week', 1)).toEqual({
+      monday: '2026-11-09',
+      allowSniff: true,
+    })
   })
 })

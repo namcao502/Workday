@@ -6,11 +6,11 @@ import type { NoticeAlerts } from './useNotices.js'
 
 export const TOAST_MS = 6000
 
-// The card itself is opaque like the bell's popup; the tone shows as a stripe on its left edge.
-const TONE_STRIPE: Readonly<Record<Notice['tone'], string>> = {
-  info: 'border-accent',
-  success: 'border-success',
-  error: 'border-danger',
+// The card itself is opaque like the bell's popup; the tone shows as a small dot before the text.
+const TONE_DOT: Readonly<Record<Notice['tone'], string>> = {
+  info: 'bg-accent',
+  success: 'bg-success',
+  error: 'bg-danger',
 }
 
 function Toast({
@@ -30,17 +30,19 @@ function Toast({
     }
   }, [notice.id, expire])
   return (
-    <Card
-      className={`w-80 max-w-[92vw] flex-row items-start gap-0 border-l-4 bg-overlay p-0 shadow-overlay ${TONE_STRIPE[notice.tone]}`}
-    >
+    <Card className={`w-80 max-w-[92vw] flex-row items-start gap-0 bg-overlay p-0 shadow-overlay`}>
       <button
         type="button"
-        className="flex-1 cursor-pointer p-3 text-left text-sm"
+        className="flex flex-1 cursor-pointer items-start gap-2 p-3 text-left text-sm"
         onClick={() => {
           alerts.open(notice)
         }}
       >
-        {noticeText(notice.event, getLanguage())}
+        <span
+          className={`mt-1.5 size-2 flex-none rounded-full ${TONE_DOT[notice.tone]}`}
+          aria-hidden="true"
+        />
+        <span className="min-w-0">{noticeText(notice.event, getLanguage())}</span>
       </button>
       <CloseButton
         className="m-1.5"

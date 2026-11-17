@@ -8,6 +8,7 @@ import { JiraTracker } from './jira/jiraTracker.js'
 import { isLoopbackHost } from './security/allowedHosts.js'
 import { createServices } from './services.js'
 import { BrowserLock } from './tsc/browserLock.js'
+import { fileGraphTokenStore } from './tsc/graphTokenStore.js'
 import { GraphSheetLog } from './tsc/graphSheetLog.js'
 import { PlaywrightTokenSource } from './tsc/tokenSniffer.js'
 
@@ -42,6 +43,8 @@ async function main(): Promise<void> {
         tsc,
         new PlaywrightTokenSource(tsc, browserProfileDir, browserLock),
         loadGraphTokenOverride(),
+        fetch,
+        fileGraphTokenStore(dataDir),
       ),
   })
   const app = await createApp({

@@ -32,7 +32,9 @@ export function ClaudePane({
   onClose,
 }: ClaudePaneProps): React.JSX.Element {
   return (
-    <div className={`h-full min-h-0 min-w-0 flex-1 flex-col ${active ? 'flex' : 'hidden'}`}>
+    <div
+      className={`h-full min-h-0 min-w-0 flex-1 flex-col rounded-2xl bg-surface p-3 shadow-surface ${active ? 'flex' : 'hidden'}`}
+    >
       <div
         className="flex flex-wrap items-center gap-1 pb-2"
         role="tablist"

@@ -12,7 +12,6 @@ import {
 } from '@workday/core'
 import { useAccess } from '../api/useMe.js'
 import { t, type Language } from '../i18n.js'
-import { HoursBar } from './HoursBar.js'
 import { TicketRows } from './TicketRows.js'
 import { dayHeader, DONE_MARK, formatMinutes, issueText, queueStatusText } from './timesheetText.js'
 
@@ -80,9 +79,12 @@ function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
   return (
     <>
       {tasks.length === 0 ? null : (
-        <HoursBar
-          minutes={tasks.map((task) => Math.round(task.workingSeconds / SECONDS_PER_MINUTE))}
-          labels={tasks.map((task) => task.ticketKey)}
+        <TicketRows
+          rows={tasks.map((task) => ({
+            key: task.ticketKey,
+            minutes: Math.round(task.workingSeconds / SECONDS_PER_MINUTE),
+          }))}
+          urlFor={props.urlFor}
         />
       )}
       <p className="text-sm">{tscLine(day)}</p>
@@ -137,17 +139,6 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
           {label}
         </Button>
       ) : null}
-      <HoursBar
-        minutes={minutes}
-        labels={entry.tickets}
-        onCommit={
-          canAct
-            ? (next) => {
-                props.onSaveMinutes(entry.date, entry.tickets, next)
-              }
-            : undefined
-        }
-      />
       <TicketRows
         rows={entry.tickets.map((key, index) => ({ key, minutes: minutes[index] ?? 0 }))}
         urlFor={props.urlFor}
@@ -207,7 +198,7 @@ const STATE_COLOR = {
 } as const
 
 // A press on a control or the hours bar does its own job; picking the day then would steal its focus.
-const OWN_PRESS = 'button, input, textarea, select, a, [role="slider"], [data-hours-bar]'
+const OWN_PRESS = 'button, input, textarea, select, a'
 
 export function DayCard(props: DayCardProps): React.JSX.Element {
   const { day, clock, language, selected } = props

@@ -42,9 +42,9 @@ import { WeekTotals } from './WeekTotals.js'
 const WORKDAYS = 5
 type Confirming = 'off' | 'clear' | null
 
-// One read per app load, without a sniff: a sniff opens the TSC browser and can raise a Microsoft sign-in
-// prompt on the phone. Refresh asks for the sniff. Kept in the query cache so a test gets a fresh one.
-// A server with no week at all (it restarted under an open page) is asked again, or the page would load forever.
+// As in the WPF app: the first view of the current week reads with a background browser (the saved sign-in), and the
+// server keeps the token until it expires. A server with no week at all (it restarted under an open page) is asked
+// again without a browser, or the page would load forever. Kept in the query cache so a test gets a fresh one.
 function useFirstRead(thisMonday: string, hasWeek: boolean): void {
   const queryClient = useQueryClient()
   useEffect(() => {
@@ -54,7 +54,7 @@ function useFirstRead(thisMonday: string, hasWeek: boolean): void {
       return
     }
     queryClient.setQueryData(queryKeys.timesheetVisited, true)
-    readWeek(thisMonday, false).catch(() => undefined)
+    readWeek(thisMonday, !visited).catch(() => undefined)
   }, [queryClient, thisMonday, hasWeek])
 }
 

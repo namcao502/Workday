@@ -11,6 +11,7 @@ import {
   type TscConfig,
 } from '@workday/core'
 import { GraphError, GraphWorkbook } from './graphWorkbook.js'
+import type { GraphTokenStore } from './graphTokenStore.js'
 import { jwtExpiry } from './jwt.js'
 
 const SAFETY_BUFFER_MILLISECONDS = 2 * 60_000
@@ -20,7 +21,7 @@ const OPAQUE_TOKEN_LIFETIME_MILLISECONDS = 30 * 60_000
 export interface TokenSource {
   sniff(): Promise<{ readonly token: string } | SheetError> // headless
   checkSession(): Promise<{ readonly signedIn: boolean } | SheetError> // headless
-  signIn(): Promise<SheetWrite> // visible browser
+  signIn(): Promise<SheetWrite & { readonly token?: string }> // visible browser; may hand back the token it saw
 }
 
 interface CachedToken {
@@ -50,7 +51,10 @@ export class GraphSheetLog implements SheetLog {
     private readonly tokens: TokenSource,
     private readonly override: string | null,
     private readonly fetchFn: typeof fetch = fetch,
-  ) {}
+    private readonly store: GraphTokenStore | null = null,
+  ) {
+    this.cached = store?.load() ?? null
+  }
 
   writeTickets(date: string, text: string): Promise<SheetWrite> {
     return this.write(date, text, async (workbook, sheet, cells) => {
@@ -115,9 +119,10 @@ export class GraphSheetLog implements SheetLog {
   async signIn(): Promise<SheetWrite> {
     const result = await this.tokens.signIn()
     if (result.ok) {
-      this.cached = null
+      this.remember(result.token ?? null)
     }
-    return result
+    // The token stays inside this class.
+    return result.ok ? { ok: true } : result
   }
 
   // Aborts with dateMismatch before any cell is touched when column B is not the expected date.
@@ -252,7 +257,7 @@ export class GraphSheetLog implements SheetLog {
   // A sniff can pick a fallback token without the .All scope; keeping it would 403 until it expires.
   private forgetRefusedToken(error: unknown): void {
     if (error instanceof GraphError && (error.status === 401 || error.status === 403)) {
-      this.cached = null
+      this.remember(null)
     }
   }
 
@@ -272,11 +277,22 @@ export class GraphSheetLog implements SheetLog {
     if (!isTokenResult(result)) {
       return result
     }
-    const expiry = jwtExpiry(result.token)
+    this.remember(result.token)
+    return result.token
+  }
+
+  // Keeps the token in memory and in the store; null drops both (a new sign-in, or Graph refused it).
+  private remember(token: string | null): void {
+    if (token === null) {
+      this.cached = null
+      this.store?.clear()
+      return
+    }
+    const expiry = jwtExpiry(token)
     this.cached = {
-      token: result.token,
+      token,
       expiresAtMilliseconds: expiry?.getTime() ?? Date.now() + OPAQUE_TOKEN_LIFETIME_MILLISECONDS,
     }
-    return result.token
+    this.store?.save(this.cached)
   }
 }

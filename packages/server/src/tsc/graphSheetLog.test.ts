@@ -1,5 +1,6 @@
 import type { SheetError, SheetWrite, TscConfig } from '@workday/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { GraphTokenStore, StoredGraphToken } from './graphTokenStore.js'
 import { GraphSheetLog, type TokenSource } from './graphSheetLog.js'
 
 // 2026-01-05 is day 5 of the year, so with 2 header rows it sits on row 7.
@@ -339,6 +340,42 @@ describe('GraphSheetLog token', () => {
     await log.signIn()
     await log.writeOff(DATE)
     expect(tokens.sniff).toHaveBeenCalledTimes(2)
+  })
+
+  it('a token seen during the sign-in is used, so the next call needs no sniff', async () => {
+    const tokens = fakeTokens()
+    const token = jwt(Math.floor(Date.now() / 1000) + 3600)
+    const source: TokenSource = {
+      ...tokens.source,
+      signIn: () => Promise.resolve({ ok: true, token }),
+    }
+    const log = new GraphSheetLog(CONFIG, source, null, fakeGraph({ B7: '1/5/2026' }).fetchFn)
+    expect(await log.signIn()).toEqual({ ok: true })
+    await log.writeOff(DATE)
+    expect(tokens.sniff).not.toHaveBeenCalled()
+  })
+
+  it('a token saved by an earlier run is reused after a restart, without a sniff', async () => {
+    const tokens = fakeTokens()
+    const memory: { value: StoredGraphToken | null } = {
+      value: {
+        token: jwt(Math.floor(Date.now() / 1000) + 3600),
+        expiresAtMilliseconds: Date.now() + 3_600_000,
+      },
+    }
+    const store: GraphTokenStore = {
+      load: () => memory.value,
+      save: (stored) => {
+        memory.value = stored
+      },
+      clear: () => {
+        memory.value = null
+      },
+    }
+    const fetchFn = fakeGraph({ B7: '1/5/2026' }).fetchFn
+    const log = new GraphSheetLog(CONFIG, tokens.source, null, fetchFn, store)
+    expect(await log.readTickets([DATE], { allowSniff: false })).toMatchObject({ kind: 'read' })
+    expect(tokens.sniff).not.toHaveBeenCalled()
   })
 
   it('a token Graph refuses is dropped so the next read sniffs again', async () => {

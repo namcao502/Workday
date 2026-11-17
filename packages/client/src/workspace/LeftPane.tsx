@@ -67,7 +67,10 @@ export function LeftPane({
     }
   }, [teamsConversation, isTicket])
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-testid="workspace-left">
+    <div
+      className="flex min-h-0 min-w-0 flex-1 flex-col rounded-2xl bg-surface p-3 shadow-surface"
+      data-testid="workspace-left"
+    >
       <div className="flex flex-wrap items-center gap-1.5 pb-2">
         <div role="tablist" className={SEGMENT_GROUP}>
           <button

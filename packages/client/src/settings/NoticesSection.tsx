@@ -199,7 +199,7 @@ export function NoticesSection({
               <th
                 key={channel}
                 scope="col"
-                className="py-1 text-xs font-medium uppercase text-muted"
+                className="w-28 py-1 text-center text-xs font-medium uppercase text-muted"
               >
                 {channelName(channel)}
               </th>
@@ -213,21 +213,23 @@ export function NoticesSection({
                 {topicName(topic)}
               </th>
               {CHANNELS.map((channel) => (
-                <td key={channel} className="py-2 text-center">
-                  <Switch
-                    size="sm"
-                    isSelected={channels[topic][channel]}
-                    onChange={(selected) => {
-                      toggle(topic, channel, selected)
-                    }}
-                  >
-                    <Switch.Content>
-                      <Switch.Control>
-                        <Switch.Thumb />
-                      </Switch.Control>
-                      <span className="sr-only">{`${topicName(topic)}: ${channelName(channel)}`}</span>
-                    </Switch.Content>
-                  </Switch>
+                <td key={channel} className="w-28 py-2">
+                  <div className="flex justify-center">
+                    <Switch
+                      size="lg"
+                      isSelected={channels[topic][channel]}
+                      onChange={(selected) => {
+                        toggle(topic, channel, selected)
+                      }}
+                    >
+                      <Switch.Content>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                        <span className="sr-only">{`${topicName(topic)}: ${channelName(channel)}`}</span>
+                      </Switch.Content>
+                    </Switch>
+                  </div>
                 </td>
               ))}
             </tr>
