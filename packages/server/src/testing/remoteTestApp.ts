@@ -56,6 +56,7 @@ export async function buildRemoteApp(
     notices: {},
     knowledgeScan: null,
     theme: 'dark',
+    season: 'auto',
     language: 'en',
     jira: null,
     remote,

@@ -61,6 +61,7 @@ async function connectedApp(): Promise<TestApp> {
     notices: {},
     knowledgeScan: null,
     theme: 'dark',
+    season: 'auto',
     language: 'en',
     jira: JIRA,
     timesheet: { logTime: '18:00', hrm: null, tsc: null },
@@ -84,6 +85,7 @@ async function hrmApp(): Promise<TestApp> {
     notices: {},
     knowledgeScan: null,
     theme: 'dark',
+    season: 'auto',
     language: 'en',
     jira: null,
     timesheet: TIMESHEET,
@@ -135,6 +137,7 @@ describe('settings routes', () => {
         notices: {},
         knowledgeScan: null,
         theme: 'dark',
+        season: 'auto',
         language: 'en',
         jira: JIRA,
         timesheet: { logTime: '18:00', hrm: null, tsc: null },
@@ -189,6 +192,16 @@ describe('settings routes', () => {
     const board = await testApp.app.inject({ url: '/api/board', headers: LOOPBACK_HEADERS })
     expect(board.json()).toMatchObject({ connected: false })
     expect(testApp.schedulerStops.count).toBe(1)
+  })
+
+  it('PUT /api/settings saves a picked season and rejects an unknown one', async () => {
+    const testApp = await connectedApp()
+
+    expect((await putSettings(testApp, { season: 'winter' })).statusCode).toBe(200)
+    expect((await putSettings(testApp, { season: 'monsoon' })).statusCode).toBe(400)
+
+    const settings = await testApp.app.inject({ url: '/api/settings', headers: LOOPBACK_HEADERS })
+    expect(settings.json()).toMatchObject({ config: { season: 'winter' } })
   })
 
   it('PUT /api/settings broadcasts settings.changed', async () => {

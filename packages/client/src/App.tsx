@@ -9,11 +9,14 @@ import { useSettings } from './api/useSettings.js'
 import { errorText } from './errors.js'
 import { setLanguage, t } from './i18n.js'
 import { PairPage } from './remote/PairPage.js'
+import { SeasonLayer } from './season/SeasonLayer.js'
+import { useActiveSeason } from './season/useActiveSeason.js'
 import { pageFromHash, type PageId } from './shell/pages.js'
 import { Shell } from './shell/Shell.js'
 
-// Same key as the inline script in index.html.
+// Same keys as the inline script in index.html.
 const THEME_STORAGE_KEY = 'workday.theme'
+const SEASON_STORAGE_KEY = 'workday.season'
 
 function useHashPage(): PageId {
   const [page, setPage] = useState(() => pageFromHash(window.location.hash))
@@ -35,6 +38,7 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
   const settings = useSettings()
   const theme = settings.data?.config.theme
   const language = settings.data?.config.language
+  const season = useActiveSeason(settings.data?.config.season, settings.data?.config.timeZone)
 
   useLayoutEffect(() => {
     if (theme !== undefined) {
@@ -47,6 +51,19 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
     }
   }, [theme, language])
 
+  useLayoutEffect(() => {
+    if (settings.data === undefined) {
+      return
+    }
+    if (season === null) {
+      delete document.documentElement.dataset['season']
+      localStorage.removeItem(SEASON_STORAGE_KEY)
+    } else {
+      document.documentElement.dataset['season'] = season
+      localStorage.setItem(SEASON_STORAGE_KEY, season)
+    }
+  }, [season, settings.data])
+
   if (settings.data === undefined) {
     return settings.isError ? (
       <CenteredAlert
@@ -55,7 +72,12 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
     ) : null
   }
   setLanguage(settings.data.config.language)
-  return <Shell page={page} />
+  return (
+    <>
+      <SeasonLayer season={season} />
+      <Shell page={page} />
+    </>
+  )
 }
 
 function CenteredAlert({ message }: { readonly message: string }): React.JSX.Element {

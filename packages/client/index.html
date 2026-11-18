@@ -15,6 +15,10 @@
         if (theme === 'light' || theme === 'dark') {
           document.documentElement.dataset.theme = theme
         }
+        const season = localStorage.getItem('workday.season')
+        if (season !== null && /^[a-z]+$/.test(season)) {
+          document.documentElement.dataset.season = season
+        }
       } catch {
         // Storage blocked: fall back to the default theme.
       }

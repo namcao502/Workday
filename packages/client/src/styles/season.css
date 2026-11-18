@@ -1,0 +1,144 @@
+/* Seasonal looks, switched by data-season on <html> (App.tsx). A season repaints the accent and the page,
+   and turns cards into frosted glass over a drawn backdrop. "html:root" outranks the plain theme rules. */
+
+/* Glass: a translucent surface, blurred backdrop, a lit top edge. Popovers and dialogs stay opaque. */
+html:root[data-season] {
+  --surface: color-mix(in oklab, var(--white) 66%, transparent);
+  --surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 10px 30px -12px rgba(15, 23, 42, 0.25);
+  --surface-shadow-raised:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.7),
+    0 14px 34px -10px rgba(15, 23, 42, 0.32);
+}
+
+html:root[data-season][data-theme='dark'] {
+  --surface: color-mix(in oklab, oklch(0.21 0.006 286) 60%, transparent);
+  --surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --surface-shadow-raised:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 16px 36px -10px rgba(0, 0, 0, 0.7);
+}
+
+/* Body and shell let the backdrop through; the panes on it are the glass. index.html gives <html> a
+   color, so the body's own background would otherwise paint over the backdrop's negative z-index. */
+html:root[data-season] body,
+html:root[data-season] .app-shell {
+  background: transparent;
+}
+
+html:root[data-season] :is(.card, .surface, .bg-surface) {
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+}
+
+/* Grey fills on glass turn into a lighter frost, so fields and tracks still read as fills. */
+html:root[data-season]:not([data-theme='dark']) :is(.card, .surface, .bg-surface) {
+  --default: color-mix(in oklab, var(--white) 55%, transparent);
+  --surface-secondary: color-mix(in oklab, var(--white) 50%, transparent);
+}
+
+html:root[data-season][data-theme='dark'] :is(.card, .surface, .bg-surface) {
+  --default: rgba(255, 255, 255, 0.07);
+  --surface-secondary: rgba(255, 255, 255, 0.06);
+}
+
+/* Accents, one per season; dark mode takes a lighter step so it reads on the dark glass. */
+html:root[data-season='winter'] {
+  --accent: oklch(0.58 0.13 240);
+}
+html:root[data-season='christmas'] {
+  --accent: oklch(0.55 0.19 27);
+}
+html:root[data-season='spring'] {
+  --accent: oklch(0.6 0.17 355);
+}
+html:root[data-season='summer'] {
+  --accent: oklch(0.6 0.12 215);
+}
+html:root[data-season='autumn'] {
+  --accent: oklch(0.6 0.15 48);
+}
+html:root[data-season='winter'][data-theme='dark'] {
+  --accent: oklch(0.72 0.12 235);
+}
+html:root[data-season='christmas'][data-theme='dark'] {
+  --accent: oklch(0.68 0.18 25);
+}
+html:root[data-season='spring'][data-theme='dark'] {
+  --accent: oklch(0.74 0.14 355);
+}
+html:root[data-season='summer'][data-theme='dark'] {
+  --accent: oklch(0.74 0.11 210);
+}
+html:root[data-season='autumn'][data-theme='dark'] {
+  --accent: oklch(0.74 0.14 55);
+}
+
+/* Backdrops: soft light pools over a two-tone wash, no images to load. */
+html[data-season='winter'] .season-backdrop {
+  background:
+    radial-gradient(1100px 600px at 8% -10%, #ffffff 0%, transparent 60%),
+    radial-gradient(900px 700px at 100% 105%, #c4d8f2 0%, transparent 60%),
+    linear-gradient(170deg, #d5e4f6 0%, #e8f0fa 50%, #cfdff2 100%);
+}
+html[data-season='winter'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(1000px 600px at 10% -10%, #1f3a63 0%, transparent 60%),
+    radial-gradient(900px 700px at 100% 105%, #122a46 0%, transparent 60%),
+    linear-gradient(170deg, #0a1322 0%, #0f1c31 100%);
+}
+
+html[data-season='christmas'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 0% 0%, #f2c9c9 0%, transparent 60%),
+    radial-gradient(900px 700px at 100% 100%, #c6e3d1 0%, transparent 60%),
+    linear-gradient(170deg, #e8e0d8 0%, #efe9e3 50%, #e3ddd5 100%);
+}
+html[data-season='christmas'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 0% 0%, #441419 0%, transparent 60%),
+    radial-gradient(900px 700px at 100% 100%, #10301f 0%, transparent 60%),
+    linear-gradient(170deg, #130c0e 0%, #0c1410 100%);
+}
+
+html[data-season='spring'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 0% 0%, #ffd6e4 0%, transparent 60%),
+    radial-gradient(900px 700px at 100% 100%, #dcf2d2 0%, transparent 60%),
+    linear-gradient(170deg, #fcf0f4 0%, #f2f7ee 100%);
+}
+html[data-season='spring'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 0% 0%, #3a1a2a 0%, transparent 60%),
+    radial-gradient(900px 700px at 100% 100%, #15291c 0%, transparent 60%),
+    linear-gradient(170deg, #160f13 0%, #0f1511 100%);
+}
+
+html[data-season='summer'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 92% -5%, #ffe39a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 0% 105%, #bfeaf3 0%, transparent 60%),
+    linear-gradient(170deg, #fff6e2 0%, #e6f6fa 100%);
+}
+html[data-season='summer'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 92% -5%, #3b3112 0%, transparent 60%),
+    radial-gradient(1000px 700px at 0% 105%, #0d2d36 0%, transparent 60%),
+    linear-gradient(170deg, #12110b 0%, #0a1619 100%);
+}
+
+html[data-season='autumn'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 95% 0%, #ffd2a6 0%, transparent 60%),
+    radial-gradient(900px 700px at 0% 100%, #efc3a0 0%, transparent 60%),
+    linear-gradient(170deg, #fbf0e4 0%, #f3e3d4 100%);
+}
+html[data-season='autumn'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 95% 0%, #3d230f 0%, transparent 60%),
+    radial-gradient(900px 700px at 0% 100%, #2b170c 0%, transparent 60%),
+    linear-gradient(170deg, #15100b 0%, #110d0a 100%);
+}

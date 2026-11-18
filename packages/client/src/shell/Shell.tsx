@@ -73,7 +73,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
   const alerts = useNotices(page)
   const schedulesDot = useSchedulesView(useAccess().mode !== 'remote').data?.scan.unseenBad === true
   return (
-    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+    <div className="app-shell flex h-dvh overflow-hidden bg-background text-foreground">
       {narrow ? null : (
         <Sidebar
           current={page}

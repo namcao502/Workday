@@ -52,6 +52,7 @@ async function timesheetApp(language: 'en' | 'vi'): Promise<TestApp> {
     notices: {},
     knowledgeScan: null,
     theme: 'dark',
+    season: 'auto',
     language,
     jira: null,
     remote: ENABLED_REMOTE,

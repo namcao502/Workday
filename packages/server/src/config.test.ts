@@ -43,6 +43,7 @@ describe('loadConfig', () => {
       timeZone: 'Asia/Ho_Chi_Minh',
       pollMinutes: 5,
       theme: 'dark',
+      season: 'auto',
       language: 'en',
       jira: null,
       remote: null,
@@ -87,6 +88,7 @@ describe('loadConfig', () => {
     const config = loadConfig(directory)
     expect(config.port).toBe(4870)
     expect(config.theme).toBe('light')
+    expect(config.season).toBe('auto')
     expect(config.language).toBe('en')
   })
 

@@ -1,4 +1,5 @@
 import type { DeviceRights } from './remoteAccess.js'
+import type { SeasonSetting } from './season.js'
 import type { StatusFlow } from './statusFlow.js'
 import type { BoardSection } from './board.js'
 import type { WaitReason } from './claudeAttention.js'
@@ -133,6 +134,7 @@ export interface WorkdayConfig {
   readonly timeZone: string
   readonly pollMinutes: number
   readonly theme: 'dark' | 'light'
+  readonly season: SeasonSetting // 'auto' follows the date
   readonly language: 'en' | 'vi'
   readonly jira: JiraConfig | null
   readonly timesheet: TimesheetConfig
@@ -214,6 +216,7 @@ export interface SettingsUpdate {
   readonly timeZone?: string
   readonly pollMinutes?: number
   readonly theme?: 'dark' | 'light'
+  readonly season?: SeasonSetting
   readonly language?: 'en' | 'vi'
   readonly jira?: JiraConfig | null
   readonly jiraApiToken?: string

@@ -18,6 +18,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
       timeZone: 'Asia/Ho_Chi_Minh',
       pollMinutes: 5,
       theme: 'dark',
+      season: 'auto',
       language: 'en',
       jira: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
