@@ -150,6 +150,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         logTimeMinutes={logTimeMinutes(view.logTime)}
         selected={day.date === date}
         canLog={canLog}
+        reading={reading}
         working={working !== null && working.action === 'drain' && working.date === day.date}
         hrmTasks={week?.hrmTasks ?? []}
         review={week?.review ?? []}
@@ -265,7 +266,8 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
       />
       <div
         ref={gridRef}
-        className={reading ? 'grid gap-3 opacity-50 pointer-events-none' : 'grid gap-3'}
+        // Rows share one height, so a day alone on the last row lines up with the rest.
+        className={`grid gap-3 ${columns > 1 ? 'auto-rows-fr' : ''} ${reading ? 'pointer-events-none opacity-70' : ''}`}
         style={{ gridTemplateColumns: `repeat(${String(columns)}, 1fr)` }}
       >
         {days.map(renderCard)}

@@ -27,6 +27,7 @@ export interface DayCardProps {
   readonly selected: boolean
   readonly canLog: boolean
   readonly working: boolean
+  readonly reading: boolean // the week read is still running: an empty day may only be unread
   readonly hrmTasks: readonly HrmTask[]
   readonly review: readonly WeekReviewItem[]
   readonly urlFor: (key: string) => string
@@ -167,6 +168,9 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
 }
 
 function EmptyBody({ props }: { readonly props: DayCardProps }): React.JSX.Element {
+  if (props.reading) {
+    return <p className="text-sm text-muted">{t('Reading...', 'Đang đọc...')}</p>
+  }
   const past = props.day.date < props.clock.date
   return (
     <p className={past ? 'text-sm text-warning' : 'text-sm text-muted'}>

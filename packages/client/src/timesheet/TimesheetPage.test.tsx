@@ -110,6 +110,27 @@ it('a day card shows Day off, the logged hours, or Nothing logged by its state',
   expect(within(card(/FRI 13/)).getByText('not yet')).toBeInTheDocument()
 })
 
+it('an empty past day says Reading while the week read runs, not Nothing logged', async () => {
+  const base = timesheetView()
+  backend({ ...base, week: base.week === null ? null : { ...base.week, reading: true } })
+  renderWithQuery(<TimesheetPage />)
+  const wednesday = await screen.findByRole('group', { name: /WED 11/ })
+  expect(within(wednesday).getByText('Reading...')).toBeInTheDocument()
+  expect(within(wednesday).queryByText(/Nothing logged/)).toBeNull()
+})
+
+it('week bars measure each ticket against the whole working week', async () => {
+  const base = timesheetView()
+  const task = { date: '2026-11-09', ticketKey: 'MDP-1', summary: null, workingSeconds: 4 * 3600 }
+  backend({
+    ...base,
+    week: base.week === null ? null : { ...base.week, hrmTasks: [task] },
+  })
+  renderWithQuery(<TimesheetPage />)
+  // 4h of a 40h week.
+  expect(await screen.findByTitle('10% of the week')).toBeInTheDocument()
+})
+
 it('pressing anywhere on a day card picks that day', async () => {
   backend(timesheetView({ queue: [queued('2026-11-11')] }))
   renderWithQuery(<TimesheetPage />)

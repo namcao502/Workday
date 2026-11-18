@@ -1,4 +1,4 @@
-import { weekTicketTotals, type HrmTask, type QueueEntry } from '@workday/core'
+import { WORK_MINUTES, weekTicketTotals, type HrmTask, type QueueEntry } from '@workday/core'
 import { Card } from '@heroui/react'
 import { KeyPill } from '../board/KeyPill.js'
 import { t } from '../i18n.js'
@@ -18,7 +18,9 @@ export function WeekTotals({
   urlFor,
 }: WeekTotalsProps): React.JSX.Element | null {
   const totals = weekTicketTotals(hrmTasks, queue, weekdays)
-  const largest = totals[0]?.minutes ?? 0
+  // Bars measure against the full week, so two 4h tickets read as a small share, not two full bars.
+  const logged = totals.reduce((sum, total) => sum + total.minutes, 0)
+  const scale = Math.max(logged, weekdays.length * WORK_MINUTES)
   if (totals.length === 0) {
     return null
   }
@@ -33,10 +35,16 @@ export function WeekTotals({
         {totals.map((total) => (
           <div key={total.key} className="flex items-center gap-2">
             <KeyPill ticketKey={total.key} url={urlFor(total.key)} />
-            <div className="h-2 flex-1 rounded-full bg-surface-secondary">
+            <div
+              className="h-2 flex-1 rounded-full bg-surface-secondary"
+              title={t(
+                `${String(Math.round((total.minutes / scale) * 100))}% of the week`,
+                `${String(Math.round((total.minutes / scale) * 100))}% của tuần`,
+              )}
+            >
               <div
                 className="h-full rounded-full bg-accent"
-                style={{ width: `${String((total.minutes / largest) * 100)}%` }}
+                style={{ width: `${String((total.minutes / scale) * 100)}%` }}
               />
             </div>
             <span className="text-sm text-muted">{formatMinutes(total.minutes)}</span>
