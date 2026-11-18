@@ -42,6 +42,15 @@ describe('parseTranscript', () => {
     ])
   })
 
+  it('drops the synthetic no-response filler but keeps the same words from the model', () => {
+    const text = [{ type: 'text', text: 'No response requested.' }]
+    const rows = parse([
+      { type: 'assistant', message: { model: '<synthetic>', content: text } },
+      { type: 'assistant', message: { model: 'claude-opus-5-5', content: text } },
+    ])
+    expect(rows.map((row) => [row.id, row.role])).toEqual([[100000, 'assistant']])
+  })
+
   it('turns a command into /cmd args and hides reminders', () => {
     const rows = parse([
       user('<command-name>/review</command-name><command-args> now </command-args>'),

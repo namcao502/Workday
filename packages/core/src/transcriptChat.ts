@@ -65,6 +65,7 @@ const HIDDEN_TEXT_PREFIXES = [
   '<local-command-caveat>',
 ]
 const INTERRUPT_MARKER = '[Request interrupted'
+const NO_RESPONSE_TEXT = 'No response requested.'
 const COMMAND_NAME = /<command-name>(.*?)<\/command-name>/s
 const COMMAND_ARGS = /<command-args>(.*?)<\/command-args>/s
 const SUMMARY = /<summary>(.*?)<\/summary>/s
@@ -275,6 +276,11 @@ function apiErrorText(root: Json): string | null {
   return text.trim() === '' ? null : text.trim()
 }
 
+// Claude Code's own placeholder reply after an interrupt: no model wrote it and it says nothing.
+function isNoResponseFiller(message: Json): boolean {
+  return str(message, 'model') === '<synthetic>' && resultText(message).trim() === NO_RESPONSE_TEXT
+}
+
 export function parseTranscript(
   lines: readonly string[],
   offsets: readonly number[],
@@ -453,6 +459,9 @@ export function parseTranscript(
       return
     }
     const content = message['content']
+    if (type === 'assistant' && isNoResponseFiller(message)) {
+      return
+    }
     // Only a person's prompt is the user's bubble: a background agent's notice becomes a step.
     const kind = originKind(root)
     if (type === 'user' && kind !== null && kind !== 'human') {

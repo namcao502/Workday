@@ -98,6 +98,7 @@ export function ChatComposer({
         : fileSuggestions(filePaths, token.query)
   }
   const current = Math.min(picked, Math.max(suggestions.length - 1, 0))
+  const canSend = text.trim() !== '' || images.length !== 0
 
   function choose(suggestion: Suggestion): void {
     if (token === null) {
@@ -135,7 +136,7 @@ export function ChatComposer({
 
   function submit(): void {
     const prompt = text.trim()
-    if (prompt === '' && images.length === 0) {
+    if (!canSend) {
       return
     }
     setRecall(null)
@@ -352,10 +353,11 @@ export function ChatComposer({
           </Button>
         ) : null}
         <Button
-          variant="primary"
+          // A disabled primary still reads as clickable; the neutral look says there is nothing to send.
+          variant={canSend ? 'primary' : 'secondary'}
           size="md"
           className="h-auto"
-          isDisabled={text.trim() === '' && images.length === 0}
+          isDisabled={!canSend}
           onPress={submit}
         >
           {working ? t('Queue', 'Xếp hàng') : t('Send', 'Gửi')}

@@ -1,4 +1,4 @@
-import { Button, Chip, Disclosure, Spinner } from '@heroui/react'
+import { Alert, Button, Chip, Disclosure, Spinner } from '@heroui/react'
 import type { ChatMessage, ChatTodo, ToolEdit } from '@workday/core'
 import { memo, useState } from 'react'
 import Markdown, { type Components } from 'react-markdown'
@@ -172,7 +172,7 @@ function MessageRow({ message, onRewind }: MessageRowProps): React.JSX.Element {
     const uuid = message.uuid
     return (
       <div className="flex max-w-[80%] flex-col items-end gap-1 self-end">
-        <div className="rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap">
+        <div className="rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap wrap-anywhere">
           {message.text}
         </div>
         {uuid === null || onRewind === undefined ? null : (
@@ -189,11 +189,48 @@ function MessageRow({ message, onRewind }: MessageRowProps): React.JSX.Element {
       </div>
     )
   }
+  return <NoticeRow text={message.text ?? ''} isError={message.isError} />
+}
+
+const INTERRUPT_MARKER = '[Request interrupted'
+// The API's wording for an expired or revoked Claude sign-in.
+const AUTH_ERROR = /failed to authenticate|oauth|\b401\b|\/login/i
+
+function NoticeRow({
+  text,
+  isError,
+}: {
+  readonly text: string
+  readonly isError: boolean
+}): React.JSX.Element {
+  if (isError && AUTH_ERROR.test(text)) {
+    return (
+      <Alert status="danger" data-auth-error="true">
+        <Alert.Indicator />
+        <Alert.Content>
+          <Alert.Title>
+            {t('Claude sign-in expired', 'Phiên đăng nhập Claude đã hết hạn')}
+          </Alert.Title>
+          <Alert.Description>
+            {t(
+              'Run "claude" in a terminal and type /login, then send your message again.',
+              'Mở terminal, chạy "claude" rồi gõ /login, sau đó gửi lại tin nhắn.',
+            )}
+            <span className="mt-1 block text-xs wrap-anywhere opacity-70">{text}</span>
+          </Alert.Description>
+        </Alert.Content>
+      </Alert>
+    )
+  }
+  // Claude writes this marker itself when a turn is stopped; show it as a plain status line.
+  const shown = text.startsWith(INTERRUPT_MARKER)
+    ? t('Stopped by you', 'Bạn đã dừng yêu cầu')
+    : text
   return (
     <div
-      className={`self-center text-center text-xs whitespace-pre-wrap ${message.isError ? 'text-danger' : 'text-muted'}`}
+      className={`self-center text-center text-xs whitespace-pre-wrap wrap-anywhere ${isError ? 'text-danger' : 'text-muted'}`}
     >
-      {message.text}
+      {shown}
     </div>
   )
 }
