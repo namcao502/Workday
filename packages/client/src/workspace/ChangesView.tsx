@@ -15,7 +15,7 @@ import { DiffView } from './DiffView.js'
 import { GroupTrees, type FileRef, type TreeGroup } from './GroupTrees.js'
 
 const LIST_SHARE = 0.3
-const LIST_MIN_PX = 160
+const LIST_MIN_PX = 200
 
 interface ChangesViewProps {
   readonly tabId: string

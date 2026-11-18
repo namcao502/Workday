@@ -17,7 +17,7 @@ interface FilesViewProps {
 }
 
 const LIST_SHARE = 0.3
-const LIST_MIN_PX = 160
+const LIST_MIN_PX = 200
 const DOCS_GROUP = 'docs'
 const DEFAULT_DOCS = ['plan.md', 'ticket.md']
 

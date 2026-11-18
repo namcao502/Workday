@@ -50,8 +50,10 @@ function GroupSection({
             setCollapsed(!collapsed)
           }}
         >
-          <Chevron width={14} height={14} aria-hidden="true" />
-          {group.label}
+          <Chevron width={14} height={14} className="shrink-0" aria-hidden="true" />
+          <span className="min-w-0 truncate" title={group.label}>
+            {group.label}
+          </span>
         </button>
       </h3>
       {collapsed ? null : (
