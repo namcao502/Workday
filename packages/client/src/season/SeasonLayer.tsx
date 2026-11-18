@@ -112,31 +112,44 @@ function Particles({
   )
 }
 
-type GarlandSeason = 'christmas' | 'tet' | 'midautumn'
+// Rain is the one season with nothing hung around the edges.
+type GarlandSeason = Exclude<Season, 'rain'>
 
 const GARLAND_ITEM: Readonly<Record<GarlandSeason, string>> = {
   christmas: 'garland-bulb',
   tet: 'garland-lantern',
   midautumn: 'garland-star',
+  winter: 'garland-flake',
+  spring: 'garland-flower',
+  summer: 'garland-flag',
+  autumn: 'garland-leaf',
 }
-const CHRISTMAS_BULBS = ['#e5484d', '#f5c542', '#30a46c', '#3e8ef7'] as const
-const STAR_LANTERNS = ['#e5484d', '#f5b82e'] as const
+
+// Colors cycled along the string; a season without a list draws its ornament in its CSS colors.
+const GARLAND_COLORS: Readonly<Partial<Record<GarlandSeason, readonly string[]>>> = {
+  christmas: ['#e5484d', '#f5c542', '#30a46c', '#3e8ef7'],
+  midautumn: ['#e5484d', '#f5b82e'],
+  winter: ['#8fb6e6', '#b9d4f2', '#6f9fd8'],
+  spring: ['#f08aa6', '#f6b3c8', '#fbd3e0'],
+  summer: ['#ff8a3d', '#ffd23f', '#2bb3a3', '#3e8ef7', '#e5484d'],
+  autumn: ['#d6602a', '#e8963a', '#9c4a26', '#c9a227'],
+}
+
+const GARLAND_EDGES = ['top', 'right', 'bottom', 'left'] as const
 const GARLAND_GAP_PX = 34
-const GARLAND_COUNT = 70 // wide enough for a 2400px window; the strip clips the rest
+const GARLAND_COUNT = 70 // long enough for a 2400px edge; the frame clips the rest
 
 function itemColor(season: GarlandSeason, index: number): string | undefined {
-  if (season === 'christmas') {
-    return CHRISTMAS_BULBS[index % CHRISTMAS_BULBS.length]
-  }
-  return season === 'midautumn' ? STAR_LANTERNS[index % STAR_LANTERNS.length] : undefined
+  const colors = GARLAND_COLORS[season]
+  return colors === undefined ? undefined : colors[index % colors.length]
 }
 
 function hasGarland(season: Season): season is GarlandSeason {
-  return season === 'christmas' || season === 'tet' || season === 'midautumn'
+  return season !== 'rain'
 }
 
-// A string along the top edge: Christmas bulbs, Tet lanterns or Mid-Autumn star lanterns. It hangs over the
-// panes but takes no click; on the light level it does not twinkle or swing.
+// A string along each of the four edges, its ornaments hanging inward: Christmas bulbs, Tet lanterns, star
+// lanterns, snowflakes, blossoms, bunting or leaves. It takes no click; on the light level nothing swings.
 function Garland({
   season,
   still,
@@ -147,24 +160,28 @@ function Garland({
   return (
     <div
       aria-hidden="true"
-      className={`season-garland pointer-events-none fixed inset-x-0 top-0 z-30 overflow-hidden ${still ? 'is-still' : ''}`}
+      className={`season-garland pointer-events-none fixed inset-0 z-30 overflow-hidden ${still ? 'is-still' : ''}`}
       data-garland={season}
       data-testid="season-garland"
     >
-      {Array.from({ length: GARLAND_COUNT }, (_, index) => {
-        const color = itemColor(season, index)
-        return (
-          <span
-            key={index}
-            className={GARLAND_ITEM[season]}
-            style={{
-              left: `${String(index * GARLAND_GAP_PX + GARLAND_GAP_PX / 2)}px`,
-              animationDelay: `${String((index % 7) * 0.37)}s`,
-              ...(color === undefined ? {} : { color }),
-            }}
-          />
-        )
-      })}
+      {GARLAND_EDGES.map((edge, edgeIndex) => (
+        <div key={edge} className="garland-edge" data-edge={edge}>
+          {Array.from({ length: GARLAND_COUNT }, (_, index) => {
+            const color = itemColor(season, index + edgeIndex)
+            return (
+              <span
+                key={index}
+                className={GARLAND_ITEM[season]}
+                style={{
+                  left: `${String(index * GARLAND_GAP_PX + GARLAND_GAP_PX / 2)}px`,
+                  animationDelay: `${String(((index + edgeIndex * 3) % 7) * 0.37)}s`,
+                  ...(color === undefined ? {} : { color }),
+                }}
+              />
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 }
@@ -182,8 +199,8 @@ interface SeasonLayerProps {
   readonly dark: boolean
 }
 
-// The season's backdrop (it fades in when the season changes), its particles behind every pane, and a
-// garland for the festivals. Reduced motion keeps the garland and backdrop still and drops the particles.
+// The season's backdrop behind every pane (it fades in when the season changes), its particles drifting
+// over the panes (sparse, and they take no click), and the garland frame. Reduced motion drops the particles.
 export function SeasonLayer({ season, level, dark }: SeasonLayerProps): React.JSX.Element | null {
   if (season === null) {
     return null
@@ -199,11 +216,16 @@ export function SeasonLayer({ season, level, dark }: SeasonLayerProps): React.JS
         className="season-backdrop season-fade-in pointer-events-none fixed inset-0 -z-10"
         data-still={still || level === 'off' ? 'true' : undefined}
         data-testid="season-layer"
-      >
-        {moving ? (
+      />
+      {moving ? (
+        <div
+          key={`particles-${season}`}
+          aria-hidden="true"
+          className="season-fade-in pointer-events-none fixed inset-0 z-20"
+        >
           <Particles season={season} dark={dark} density={level === 'full' ? 1 : LIGHT_DENSITY} />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
       {level !== 'off' && hasGarland(season) ? <Garland season={season} still={still} /> : null}
     </>
   )

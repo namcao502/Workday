@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import type { Season } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
 import { stubMatchMedia } from '../testSupport.js'
 import { effectLevel } from './effectLevel.js'
@@ -13,13 +14,38 @@ it('draws nothing when no season is on', () => {
   expect(screen.queryByTestId('season-layer')).toBeNull()
 })
 
-it('draws the backdrop behind the panes, with the particle canvas', () => {
+it('draws the backdrop behind the panes and the particles over them, taking no click', () => {
   stubMatchMedia(false)
   render(<SeasonLayer season="winter" level="full" dark={false} />)
   const layer = screen.getByTestId('season-layer')
   expect(layer).toHaveClass('season-backdrop', '-z-10', 'pointer-events-none')
-  expect(screen.getByTestId('season-canvas')).toBeInTheDocument()
-  // Only the festivals (Christmas, Tet, Mid-Autumn) hang a garland.
+  const canvas = screen.getByTestId('season-canvas')
+  expect(layer).not.toContainElement(canvas)
+  expect(canvas.parentElement).toHaveClass('z-20', 'pointer-events-none')
+})
+
+it('the garland frames all four edges, each season with its own ornament; rain hangs none', () => {
+  stubMatchMedia(false)
+  const { rerender } = render(<SeasonLayer season="christmas" level="full" dark={false} />)
+  const garland = screen.getByTestId('season-garland')
+  const edges = [...garland.querySelectorAll('.garland-edge')].map((edge) =>
+    edge.getAttribute('data-edge'),
+  )
+  expect(edges).toEqual(['top', 'right', 'bottom', 'left'])
+  for (const edge of garland.querySelectorAll('.garland-edge')) {
+    expect(edge.querySelector('.garland-bulb')).not.toBeNull()
+  }
+  const ornaments: readonly (readonly [Season, string])[] = [
+    ['winter', 'garland-flake'],
+    ['spring', 'garland-flower'],
+    ['summer', 'garland-flag'],
+    ['autumn', 'garland-leaf'],
+  ]
+  for (const [season, ornament] of ornaments) {
+    rerender(<SeasonLayer season={season} level="full" dark={false} />)
+    expect(screen.getByTestId('season-garland').querySelector(`.${ornament}`)).not.toBeNull()
+  }
+  rerender(<SeasonLayer season="rain" level="full" dark={false} />)
   expect(screen.queryByTestId('season-garland')).toBeNull()
 })
 
@@ -51,7 +77,6 @@ it('Mid-Autumn hangs star lanterns; a summer day has no particles but a summer n
   expect(screen.getByTestId('season-garland').querySelector('.garland-star')).not.toBeNull()
   rerender(<SeasonLayer season="summer" level="full" dark={false} />)
   expect(screen.queryByTestId('season-canvas')).toBeNull()
-  expect(screen.queryByTestId('season-garland')).toBeNull()
   rerender(<SeasonLayer season="summer" level="full" dark />)
   expect(screen.getByTestId('season-canvas')).toBeInTheDocument()
 })
