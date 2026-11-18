@@ -5,7 +5,8 @@ import { ticketPr } from './workTestSupport.js'
 
 it('shows one button with the PR count and the worst state as its dot', () => {
   render(<PrPills prs={[ticketPr('main', { build: 'failed' }), ticketPr('dev')]} repoLabels={{}} />)
-  expect(screen.getByRole('button', { name: /PR 2/ })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'PR 2: Build failed' })).toBeInTheDocument()
+  expect(screen.getByTitle('Build failed')).toHaveTextContent('PR 2')
   expect(screen.getByTestId('pr-dot')).toHaveClass('bg-danger')
   expect(screen.queryByRole('link')).not.toBeInTheDocument()
 })

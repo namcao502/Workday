@@ -22,3 +22,21 @@ it('Segmented shows the dot only on the flagged option', () => {
   expect(dots).toHaveLength(1)
   expect(screen.getByRole('radio', { name: 'Beta' })).toContainElement(dots[0] as HTMLElement)
 })
+
+it('Segmented fades the right edge while choices are hidden past it', () => {
+  const scrollWidth = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(400)
+  const clientWidth = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
+  render(<Segmented label="Wide" value="a" options={options} onChange={vi.fn()} />)
+  const group = screen.getByRole('radiogroup', { name: 'Wide' })
+  expect(group).toHaveAttribute('data-overflow', 'true')
+  expect(group.className).toContain('to_left')
+  scrollWidth.mockRestore()
+  clientWidth.mockRestore()
+})
+
+it('Segmented has no fade when every choice fits', () => {
+  render(<Segmented label="Fits" value="a" options={options} onChange={vi.fn()} />)
+  const group = screen.getByRole('radiogroup', { name: 'Fits' })
+  expect(group).not.toHaveAttribute('data-overflow')
+  expect(group.className).not.toContain('mask-image')
+})

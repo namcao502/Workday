@@ -1,6 +1,6 @@
 import { Button } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
-import type { BoardRow } from '@workday/core'
+import type { BoardRow, StatusFlow } from '@workday/core'
 import { getBoard, queryKeys } from '../api/client.js'
 import { openInVsCode } from '../api/workspaceApi.js'
 import { useRepoLabels, useWork } from '../api/useWork.js'
@@ -8,7 +8,7 @@ import { KeyPill } from '../board/KeyPill.js'
 import { dueUrgencyOf, etaUrgencyOf } from '../board/boardView.js'
 import { urgencyColor } from '../board/DueDate.js'
 import { PrPills } from '../board/PrPills.js'
-import { statusColor } from '../board/StatusText.js'
+import { statusColor, useStatusFlow } from '../board/StatusText.js'
 import { useReadyToTest } from '../board/useReadyToTest.js'
 import { formatDateOnly, getLanguage, t } from '../i18n.js'
 
@@ -21,7 +21,7 @@ export interface TicketFact {
 }
 
 // "Due Nov 13", "ETA Nov 13", "Logged 2.5h": a lone date could be either, so each names its column (WPF HeaderFacts).
-export function ticketFacts(row: BoardRow): readonly TicketFact[] {
+export function ticketFacts(row: BoardRow, flow?: StatusFlow): readonly TicketFact[] {
   const language = getLanguage()
   const { ticket } = row
   const facts: TicketFact[] = []
@@ -29,7 +29,7 @@ export function ticketFacts(row: BoardRow): readonly TicketFact[] {
     facts.push({
       label: null,
       value: ticket.status,
-      className: `font-medium ${statusColor(ticket.statusCategory)}`,
+      className: `font-medium ${statusColor(ticket.status, ticket.statusCategory, flow)}`,
     })
   }
   if (ticket.dueDate !== null) {
@@ -63,9 +63,10 @@ export function TicketInfoBar({ ticketKey }: { readonly ticketKey: string }): Re
   const work = useWork().data
   const repoLabels = useRepoLabels()
   const readyToTest = useReadyToTest()
+  const statusFlow = useStatusFlow()
   const row = board.data?.rows.find((candidate) => candidate.ticket.key === ticketKey)
   const steps = work?.readyToTest[ticketKey]
-  const facts = row === undefined ? [] : ticketFacts(row)
+  const facts = row === undefined ? [] : ticketFacts(row, statusFlow)
   return (
     <div
       className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-surface px-3 py-2 shadow-surface"
@@ -77,7 +78,8 @@ export function TicketInfoBar({ ticketKey }: { readonly ticketKey: string }): Re
         <KeyPill ticketKey={ticketKey} url={row.url} />
       )}
       {row === undefined ? null : (
-        <span className="min-w-0 flex-1 truncate text-base" title={row.ticket.summary}>
+        // Two lines before the cut: the facts and buttons beside it would otherwise leave a stub.
+        <span className="min-w-48 flex-1 line-clamp-2 text-base" title={row.ticket.summary}>
           {row.ticket.summary}
         </span>
       )}

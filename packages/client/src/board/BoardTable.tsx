@@ -65,7 +65,9 @@ export function BoardTable({
             <th className={th}>{t('Status', 'Trạng thái')}</th>
             <th className={th}>{t('Due', 'Hạn')}</th>
             <th className={th}>{t('ETA', 'ETA')}</th>
-            <th className={th}>{t('P', 'P')}</th>
+            <th className={th} title={t('Dev priority', 'Độ ưu tiên dev')}>
+              {t('Priority', 'Ưu tiên')}
+            </th>
             <th className={th} />
           </tr>
         </thead>
@@ -75,12 +77,19 @@ export function BoardTable({
               <td className={`${td} whitespace-nowrap`}>
                 <KeyPill ticketKey={row.ticket.key} url={row.url} />
               </td>
-              <td className={`${td} [overflow-wrap:anywhere]`}>
-                {row.ticket.summary}
-                <PrPills
-                  prs={prsOf(work, view, row.ticket.key)}
-                  repoLabels={work?.repoLabels ?? {}}
-                />
+              {/* max-w-0 lets the cell shrink, so a long summary cuts to one line instead of growing the row. */}
+              <td className={`${td} w-full max-w-0`}>
+                <div className="flex items-center">
+                  <span className="min-w-0 truncate" title={row.ticket.summary}>
+                    {row.ticket.summary}
+                  </span>
+                  <span className="shrink-0">
+                    <PrPills
+                      prs={prsOf(work, view, row.ticket.key)}
+                      repoLabels={work?.repoLabels ?? {}}
+                    />
+                  </span>
+                </div>
               </td>
               <td className={`${td} whitespace-nowrap`}>
                 {row.ticket.status === null ? null : (
@@ -106,11 +115,11 @@ export function BoardTable({
                   />
                 )}
               </td>
-              <td className={td}>
+              <td className={`${td} whitespace-nowrap`}>
                 {row.ticket.devPriority === null ? null : (
                   <PriorityText
                     devPriority={row.ticket.devPriority}
-                    text={String(row.ticket.devPriority)}
+                    text={`P${String(row.ticket.devPriority)}`}
                   />
                 )}
               </td>

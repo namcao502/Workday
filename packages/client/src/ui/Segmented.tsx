@@ -1,4 +1,53 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { SEGMENT_GROUP, segmentClass } from './segmentedStyle.js'
+
+interface Overflow {
+  readonly left: boolean
+  readonly right: boolean
+}
+
+const NO_OVERFLOW: Overflow = { left: false, right: false }
+const FADE_LEFT = '[mask-image:linear-gradient(to_right,transparent,black_2rem)]'
+const FADE_RIGHT = '[mask-image:linear-gradient(to_left,transparent,black_2rem)]'
+const FADE_BOTH =
+  '[mask-image:linear-gradient(to_right,transparent,black_2rem,black_calc(100%-2rem),transparent)]'
+
+function fadeClass(overflow: Overflow): string {
+  if (overflow.left && overflow.right) {
+    return FADE_BOTH
+  }
+  return overflow.left ? FADE_LEFT : overflow.right ? FADE_RIGHT : ''
+}
+
+// Which edges hide a choice: a narrow screen scrolls the row, and the fade says there is more.
+function useOverflow(group: React.RefObject<HTMLDivElement | null>): Overflow {
+  const [overflow, setOverflow] = useState(NO_OVERFLOW)
+  useLayoutEffect(() => {
+    const element = group.current
+    if (element === null) {
+      return
+    }
+    function measure(): void {
+      if (element === null) {
+        return
+      }
+      const left = element.scrollLeft > 1
+      const right = element.scrollLeft + element.clientWidth < element.scrollWidth - 1
+      setOverflow((current) =>
+        current.left === left && current.right === right ? current : { left, right },
+      )
+    }
+    measure()
+    element.addEventListener('scroll', measure, { passive: true })
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    observer?.observe(element)
+    return () => {
+      element.removeEventListener('scroll', measure)
+      observer?.disconnect()
+    }
+  }, [group])
+  return overflow
+}
 
 interface SegmentedProps<Value extends string> {
   readonly label: string
@@ -18,6 +67,18 @@ export function Segmented<Value extends string>({
   options,
   onChange,
 }: SegmentedProps<Value>): React.JSX.Element {
+  const group = useRef<HTMLDivElement>(null)
+  const overflow = useOverflow(group)
+  const selectedIndex = options.findIndex((option) => option.value === value)
+
+  // Keep the chosen view in sight when the row scrolls.
+  useLayoutEffect(() => {
+    const button = group.current?.children[selectedIndex]
+    if (button instanceof HTMLElement && typeof button.scrollIntoView === 'function') {
+      button.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    }
+  }, [selectedIndex])
+
   function move(from: number, step: number): void {
     const next = options[(from + step + options.length) % options.length]
     if (next !== undefined) {
@@ -25,7 +86,13 @@ export function Segmented<Value extends string>({
     }
   }
   return (
-    <div role="radiogroup" aria-label={label} className={SEGMENT_GROUP}>
+    <div
+      ref={group}
+      role="radiogroup"
+      aria-label={label}
+      className={`${SEGMENT_GROUP} ${fadeClass(overflow)}`}
+      data-overflow={overflow.left || overflow.right ? 'true' : undefined}
+    >
       {options.map((option, index) => {
         const selected = option.value === value
         return (

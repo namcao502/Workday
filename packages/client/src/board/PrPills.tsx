@@ -56,9 +56,11 @@ const DOT_CLASS: Readonly<Record<TodoTone, string>> = {
   ready: 'bg-success',
 }
 
-function worstTone(prs: readonly TicketPr[]): TodoTone {
-  const tones = prs.map((ticketPr) => prState(ticketPr.pr).tone)
-  return TONE_RANK.find((tone) => tones.includes(tone)) ?? 'muted'
+// The state behind the button's dot, so its color has words too.
+function worstState(prs: readonly TicketPr[]): PrState | undefined {
+  const states = prs.map((ticketPr) => prState(ticketPr.pr))
+  const tone = TONE_RANK.find((candidate) => states.some((state) => state.tone === candidate))
+  return states.find((state) => state.tone === tone)
 }
 
 // One button for all of a ticket's PRs: its dot is the worst state; a click lists each PR (repo, branch, state)
@@ -67,15 +69,25 @@ export function PrPills({ prs, repoLabels }: PrPillsProps): React.JSX.Element | 
   if (prs.length === 0) {
     return null
   }
+  const worst = worstState(prs)
+  const label = `PR ${String(prs.length)}`
   return (
     <Popover>
-      <Button size="sm" variant="secondary" className="ml-2 align-middle">
-        {`PR ${String(prs.length)}`}
-        <span
-          aria-hidden="true"
-          className={`size-2 rounded-full ${DOT_CLASS[worstTone(prs)]}`}
-          data-testid="pr-dot"
-        />
+      <Button
+        size="sm"
+        variant="secondary"
+        className="ml-2 align-middle"
+        aria-label={worst === undefined ? label : `${label}: ${worst.word}`}
+      >
+        {/* The Button drops a title prop, so the hover text sits on its content. */}
+        <span className="flex items-center gap-1.5" title={worst?.word}>
+          {label}
+          <span
+            aria-hidden="true"
+            className={`size-2 rounded-full ${DOT_CLASS[worst?.tone ?? 'muted']}`}
+            data-testid="pr-dot"
+          />
+        </span>
       </Button>
       <Popover.Content placement="bottom start">
         <Popover.Dialog className="w-72 max-w-[92vw]">
