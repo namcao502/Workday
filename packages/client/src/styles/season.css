@@ -330,7 +330,7 @@ html[data-season='winter'] {
 }
 html[data-season='christmas'] {
   --nav-a: #c0262d;
-  --nav-b: #1f7a4a;
+  --nav-b: #b8860b;
 }
 html[data-season='spring'] {
   --nav-a: #c2185b;

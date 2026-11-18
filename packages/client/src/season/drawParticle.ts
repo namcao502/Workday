@@ -2,7 +2,7 @@ import { particleAlpha, type Particle, type ParticleShape } from './particles.js
 
 // Canvas drawing for each particle shape; particles.ts moves them, this only paints one frame.
 
-const FLAKE_HALO = 'rgba(70, 100, 140, 0.26)'
+const FLAKE_HALO = 'rgba(70, 100, 140, 0.15)'
 const CRYSTAL_FROM = 4.2 // a flake this big or bigger is drawn as a six-arm crystal, smaller as a dot
 const BLOSSOM_CENTER = 'rgba(200, 90, 20, 0.9)'
 const LEAF_VEIN = 'rgba(90, 40, 15, 0.55)'

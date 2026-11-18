@@ -40,7 +40,7 @@ const SNOW: ParticleStyle = {
   speed: [18, 55],
   sway: [6, 22],
   spin: 0.3,
-  colors: ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.75)'],
+  colors: ['rgba(255,255,255,0.72)', 'rgba(255,255,255,0.52)'], // see-through: the flakes drift over text
 }
 
 const STARS: ParticleStyle = {
