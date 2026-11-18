@@ -321,3 +321,204 @@ html[data-season='christmas'] :is(.app-sidebar, .app-tabbar)::before {
     transition: none;
   }
 }
+
+/* Sidebar labels: the season's two colors run through the text, and a small ornament hangs after it.
+   Only the current page's label moves (one shimmer, one sway), so the cost stays flat. */
+html[data-season='winter'] {
+  --nav-a: #2b6cb0;
+  --nav-b: #5f9fe0;
+}
+html[data-season='christmas'] {
+  --nav-a: #c0262d;
+  --nav-b: #1f7a4a;
+}
+html[data-season='spring'] {
+  --nav-a: #c2185b;
+  --nav-b: #e0608f;
+}
+html[data-season='summer'] {
+  --nav-a: #d9480f;
+  --nav-b: #d99a06;
+}
+html[data-season='autumn'] {
+  --nav-a: #b4441a;
+  --nav-b: #c98418;
+}
+html[data-season='tet'] {
+  --nav-a: #c81e1e;
+  --nav-b: #c99512;
+}
+html[data-season='midautumn'] {
+  --nav-a: #c2410c;
+  --nav-b: #c99512;
+}
+html[data-season='rain'] {
+  --nav-a: #3b5b7d;
+  --nav-b: #6c8db0;
+}
+
+/* Dark theme: the same colors, lifted toward white so they read on a dark sidebar. */
+html[data-season] .app-sidebar {
+  --nav-from: var(--nav-a);
+  --nav-to: var(--nav-b);
+}
+html[data-season][data-theme='dark'] .app-sidebar {
+  --nav-from: color-mix(in oklab, var(--nav-a) 55%, white);
+  --nav-to: color-mix(in oklab, var(--nav-b) 55%, white);
+}
+
+html[data-season] .app-sidebar .nav-label {
+  position: relative;
+  background: linear-gradient(90deg, var(--nav-from), var(--nav-to), var(--nav-from)) 0 0 / 200%
+    100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html[data-season] .app-sidebar [aria-current='page'] .nav-label {
+  font-weight: 600;
+  animation: nav-shimmer 6s linear infinite;
+}
+
+@keyframes nav-shimmer {
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* The ornament: drawn after the text, raised a little, in the season's own shape. */
+html[data-season] .app-sidebar .nav-label::after {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-left: 6px;
+  vertical-align: 0.3em;
+  background: var(--nav-to);
+  transform-origin: 50% 0;
+}
+
+html[data-season] .app-sidebar [aria-current='page'] .nav-label::after {
+  animation: nav-sway 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes nav-sway {
+  from {
+    rotate: -14deg;
+  }
+  to {
+    rotate: 14deg;
+  }
+}
+
+/* Winter: a six-point snowflake. */
+html[data-season='winter'] .app-sidebar .nav-label::after {
+  width: 11px;
+  height: 11px;
+  clip-path: polygon(
+    50% 0%,
+    58% 36%,
+    93% 25%,
+    66% 50%,
+    93% 75%,
+    58% 64%,
+    50% 100%,
+    42% 64%,
+    7% 75%,
+    34% 50%,
+    7% 25%,
+    42% 36%
+  );
+}
+
+/* Christmas: a glowing gold bulb (a red one would read as the unread badge). */
+html[data-season='christmas'] .app-sidebar .nav-label::after {
+  width: 7px;
+  height: 10px;
+  border-radius: 50% 50% 45% 45% / 40% 40% 60% 60%;
+  background: #f5c542;
+  box-shadow: 0 0 6px 1px rgba(245, 197, 66, 0.7);
+}
+
+/* Tet: a yellow mai blossom (a red lantern this small would read as the unread badge). */
+html[data-season='tet'] .app-sidebar .nav-label::after {
+  width: 11px;
+  height: 11px;
+  background:
+    radial-gradient(circle at 50% 50%, #c2410c 0 1.6px, transparent 2px),
+    radial-gradient(circle at 50% 20%, #f5b800 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 79% 41%, #f5b800 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 68% 76%, #f5b800 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 32% 76%, #f5b800 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 21% 41%, #f5b800 0 2.7px, transparent 3.1px);
+}
+
+/* Mid-Autumn: a gold star. */
+
+html[data-season='midautumn'] .app-sidebar .nav-label::after {
+  width: 11px;
+  height: 11px;
+  background: #f5b82e;
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+}
+
+/* Spring: five pink petals round a yellow heart. */
+html[data-season='spring'] .app-sidebar .nav-label::after {
+  width: 11px;
+  height: 11px;
+  background:
+    radial-gradient(circle at 50% 50%, #f5c542 0 1.6px, transparent 2px),
+    radial-gradient(circle at 50% 20%, #f08aa6 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 79% 41%, #f08aa6 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 68% 76%, #f08aa6 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 32% 76%, #f08aa6 0 2.7px, transparent 3.1px),
+    radial-gradient(circle at 21% 41%, #f08aa6 0 2.7px, transparent 3.1px);
+}
+
+/* Summer: a small sun with a soft glow. */
+html[data-season='summer'] .app-sidebar .nav-label::after {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f5b82e;
+  box-shadow:
+    0 0 0 2px rgba(245, 184, 46, 0.3),
+    0 0 7px 2px rgba(245, 160, 30, 0.55);
+}
+
+/* Autumn: a leaf, pointed at both ends. */
+html[data-season='autumn'] .app-sidebar .nav-label::after {
+  width: 9px;
+  height: 11px;
+  border-radius: 2px 90% 2px 90%;
+  background: #d6602a;
+}
+
+/* Rain: a drop, point up. */
+html[data-season='rain'] .app-sidebar .nav-label::after {
+  width: 8px;
+  height: 8px;
+  border-radius: 0 50% 50% 50%;
+  transform: rotate(45deg);
+  transform-origin: 50% 50%;
+  background: #6c8db0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-season] .app-sidebar [aria-current='page'] .nav-label,
+  html[data-season] .app-sidebar [aria-current='page'] .nav-label::after {
+    animation: none;
+  }
+}
