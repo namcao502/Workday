@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { activeSeason, parseSeasonSetting, seasonForDate } from './season.js'
+import {
+  activeSeason,
+  parseSeasonEffects,
+  parseSeasonSetting,
+  seasonForDate,
+  tetDate,
+} from './season.js'
 
 describe('seasonForDate', () => {
   it('reads Christmas from Dec 1 to Dec 26, then winter until the end of February', () => {
@@ -20,6 +26,29 @@ describe('seasonForDate', () => {
   })
 })
 
+describe('Tet', () => {
+  it('uses the Vietnamese lunar new year, which differs from the Chinese one in some years', () => {
+    expect(tetDate(2027)).toBe('2027-02-06')
+    expect(tetDate(2030)).toBe('2030-02-02')
+    expect(tetDate(1999)).toBeNull()
+  })
+
+  it('runs from a week before Tet to the 10th day, over winter and spring', () => {
+    // Tet 2027 is Feb 6: Jan 30 .. Feb 15.
+    expect(seasonForDate('2027-01-29')).toBe('winter')
+    expect(seasonForDate('2027-01-30')).toBe('tet')
+    expect(seasonForDate('2027-02-15')).toBe('tet')
+    expect(seasonForDate('2027-02-16')).toBe('winter')
+    // Tet 2029 is Feb 13, so its 10th day is in March: spring resumes after.
+    expect(seasonForDate('2029-02-22')).toBe('tet')
+    expect(seasonForDate('2029-03-01')).toBe('spring')
+  })
+
+  it('a year past the table falls back to the plain seasons', () => {
+    expect(seasonForDate('2070-02-01')).toBe('winter')
+  })
+})
+
 describe('activeSeason', () => {
   it('follows the date on auto, keeps a picked season, and is null when off', () => {
     expect(activeSeason('auto', '2026-12-24')).toBe('christmas')
@@ -34,5 +63,12 @@ describe('parseSeasonSetting', () => {
     expect(parseSeasonSetting('off')).toBe('off')
     expect(parseSeasonSetting('monsoon')).toBeNull()
     expect(parseSeasonSetting(3)).toBeNull()
+    expect(parseSeasonSetting('tet')).toBe('tet')
+  })
+
+  it('parses the effect level', () => {
+    expect(parseSeasonEffects('light')).toBe('light')
+    expect(parseSeasonEffects('auto')).toBe('auto')
+    expect(parseSeasonEffects('loud')).toBeNull()
   })
 })

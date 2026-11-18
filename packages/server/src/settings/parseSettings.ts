@@ -20,7 +20,7 @@ import {
   parseVpn,
   parseWorkspace,
 } from '../config.js'
-import { parseSeasonSetting } from '@workday/core'
+import { parseSeasonEffects, parseSeasonSetting } from '@workday/core'
 import { isRecord } from '../jsonFile.js'
 
 const MIN_PORT = 1024
@@ -153,6 +153,13 @@ export function parseSettingsUpdate(raw: unknown, currentPort: number): Settings
       return null
     }
     update = { ...update, season }
+  }
+  if (Object.hasOwn(raw, 'seasonEffects')) {
+    const seasonEffects = parseSeasonEffects(raw['seasonEffects'])
+    if (seasonEffects === null) {
+      return null
+    }
+    update = { ...update, seasonEffects }
   }
   if (language !== undefined) {
     if (language !== 'en' && language !== 'vi') {

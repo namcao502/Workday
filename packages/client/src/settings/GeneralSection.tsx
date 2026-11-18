@@ -1,4 +1,10 @@
-import { SEASONS, type Season, type SeasonSetting, type SettingsView } from '@workday/core'
+import {
+  SEASONS,
+  type Season,
+  type SeasonEffects,
+  type SeasonSetting,
+  type SettingsView,
+} from '@workday/core'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t, type Language } from '../i18n.js'
 import { useActiveSeason } from '../season/useActiveSeason.js'
@@ -19,6 +25,8 @@ export function seasonName(season: Season): string {
       return t('Winter', 'Đông')
     case 'christmas':
       return t('Christmas', 'Giáng sinh')
+    case 'tet':
+      return t('Tet', 'Tết')
   }
 }
 
@@ -28,7 +36,7 @@ export function GeneralSection({
   readonly settings: SettingsView
 }): React.JSX.Element {
   const save = useSaveSettings()
-  const { theme, language, season, timeZone } = settings.config
+  const { theme, language, season, seasonEffects, timeZone } = settings.config
   const shown = useActiveSeason(season, timeZone)
   return (
     <Section title={t('General', 'Chung')}>
@@ -66,6 +74,30 @@ export function GeneralSection({
           </span>
         ) : null}
       </div>
+      {season === 'off' ? null : (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="w-24 text-sm text-muted">{t('Effects', 'Hiệu ứng')}</span>
+          <Segmented<SeasonEffects>
+            label={t('Effects', 'Hiệu ứng')}
+            value={seasonEffects}
+            options={[
+              { value: 'auto', label: t('Auto', 'Tự động') },
+              { value: 'off', label: t('Off', 'Tắt') },
+              { value: 'light', label: t('Light', 'Nhẹ') },
+              { value: 'full', label: t('Full', 'Đầy đủ') },
+            ]}
+            onChange={(next) => {
+              void save({ seasonEffects: next })
+            }}
+          />
+          <span className="text-sm text-muted">
+            {t(
+              'Auto: full on a computer, light on a phone. Off keeps the colors.',
+              'Tự động: đầy đủ trên máy tính, nhẹ trên điện thoại. Tắt vẫn giữ màu.',
+            )}
+          </span>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <span className="w-24 text-sm text-muted">{t('Language', 'Ngôn ngữ')}</span>
         <Segmented<Language>

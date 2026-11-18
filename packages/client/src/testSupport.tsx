@@ -19,6 +19,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
       pollMinutes: 5,
       theme: 'dark',
       season: 'auto',
+      seasonEffects: 'auto',
       language: 'en',
       jira: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },

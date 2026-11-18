@@ -142,3 +142,119 @@ html[data-season='autumn'][data-theme='dark'] .season-backdrop {
     radial-gradient(900px 700px at 0% 100%, #2b170c 0%, transparent 60%),
     linear-gradient(170deg, #15100b 0%, #110d0a 100%);
 }
+
+html:root[data-season='tet'] {
+  --accent: oklch(0.57 0.2 30);
+}
+html:root[data-season='tet'][data-theme='dark'] {
+  --accent: oklch(0.72 0.17 40);
+}
+
+html[data-season='tet'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 95% -5%, #ffe08a 0%, transparent 60%),
+    radial-gradient(900px 700px at 0% 105%, #ffc9b8 0%, transparent 60%),
+    linear-gradient(170deg, #fff4dc 0%, #fde7dc 100%);
+}
+html[data-season='tet'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(900px 600px at 95% -5%, #3a2a08 0%, transparent 60%),
+    radial-gradient(900px 700px at 0% 105%, #3b0f10 0%, transparent 60%),
+    linear-gradient(170deg, #160d08 0%, #140a0a 100%);
+}
+
+/* The garland along the top edge: a thin wire, then bulbs (Christmas) or small lanterns (Tet). */
+.season-garland {
+  height: 26px;
+}
+
+.season-garland::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 4px;
+  height: 1px;
+  background: rgba(40, 70, 50, 0.55);
+}
+
+.season-garland[data-garland='tet']::before {
+  background: rgba(200, 150, 40, 0.85);
+}
+
+.garland-bulb {
+  position: absolute;
+  top: 5px;
+  width: 7px;
+  height: 10px;
+  margin-left: -3.5px;
+  border-radius: 50% 50% 45% 45% / 40% 40% 60% 60%;
+  background: currentColor;
+  box-shadow: 0 0 8px 2px currentColor;
+  animation: garland-twinkle 2.4s ease-in-out infinite alternate;
+}
+
+.garland-bulb::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 1.5px;
+  width: 4px;
+  height: 3px;
+  border-radius: 1px;
+  background: #5b6560;
+}
+
+.garland-lantern {
+  position: absolute;
+  top: 5px;
+  width: 12px;
+  height: 14px;
+  margin-left: -6px;
+  border-radius: 40%;
+  border-top: 2px solid #f5c542;
+  border-bottom: 2px solid #f5c542;
+  background: radial-gradient(circle at 50% 40%, #ff5a4a 0%, #c81e1e 70%);
+  box-shadow: 0 0 8px rgba(255, 80, 60, 0.45);
+  transform-origin: 50% -3px;
+  animation: garland-swing 3.2s ease-in-out infinite alternate;
+}
+
+.garland-lantern::after {
+  content: '';
+  position: absolute;
+  left: 4.5px;
+  top: 12px;
+  width: 1.5px;
+  height: 6px;
+  background: #f5c542;
+}
+
+.season-garland.is-still .garland-bulb,
+.season-garland.is-still .garland-lantern {
+  animation: none;
+}
+
+@keyframes garland-twinkle {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes garland-swing {
+  from {
+    transform: rotate(-7deg);
+  }
+  to {
+    transform: rotate(7deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .garland-bulb,
+  .garland-lantern {
+    animation: none;
+  }
+}

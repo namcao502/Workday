@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, sentJson, settingsView, stubFetch } from '../testSupport.js'
 import { GeneralSection } from './GeneralSection.js'
@@ -25,4 +25,22 @@ it('picking a season by hand saves it', async () => {
     expect(fetchMock).toHaveBeenCalled()
   })
   expect(sentJson(fetchMock)).toEqual({ season: 'winter' })
+})
+
+it('the effect level saves, and is hidden while seasons are off', async () => {
+  const fetchMock = stubFetch(() => jsonResponse(settingsView()))
+  const { unmount } = renderWithQuery(<GeneralSection settings={settingsView()} />)
+  const effects = screen.getByRole('radiogroup', { name: 'Effects' })
+  fireEvent.click(within(effects).getByRole('radio', { name: 'Light' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalled()
+  })
+  expect(sentJson(fetchMock)).toEqual({ seasonEffects: 'light' })
+  unmount()
+
+  const off = settingsView()
+  renderWithQuery(
+    <GeneralSection settings={{ ...off, config: { ...off.config, season: 'off' } }} />,
+  )
+  expect(screen.queryByRole('radiogroup', { name: 'Effects' })).toBeNull()
 })

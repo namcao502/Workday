@@ -10,7 +10,9 @@ import { errorText } from './errors.js'
 import { setLanguage, t } from './i18n.js'
 import { PairPage } from './remote/PairPage.js'
 import { SeasonLayer } from './season/SeasonLayer.js'
+import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
+import { useNarrow } from './shell/useNarrow.js'
 import { pageFromHash, type PageId } from './shell/pages.js'
 import { Shell } from './shell/Shell.js'
 
@@ -39,6 +41,7 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
   const theme = settings.data?.config.theme
   const language = settings.data?.config.language
   const season = useActiveSeason(settings.data?.config.season, settings.data?.config.timeZone)
+  const level = effectLevel(settings.data?.config.seasonEffects, useNarrow())
 
   useLayoutEffect(() => {
     if (theme !== undefined) {
@@ -74,7 +77,7 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
   setLanguage(settings.data.config.language)
   return (
     <>
-      <SeasonLayer season={season} />
+      <SeasonLayer season={season} level={level} />
       <Shell page={page} />
     </>
   )

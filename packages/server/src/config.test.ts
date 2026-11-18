@@ -44,6 +44,7 @@ describe('loadConfig', () => {
       pollMinutes: 5,
       theme: 'dark',
       season: 'auto',
+      seasonEffects: 'auto',
       language: 'en',
       jira: null,
       remote: null,

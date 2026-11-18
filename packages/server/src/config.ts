@@ -2,6 +2,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   parseColumns,
+  parseSeasonEffects,
   parseSeasonSetting,
   isIpv4Cidr,
   parseIpv4,
@@ -374,6 +375,7 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
     pollMinutes: parsePollMinutes(raw['pollMinutes']),
     theme: raw['theme'] === 'light' ? 'light' : 'dark',
     season: parseSeasonSetting(raw['season']) ?? DEFAULT_CONFIG.season,
+    seasonEffects: parseSeasonEffects(raw['seasonEffects']) ?? DEFAULT_CONFIG.seasonEffects,
     language: raw['language'] === 'vi' ? 'vi' : 'en',
     jira: parseJira(raw['jira']),
     timesheet: parseTimesheet(raw['timesheet']),
@@ -482,6 +484,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   pollMinutes: DEFAULT_POLL_MINUTES,
   theme: 'dark',
   season: 'auto',
+  seasonEffects: 'auto',
   language: 'en',
   jira: null,
   timesheet: { logTime: DEFAULT_LOG_TIME, hrm: null, tsc: null },

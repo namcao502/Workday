@@ -57,6 +57,7 @@ export async function buildRemoteApp(
     knowledgeScan: null,
     theme: 'dark',
     season: 'auto',
+    seasonEffects: 'auto',
     language: 'en',
     jira: null,
     remote,
