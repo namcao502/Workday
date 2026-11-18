@@ -237,7 +237,7 @@ function noticeOf(key: string, update: TicketUpdate): NoticeInput {
       fields: changedFields(update.viewed, update.current),
       changedBy: update.changedBy,
     },
-    target: { kind: 'board', key },
+    target: { kind: 'ticketUpdate', key },
     place: placeOf(key),
   }
 }

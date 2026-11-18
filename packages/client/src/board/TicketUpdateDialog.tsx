@@ -1,16 +1,55 @@
-import { Button, Modal } from '@heroui/react'
+import { Button, buttonVariants, Modal } from '@heroui/react'
 import type { TicketField } from '@workday/core'
 import { useState } from 'react'
 import { useSettings } from '../api/useSettings.js'
 import { useTicketUpdate, type TicketUpdateView } from '../api/ticketUpdateApi.js'
 import { actionErrorText, useWorkActions } from '../api/useWork.js'
 import { formatShortDate, getLanguage, t } from '../i18n.js'
-import { fieldLabel, fieldValue, isLongField, orderedFields } from './ticketUpdateText.js'
+import {
+  diffParts,
+  fieldLabel,
+  fieldValue,
+  isLongField,
+  orderedFields,
+  type DiffPart,
+} from './ticketUpdateText.js'
 
 interface TicketUpdateDialogProps {
   readonly ticketKey: string
   readonly canAct: boolean // marking as seen writes, so it needs act access
   readonly onClose: () => void
+}
+
+const CHANGE_CLASS = {
+  added: 'rounded-sm bg-success-soft text-success',
+  removed: 'rounded-sm bg-danger-soft text-danger line-through',
+} as const
+
+// One side of a field: the words it shares with the other side plain, its own changes marked.
+function DiffSide({
+  parts,
+  change,
+  className,
+}: {
+  readonly parts: readonly DiffPart[]
+  readonly change: 'added' | 'removed'
+  readonly className: string
+}): React.JSX.Element {
+  return (
+    <p className={className}>
+      {parts
+        .filter((part) => part.change === 'same' || part.change === change)
+        .map((part, index) =>
+          part.change === 'same' ? (
+            <span key={index}>{part.text}</span>
+          ) : (
+            <mark key={index} data-diff={change} className={CHANGE_CLASS[change]}>
+              {part.text}
+            </mark>
+          ),
+        )}
+    </p>
+  )
 }
 
 function FieldRow({
@@ -21,17 +60,18 @@ function FieldRow({
   readonly update: TicketUpdateView
 }): React.JSX.Element {
   const valueClass = isLongField(field) ? 'whitespace-pre-wrap' : ''
+  const parts = diffParts(fieldValue(update.viewed, field), fieldValue(update.current, field))
   return (
     <li className="flex flex-col gap-1 rounded-2xl bg-surface-secondary px-3 py-2">
       <span className="text-xs font-medium text-muted uppercase">{fieldLabel(field)}</span>
       <div className="grid grid-cols-2 gap-3 text-sm [overflow-wrap:anywhere]">
         <div>
           <span className="text-xs text-muted">{t('Before', 'Trước')}</span>
-          <p className={valueClass}>{fieldValue(update.viewed, field)}</p>
+          <DiffSide parts={parts} change="removed" className={valueClass} />
         </div>
         <div>
           <span className="text-xs text-muted">{t('After', 'Sau')}</span>
-          <p className={valueClass}>{fieldValue(update.current, field)}</p>
+          <DiffSide parts={parts} change="added" className={valueClass} />
         </div>
       </div>
     </li>
@@ -56,7 +96,9 @@ export function TicketUpdateDialog({
 }: TicketUpdateDialogProps): React.JSX.Element {
   const query = useTicketUpdate(ticketKey)
   const actions = useWorkActions()
-  const timeZone = useSettings().data?.config.timeZone ?? 'UTC'
+  const config = useSettings().data?.config
+  const timeZone = config?.timeZone ?? 'UTC'
+  const jiraBaseUrl = config?.jira?.baseUrl
   const [message, setMessage] = useState<string | null>(null)
   const update = query.data ?? null
 
@@ -119,6 +161,16 @@ export function TicketUpdateDialog({
             )}
           </Modal.Body>
           <Modal.Footer>
+            {jiraBaseUrl === undefined ? null : (
+              <a
+                className={buttonVariants({ variant: 'ghost' })}
+                href={`${jiraBaseUrl}/browse/${ticketKey}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('Open in Jira', 'Mở Jira')}
+              </a>
+            )}
             {canAct && update !== null ? (
               <Button
                 onPress={() => {

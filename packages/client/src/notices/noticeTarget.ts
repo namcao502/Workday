@@ -1,4 +1,5 @@
 import type { NoticeTarget } from '@workday/core'
+import { openTicketUpdate } from '../board/TicketUpdateHost.js'
 import { navigateTo, navigateToWorkspace } from '../shell/pages.js'
 import { navigateToSettings } from '../settings/settingsGroups.js'
 
@@ -23,6 +24,8 @@ export function openNoticeTarget(target: NoticeTarget | null, remote: boolean): 
   }
   if (target.kind === 'url') {
     window.open(target.url, '_blank', 'noopener')
+  } else if (target.kind === 'ticketUpdate') {
+    openTicketUpdate(target.key)
   } else if (target.kind === 'timesheet') {
     navigateTo('timesheet')
   } else if (target.kind === 'schedules' && !remote) {

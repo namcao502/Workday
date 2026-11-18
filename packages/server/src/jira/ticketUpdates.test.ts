@@ -166,7 +166,7 @@ describe('TicketUpdateService.check', () => {
     expect(h.notices[0]).toMatchObject({
       topic: 'jira',
       place: 'ticket-update:MDP-1',
-      target: { kind: 'board', key: 'MDP-1' },
+      target: { kind: 'ticketUpdate', key: 'MDP-1' },
       event: {
         type: 'ticketUpdated',
         key: 'MDP-1',

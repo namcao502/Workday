@@ -58,6 +58,7 @@ function localUrl(target: NoticeTarget | null): string {
     case 'timesheet':
       return '/#/timesheet'
     case 'board':
+    case 'ticketUpdate':
       return '/#/tickets'
     case 'workspace':
       return `/#/workspace/${encodeURIComponent(target.tab)}/${encodeURIComponent(target.session)}`

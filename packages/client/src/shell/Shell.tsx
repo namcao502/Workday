@@ -13,6 +13,7 @@ import { SettingsPage } from '../settings/SettingsPage.js'
 import { TimesheetPage } from '../timesheet/TimesheetPage.js'
 import { needsAttention } from '../timesheet/timesheetState.js'
 import { NoticeToasts } from '../notices/NoticeToasts.js'
+import { TicketUpdateHost } from '../board/TicketUpdateHost.js'
 import { useNotices } from '../notices/useNotices.js'
 import { WorkspacePage } from '../workspace/WorkspacePage.js'
 import { Sidebar } from './Sidebar.js'
@@ -106,6 +107,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
         />
       ) : null}
       <NoticeToasts alerts={alerts} />
+      <TicketUpdateHost />
     </div>
   )
 }

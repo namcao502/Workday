@@ -1,4 +1,5 @@
 import type { TicketContent, TicketField } from '@workday/core'
+import { diffWords } from 'diff'
 import { t } from '../i18n.js'
 
 export function fieldLabel(field: TicketField): string {
@@ -49,4 +50,18 @@ export function orderedFields(fields: readonly TicketField[]): readonly TicketFi
     ...fields.filter((field) => field === 'attachments'),
     ...fields.filter((field) => field === 'description'),
   ]
+}
+
+export interface DiffPart {
+  readonly text: string
+  readonly change: 'same' | 'added' | 'removed'
+}
+
+// Word by word, like the C# dialog's side-by-side diff: the before side keeps 'same' and 'removed', the after side
+// 'same' and 'added'.
+export function diffParts(before: string, after: string): readonly DiffPart[] {
+  return diffWords(before, after).map((part) => ({
+    text: part.value,
+    change: part.added ? 'added' : part.removed ? 'removed' : 'same',
+  }))
 }

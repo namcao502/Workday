@@ -22,6 +22,7 @@ const TARGET_KINDS: ReadonlySet<string> = new Set([
   'schedules',
   'teams',
   'timesheet',
+  'ticketUpdate',
 ])
 
 function isTarget(raw: unknown): raw is NoticeTarget {
@@ -31,6 +32,8 @@ function isTarget(raw: unknown): raw is NoticeTarget {
   switch (raw['kind']) {
     case 'board':
       return raw['key'] === null || typeof raw['key'] === 'string'
+    case 'ticketUpdate':
+      return typeof raw['key'] === 'string'
     case 'schedules':
     case 'timesheet':
       return true

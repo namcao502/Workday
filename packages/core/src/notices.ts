@@ -85,6 +85,7 @@ export type NoticeTarget =
   | { readonly kind: 'url'; readonly url: string }
   | { readonly kind: 'teams'; readonly key: string; readonly conversationId: string }
   | { readonly kind: 'timesheet' }
+  | { readonly kind: 'ticketUpdate'; readonly key: string } // opens the old / new comparison
 
 export interface Notice {
   readonly id: number
