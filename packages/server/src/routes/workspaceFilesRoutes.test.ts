@@ -59,9 +59,15 @@ describe('workspace files routes', () => {
 
   it('reads text, and an image as kind image', async () => {
     const { testApp } = await setup()
-    const text = await get(testApp.app, '/api/workspace/tabs/MDP-1/files/content?group=wt0&path=a.txt')
+    const text = await get(
+      testApp.app,
+      '/api/workspace/tabs/MDP-1/files/content?group=wt0&path=a.txt',
+    )
     expect(text.json<FileContentView>()).toEqual({ kind: 'text', text: 'hello' })
-    const image = await get(testApp.app, '/api/workspace/tabs/MDP-1/files/content?group=wt0&path=pic.png')
+    const image = await get(
+      testApp.app,
+      '/api/workspace/tabs/MDP-1/files/content?group=wt0&path=pic.png',
+    )
     expect(image.json<FileContentView>()).toEqual({ kind: 'image' })
   })
 
@@ -122,7 +128,9 @@ describe('workspace files routes', () => {
         payload,
       })
     expect((await post({ tabId: 'MDP-1' })).json()).toEqual({ ok: true })
-    expect((await post({ tabId: 'MDP-1', group: 'wt0', path: 'a.txt' })).json()).toEqual({ ok: true })
+    expect((await post({ tabId: 'MDP-1', group: 'wt0', path: 'a.txt' })).json()).toEqual({
+      ok: true,
+    })
     expect((await post({ tabId: 'MDP-1', path: '../x' })).statusCode).toBe(400)
     expect((await post({ tabId: 'MDP-9' })).statusCode).toBe(404)
     const targets = testApp.editorCommands.map((command) =>

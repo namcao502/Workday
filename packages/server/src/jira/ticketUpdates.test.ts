@@ -1,4 +1,10 @@
-import type { BoardState, ServerEvent, TicketContent, TicketFieldIds, TicketUpdate } from '@workday/core'
+import type {
+  BoardState,
+  ServerEvent,
+  TicketContent,
+  TicketFieldIds,
+  TicketUpdate,
+} from '@workday/core'
 import { describe, expect, it } from 'vitest'
 import type { NoticeInput } from '../notices/noticeService.js'
 import { boardWith, deferred, FakeTracker, makeTicket } from '../testing/fakes.js'
@@ -161,7 +167,12 @@ describe('TicketUpdateService.check', () => {
       topic: 'jira',
       place: 'ticket-update:MDP-1',
       target: { kind: 'board', key: 'MDP-1' },
-      event: { type: 'ticketUpdated', key: 'MDP-1', fields: ['summary', 'description'], changedBy: 'An' },
+      event: {
+        type: 'ticketUpdated',
+        key: 'MDP-1',
+        fields: ['summary', 'description'],
+        changedBy: 'An',
+      },
     })
     expect(h.saves).toHaveLength(1)
     expect(h.events).toContainEqual({ type: 'work.changed' })
@@ -178,7 +189,10 @@ describe('TicketUpdateService.check', () => {
 describe('TicketUpdateService.markViewed', () => {
   it('stores the shown content, clears the notice and broadcasts', async () => {
     const changed = { ...CONTENT, summary: 'Changed' }
-    const h = harness({ 'MDP-1': stored({ current: changed, changedBy: 'An' }) }, watching(UPDATED_1))
+    const h = harness(
+      { 'MDP-1': stored({ current: changed, changedBy: 'An' }) },
+      watching(UPDATED_1),
+    )
 
     await h.service.markViewed('MDP-1', changed)
 

@@ -1,6 +1,7 @@
 import { Card } from '@heroui/react'
 import { totalTokens, type TicketReport, type TicketReportRow } from '@workday/core'
 import { KeyPill } from '../board/KeyPill.js'
+import { StatusText } from '../board/StatusText.js'
 import { t } from '../i18n.js'
 import { EMPTY_CELL, formatClaudeTime, formatHours, formatTokens } from './insightsText.js'
 
@@ -83,7 +84,16 @@ export function ReportTable({
                     {row.facts.summary ?? EMPTY_CELL}
                   </button>
                 </td>
-                <td className={td}>{row.facts.status ?? EMPTY_CELL}</td>
+                <td className={td}>
+                  {row.facts.status === null ? (
+                    EMPTY_CELL
+                  ) : (
+                    <StatusText
+                      status={row.facts.status}
+                      statusCategory={row.facts.statusCategory}
+                    />
+                  )}
+                </td>
                 <td className={num}>{hoursCell(row, report.hoursRead)}</td>
                 <td className={num}>{numberCell(row.sessions)}</td>
                 <td className={num}>{numberCell(row.turns)}</td>

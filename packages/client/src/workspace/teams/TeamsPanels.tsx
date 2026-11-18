@@ -7,22 +7,44 @@ function optionLabel(option: TeamsOption): string {
   return option.posted ? option.label : `${option.label} ${t('(not posted)', '(chưa đăng)')}`
 }
 
-// Channels first, then the ticket's group chats.
+function UnreadDot({ label }: { readonly label: string }): React.JSX.Element {
+  return (
+    <span
+      className="ml-1.5 size-2 flex-none self-center rounded-full bg-danger"
+      role="img"
+      aria-label={label}
+    />
+  )
+}
+
+// Channels first, then the ticket's group chats; a dot marks each one with a message waiting.
 export function ConversationSelect({
   options,
   value,
+  pending,
   onChange,
 }: {
   readonly options: readonly TeamsOption[]
   readonly value: string
+  readonly pending: readonly string[] // conversation ids with a message waiting for me
   readonly onChange: (id: string) => void
 }): React.JSX.Element {
   const channels = options.filter((option) => option.kind === 'channel')
   const chats = options.filter((option) => option.kind === 'chat')
+  const waiting = new Set(pending)
+  // The open conversation is marked seen as it shows, so only another one needs the hint.
+  const otherWaiting = options.some((option) => option.id !== value && waiting.has(option.id))
+  const item = (option: TeamsOption): React.JSX.Element => (
+    <ListBox.Item key={option.id} id={option.id} textValue={optionLabel(option)}>
+      {optionLabel(option)}
+      {waiting.has(option.id) ? <UnreadDot label={t('Unread', 'Chưa đọc')} /> : null}
+      <ListBox.ItemIndicator />
+    </ListBox.Item>
+  )
   return (
     <Select
       aria-label={t('Conversation', 'Hội thoại')}
-      className="min-w-0 max-w-full"
+      className="min-w-0 max-w-full flex-1"
       value={value}
       onChange={(key) => {
         if (key !== null) {
@@ -32,25 +54,20 @@ export function ConversationSelect({
     >
       <Select.Trigger>
         <Select.Value />
+        {otherWaiting ? (
+          <UnreadDot
+            label={t('Unread in another conversation', 'Có tin chưa đọc ở hội thoại khác')}
+          />
+        ) : null}
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover>
         <ListBox>
-          {channels.map((option) => (
-            <ListBox.Item key={option.id} id={option.id} textValue={optionLabel(option)}>
-              {optionLabel(option)}
-              <ListBox.ItemIndicator />
-            </ListBox.Item>
-          ))}
+          {channels.map(item)}
           {chats.length === 0 ? null : (
             <ListBox.Section>
               <Header>{t('Chats', 'Trò chuyện')}</Header>
-              {chats.map((option) => (
-                <ListBox.Item key={option.id} id={option.id} textValue={optionLabel(option)}>
-                  {optionLabel(option)}
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
+              {chats.map(item)}
             </ListBox.Section>
           )}
         </ListBox>

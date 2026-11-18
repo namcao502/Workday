@@ -1,3 +1,4 @@
+import { ArrowDown } from '@gravity-ui/icons'
 import { Button, Dropdown } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AgentModel, AgentRewind, ChatAnswer, ChatMessage, UsageWindow } from '@workday/core'
@@ -180,6 +181,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   const echoBase = useRef<number | null>(null) // user rows in the transcript when the first echo arrived
   const listRef = useRef<HTMLDivElement>(null)
   const atBottom = useRef(true)
+  const [awayFromBottom, setAwayFromBottom] = useState(false)
   const messages = chat.data?.messages
   const requests = chat.data?.requests
   const userCount = (messages ?? []).filter((message) => message.role === 'user').length
@@ -263,72 +265,95 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div
-        ref={listRef}
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2"
-        onScroll={(event) => {
-          const list = event.currentTarget
-          // A hidden list reports 0 for everything: that says nothing about where the reader was.
-          if (list.clientHeight === 0) {
-            return
-          }
-          atBottom.current =
-            list.scrollHeight - list.scrollTop - list.clientHeight < BOTTOM_SLACK_PX
-        }}
-      >
-        {chat.data?.hasMore === true ? (
-          <p className="text-center text-xs text-muted">
-            {t('Earlier messages are not shown.', 'Tin nhắn cũ hơn không hiển thị.')}
-          </p>
-        ) : null}
-        {chat.data === undefined ? (
-          <p className="text-center text-sm text-muted" role="status">
-            {t('Loading the conversation...', 'Đang tải cuộc trò chuyện...')}
-          </p>
-        ) : null}
-        {empty ? (
-          <p className="m-auto max-w-sm text-center text-sm text-muted" role="status">
-            {running
-              ? t('Claude is starting...', 'Claude đang khởi động...')
-              : t(
-                  'No conversation yet. Send a message to start one.',
-                  'Chưa có cuộc trò chuyện. Gửi một tin nhắn để bắt đầu.',
-                )}
-          </p>
-        ) : null}
-        <ChatRows
-          messages={messages ?? []}
-          {...(running && !working ? { onRewind: startRewind } : {})}
-        />
-        {echoed.map((text, index) => (
-          <div
-            key={`echo-${String(index)}-${text}`}
-            className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap"
-          >
-            {text}
-          </div>
-        ))}
-        {resumable ? (
-          <p
-            className="rounded-2xl bg-surface-secondary px-3 py-2 text-center text-xs text-muted"
-            role="status"
-          >
-            {t(
-              'This is the history of an earlier session. Send a message to continue it.',
-              'Đây là lịch sử của phiên trước. Gửi một tin nhắn để nối tiếp.',
-            )}
-          </p>
-        ) : null}
-        {(requests ?? []).map((request) => (
-          <ChatRequestCard
-            key={request.id}
-            request={request}
-            busy={answering}
-            onAnswer={(response) => {
-              answer(request.id, response)
-            }}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={listRef}
+          data-testid="chat-list"
+          className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2"
+          onScroll={(event) => {
+            const list = event.currentTarget
+            // A hidden list reports 0 for everything: that says nothing about where the reader was.
+            if (list.clientHeight === 0) {
+              return
+            }
+            atBottom.current =
+              list.scrollHeight - list.scrollTop - list.clientHeight < BOTTOM_SLACK_PX
+            setAwayFromBottom(!atBottom.current)
+          }}
+        >
+          {chat.data?.hasMore === true ? (
+            <p className="text-center text-xs text-muted">
+              {t('Earlier messages are not shown.', 'Tin nhắn cũ hơn không hiển thị.')}
+            </p>
+          ) : null}
+          {chat.data === undefined ? (
+            <p className="text-center text-sm text-muted" role="status">
+              {t('Loading the conversation...', 'Đang tải cuộc trò chuyện...')}
+            </p>
+          ) : null}
+          {empty ? (
+            <p className="m-auto max-w-sm text-center text-sm text-muted" role="status">
+              {running
+                ? t('Claude is starting...', 'Claude đang khởi động...')
+                : t(
+                    'No conversation yet. Send a message to start one.',
+                    'Chưa có cuộc trò chuyện. Gửi một tin nhắn để bắt đầu.',
+                  )}
+            </p>
+          ) : null}
+          <ChatRows
+            messages={messages ?? []}
+            {...(running && !working ? { onRewind: startRewind } : {})}
           />
-        ))}
+          {echoed.map((text, index) => (
+            <div
+              key={`echo-${String(index)}-${text}`}
+              className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap"
+            >
+              {text}
+            </div>
+          ))}
+          {resumable ? (
+            <p
+              className="rounded-2xl bg-surface-secondary px-3 py-2 text-center text-xs text-muted"
+              role="status"
+            >
+              {t(
+                'This is the history of an earlier session. Send a message to continue it.',
+                'Đây là lịch sử của phiên trước. Gửi một tin nhắn để nối tiếp.',
+              )}
+            </p>
+          ) : null}
+          {(requests ?? []).map((request) => (
+            <ChatRequestCard
+              key={request.id}
+              request={request}
+              busy={answering}
+              onAnswer={(response) => {
+                answer(request.id, response)
+              }}
+            />
+          ))}
+        </div>
+        {awayFromBottom ? (
+          <Button
+            isIconOnly
+            size="sm"
+            variant="secondary"
+            className="absolute bottom-3 right-4 rounded-full shadow-overlay"
+            aria-label={t('Go to the latest message', 'Tới tin nhắn mới nhất')}
+            onPress={() => {
+              const list = listRef.current
+              if (list !== null) {
+                list.scrollTop = list.scrollHeight
+                atBottom.current = true
+                setAwayFromBottom(false)
+              }
+            }}
+          >
+            <ArrowDown />
+          </Button>
+        ) : null}
       </div>
       {rewind === null ? null : (
         <RewindCard

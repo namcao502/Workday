@@ -1,5 +1,6 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { trackAction } from '../api/pendingActions.js'
 import { NoticeBell } from './NoticeBell.js'
 import { notice, renderNotices } from './noticeTestSupport.js'
 
@@ -41,5 +42,39 @@ it('opening a notice from the bell navigates and marks it read', async () => {
       '/api/notices/1/read',
       expect.objectContaining({ method: 'POST' }),
     )
+  })
+})
+
+it('while work runs the bell icon turns into the spinner, as in the WPF app', async () => {
+  renderNotices(<NoticeBell />, [])
+  const bell = await screen.findByRole('button', { name: 'Notices' })
+  let finish: () => void = () => undefined
+  const action = trackAction(
+    '/api/board/check',
+    () => new Promise<void>((resolve) => (finish = resolve)),
+  )
+  expect(
+    await screen.findByRole('button', { name: 'Notices, work running' }, { timeout: 2000 }),
+  ).toBe(bell)
+  expect(bell.querySelector('.spinner')).not.toBeNull()
+  finish()
+  await act(() => action)
+  expect(await screen.findByRole('button', { name: 'Notices' }, { timeout: 2000 })).toBe(bell)
+})
+
+it('the open bell lists the running work by name above the notices', async () => {
+  renderNotices(<NoticeBell />, [notice(1)])
+  let finish: () => void = () => undefined
+  const action = trackAction(
+    '/api/workspace/start/MDP-7',
+    () => new Promise<void>((resolve) => (finish = resolve)),
+  )
+  fireEvent.click(await screen.findByRole('button', { name: /Notices/ }))
+  expect(await screen.findByText('Running now')).toBeInTheDocument()
+  expect(screen.getByText('Creating the MDP-7 worktree')).toBeInTheDocument()
+  finish()
+  await act(() => action)
+  await waitFor(() => {
+    expect(screen.queryByText('Running now')).toBeNull()
   })
 })

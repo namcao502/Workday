@@ -63,6 +63,11 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const url = (event.notification.data && event.notification.data.url) || '/'
+  // A link to the app on another origin (npm start vs dev) opens there instead of in this origin's window.
+  if (new URL(url, self.location.origin).origin !== self.location.origin) {
+    event.waitUntil(self.clients.openWindow(url))
+    return
+  }
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
       const open = windows.find((client) => 'focus' in client)

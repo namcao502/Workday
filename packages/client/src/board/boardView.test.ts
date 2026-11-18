@@ -1,6 +1,6 @@
 import type { BoardRow, Ticket } from '@workday/core'
 import { expect, it } from 'vitest'
-import { countViews, pickViewWithHits, rowsForView } from './boardView.js'
+import { countViews, isPollLate, pickViewWithHits, rowsForView } from './boardView.js'
 
 function row(key: string, section: BoardRow['section'], overrides: Partial<Ticket> = {}): BoardRow {
   return {
@@ -21,6 +21,7 @@ function row(key: string, section: BoardRow['section'], overrides: Partial<Ticke
     },
     section,
     dueUrgency: 'none',
+    etaUrgency: 'none',
     url: `https://jira.example/browse/${key}`,
   }
 }
@@ -61,4 +62,10 @@ it('pickViewWithHits keeps a view that has hits and otherwise moves to one that 
   expect(pickViewWithHits({ working: 1, done: 2, dismissed: 0 }, 'done')).toBe('done')
   expect(pickViewWithHits({ working: 0, done: 2, dismissed: 1 }, 'working')).toBe('done')
   expect(pickViewWithHits({ working: 0, done: 0, dismissed: 0 }, 'working')).toBe('working')
+})
+
+it('isPollLate: late once two poll intervals passed without a check', () => {
+  const at = '2026-11-18T10:00:00Z'
+  expect(isPollLate(at, 15, new Date('2026-11-18T10:30:00Z'))).toBe(false)
+  expect(isPollLate(at, 15, new Date('2026-11-18T10:31:00Z'))).toBe(true)
 })

@@ -2,11 +2,16 @@ import { fullSizeImageUrl, isAmsImageUrl, safeHtml } from '@workday/core'
 import DOMPurify from 'dompurify'
 import { teamsImageSrc } from '../../api/teamsApi.js'
 import { ctrlLinkHint } from '../../ui/ctrlLink.js'
+import { highlightAuto } from '../../ui/highlight.js'
 
 const FULL_SIZE_ATTRIBUTE = 'data-full-size'
 
-// Core's allow-list first, then DOMPurify; an inert DOMParser document keeps the originals from loading.
-export function renderTeamsHtml(content: string, isPlainText: boolean): string {
+// Core's allow-list, then DOMPurify, in an inert document. Code is coloured in the thread only, never the composer.
+export function renderTeamsHtml(
+  content: string,
+  isPlainText: boolean,
+  highlightCode = false,
+): string {
   const clean = DOMPurify.sanitize(safeHtml(content, isPlainText))
   const parsed = new DOMParser().parseFromString(clean, 'text/html')
   for (const image of parsed.body.querySelectorAll('img')) {
@@ -24,6 +29,12 @@ export function renderTeamsHtml(content: string, isPlainText: boolean): string {
     link.setAttribute('target', '_blank')
     link.setAttribute('rel', 'noopener noreferrer')
     link.setAttribute('title', ctrlLinkHint())
+  }
+  if (highlightCode) {
+    for (const block of parsed.body.querySelectorAll('pre')) {
+      // highlightAuto escapes the text; the only markup it adds is highlight.js spans.
+      block.innerHTML = `<code>${highlightAuto(block.textContent)}</code>`
+    }
   }
   return parsed.body.innerHTML
 }

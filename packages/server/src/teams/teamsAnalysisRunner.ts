@@ -19,6 +19,7 @@ export interface AnalysisRunnerDeps {
     promptState(name: string): PromptOutcome
     prompt(name: string, text: string): PromptOutcome
     assistantTexts(name: string): readonly string[] // newest last
+    isWorking(name: string): boolean // a turn is running or queued
   }
   readonly tmpDir: string
   readonly now: () => Date
@@ -108,11 +109,13 @@ export class TeamsAnalysisRunner {
     const request = this.requests.get(key)
     if (request !== undefined) {
       const answered = await this.collect(ticketKey, conversationId, request)
+      const timedOut = this.deps.now().getTime() - request.startedAt >= ANALYSIS_TIMEOUT_MS
       if (answered) {
         this.requests.delete(key)
-      } else if (this.deps.now().getTime() - request.startedAt < ANALYSIS_TIMEOUT_MS) {
+      } else if (this.deps.workspace.isWorking(request.session) && !timedOut) {
         return { kind: 'running' }
       } else {
+        // The turn ended without the answer (an API error such as a 401, or Claude stopped): Analyze may run again.
         this.requests.delete(key)
         return { kind: 'failed' }
       }

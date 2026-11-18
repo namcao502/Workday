@@ -71,6 +71,7 @@ const TEAMS_BROWSER_FOLDER = 'teams-browser'
 const TEAMS_FIRST_CHECK_MINUTES = 1
 
 export interface ServicesOptions {
+  readonly localOrigin?: string | undefined // where this PC's browser opens the app
   readonly dataDir: string
   readonly config: WorkdayConfig
   readonly createTracker: (jira: JiraConfig, token: string) => TicketTracker
@@ -157,6 +158,7 @@ export function createServices(options: ServicesOptions): Services {
       ? {}
       : { createVerifier: options.createAccessVerifier }),
     ...(options.sendPush === undefined ? {} : { sendPush: options.sendPush }),
+    localOrigin: options.localOrigin,
     ...(options.spawnTunnel === undefined ? {} : { spawnTunnel: options.spawnTunnel }),
     ...logError,
   })

@@ -1,9 +1,10 @@
 import { noticeText, type Notice } from '@workday/core'
-import { Badge, Button, Popover } from '@heroui/react'
+import { Badge, Button, Popover, Spinner } from '@heroui/react'
 import { Bell } from '@gravity-ui/icons'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
+import { useGlobalBusy, useRunningWork } from '../shell/useGlobalBusy.js'
 import { formatShortDate, getLanguage, t } from '../i18n.js'
 import { openNoticeTarget } from './noticeTarget.js'
 import { useNoticeActions, useNoticesView } from './useNotices.js'
@@ -59,16 +60,37 @@ function NoticeItem({
   )
 }
 
-export function NoticeBell(): React.JSX.Element | null {
+// The work running now, first in the list so a click on the spinning bell says what loads (WPF NoticeHistoryView).
+function RunningWork({ labels }: { readonly labels: readonly string[] }): React.JSX.Element | null {
+  if (labels.length === 0) {
+    return null
+  }
+  return (
+    <section className="mb-2 rounded-xl bg-surface-secondary p-2" aria-live="polite">
+      <h3 className="m-0 pb-1 text-sm font-semibold">{t('Running now', 'Đang chạy')}</h3>
+      <ul className="m-0 flex list-none flex-col gap-1 p-0">
+        {labels.map((label) => (
+          <li key={label} className="flex items-start gap-2 text-sm text-muted">
+            <span className="mt-1.5 size-2 flex-none rounded-full bg-accent" aria-hidden="true" />
+            {label}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+export function NoticeBell(): React.JSX.Element {
   const view = useNoticesView().data
   const actions = useNoticeActions()
   const remote = useAccess().mode === 'remote'
   const timeZone = useTimeZone()
+  const busy = useGlobalBusy()
+  const running = useRunningWork()
   const [open, setOpen] = useState(false)
-  if (view === undefined) {
-    return null
-  }
-  const newestFirst = [...view.notices].reverse()
+  // Shown before the notices load too: the first load of the page spins in it.
+  const unread = view?.unread ?? 0
+  const newestFirst = view === undefined ? [] : [...view.notices].reverse()
 
   function openNotice(notice: Notice): void {
     setOpen(false)
@@ -79,17 +101,31 @@ export function NoticeBell(): React.JSX.Element | null {
   return (
     <Popover isOpen={open} onOpenChange={setOpen}>
       <Badge.Anchor>
-        <Button isIconOnly variant="secondary" aria-label={t('Notices', 'Thông báo')}>
-          <Bell width={20} height={20} aria-hidden="true" />
+        {/* While work runs the bell glyph is the spinner, as in the WPF app (BusyIndicator). */}
+        <Button
+          isIconOnly
+          variant="secondary"
+          aria-label={
+            busy
+              ? t('Notices, work running', 'Thông báo, đang chạy việc')
+              : t('Notices', 'Thông báo')
+          }
+        >
+          {busy ? (
+            <Spinner size="sm" aria-hidden="true" />
+          ) : (
+            <Bell width={20} height={20} aria-hidden="true" />
+          )}
         </Button>
-        {view.unread === 0 ? null : (
+        {unread === 0 ? null : (
           <Badge color="danger" size="sm" placement="top-right" data-testid="notice-unread">
-            {badgeText(view.unread)}
+            {badgeText(unread)}
           </Badge>
         )}
       </Badge.Anchor>
       <Popover.Content placement="bottom end">
         <Popover.Dialog className="w-[360px] max-w-[92vw]">
+          <RunningWork labels={running} />
           <div className="flex items-center justify-between pb-2">
             <Popover.Heading className="font-semibold">
               {t('Notifications', 'Thông báo')}
@@ -97,7 +133,7 @@ export function NoticeBell(): React.JSX.Element | null {
             <Button
               size="sm"
               variant="secondary"
-              isDisabled={view.unread === 0}
+              isDisabled={unread === 0}
               onPress={() => {
                 void actions.readAll()
               }}
@@ -105,7 +141,9 @@ export function NoticeBell(): React.JSX.Element | null {
               {t('Mark all read', 'Đánh dấu đã đọc tất cả')}
             </Button>
           </div>
-          {newestFirst.length === 0 ? (
+          {view === undefined ? (
+            <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+          ) : newestFirst.length === 0 ? (
             <p className="text-sm text-muted">{t('No notifications yet', 'Chưa có thông báo')}</p>
           ) : (
             <ul className="m-0 max-h-[420px] list-none overflow-auto p-0">

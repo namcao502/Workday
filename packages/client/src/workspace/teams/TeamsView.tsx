@@ -137,7 +137,12 @@ export function TeamsView({
     <div className="flex h-full min-h-0 flex-col">
       <div className="relative flex flex-wrap items-center gap-2 py-1.5">
         {options.length === 0 ? null : (
-          <ConversationSelect options={options} value={id} onChange={setSelected} />
+          <ConversationSelect
+            options={options}
+            value={id}
+            pending={view.pending}
+            onChange={setSelected}
+          />
         )}
         {view.state === 'thread' ? (
           <Button

@@ -386,3 +386,17 @@ it('the clear button empties the box, and the spinner sits inside the box while 
   fireEvent.click(screen.getByRole('button', { name: 'Clear text' }))
   expect(box).toHaveValue('')
 })
+
+it('a jump-to-latest button shows once the reader scrolls up and takes them to the bottom', async () => {
+  stubChat({ messages: [tool(1)] })
+  renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
+  await screen.findByText(/f1\.ts/)
+  expect(screen.queryByRole('button', { name: 'Go to the latest message' })).toBeNull()
+  const list = screen.getByTestId('chat-list')
+  Object.defineProperty(list, 'scrollHeight', { value: 1000, configurable: true })
+  Object.defineProperty(list, 'clientHeight', { value: 300, configurable: true })
+  list.scrollTop = 100
+  fireEvent.scroll(list)
+  fireEvent.click(await screen.findByRole('button', { name: 'Go to the latest message' }))
+  expect(list.scrollTop).toBe(1000)
+})

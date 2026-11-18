@@ -125,6 +125,24 @@ describe('AgentSession', () => {
     expect(session.state).toMatchObject({ working: false, finished: true })
   })
 
+  it('a prompt folded into the running turn ends working with that turn', () => {
+    const { session, agent } = build()
+    session.send('one')
+    session.send('two')
+    agent.last().emit({ type: 'turnEnded', ok: true, queued: 0 })
+    expect(session.state).toMatchObject({ working: false, finished: true })
+  })
+
+  it('a prompt the SDK still holds keeps working until its turn ends', () => {
+    const { session, agent } = build()
+    session.send('one')
+    session.send('two')
+    agent.last().emit({ type: 'turnEnded', ok: true, queued: 1 })
+    expect(session.state).toMatchObject({ working: true, finished: false })
+    agent.last().emit({ type: 'turnEnded', ok: true, queued: 0 })
+    expect(session.state).toMatchObject({ working: false, finished: true })
+  })
+
   it('exited denies open requests and the next send starts a new process', async () => {
     const { session, agent, savedIds } = build()
     session.send('hi')

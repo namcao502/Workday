@@ -77,7 +77,9 @@ function isMine(message: TeamsMessage, myId: string): boolean {
 
 function othersNewestFirst(thread: TeamsThread, myId: string): readonly TeamsMessage[] {
   return thread.messages
-    .filter((message) => !isMine(message, myId) && message.senderId.startsWith(PERSON_SENDER_PREFIX))
+    .filter(
+      (message) => !isMine(message, myId) && message.senderId.startsWith(PERSON_SENDER_PREFIX),
+    )
     .sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt))
 }
 
@@ -133,9 +135,7 @@ export function replyMention(qc: TeamsPerson): TeamsMention {
 // The reply box's HTML: the QC's chip (the composer's data-mention form), the fix, then its PRs block by block.
 export function buildReplyHtml(fix: BugFix, qc: TeamsPerson | null): string {
   const chip =
-    qc === null
-      ? ''
-      : `<span data-mention="0">${escapeHtml(replyMention(qc).text)}</span>, `
+    qc === null ? '' : `<span data-mention="0">${escapeHtml(replyMention(qc).text)}</span>, `
   let html = `<p>${chip}dạ e fix bug ${escapeHtml(fix.bugKey)} r nha</p>`
   for (const line of fix.description.split('\n').filter((text) => text !== '')) {
     html += `<p>${inlineMarkdown(escapeHtml(line))}</p>`

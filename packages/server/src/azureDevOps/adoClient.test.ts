@@ -65,9 +65,9 @@ describe('ticketPrs', () => {
 
   it('throws NetworkFailure when fetch rejects', async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.reject(new TypeError('fetch failed')))
-    await expect(new AzureDevOpsClient(CONFIG, 'pat', fetchMock).ticketPrs('MDP-1')).rejects.toThrow(
-      NetworkFailure,
-    )
+    await expect(
+      new AzureDevOpsClient(CONFIG, 'pat', fetchMock).ticketPrs('MDP-1'),
+    ).rejects.toThrow(NetworkFailure)
   })
 
   it('throws, never reading unfiltered, when the user id cannot be read', async () => {

@@ -9,7 +9,11 @@ afterEach(async () => {
   await Promise.all(openApps.splice(0).map((app) => app.close()))
 })
 
-async function post(testApp: TestApp, url: string, headers: Record<string, string> = LOOPBACK_HEADERS) {
+async function post(
+  testApp: TestApp,
+  url: string,
+  headers: Record<string, string> = LOOPBACK_HEADERS,
+) {
   return await testApp.app.inject({ method: 'POST', url, headers })
 }
 

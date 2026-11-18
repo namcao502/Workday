@@ -30,7 +30,12 @@ function at(minutes: number): string {
   return new Date(Date.parse(DRAFT_TIME) + minutes * 60_000).toISOString()
 }
 
-function message(senderId: string, senderName: string, minutes: number, text: string): TeamsMessage {
+function message(
+  senderId: string,
+  senderName: string,
+  minutes: number,
+  text: string,
+): TeamsMessage {
   return {
     id: `${senderId}${String(minutes)}`,
     senderId,
@@ -110,7 +115,9 @@ it('isFixReplied needs my message after the draft naming the bug', () => {
 it('buildReplyHtml tags QC and renders inline markdown', () => {
   const marked = { ...fix(), description: 'e sửa **Is Jit** cho *đơn mới*, gọi `GetX()` a * b' }
   const html = buildReplyHtml(marked, { mri: HELENA, displayName: 'Helena' })
-  expect(html.startsWith('<p><span data-mention="0">@Helena</span>, dạ e fix bug MDP-9323 r nha</p>')).toBe(true)
+  expect(
+    html.startsWith('<p><span data-mention="0">@Helena</span>, dạ e fix bug MDP-9323 r nha</p>'),
+  ).toBe(true)
   expect(replyMention({ mri: HELENA, displayName: 'Helena (QC)' })).toEqual({
     text: '@Helena',
     mri: HELENA,
@@ -124,7 +131,10 @@ it('buildReplyHtml tags QC and renders inline markdown', () => {
 })
 
 it('buildReplyHtml escapes html', () => {
-  const html = buildReplyHtml({ ...fix(), description: 'a <b> & c' }, { mri: HELENA, displayName: 'Helena <QC>' })
+  const html = buildReplyHtml(
+    { ...fix(), description: 'a <b> & c' },
+    { mri: HELENA, displayName: 'Helena <QC>' },
+  )
   expect(html).toContain('>@Helena &lt;QC&gt;</span>')
   expect(html).toContain('<p>a &lt;b&gt; &amp; c</p>')
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { devPriorityLevel, dueUrgency, isStatusDone, ticketEquals } from './ticket.js'
+import { devPriorityLevel, dueUrgency, etaUrgency, isStatusDone, ticketEquals } from './ticket.js'
 import { makeTicket } from './testing/ticketFixture.js'
 
 describe('isStatusDone', () => {
@@ -11,6 +11,23 @@ describe('isStatusDone', () => {
     ['done', true],
   ])('follows the Jira status category %s', (statusCategory, expected) => {
     expect(isStatusDone(makeTicket('MDP-1', { statusCategory }))).toBe(expected)
+  })
+})
+
+describe('etaUrgency', () => {
+  const today = '2026-09-29'
+
+  it('flags a passed ETA as overdue and a near one as soon, like the due date', () => {
+    const late = makeTicket('MDP-1', { eta: '2026-09-28', statusCategory: 'indeterminate' })
+    const near = makeTicket('MDP-1', { eta: '2026-09-30', statusCategory: 'indeterminate' })
+    expect(etaUrgency(late, today)).toBe('overdue')
+    expect(etaUrgency(near, today)).toBe('dueSoon')
+  })
+
+  it('is none without an ETA or when Jira already finished the ticket', () => {
+    expect(etaUrgency(makeTicket('MDP-1', { eta: null }), today)).toBe('none')
+    const done = makeTicket('MDP-1', { eta: '2026-09-01', statusCategory: 'done' })
+    expect(etaUrgency(done, today)).toBe('none')
   })
 })
 

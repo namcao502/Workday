@@ -10,7 +10,11 @@ function folderName(folder: string | null): string {
 }
 
 // Same subject as the Workspace's own desktop notice: the ticket key, else the terminal's folder.
-export function claudeWaitNotice(session: string, tab: WorkspaceTab, wait: WaitReason): NoticeInput {
+export function claudeWaitNotice(
+  session: string,
+  tab: WorkspaceTab,
+  wait: WaitReason,
+): NoticeInput {
   const subject = tab.kind === 'ticket' ? tab.id : `Terminal ${folderName(tab.folder)}`
   return {
     topic: 'claude',

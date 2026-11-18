@@ -151,8 +151,8 @@ export function TeamsAnalysisPanel({
     summary = t('Claude is analyzing in the session...', 'Claude đang phân tích trong phiên...')
   } else if (view.kind === 'failed') {
     summary = t(
-      'Claude did not return an analysis. Press Analyze to try again.',
-      'Claude chưa trả phân tích. Bấm Phân tích để thử lại.',
+      'Claude stopped without an analysis; the Claude pane shows why. Press Analyze to try again.',
+      'Claude dừng mà chưa trả phân tích; lý do ở khung Claude. Bấm Phân tích để thử lại.',
     )
   } else if (view.kind === 'done') {
     summary = summaryOf(view.analysis)

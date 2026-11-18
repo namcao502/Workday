@@ -29,7 +29,12 @@ export type TodoItem =
     }
   | { readonly kind: 'teamsMessage'; readonly ticketKey: string; readonly item: TeamsAttentionItem }
   | { readonly kind: 'dbReview'; readonly ticketKey: string; readonly approval: DbReviewApproval }
-  | { readonly kind: 'qcBugReply'; readonly ticketKey: string; readonly parentKey: string; readonly fix: BugFix }
+  | {
+      readonly kind: 'qcBugReply'
+      readonly ticketKey: string
+      readonly parentKey: string
+      readonly fix: BugFix
+    }
   | { readonly kind: 'qcBug'; readonly ticketKey: string; readonly parentKey: string }
   | {
       readonly kind: 'jiraUpdated'
@@ -200,7 +205,11 @@ function updatedTodos(input: TodoInput): readonly TodoItem[] {
     }
   }
   return todos
-    .sort((a, b) => compareText(b.at, a.at) || compareText(ticketKeyOf(a.item) ?? '', ticketKeyOf(b.item) ?? ''))
+    .sort(
+      (a, b) =>
+        compareText(b.at, a.at) ||
+        compareText(ticketKeyOf(a.item) ?? '', ticketKeyOf(b.item) ?? ''),
+    )
     .map((todo) => todo.item)
 }
 
@@ -243,7 +252,10 @@ export function buildTodos(input: TodoInput): readonly TodoItem[] {
     .sort((a, b) => compareText(a.bug.key, b.bug.key))
   const bugKeys = new Set(bugsToFix.map((qcBug) => qcBug.bug.key))
   overdue('inProgress', started)
-  overdue('new', pending.filter((ticket) => !bugKeys.has(ticket.key)))
+  overdue(
+    'new',
+    pending.filter((ticket) => !bugKeys.has(ticket.key)),
+  )
   todos.push(...blockedPrTodos(input, [...started, ...done]))
   // Oldest first: the teammate has waited longest on it.
   const unseen = Object.values(input.reviews)

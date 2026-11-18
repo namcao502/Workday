@@ -113,6 +113,10 @@ export function dueUrgencyOf(row: BoardRow): BoardRow['dueUrgency'] {
   return viewOfRow(row) === 'working' ? row.dueUrgency : 'none'
 }
 
+export function etaUrgencyOf(row: BoardRow): BoardRow['etaUrgency'] {
+  return viewOfRow(row) === 'working' ? row.etaUrgency : 'none'
+}
+
 // Search keeps whole groups: a group stays when its key, summary or a review title holds every word.
 export function filterGroups(
   groups: readonly TodoGroup[],
@@ -135,4 +139,12 @@ export function filterGroups(
     const text = [key, summaries.get(key) ?? '', ...reviewTitles].join(' ').toLowerCase()
     return words.every((word) => text.includes(word))
   })
+}
+
+const MINUTE_MS = 60_000
+const LATE_AFTER_POLLS = 2
+
+// The automatic check missed two runs (the server stopped polling or sleeps): the time shows orange.
+export function isPollLate(lastPollAt: string, pollMinutes: number, now: Date): boolean {
+  return now.getTime() - Date.parse(lastPollAt) > LATE_AFTER_POLLS * pollMinutes * MINUTE_MS
 }

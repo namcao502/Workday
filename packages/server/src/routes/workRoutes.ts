@@ -140,20 +140,24 @@ export function registerWorkRoutes(
   )
 
   // Hands the QC bug to its parent's Claude session; a refusal changes nothing.
-  app.post<{ Params: { key: string } }>('/api/work/bugs/:key/fix', BOARD_ACT, async (request, reply) => {
-    const { key } = request.params
-    if (!isTicketKey(key)) {
-      return fail(reply, 400, 'invalidKey')
-    }
-    const outcome = await bugFixer.fix(key)
-    if (!outcome.ok && outcome.error.code === 'notABug') {
-      return reply.code(404).send(outcome)
-    }
-    if (!outcome.ok && outcome.error.code === 'busy') {
-      return reply.code(409).send(outcome)
-    }
-    return outcome
-  })
+  app.post<{ Params: { key: string } }>(
+    '/api/work/bugs/:key/fix',
+    BOARD_ACT,
+    async (request, reply) => {
+      const { key } = request.params
+      if (!isTicketKey(key)) {
+        return fail(reply, 400, 'invalidKey')
+      }
+      const outcome = await bugFixer.fix(key)
+      if (!outcome.ok && outcome.error.code === 'notABug') {
+        return reply.code(404).send(outcome)
+      }
+      if (!outcome.ok && outcome.error.code === 'busy') {
+        return reply.code(409).send(outcome)
+      }
+      return outcome
+    },
+  )
 
   app.post<{ Params: { key: string } }>(
     '/api/work/suggestions/:key/hide',

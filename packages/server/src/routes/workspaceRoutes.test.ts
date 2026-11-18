@@ -162,7 +162,11 @@ describe('workspace routes', () => {
     const open = await post('/api/workspace/open/MDP-1', {})
     expect(open.json()).toEqual({ ok: true, warning: null })
     rmSync(join(devRepoPath, '.claude'), { recursive: true })
-    await app.inject({ method: 'DELETE', url: '/api/workspace/tabs/MDP-1', headers: LOOPBACK_HEADERS })
+    await app.inject({
+      method: 'DELETE',
+      url: '/api/workspace/tabs/MDP-1',
+      headers: LOOPBACK_HEADERS,
+    })
     const confirm = await post('/api/workspace/open/MDP-1', {})
     expect(confirm.json()).toEqual({ ok: false, confirmRecreate: true })
     const recreated = await post('/api/workspace/open/MDP-1', { recreate: true })

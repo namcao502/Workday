@@ -43,7 +43,12 @@ export function serviceRig(
     now: () => clock.now,
     board: { snapshot: () => boardWith({ inProgress: { 'MDP-1': makeTicket('MDP-1') } }) },
     prs: { state: () => ({ tracking: {} }) },
-    workspace: { promptState: () => 'sent', prompt: () => 'sent', assistantTexts: () => [] },
+    workspace: {
+      promptState: () => 'sent',
+      prompt: () => 'sent',
+      assistantTexts: () => [],
+      isWorking: () => false,
+    },
     tmpDir: '',
     log: () => undefined,
   })

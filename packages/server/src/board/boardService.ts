@@ -4,6 +4,8 @@ import {
   applyLiveTickets,
   dismiss,
   dueUrgency,
+  etaUrgency,
+  isWithDeveloper,
   markDone,
   offPollKeys,
   parseTicketKey,
@@ -105,12 +107,18 @@ export class BoardService {
 
   view(): BoardView {
     const today = todayIn(this.settings.timeZone, this.now())
-    const toRow = (ticket: Ticket, section: BoardRow['section']): BoardRow => ({
-      ticket,
-      section,
-      dueUrgency: dueUrgency(ticket, today),
-      url: this.ticketUrl(ticket.key),
-    })
+    const developerStatuses = this.settings.jira?.statusFlow.developerStatuses ?? []
+    // A late date is only flagged while the status puts the next move on the developer (not in review or QC).
+    const toRow = (ticket: Ticket, section: BoardRow['section']): BoardRow => {
+      const flagged = isWithDeveloper(ticket.status, developerStatuses)
+      return {
+        ticket,
+        section,
+        dueUrgency: flagged ? dueUrgency(ticket, today) : 'none',
+        etaUrgency: flagged ? etaUrgency(ticket, today) : 'none',
+        url: this.ticketUrl(ticket.key),
+      }
+    }
     const listRows = SECTIONS.flatMap((section) =>
       Object.values(this.state[section]).map((ticket) => toRow(ticket, section)),
     )

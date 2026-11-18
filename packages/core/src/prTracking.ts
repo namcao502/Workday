@@ -186,7 +186,9 @@ export function isDevPrMerged(tracking: PrTracking, ticketKey: string): boolean 
 // A ticket with no PR tracked yet is not "closed": its PR may not exist yet.
 export function areAllPrsClosed(tracking: PrTracking, ticketKey: string): boolean {
   const prs = ticketEntries(tracking, `${ticketKey}|`)
-  return prs.length !== 0 && prs.every((pr) => pr.status === 'completed' || pr.status === 'abandoned')
+  return (
+    prs.length !== 0 && prs.every((pr) => pr.status === 'completed' || pr.status === 'abandoned')
+  )
 }
 
 // " -> MDP-1" for a PR into anything but main or development, else "".

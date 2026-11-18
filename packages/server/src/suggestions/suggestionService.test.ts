@@ -42,7 +42,10 @@ class EpicTracker extends FakeTracker {
   }
 }
 
-function setup(initialState: SuggestionState = EMPTY_SUGGESTION_STATE, board: BoardState = boardWith()) {
+function setup(
+  initialState: SuggestionState = EMPTY_SUGGESTION_STATE,
+  board: BoardState = boardWith(),
+) {
   const tracker = new EpicTracker()
   tracker.results = { epics: [EPIC] }
   const notices: NoticeInput[] = []

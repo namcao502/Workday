@@ -5,7 +5,11 @@ import { queryKeys } from '../api/client.js'
 import { getNotices, markAllNoticesRead, markNoticeRead, markPlaceRead } from '../api/noticeApi.js'
 import { useAccess } from '../api/useMe.js'
 import { getLanguage } from '../i18n.js'
-import { LOCAL_PUSH_CHANGED_EVENT, localPushActive } from '../remote/pushSubscription.js'
+import {
+  adoptLocalPush,
+  LOCAL_PUSH_CHANGED_EVENT,
+  localPushActive,
+} from '../remote/pushSubscription.js'
 import type { PageId } from '../shell/pages.js'
 import { openNoticeTarget } from './noticeTarget.js'
 
@@ -78,6 +82,8 @@ export function useNotices(page: PageId): NoticeAlerts {
       })
     }
     refresh()
+    // Best effort: when it cannot move, push stays where it was and the Settings switch still works.
+    adoptLocalPush().catch(() => undefined)
     window.addEventListener(LOCAL_PUSH_CHANGED_EVENT, refresh)
     return () => {
       active = false

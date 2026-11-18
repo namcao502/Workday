@@ -24,7 +24,11 @@ function epic(key: string, summary: string, overrides: Partial<EpicTicket> = {})
   }
 }
 
-function rank(candidates: readonly EpicTicket[], mine: readonly EpicTicket[] = [], excluded: string[] = []) {
+function rank(
+  candidates: readonly EpicTicket[],
+  mine: readonly EpicTicket[] = [],
+  excluded: string[] = [],
+) {
   return rankSuggestions(candidates, mine, new Set(excluded), today, options)
 }
 
@@ -39,13 +43,17 @@ describe('pickMonthEpic', () => {
   const backlog = epic('MDP-7947', 'MDP Issues - 2026 - Backlog')
 
   it('falls back to last month and never picks a future month', () => {
-    expect(pickMonthEpic([november, backlog, september, october], today, prefix)?.key).toBe('MDP-9170')
+    expect(pickMonthEpic([november, backlog, september, october], today, prefix)?.key).toBe(
+      'MDP-9170',
+    )
     expect(pickMonthEpic([backlog, september], today, prefix)?.key).toBe('MDP-8809')
     expect(pickMonthEpic([november, backlog], today, prefix)).toBeNull()
   })
 
   it('reads a month case-insensitively and trims', () => {
-    expect(pickMonthEpic([epic('MDP-1', '  mdp issues - september 2026 ')], today, prefix)?.key).toBe('MDP-1')
+    expect(
+      pickMonthEpic([epic('MDP-1', '  mdp issues - september 2026 ')], today, prefix)?.key,
+    ).toBe('MDP-1')
   })
 
   it.each(['MDP Issues - Octember 2026', 'Something else'])('ignores %j', (summary) => {
@@ -53,7 +61,9 @@ describe('pickMonthEpic', () => {
   })
 
   it('skips a key that is not a Jira key', () => {
-    expect(pickMonthEpic([epic('MDP-1 OR project = X', 'MDP Issues - October 2026')], today, prefix)).toBeNull()
+    expect(
+      pickMonthEpic([epic('MDP-1 OR project = X', 'MDP Issues - October 2026')], today, prefix),
+    ).toBeNull()
   })
 })
 
@@ -72,14 +82,24 @@ describe('rankSuggestions', () => {
         priority: 'High',
         issueType: 'Bug',
       }),
-      epic('MDP-9272', "Placeholder: show a 'By Box' view", { dueDate: '2026-10-19', priority: 'High' }),
-      epic('MDP-9311', 'Add new pretreat options to Polaris PMPD config screens', { dueDate: '2026-10-20' }),
+      epic('MDP-9272', "Placeholder: show a 'By Box' view", {
+        dueDate: '2026-10-19',
+        priority: 'High',
+      }),
+      epic('MDP-9311', 'Add new pretreat options to Polaris PMPD config screens', {
+        dueDate: '2026-10-20',
+      }),
     ]
     const mine = [epic('MDP-9310', 'Permitted SKU UI change requests')]
 
     const ranked = rank(candidates, mine, ['MDP-9311'])
 
-    expect(ranked.map((s) => s.ticket.key)).toEqual(['MDP-9326', 'MDP-9361', 'MDP-9334', 'MDP-9362'])
+    expect(ranked.map((s) => s.ticket.key)).toEqual([
+      'MDP-9326',
+      'MDP-9361',
+      'MDP-9334',
+      'MDP-9362',
+    ])
     expect(ranked[0]?.similarKey).toBe('MDP-9310')
     expect(ranked[1]?.similarKey).toBeNull()
   })
@@ -107,14 +127,20 @@ describe('rankSuggestions', () => {
       epic('MDP-1', 'Add new columns to the export'),
       epic('MDP-2', 'Permitted SKU UI change requests'),
     ]
-    const similar = (summary: string, own = mine) => rank([epic('MDP-9', summary)], own)[0]?.similarKey
+    const similar = (summary: string, own = mine) =>
+      rank([epic('MDP-9', summary)], own)[0]?.similarKey
     expect(similar('Export permitted SKUs with weights')).toBe('MDP-2')
     expect(similar('Add new update for the export')).toBeNull()
-    expect(similar('New pretreat options in the PMPD config', [epic('MDP-8246', 'Add a partner config option to control ASNs')])).toBeNull()
+    expect(
+      similar('New pretreat options in the PMPD config', [
+        epic('MDP-8246', 'Add a partner config option to control ASNs'),
+      ]),
+    ).toBeNull()
   })
 
   it('marks urgent: high priority, due within two days or overdue, not a stale date', () => {
-    const urgent = (overrides: Partial<EpicTicket>) => rank([epic('MDP-1', 'x', overrides)])[0]?.urgent
+    const urgent = (overrides: Partial<EpicTicket>) =>
+      rank([epic('MDP-1', 'x', overrides)])[0]?.urgent
     expect(urgent({ priority: 'High' })).toBe(true)
     expect(urgent({ dueDate: '2026-10-18' })).toBe(true)
     expect(urgent({ dueDate: '2026-10-22' })).toBe(true)

@@ -2,7 +2,6 @@ import { Bars } from '@gravity-ui/icons'
 import { Button } from '@heroui/react'
 import { t } from '../i18n.js'
 import { NoticeBell } from '../notices/NoticeBell.js'
-import { GlobalLoading } from './GlobalLoading.js'
 
 interface TopBarProps {
   readonly onToggleMenu?: (() => void) | undefined // absent while the tab bar replaces the sidebar
@@ -23,7 +22,6 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
         </Button>
       )}
       <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-between gap-3" />
-      <GlobalLoading />
       <NoticeBell />
     </header>
   )

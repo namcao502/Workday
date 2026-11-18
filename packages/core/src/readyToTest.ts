@@ -2,7 +2,10 @@ import type { BoardSection } from './board.js'
 import type { DeployState } from './devDeploys.js'
 
 // The configured path is walked forward only: the steps after the current status, never backward.
-export function stepsToReadyToTest(status: string | null, path: readonly string[]): readonly string[] {
+export function stepsToReadyToTest(
+  status: string | null,
+  path: readonly string[],
+): readonly string[] {
   if (status === null) {
     return []
   }

@@ -15,7 +15,12 @@ async function teamsApp(): Promise<TestApp> {
   openApps.push(testApp.app)
   testApp.teamsChat.addChannel('c1')
   await testApp.services.settings.update({
-    teams: { watchedChannels: ['team > c1'], postLeadName: null, postGreeting: null, dbReviewChannel: null },
+    teams: {
+      watchedChannels: ['team > c1'],
+      postLeadName: null,
+      postGreeting: null,
+      dbReviewChannel: null,
+    },
   })
   return testApp
 }
@@ -26,7 +31,12 @@ describe('teams routes', () => {
     openApps.push(testApp.app)
     const before = await testApp.app.inject({ url: '/api/teams/status', headers: LOOPBACK_HEADERS })
     await testApp.services.settings.update({
-      teams: { watchedChannels: ['team > c1'], postLeadName: null, postGreeting: null, dbReviewChannel: null },
+      teams: {
+        watchedChannels: ['team > c1'],
+        postLeadName: null,
+        postGreeting: null,
+        dbReviewChannel: null,
+      },
     })
     const after = await testApp.app.inject({ url: '/api/teams/status', headers: LOOPBACK_HEADERS })
 

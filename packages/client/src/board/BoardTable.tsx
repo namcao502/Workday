@@ -1,11 +1,13 @@
 import { Card } from '@heroui/react'
 import type { BoardAction, BoardRow, TicketPr } from '@workday/core'
 import { formatDateOnly, t, type Language } from '../i18n.js'
-import type { RowViewId } from './boardView.js'
+import { dueUrgencyOf, etaUrgencyOf, type RowViewId } from './boardView.js'
 import { DueDate } from './DueDate.js'
 import { KeyPill } from './KeyPill.js'
+import { PriorityText } from './PriorityText.js'
 import { PrPills } from './PrPills.js'
 import { RowMenu, type RowWorkspace } from './RowMenu.js'
+import { StatusText } from './StatusText.js'
 
 // What /api/work adds to a row: its PR pills and the Ready to Test menu item.
 export interface RowWork {
@@ -80,16 +82,38 @@ export function BoardTable({
                   repoLabels={work?.repoLabels ?? {}}
                 />
               </td>
-              <td className={`${td} whitespace-nowrap`}>{row.ticket.status}</td>
               <td className={`${td} whitespace-nowrap`}>
-                {row.ticket.dueDate === null ? null : (
-                  <DueDate row={row} text={formatDateOnly(row.ticket.dueDate, language)} />
+                {row.ticket.status === null ? null : (
+                  <StatusText
+                    status={row.ticket.status}
+                    statusCategory={row.ticket.statusCategory}
+                  />
                 )}
               </td>
               <td className={`${td} whitespace-nowrap`}>
-                {row.ticket.eta === null ? null : formatDateOnly(row.ticket.eta, language)}
+                {row.ticket.dueDate === null ? null : (
+                  <DueDate
+                    urgency={dueUrgencyOf(row)}
+                    text={formatDateOnly(row.ticket.dueDate, language)}
+                  />
+                )}
               </td>
-              <td className={td}>{row.ticket.devPriority}</td>
+              <td className={`${td} whitespace-nowrap`}>
+                {row.ticket.eta === null ? null : (
+                  <DueDate
+                    urgency={etaUrgencyOf(row)}
+                    text={formatDateOnly(row.ticket.eta, language)}
+                  />
+                )}
+              </td>
+              <td className={td}>
+                {row.ticket.devPriority === null ? null : (
+                  <PriorityText
+                    devPriority={row.ticket.devPriority}
+                    text={String(row.ticket.devPriority)}
+                  />
+                )}
+              </td>
               <td className={td}>
                 <RowMenu
                   ticketKey={row.ticket.key}

@@ -5,29 +5,54 @@ import { getBoard, queryKeys } from '../api/client.js'
 import { openInVsCode } from '../api/workspaceApi.js'
 import { useRepoLabels, useWork } from '../api/useWork.js'
 import { KeyPill } from '../board/KeyPill.js'
+import { dueUrgencyOf, etaUrgencyOf } from '../board/boardView.js'
+import { urgencyColor } from '../board/DueDate.js'
 import { PrPills } from '../board/PrPills.js'
+import { statusColor } from '../board/StatusText.js'
 import { useReadyToTest } from '../board/useReadyToTest.js'
 import { formatDateOnly, getLanguage, t } from '../i18n.js'
 
 const SECONDS_PER_HOUR = 3600
 
+export interface TicketFact {
+  readonly label: string | null // muted, so the value stands out; null for the status
+  readonly value: string
+  readonly className: string // the value's color, which tells the state at a glance
+}
+
 // "Due Nov 13", "ETA Nov 13", "Logged 2.5h": a lone date could be either, so each names its column (WPF HeaderFacts).
-export function ticketFacts(row: BoardRow): readonly string[] {
+export function ticketFacts(row: BoardRow): readonly TicketFact[] {
   const language = getLanguage()
   const { ticket } = row
-  const facts: string[] = []
+  const facts: TicketFact[] = []
   if (ticket.status !== null) {
-    facts.push(ticket.status)
+    facts.push({
+      label: null,
+      value: ticket.status,
+      className: `font-medium ${statusColor(ticket.statusCategory)}`,
+    })
   }
   if (ticket.dueDate !== null) {
-    facts.push(`${t('Due', 'Hạn')} ${formatDateOnly(ticket.dueDate, language)}`)
+    facts.push({
+      label: t('Due', 'Hạn'),
+      value: formatDateOnly(ticket.dueDate, language),
+      className: `font-medium ${urgencyColor(dueUrgencyOf(row))}`,
+    })
   }
   if (ticket.eta !== null) {
-    facts.push(`ETA ${formatDateOnly(ticket.eta, language)}`)
+    facts.push({
+      label: 'ETA',
+      value: formatDateOnly(ticket.eta, language),
+      className: `font-medium ${urgencyColor(etaUrgencyOf(row))}`,
+    })
   }
   if (ticket.timeSpentSeconds !== null && ticket.timeSpentSeconds !== 0) {
     const hours = Math.round((ticket.timeSpentSeconds / SECONDS_PER_HOUR) * 10) / 10
-    facts.push(`${t('Logged', 'Đã log')} ${String(hours)}h`)
+    facts.push({
+      label: t('Logged', 'Đã log'),
+      value: `${String(hours)}h`,
+      className: 'font-medium text-foreground',
+    })
   }
   return facts
 }
@@ -56,7 +81,17 @@ export function TicketInfoBar({ ticketKey }: { readonly ticketKey: string }): Re
           {row.ticket.summary}
         </span>
       )}
-      {facts.length === 0 ? null : <span className="text-sm text-muted">{facts.join(' · ')}</span>}
+      {facts.length === 0 ? null : (
+        <span className="text-sm text-muted">
+          {facts.map((fact, index) => (
+            <span key={fact.label ?? fact.value}>
+              {index === 0 ? null : ' · '}
+              {fact.label === null ? null : `${fact.label} `}
+              <span className={fact.className}>{fact.value}</span>
+            </span>
+          ))}
+        </span>
+      )}
       <PrPills prs={work?.prs[ticketKey] ?? []} repoLabels={repoLabels} />
       <span className="ml-auto flex items-center gap-1">
         {steps === undefined ? null : (

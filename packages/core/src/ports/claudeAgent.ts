@@ -24,7 +24,8 @@ export type AgentEvent =
     }
   | { readonly type: 'message' } // something was written to the transcript
   | { readonly type: 'mode'; readonly mode: AgentMode }
-  | { readonly type: 'turnEnded'; readonly ok: boolean }
+  // queued: prompts the SDK still holds; sends merged into the ended turn are not counted. Absent on older CLIs.
+  | { readonly type: 'turnEnded'; readonly ok: boolean; readonly queued?: number | undefined }
   | { readonly type: 'exited'; readonly error: string | null }
 
 // The part of AbortSignal the port uses; core builds without DOM or Node types.

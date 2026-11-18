@@ -34,7 +34,7 @@ export function TeamsMessageRow({
 }: TeamsMessageRowProps): React.JSX.Element {
   const [confirming, setConfirming] = useState(false)
   const html = useMemo(
-    () => renderTeamsHtml(message.content, message.isPlainText),
+    () => renderTeamsHtml(message.content, message.isPlainText, true),
     [message.content, message.isPlainText],
   )
   const own = sameId(message.senderId, myId)
@@ -107,12 +107,12 @@ export function TeamsMessageRow({
           </div>
         )}
       </div>
-      <div className="absolute -top-2.5 right-1 hidden items-center gap-0.5 rounded-lg bg-overlay p-0.5 shadow-overlay group-focus-within:flex group-hover:flex">
+      <div className="absolute right-1.5 top-1.5 hidden items-center gap-0.5 rounded-full bg-overlay shadow-overlay group-focus-within:flex group-hover:flex">
         {QUICK_REACTION_KEYS.map((key) => (
           <Button
             key={key}
             isIconOnly
-            variant="secondary"
+            variant="ghost"
             size="sm"
             aria-label={t(`React ${key}`, `Phản ứng ${key}`)}
             isDisabled={locked}
@@ -123,17 +123,17 @@ export function TeamsMessageRow({
             <TeamsEmoji reaction={key} />
           </Button>
         ))}
-        <Button variant="secondary" size="sm" onPress={onAskClaude}>
+        <Button variant="ghost" size="sm" onPress={onAskClaude}>
           {t('Ask Claude', 'Hỏi Claude')}
         </Button>
         {own && isEditable(message) ? (
-          <Button variant="secondary" size="sm" onPress={onEdit}>
+          <Button variant="ghost" size="sm" onPress={onEdit}>
             {t('Edit', 'Sửa')}
           </Button>
         ) : null}
         {own ? (
           <Button
-            variant="secondary"
+            variant="ghost"
             size="sm"
             onPress={() => {
               setConfirming(true)

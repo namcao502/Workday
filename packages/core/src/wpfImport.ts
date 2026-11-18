@@ -426,7 +426,10 @@ function numberOrNull(value: unknown): number | null {
 // The WPF stores the links as one comma-joined string.
 function linkedKeysOf(value: unknown): readonly string[] {
   return typeof value === 'string'
-    ? value.split(',').map((key) => key.trim()).filter((key) => key !== '')
+    ? value
+        .split(',')
+        .map((key) => key.trim())
+        .filter((key) => key !== '')
     : []
 }
 

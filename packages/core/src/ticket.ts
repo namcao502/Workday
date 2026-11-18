@@ -57,20 +57,29 @@ export function devPriorityLevel(devPriority: number | null): DevPriorityLevel {
   return devPriority <= 2 ? 'high' : 'normal'
 }
 
-// A ticket Jira already finished is never flagged, whatever its due date.
-export function dueUrgency(ticket: Ticket, today: string): DueUrgency {
-  if (isStatusDone(ticket) || ticket.dueDate === null) {
+// A ticket Jira already finished is never flagged, whatever the date.
+function dateUrgency(ticket: Ticket, date: string | null, today: string): DueUrgency {
+  if (isStatusDone(ticket) || date === null) {
     return 'none'
   }
-  const dueDay = dayNumberOf(ticket.dueDate)
+  const day = dayNumberOf(date)
   const todayDay = dayNumberOf(today)
-  if (dueDay === null || todayDay === null) {
+  if (day === null || todayDay === null) {
     return 'none'
   }
-  if (dueDay < todayDay) {
+  if (day < todayDay) {
     return 'overdue'
   }
-  return dueDay - todayDay <= DUE_SOON_DAYS ? 'dueSoon' : 'none'
+  return day - todayDay <= DUE_SOON_DAYS ? 'dueSoon' : 'none'
+}
+
+export function dueUrgency(ticket: Ticket, today: string): DueUrgency {
+  return dateUrgency(ticket, ticket.dueDate, today)
+}
+
+// The ETA is the developer's own promise: a passed one is late work just as a passed due date is.
+export function etaUrgency(ticket: Ticket, today: string): DueUrgency {
+  return dateUrgency(ticket, ticket.eta, today)
 }
 
 // Field-by-field equality, like a C# record: every Jira change (even a comment, via `updated`) counts.

@@ -21,6 +21,7 @@ export interface PostDraft {
   readonly subject: string
   readonly body: string
   readonly bodyHtml: string
+  readonly lead: TeamsPerson | null
 }
 
 export interface DraftSources {
@@ -62,7 +63,12 @@ export function draftHtml(markdown: string): string {
     .parse(markdown, { async: false, breaks: true })
     .replace(/>\s*\n\s*</g, '><')
     .trim()
-  return safeHtml(html, false)
+  // A blank line between blocks becomes the empty paragraph Teams itself writes for one; without it they touch.
+  const spaced = html.replace(
+    /<\/(p|ul|ol|pre|blockquote|table)>(?=<(?:p|ul|ol|pre|blockquote|table)\b)/g,
+    '</$1><p>&nbsp;</p>',
+  )
+  return safeHtml(spaced, false)
 }
 
 export async function loadPostDraft(ticketKey: string, sources: DraftSources): Promise<PostDraft> {
@@ -76,7 +82,7 @@ export async function loadPostDraft(ticketKey: string, sources: DraftSources): P
   const lead = resolvePostLead(sources.people, sources.config.postLeadName)
   const greeted = withGreeting(draft, lead, sources.config.postGreeting)
   const { subject, body } = splitSubject(greeted)
-  return { subject, body, bodyHtml: draftHtml(body) }
+  return { subject, body, bodyHtml: draftHtml(body), lead }
 }
 
 export function ticketSummary(board: BoardState, key: string): string | null {

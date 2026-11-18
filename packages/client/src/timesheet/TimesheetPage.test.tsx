@@ -113,7 +113,9 @@ it('a day card shows Day off, the logged hours, or Nothing logged by its state',
 it('pressing anywhere on a day card picks that day', async () => {
   backend(timesheetView({ queue: [queued('2026-11-11')] }))
   renderWithQuery(<TimesheetPage />)
-  const dateBox = await screen.findByLabelText('Date')
+  await screen.findByRole('group', { name: /MON 9/ })
+  // The picker keeps its value in a hidden input named after the field.
+  const dateBox = document.querySelector('input[name="log-date"]')
   expect(dateBox).toHaveValue('2026-11-12')
   const monday = await screen.findByRole('group', { name: /MON 9/ })
   fireEvent.click(within(monday).getByText(/MDP-1, MDP-2/))

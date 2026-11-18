@@ -39,7 +39,9 @@ export async function listDocs(docsRoot: string): Promise<readonly string[] | nu
     const entries = await readdir(docsRoot, { recursive: true, withFileTypes: true })
     return entries
       .filter((entry) => entry.isFile())
-      .map((entry) => relativePath(docsRoot, join(entry.parentPath, entry.name)).replaceAll('\\', '/'))
+      .map((entry) =>
+        relativePath(docsRoot, join(entry.parentPath, entry.name)).replaceAll('\\', '/'),
+      )
       .sort(byNameIgnoringCase)
   } catch {
     return null
@@ -87,7 +89,9 @@ function isInside(root: string, path: string): boolean {
     process.platform === 'win32' ? value.toLowerCase() : value
   const rootText = normalize(root)
   const pathText = normalize(path)
-  return pathText === rootText || pathText.startsWith(rootText.endsWith(sep) ? rootText : rootText + sep)
+  return (
+    pathText === rootText || pathText.startsWith(rootText.endsWith(sep) ? rootText : rootText + sep)
+  )
 }
 
 // Throws PathOutsideError when the real path leaves root.

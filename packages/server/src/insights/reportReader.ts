@@ -36,7 +36,12 @@ function factsOf(board: BoardState): Record<string, TicketReportFacts> {
   // Later sections win over earlier ones when a key sits in more than one.
   for (const section of ['new', 'inProgress', 'done'] as const) {
     for (const ticket of Object.values(board[section])) {
-      facts[ticket.key] = { summary: ticket.summary, status: ticket.status, section }
+      facts[ticket.key] = {
+        summary: ticket.summary,
+        status: ticket.status,
+        statusCategory: ticket.statusCategory,
+        section,
+      }
     }
   }
   return facts

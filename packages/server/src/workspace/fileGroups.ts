@@ -19,7 +19,14 @@ export async function buildFileGroups(
     const folder = tab.folder ?? devRepo
     return folder === null
       ? []
-      : [{ id: 'wt0', label: basename(folder.replace(/[\\/]+$/, '')), root: folder, kind: 'worktree' }]
+      : [
+          {
+            id: 'wt0',
+            label: basename(folder.replace(/[\\/]+$/, '')),
+            root: folder,
+            kind: 'worktree',
+          },
+        ]
   }
   if (devRepo === null) {
     return []

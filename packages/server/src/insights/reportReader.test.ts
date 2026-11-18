@@ -91,6 +91,7 @@ describe('ReportReader', () => {
     expect(first?.facts).toEqual({
       summary: 'Fix it',
       status: 'In Progress',
+      statusCategory: 'new',
       section: 'inProgress',
     })
     expect(first?.tokens.inputTokens).toBe(100)

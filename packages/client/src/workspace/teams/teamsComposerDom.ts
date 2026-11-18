@@ -340,3 +340,29 @@ export function applyLink(range: Range, url: string): void {
     document.execCommand('createLink', false, url)
   }
 }
+
+// The draft greets the lead by name (server side, plain text); the composer turns that name into a real tag.
+export function leadChip(html: string, lead: TeamsPerson | null): LoadedDraft {
+  if (lead === null) {
+    return { html, mentions: [] }
+  }
+  const parsed = new DOMParser().parseFromString(html, 'text/html')
+  const walker = parsed.createTreeWalker(parsed.body, NodeFilter.SHOW_TEXT)
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    const text = node.textContent ?? ''
+    const at = text.indexOf(lead.displayName)
+    if (at === -1 || !(node instanceof Text)) {
+      continue
+    }
+    const label = shortName(lead.displayName)
+    const after = node.splitText(at)
+    after.textContent = text.slice(at + lead.displayName.length)
+    const chip = makeChip(0, label)
+    after.before(parsed.importNode(chip, true))
+    return {
+      html: parsed.body.innerHTML,
+      mentions: [{ text: label, mri: lead.mri, displayName: lead.displayName }],
+    }
+  }
+  return { html, mentions: [] }
+}

@@ -12,7 +12,12 @@ function view(posted: boolean): NotPosted {
     state: 'notPosted',
     options: [],
     channelId: 'ch1',
-    draft: { subject: 'MDP-1 Title', body: 'text', bodyHtml: '<p>text<script>x</script></p>' },
+    draft: {
+      subject: 'MDP-1 Title',
+      body: 'text',
+      bodyHtml: '<p>text<script>x</script></p>',
+      lead: null,
+    },
     posted,
     people: [],
     pending: [],

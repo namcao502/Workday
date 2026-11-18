@@ -86,7 +86,11 @@ export async function createWorktree(
       ? Promise.resolve(true)
       : git(repoPath, ['config', `branch.${ticketKey}.parentTicket`, parentKey], logError)
   if (!hasBranch) {
-    const added = await git(repoPath, ['worktree', 'add', worktreePath, '-b', ticketKey, baseRef], logError)
+    const added = await git(
+      repoPath,
+      ['worktree', 'add', worktreePath, '-b', ticketKey, baseRef],
+      logError,
+    )
     return added && (await recordParent()) ? 'created' : 'failed'
   }
   if (

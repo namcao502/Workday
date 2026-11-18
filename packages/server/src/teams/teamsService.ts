@@ -42,6 +42,7 @@ export interface TeamsServiceDeps extends TeamsLookupDeps {
     promptState(name: string): PromptOutcome
     prompt(name: string, text: string): PromptOutcome
     assistantTexts(name: string): readonly string[]
+    isWorking(name: string): boolean
   }
   readonly tmpDir: string
   readonly logError?: (message: string, error: unknown) => void

@@ -38,6 +38,7 @@ function row(
     },
     section,
     dueUrgency,
+    etaUrgency: 'none',
     url: `https://example.atlassian.net/browse/${key}`,
   }
 }

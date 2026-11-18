@@ -20,7 +20,12 @@ function report(): TicketReport {
     rows: [
       {
         ticketKey: 'MDP-1',
-        facts: { summary: 'Fix, "quoted"\nline | pipe', status: 'Done', section: null },
+        facts: {
+          summary: 'Fix, "quoted"\nline | pipe',
+          status: 'Done',
+          statusCategory: 'done',
+          section: null,
+        },
         hours: 1.5,
         sessions: 2,
         turns: 3,
@@ -31,7 +36,7 @@ function report(): TicketReport {
       },
       {
         ticketKey: 'MDP-2',
-        facts: { summary: null, status: null, section: null },
+        facts: { summary: null, status: null, statusCategory: null, section: null },
         hours: null,
         sessions: 0,
         turns: 0,

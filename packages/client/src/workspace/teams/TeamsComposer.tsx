@@ -308,6 +308,7 @@ export function TeamsComposer({
       {withSubject ? (
         <Input
           variant="secondary"
+          className="w-full"
           aria-label={t('Subject', 'Tiêu đề')}
           value={subject}
           onChange={(event) => {
@@ -340,7 +341,7 @@ export function TeamsComposer({
       />
       <div
         ref={editorRef}
-        className="teams-content max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-2xl bg-surface-secondary p-2 text-sm outline-none focus:bg-field-focus"
+        className="teams-content max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-2xl bg-surface-secondary p-2 text-sm outline-none focus:inset-ring-2 focus:inset-ring-focus"
         role="textbox"
         aria-multiline="true"
         aria-label={label}
@@ -350,7 +351,16 @@ export function TeamsComposer({
           refreshTrigger()
           onChange?.()
         }}
-        onClick={refreshTrigger}
+        onClick={(event) => {
+          // Editable text never follows a link; Ctrl+click opens it, as everywhere else in Workday.
+          const link = event.target instanceof Element ? event.target.closest('a[href]') : null
+          if (link !== null && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault()
+            window.open(link.getAttribute('href') ?? '', '_blank', 'noopener,noreferrer')
+            return
+          }
+          refreshTrigger()
+        }}
         onKeyDown={onKeyDown}
         onDragOver={(event) => {
           if (mode !== 'edit' && event.dataTransfer.types.includes('Files')) {

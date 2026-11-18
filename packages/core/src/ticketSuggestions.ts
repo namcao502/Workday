@@ -56,10 +56,53 @@ const MONTH_NAMES = [
 
 // Words too common in ticket titles to say two tickets are about the same thing; compared after the plural "s" is cut.
 const COMMON_WORDS: readonly string[] = [
-  'add', 'the', 'and', 'for', 'with', 'from', 'into', 'that', 'this', 'not', 'are', 'all', 'new', 'use', 'via',
-  'per', 'when', 'should', 'can', 'allow', 'update', 'change', 'request', 'support', 'create', 'show', 'fix',
-  'make', 'need', 'based', 'only', 'instead', 'placeholder', 'phase', 'issue', 'feature', 'page', 'screen',
-  'button', 'list', 'data', 'value', 'config', 'option', 'setting', 'field', 'column',
+  'add',
+  'the',
+  'and',
+  'for',
+  'with',
+  'from',
+  'into',
+  'that',
+  'this',
+  'not',
+  'are',
+  'all',
+  'new',
+  'use',
+  'via',
+  'per',
+  'when',
+  'should',
+  'can',
+  'allow',
+  'update',
+  'change',
+  'request',
+  'support',
+  'create',
+  'show',
+  'fix',
+  'make',
+  'need',
+  'based',
+  'only',
+  'instead',
+  'placeholder',
+  'phase',
+  'issue',
+  'feature',
+  'page',
+  'screen',
+  'button',
+  'list',
+  'data',
+  'value',
+  'config',
+  'option',
+  'setting',
+  'field',
+  'column',
 ]
 
 // Day number of a "YYYY-MM-DD" date, or null when it is not one.
@@ -74,7 +117,9 @@ function dayNumberOf(date: string | null): number | null {
   const milliseconds = Date.UTC(year, month - 1, day)
   const parsed = new Date(milliseconds)
   const isReal =
-    parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
   return isReal ? milliseconds / MS_PER_DAY : null
 }
 
@@ -148,7 +193,12 @@ function dueScore(left: number | null): number {
   return left <= DUE_THIS_WEEK_DAYS ? DUE_THIS_WEEK_POINTS : DUE_LATER_POINTS
 }
 
-function score(ticket: EpicTicket, similar: boolean, today: string, selectedStatus: string | null): number {
+function score(
+  ticket: EpicTicket,
+  similar: boolean,
+  today: string,
+  selectedStatus: string | null,
+): number {
   const level = devPriorityLevel(ticket.devPriority)
   return (
     dueScore(daysLeft(ticket, today)) +
@@ -173,12 +223,18 @@ function significantWords(summary: string, stopWords: ReadonlySet<string>): Read
 }
 
 // The user's ticket sharing the most words (at least two) with the summary; a tie goes to the first.
-function similarKeyOf(summary: string, mine: readonly EpicTicket[], stopWords: ReadonlySet<string>): string | null {
+function similarKeyOf(
+  summary: string,
+  mine: readonly EpicTicket[],
+  stopWords: ReadonlySet<string>,
+): string | null {
   const words = significantWords(summary, stopWords)
   let similarKey: string | null = null
   let bestShared = SIMILAR_MIN_SHARED_WORDS - 1
   for (const ticket of mine) {
-    const shared = [...significantWords(ticket.summary, stopWords)].filter((word) => words.has(word)).length
+    const shared = [...significantWords(ticket.summary, stopWords)].filter((word) =>
+      words.has(word),
+    ).length
     if (shared > bestShared) {
       bestShared = shared
       similarKey = ticket.key
@@ -195,8 +251,12 @@ export function rankSuggestions(
   today: string,
   options: RankOptions,
 ): readonly Suggestion[] {
-  const stopWords = new Set([...COMMON_WORDS, ...options.stopWords.map((word) => word.toLowerCase())])
-  const dueOf = (ticket: EpicTicket): number => dayNumberOf(ticket.dueDate) ?? Number.MAX_SAFE_INTEGER
+  const stopWords = new Set([
+    ...COMMON_WORDS,
+    ...options.stopWords.map((word) => word.toLowerCase()),
+  ])
+  const dueOf = (ticket: EpicTicket): number =>
+    dayNumberOf(ticket.dueDate) ?? Number.MAX_SAFE_INTEGER
   return candidates
     .filter(
       (ticket) =>
@@ -222,7 +282,9 @@ export function suggestionNotice(
   baselineDone: boolean,
   today: string,
 ): { readonly noticeKeys: readonly string[]; readonly notifiedKeys: readonly string[] } {
-  const urgentKeys = ranked.filter((suggestion) => suggestion.urgent).map((suggestion) => suggestion.ticket.key)
+  const urgentKeys = ranked
+    .filter((suggestion) => suggestion.urgent)
+    .map((suggestion) => suggestion.ticket.key)
   const stillSuggested = new Set(ranked.map((suggestion) => suggestion.ticket.key))
   const keptKeys = notifiedKeys.filter((key) => stillSuggested.has(key))
   if (!baselineDone) {

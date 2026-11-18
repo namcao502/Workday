@@ -60,7 +60,7 @@ function totalRow(report: TicketReport): TicketReportRow {
   const known = rows.flatMap((row) => (row.hours === null ? [] : [row.hours]))
   return {
     ticketKey: TOTAL_KEY,
-    facts: { summary: null, status: null, section: null },
+    facts: { summary: null, status: null, statusCategory: null, section: null },
     hours: known.length === 0 ? null : sum(known),
     sessions: sum(rows.map((row) => row.sessions)),
     turns: sum(rows.map((row) => row.turns)),

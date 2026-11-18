@@ -20,7 +20,11 @@ it('sets the theme and shows the default page once the settings load', async () 
       ? jsonResponse({ mode: 'local' })
       : jsonResponse(settingsView({ config: { ...settingsView().config, theme: 'light' } })),
   )
-  render(<App socketFactory={() => ({ onmessage: null, onclose: null, close: vi.fn() })} />)
+  render(
+    <App
+      socketFactory={() => ({ onopen: null, onmessage: null, onclose: null, close: vi.fn() })}
+    />,
+  )
   expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
   expect(document.documentElement.dataset['theme']).toBe('light')
 })
@@ -33,13 +37,17 @@ it('remembers the theme so index.html can apply it before the settings load', as
       ? jsonResponse({ mode: 'local' })
       : jsonResponse(settingsView({ config: { ...settingsView().config, theme: 'light' } })),
   )
-  render(<App socketFactory={() => ({ onmessage: null, onclose: null, close: vi.fn() })} />)
+  render(
+    <App
+      socketFactory={() => ({ onopen: null, onmessage: null, onclose: null, close: vi.fn() })}
+    />,
+  )
   expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
   expect(localStorage.getItem('workday.theme')).toBe('light')
 })
 
 const RIGHTS = { board: 'view', timesheet: 'view' } as const
-const noSocket = () => ({ onmessage: null, onclose: null, close: vi.fn() })
+const noSocket = () => ({ onopen: null, onmessage: null, onclose: null, close: vi.fn() })
 
 it('a 401 notPaired from any call shows the pair page', async () => {
   stubMatchMedia(false)

@@ -119,7 +119,11 @@ export function mergesToWatch(
     const merges: DevMerge[] = []
     for (const pr of latest) {
       if (pr.mergeCommit !== null && pr.mergedAt !== null) {
-        merges.push({ repository: pr.repository, mergeCommit: pr.mergeCommit, mergedAt: pr.mergedAt })
+        merges.push({
+          repository: pr.repository,
+          mergeCommit: pr.mergeCommit,
+          mergedAt: pr.mergedAt,
+        })
       }
     }
     if (merges.length !== latest.length) {

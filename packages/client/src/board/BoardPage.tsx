@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { addTicket, boardAction, checkBoard, getBoard, queryKeys } from '../api/client.js'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
+import { useNow } from '../api/useTimesheet.js'
 import { useRepoLabels, useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
 import { errorText } from '../errors.js'
@@ -26,6 +27,7 @@ import {
   countViews,
   filterGroups,
   filterSuggestions,
+  isPollLate,
   pickViewWithHits,
   rowsForView,
   VIEW_IDS,
@@ -66,9 +68,16 @@ interface PollStatusProps {
   readonly board: BoardView
   readonly language: Language
   readonly timeZone: string
+  readonly pollMinutes: number | null // null until the settings load
 }
 
-function PollStatus({ board, language, timeZone }: PollStatusProps): React.JSX.Element | null {
+function PollStatus({
+  board,
+  language,
+  timeZone,
+  pollMinutes,
+}: PollStatusProps): React.JSX.Element | null {
+  const now = useNow()
   const { lastPoll } = board
   if (lastPoll === null) {
     return null
@@ -79,7 +88,13 @@ function PollStatus({ board, language, timeZone }: PollStatusProps): React.JSX.E
   }
   const clock = formatClock(new Date(lastPoll.at), language, timeZone)
   return (
-    <span className="text-sm text-muted">
+    <span
+      className={
+        pollMinutes !== null && isPollLate(lastPoll.at, pollMinutes, now)
+          ? 'text-sm text-warning'
+          : 'text-sm text-muted'
+      }
+    >
       {t(`Checked at ${clock}`, `Đã kiểm tra lúc ${clock}`)}
     </span>
   )
@@ -267,7 +282,12 @@ export function BoardPage(): React.JSX.Element {
           </Button>
         ) : null}
         {board.data === undefined ? null : (
-          <PollStatus board={board.data} language={language} timeZone={timeZone} />
+          <PollStatus
+            board={board.data}
+            language={language}
+            timeZone={timeZone}
+            pollMinutes={settings.data?.config.pollMinutes ?? null}
+          />
         )}
       </div>
       {check.isError ? (

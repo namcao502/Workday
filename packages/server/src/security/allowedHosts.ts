@@ -16,6 +16,11 @@ export function allowedHostHeaders(options: AllowedHostOptions): ReadonlySet<str
   return new Set(ports.flatMap((port) => LOOPBACK_HOSTS.map((host) => `${host}:${String(port)}`)))
 }
 
+// Where the PC's browser opens the app: Vite serves the client in dev.
+export function localAppOrigin(options: AllowedHostOptions): string {
+  return `http://127.0.0.1:${String(options.dev ? VITE_DEV_PORT : options.port)}`
+}
+
 export function isAllowedHost(
   hostHeader: string | undefined,
   allowed: ReadonlySet<string>,

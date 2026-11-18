@@ -249,7 +249,8 @@ export class AgentSession {
       case 'turnEnded': {
         // A turn nobody prompted (a background task reporting back) is not the user's turn to take.
         const prompted = this.turns !== 0
-        this.turns = Math.max(0, this.turns - 1)
+        // The SDK's own count wins: a prompt sent mid-turn may be folded into this turn and get no result of its own.
+        this.turns = event.queued ?? Math.max(0, this.turns - 1)
         this.update(this.turns === 0 && prompted ? { working: false, finished: true } : {})
         this.deps.onChange()
         void this.refreshUsage()

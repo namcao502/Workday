@@ -53,7 +53,9 @@ export function listedChanges(
 
 // The bug key when the current branch is another ticket's (with or without "-dev"), else null.
 export function bugBranchOf(currentBranch: string, ticketKey: string): string | null {
-  const branchKey = currentBranch.endsWith('-dev') ? currentBranch.slice(0, -'-dev'.length) : currentBranch
+  const branchKey = currentBranch.endsWith('-dev')
+    ? currentBranch.slice(0, -'-dev'.length)
+    : currentBranch
   return isTicketKey(branchKey) && branchKey !== ticketKey ? branchKey : null
 }
 

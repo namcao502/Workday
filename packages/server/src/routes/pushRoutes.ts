@@ -62,9 +62,15 @@ export function registerPushRoutes(
     if (subscription === null) {
       return reply.code(400).send({ error: 'Body must be { subscription } with an https endpoint' })
     }
-    await remote.push.local.add(subscription)
+    await remote.push.local.add(subscription, request.headers.origin ?? null)
     return reply.code(204).send()
   })
+
+  // Which page origins hold a subscription, so a page on another one can take over.
+  app.get('/api/push/local', () => ({
+    // '' is a subscription saved before origins were recorded: push is on, from an unknown page.
+    origins: remote.push.local.list().map((entry) => entry.origin ?? ''),
+  }))
 
   app.delete('/api/push/local', async (request, reply) => {
     const endpoint = isRecord(request.body) ? request.body['endpoint'] : undefined

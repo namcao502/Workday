@@ -2,6 +2,7 @@ import { Button, Card, Input } from '@heroui/react'
 import { Plus } from '@gravity-ui/icons'
 import type { TicketCheck } from '@workday/core'
 import { t } from '../i18n.js'
+import { DateInput } from '../ui/DateInput.js'
 import { ActionMenu } from './ActionMenu.js'
 import { TicketRows, type TicketRow } from './TicketRows.js'
 
@@ -39,17 +40,12 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
     <Card>
       <Card.Content className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Input
-            type="date"
-            variant="secondary"
-            className="w-40"
-            aria-label={t('Date', 'Ngày')}
+          <DateInput
+            label={t('Date', 'Ngày')}
+            name="log-date"
+            className="w-44"
             value={props.date}
-            onChange={(event) => {
-              if (event.target.value !== '') {
-                props.onDate(event.target.value)
-              }
-            }}
+            onChange={props.onDate}
           />
           <Input
             variant="secondary"

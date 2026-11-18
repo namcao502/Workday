@@ -11,6 +11,7 @@ import { copyWithListMarkers } from '../ui/copyListMarkers.js'
 import { ctrlLinkHint, openLinkOnCtrl } from '../ui/ctrlLink.js'
 import { remarkBreaks } from '../ui/remarkBreaks.js'
 import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
+import { highlightLines, languageOf } from '../ui/highlight.js'
 import { Segmented } from '../ui/Segmented.js'
 
 interface FileViewerProps {
@@ -47,18 +48,20 @@ function resolveRelative(from: string, href: string): string | null {
 
 interface SourceViewProps {
   readonly text: string
+  readonly path: string // picks the highlighting language
   readonly withCopy: boolean // false when the caller already shows a copy button for the whole file
 }
 
 // Each line is a number column and a text column; a long line wraps inside the text column.
-function SourceView({ text, withCopy }: SourceViewProps): React.JSX.Element {
-  const lines = useMemo(() => text.split('\n'), [text])
+function SourceView({ text, path, withCopy }: SourceViewProps): React.JSX.Element {
+  const lines = useMemo(() => highlightLines(text, languageOf(path)), [text, path])
   const code = (
     <pre className="code-view">
       {lines.map((line, index) => (
         <span className="code-line" key={index}>
           <span className="code-number">{index + 1}</span>
-          <span className="code-text">{line}</span>
+          {/* highlightLines escapes the text; the only markup is highlight.js spans. */}
+          <span className="code-text" dangerouslySetInnerHTML={{ __html: line }} />
         </span>
       ))}
     </pre>
@@ -137,7 +140,11 @@ function MarkdownWithSource(props: FileViewerProps & { readonly text: string }):
         />
         <CopyButton text={props.text} />
       </div>
-      {source ? <SourceView text={props.text} withCopy={false} /> : <MarkdownView {...props} />}
+      {source ? (
+        <SourceView text={props.text} path={props.path} withCopy={false} />
+      ) : (
+        <MarkdownView {...props} />
+      )}
     </>
   )
 }
@@ -146,7 +153,7 @@ export function FileViewer(props: FileViewerProps): React.JSX.Element {
   const { content, tabId, group, path, onOpenInEditor } = props
   switch (content.kind) {
     case 'text':
-      return <SourceView text={content.text} withCopy />
+      return <SourceView text={content.text} path={path} withCopy />
     case 'markdown':
       return <MarkdownWithSource {...props} text={content.text} />
     case 'image':

@@ -135,3 +135,110 @@
   border-radius: 0.5rem;
   padding: 0 4px;
 }
+
+/* Code colours (highlight.js tokens) for Changes, Files and Teams code blocks; GitHub-like, light then dark. */
+.hljs-comment,
+.hljs-quote {
+  color: #6e7781;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-doctag {
+  color: #cf222e;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-char.escape_ {
+  color: #0a3069;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable.constant_,
+.hljs-property {
+  color: #0550ae;
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-section,
+.hljs-meta {
+  color: #8250df;
+}
+
+.hljs-type,
+.hljs-built_in,
+.hljs-title.class_,
+.hljs-variable,
+.hljs-params {
+  color: #953800;
+}
+
+.hljs-name,
+.hljs-tag,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #116329;
+}
+
+[data-theme='dark'] .hljs-comment,
+[data-theme='dark'] .hljs-quote {
+  color: #8b949e;
+}
+
+[data-theme='dark'] .hljs-keyword,
+[data-theme='dark'] .hljs-selector-tag,
+[data-theme='dark'] .hljs-doctag {
+  color: #ff7b72;
+}
+
+[data-theme='dark'] .hljs-string,
+[data-theme='dark'] .hljs-regexp,
+[data-theme='dark'] .hljs-char.escape_ {
+  color: #a5d6ff;
+}
+
+[data-theme='dark'] .hljs-number,
+[data-theme='dark'] .hljs-literal,
+[data-theme='dark'] .hljs-attr,
+[data-theme='dark'] .hljs-attribute,
+[data-theme='dark'] .hljs-variable.constant_,
+[data-theme='dark'] .hljs-property {
+  color: #79c0ff;
+}
+
+[data-theme='dark'] .hljs-title,
+[data-theme='dark'] .hljs-title.function_,
+[data-theme='dark'] .hljs-section,
+[data-theme='dark'] .hljs-meta {
+  color: #d2a8ff;
+}
+
+[data-theme='dark'] .hljs-type,
+[data-theme='dark'] .hljs-built_in,
+[data-theme='dark'] .hljs-title.class_,
+[data-theme='dark'] .hljs-variable,
+[data-theme='dark'] .hljs-params {
+  color: #ffa657;
+}
+
+[data-theme='dark'] .hljs-name,
+[data-theme='dark'] .hljs-tag,
+[data-theme='dark'] .hljs-selector-class,
+[data-theme='dark'] .hljs-selector-id {
+  color: #7ee787;
+}
+
+.teams-content a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.teams-content a:hover {
+  text-decoration-thickness: 2px;
+}

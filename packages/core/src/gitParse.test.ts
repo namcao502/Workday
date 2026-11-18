@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_DIFF_CHARS, bugBranchOf, listedChanges, parseExcerpt, parseNameStatus } from './gitParse.js'
+import {
+  MAX_DIFF_CHARS,
+  bugBranchOf,
+  listedChanges,
+  parseExcerpt,
+  parseNameStatus,
+} from './gitParse.js'
 
 describe('parseNameStatus', () => {
   it('reads status/path pairs', () => {
@@ -63,7 +69,8 @@ describe('parseExcerpt', () => {
   })
 
   it('reads an added file and skips the no-newline marker', () => {
-    const diff = '--- /dev/null\n+++ b/f.txt\n@@ -0,0 +1,2 @@\n+a\r\n+b\n\\ No newline at end of file\n'
+    const diff =
+      '--- /dev/null\n+++ b/f.txt\n@@ -0,0 +1,2 @@\n+a\r\n+b\n\\ No newline at end of file\n'
     expect(parseExcerpt(diff)).toEqual({
       original: '',
       modified: 'a\nb',

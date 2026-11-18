@@ -6,6 +6,7 @@ import { useChanges } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
 import { CopyPath } from '../ui/CopyPath.js'
 import { FindablePane } from '../ui/FindablePane.js'
+import type { OverviewMark } from '../ui/OverviewRuler.js'
 import { SplitView } from '../ui/SplitView.js'
 import { useStoredSplit } from '../ui/useStoredSplit.js'
 import { useListPane } from './useListPane.js'
@@ -27,6 +28,7 @@ function sameRef(a: FileRef | null, b: FileRef): boolean {
 export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
   const { data, refetch, isFetching } = useChanges(tabId)
   const [chosen, setChosen] = useState<FileRef | null>(null)
+  const [overview, setOverview] = useState<readonly OverviewMark[]>([])
   const split = useStoredSplit('changes')
   const groups = useMemo<readonly TreeGroup[]>(
     () =>
@@ -120,10 +122,10 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
           </div>
         }
         right={
-          <FindablePane>
+          <FindablePane overview={overview}>
             {selected === null ? null : (
               <div key={`${selected.group}:${selected.path}`} className="animate-fade-in">
-                <DiffView tabId={tabId} {...selected} />
+                <DiffView tabId={tabId} {...selected} onOverview={setOverview} />
               </div>
             )}
           </FindablePane>

@@ -22,7 +22,9 @@ function isNullableNumber(value: unknown): value is number | null {
 
 // A board.json written before linked keys existed has none; that reads as no links.
 function isLinkedKeys(value: unknown): value is readonly string[] | undefined {
-  return value === undefined || (Array.isArray(value) && value.every((key) => typeof key === 'string'))
+  return (
+    value === undefined || (Array.isArray(value) && value.every((key) => typeof key === 'string'))
+  )
 }
 
 function parseTicket(raw: unknown): Ticket | null {

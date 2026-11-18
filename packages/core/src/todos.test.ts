@@ -91,8 +91,20 @@ describe('buildTodos jiraUpdated', () => {
       }),
     )
     expect(todos).toEqual([
-      { kind: 'jiraUpdated', ticketKey: 'MDP-2', section: 'inProgress', fields: ['summary'], changedBy: null },
-      { kind: 'jiraUpdated', ticketKey: 'MDP-1', section: 'new', fields: ['summary'], changedBy: 'An' },
+      {
+        kind: 'jiraUpdated',
+        ticketKey: 'MDP-2',
+        section: 'inProgress',
+        fields: ['summary'],
+        changedBy: null,
+      },
+      {
+        kind: 'jiraUpdated',
+        ticketKey: 'MDP-1',
+        section: 'new',
+        fields: ['summary'],
+        changedBy: 'An',
+      },
     ])
   })
 
@@ -320,7 +332,11 @@ describe('qc bug todos', () => {
   it('adds a qcBugReply then a qcBug item, both needed now, for a bug still New', () => {
     const todos = buildTodos(
       input({
-        board: { ...emptyBoard, new: { [bug.key]: bug }, inProgress: { [startedBug.key]: startedBug } },
+        board: {
+          ...emptyBoard,
+          new: { [bug.key]: bug },
+          inProgress: { [startedBug.key]: startedBug },
+        },
         qcBugs: [
           { bug, parentKey: 'MDP-9310' },
           { bug: startedBug, parentKey: 'MDP-9310' },

@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp, Xmark } from '@gravity-ui/icons'
 import { Button, Input } from '@heroui/react'
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n.js'
+import { OverviewRuler, type OverviewMark } from './OverviewRuler.js'
 
 // Line numbers and diff marks are not part of the text a search or a select-all means.
 const SKIPPED = '.code-number, .diff-number, .diff-mark'
@@ -74,11 +75,12 @@ function isEditable(target: EventTarget | null): boolean {
 
 interface FindablePaneProps {
   readonly children: React.ReactNode
+  readonly overview?: readonly OverviewMark[] | undefined
 }
 
 // A scrolling pane (a file or a diff) with Ctrl+A selecting only its text and Ctrl+F opening a find bar:
 // every match highlighted, Enter / Shift+Enter step through them, Esc closes.
-export function FindablePane({ children }: FindablePaneProps): React.JSX.Element {
+export function FindablePane({ children, overview = [] }: FindablePaneProps): React.JSX.Element {
   const outer = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -234,6 +236,7 @@ export function FindablePane({ children }: FindablePaneProps): React.JSX.Element
       <div ref={content} className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
         {children}
       </div>
+      {overview.length === 0 ? null : <OverviewRuler marks={overview} scroller={content} />}
     </div>
   )
 }

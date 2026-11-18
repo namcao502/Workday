@@ -1,5 +1,5 @@
-// How many actions (requests other than reads) are in flight, for the global loading icon.
-let pending = 0
+// The actions (requests other than reads) in flight, by path: the bell spins for them and lists them by name.
+let pending: readonly string[] = [] // replaced, never changed in place, so a snapshot stays stable
 const listeners = new Set<() => void>()
 
 function notify(): void {
@@ -15,17 +15,21 @@ export function subscribePending(listener: () => void): () => void {
   }
 }
 
-export function pendingActions(): number {
+export function pendingActions(): readonly string[] {
   return pending
 }
 
-export async function trackAction<Result>(run: () => Promise<Result>): Promise<Result> {
-  pending += 1
+export async function trackAction<Result>(
+  path: string,
+  run: () => Promise<Result>,
+): Promise<Result> {
+  pending = [...pending, path]
   notify()
   try {
     return await run()
   } finally {
-    pending -= 1
+    const at = pending.indexOf(path)
+    pending = pending.filter((_, index) => index !== at)
     notify()
   }
 }

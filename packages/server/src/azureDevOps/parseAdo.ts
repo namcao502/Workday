@@ -203,7 +203,10 @@ export function parsePrs(
   })
 }
 
-function findReviewer(reviewers: unknown, userId: string): Readonly<Record<string, unknown>> | null {
+function findReviewer(
+  reviewers: unknown,
+  userId: string,
+): Readonly<Record<string, unknown>> | null {
   if (!Array.isArray(reviewers)) {
     return null
   }

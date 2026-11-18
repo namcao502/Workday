@@ -16,7 +16,12 @@ const JIRA: JiraConfig = {
   maxResults: 50,
   etaFieldId: null,
   devPriorityFieldId: null,
-  statusFlow: { preWorkStatuses: [], reworkStatuses: [], readyToTestPath: [], developerStatuses: [] },
+  statusFlow: {
+    preWorkStatuses: [],
+    reworkStatuses: [],
+    readyToTestPath: [],
+    developerStatuses: [],
+  },
   suggestions: null,
 }
 
@@ -98,7 +103,13 @@ describe('ticket update routes', () => {
     const dataDir = newDataDir()
     await saveBoard(dataDir, boardWith({ new: { 'MDP-1': makeTicket('MDP-1') } }))
     await writeJsonAtomic(join(dataDir, 'ticket-updates.json'), {
-      'MDP-1': { viewed, current, updated: 'u', changedBy: 'An', changedAt: '2026-11-16T03:00:00.000Z' },
+      'MDP-1': {
+        viewed,
+        current,
+        updated: 'u',
+        changedBy: 'An',
+        changedAt: '2026-11-16T03:00:00.000Z',
+      },
     })
     const { app } = await buildTestApp({ dataDir })
     openApps.push(app)
@@ -114,7 +125,13 @@ describe('ticket update routes', () => {
     const after = await app.inject({ url: '/api/tickets/MDP-1/update', ...request })
 
     expect(before.json()).toEqual({
-      update: { fields: ['summary'], viewed, current, changedBy: 'An', changedAt: '2026-11-16T03:00:00.000Z' },
+      update: {
+        fields: ['summary'],
+        viewed,
+        current,
+        changedBy: 'An',
+        changedAt: '2026-11-16T03:00:00.000Z',
+      },
     })
     expect(marked.json()).toEqual({ ok: true })
     expect(after.json()).toEqual({ update: null })

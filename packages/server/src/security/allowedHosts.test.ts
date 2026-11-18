@@ -3,6 +3,7 @@ import {
   allowedHostHeaders,
   isAllowedHost,
   isAllowedOrigin,
+  localAppOrigin,
   isLoopbackHost,
   remoteHostHeaders,
   remoteOrigin,
@@ -47,4 +48,9 @@ describe('allowedHosts', () => {
     expect(isAllowedHost('workday.example.com', remoteHostHeaders(null))).toBe(false)
     expect(remoteOrigin('workday.example.com')).toBe('https://workday.example.com')
   })
+})
+
+it('the local app origin is the Vite port in dev and the server port otherwise', () => {
+  expect(localAppOrigin({ port: 4870, dev: false })).toBe('http://127.0.0.1:4870')
+  expect(localAppOrigin({ port: 4870, dev: true })).toBe('http://127.0.0.1:5173')
 })

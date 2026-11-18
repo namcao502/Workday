@@ -8,6 +8,7 @@ const localPushActive = vi.hoisted(() => vi.fn<() => Promise<boolean>>())
 
 vi.mock('../remote/pushSubscription.js', () => ({
   localPushActive,
+  adoptLocalPush: () => Promise.resolve(),
   LOCAL_PUSH_CHANGED_EVENT: 'workday:local-push-changed',
 }))
 

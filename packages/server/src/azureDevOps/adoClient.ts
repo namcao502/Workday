@@ -93,7 +93,10 @@ export class AzureDevOpsClient implements PullRequests {
     await readBranch('dev', `${ticketKey}-dev`)
 
     // The ticket's other branches, read in the repos its PRs are in and in the configured repos.
-    const repositories = new Set([...prs.map((pr) => pr.repository), ...Object.keys(this.config.repoLabels)])
+    const repositories = new Set([
+      ...prs.map((pr) => pr.repository),
+      ...Object.keys(this.config.repoLabels),
+    ])
     const extraLabels = new Set<string>()
     for (const repository of repositories) {
       try {
@@ -121,7 +124,9 @@ export class AzureDevOpsClient implements PullRequests {
       `${this.projectBase}/_apis/git/pullrequests?searchCriteria.reviewerId=${encodeURIComponent(userId)}` +
         `&searchCriteria.status=active&$top=${String(MAX_REVIEW_REQUESTS)}&api-version=${API_VERSION}`,
     )
-    return parseReviewRequests(root, userId, (repository, id) => this.pullRequestUrl(repository, id))
+    return parseReviewRequests(root, userId, (repository, id) =>
+      this.pullRequestUrl(repository, id),
+    )
   }
 
   // Needs the PAT's Build (Read) scope.
@@ -171,15 +176,24 @@ export class AzureDevOpsClient implements PullRequests {
         `&searchCriteria.creatorId=${encodeURIComponent(creatorId)}&searchCriteria.status=all&api-version=${API_VERSION}`,
     )
     const reads: PrRead[] = []
-    const listed = parsePrs(root, creatorId, (repository, id) => this.pullRequestUrl(repository, id))
+    const listed = parsePrs(root, creatorId, (repository, id) =>
+      this.pullRequestUrl(repository, id),
+    )
     for (const { pr, projectId } of listed) {
       const threads = await this.getJson(
         `${this.projectBase}/_apis/git/repositories/${encodeURIComponent(pr.repository)}` +
           `/pullrequests/${String(pr.pullRequestId)}/threads?api-version=${API_VERSION}`,
       )
       const { realComments, openThreads } = countComments(threads)
-      const build = pr.status === 'active' ? await this.buildState(projectId, pr.pullRequestId) : 'unknown'
-      reads.push({ ...pr, branch: label, commentCount: realComments, openThreadCount: openThreads, build })
+      const build =
+        pr.status === 'active' ? await this.buildState(projectId, pr.pullRequestId) : 'unknown'
+      reads.push({
+        ...pr,
+        branch: label,
+        commentCount: realComments,
+        openThreadCount: openThreads,
+        build,
+      })
     }
     return reads
   }

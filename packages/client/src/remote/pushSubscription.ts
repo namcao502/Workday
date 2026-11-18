@@ -1,4 +1,11 @@
-import { deleteLocalPush, deletePush, getPushKey, putLocalPush, putPush } from '../api/remoteApi.js'
+import {
+  deleteLocalPush,
+  deletePush,
+  getLocalPushOrigins,
+  getPushKey,
+  putLocalPush,
+  putPush,
+} from '../api/remoteApi.js'
 import { registerServiceWorker, SERVICE_WORKER_URL } from '../registerServiceWorker.js'
 
 export type SubscribeResult = 'subscribed' | 'denied'
@@ -87,4 +94,34 @@ export async function unsubscribeLocalPush(): Promise<void> {
     await subscription.unsubscribe()
   }
   window.dispatchEvent(new Event(LOCAL_PUSH_CHANGED_EVENT))
+}
+
+// localhost and 127.0.0.1 are one machine; the server treats them as one origin too.
+function sameMachine(origin: string): string {
+  return origin.replace('://localhost:', '://127.0.0.1:')
+}
+
+// Push is on for another origin (dev vs start); a click there opens a new tab instead of focusing this one.
+export function shouldAdoptLocalPush(
+  origins: readonly string[],
+  here: string,
+  permission: NotificationPermission,
+): boolean {
+  const mine = sameMachine(here)
+  return (
+    permission === 'granted' &&
+    origins.length !== 0 &&
+    !origins.some((origin) => sameMachine(origin) === mine)
+  )
+}
+
+// Moves desktop push to this page's origin, silently: only when the browser already allows notices here.
+export async function adoptLocalPush(): Promise<void> {
+  if (!pushSupported() || typeof Notification === 'undefined') {
+    return
+  }
+  const origins = await getLocalPushOrigins()
+  if (shouldAdoptLocalPush(origins, window.location.origin, Notification.permission)) {
+    await subscribeLocalPush()
+  }
 }

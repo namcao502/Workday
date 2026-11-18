@@ -25,7 +25,7 @@ export function registerSettingsRoutes(app: FastifyInstance, settings: SettingsS
   app.get('/api/settings', { config: { access: { area: 'any' } } }, () => settings.view())
 
   app.put('/api/settings', async (request, reply) => {
-    const update = parseSettingsUpdate(request.body)
+    const update = parseSettingsUpdate(request.body, settings.port)
     if (update === null) {
       return reply.code(400).send({ error: 'Invalid settings' })
     }

@@ -9,6 +9,7 @@ const CHAT_REFETCH_MS = 700
 
 // The part of WebSocket this hook uses, so a test can pass a fake.
 export interface EventSocket {
+  onopen: ((event: Event) => void) | null
   onmessage: ((event: MessageEvent) => void) | null
   onclose: ((event: CloseEvent) => void) | null
   close: () => void
@@ -31,6 +32,7 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined
     let chatTimer: ReturnType<typeof setTimeout> | undefined
     let chatQueued = false
+    let wasOpen = false
 
     // The first event refetches at once; the ones inside the window collapse into one more refetch at its end.
     function refetchChat(): void {
@@ -79,6 +81,13 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
 
     function connect(): void {
       socket = openSocket('/api/events')
+      // Events sent while the socket was down (sleep, lock screen, server restart) are lost: refetch everything.
+      socket.onopen = () => {
+        if (wasOpen) {
+          void queryClient.invalidateQueries()
+        }
+        wasOpen = true
+      }
       socket.onmessage = handleMessage
       socket.onclose = () => {
         if (!stopped) {

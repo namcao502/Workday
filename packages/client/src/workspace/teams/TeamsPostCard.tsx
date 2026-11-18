@@ -1,10 +1,11 @@
 import { Button } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { TeamsReadView } from '@workday/core'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { postToChannel } from '../../api/teamsApi.js'
 import { t } from '../../i18n.js'
 import { TeamsComposer } from './TeamsComposer.js'
+import { leadChip } from './teamsComposerDom.js'
 import { renderTeamsHtml } from './teamsContent.js'
 import type { SendAction } from './teamsSend.js'
 
@@ -40,9 +41,13 @@ export function TeamsPostCard({
   const [warned, setWarned] = useState(false)
   const draft = frozen?.draft ?? view.draft
   const liveKey = draftKey(view.draft)
+  const initial = useMemo(
+    () => leadChip(renderTeamsHtml(draft.bodyHtml, false), draft.lead),
+    [draft.bodyHtml, draft.lead],
+  )
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex flex-col gap-2">
       <TeamsComposer
         key={`${String(version)}:${frozen?.key ?? liveKey}`}
         mode="post"
@@ -51,7 +56,8 @@ export function TeamsPostCard({
         submitLabel={t('Post', 'Đăng')}
         withSubject
         initialSubject={draft.subject}
-        initialHtml={renderTeamsHtml(draft.bodyHtml, false)}
+        initialHtml={initial.html}
+        initialMentions={initial.mentions}
         locked={locked}
         onChange={() => {
           setFrozen((current) => current ?? { draft: view.draft, key: liveKey })
@@ -76,6 +82,7 @@ export function TeamsPostCard({
       <Button
         variant="secondary"
         size="sm"
+        className="self-start"
         onPress={() => {
           setFrozen(null)
           setWarned(false)

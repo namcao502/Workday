@@ -1,4 +1,5 @@
 import { cleanup, screen } from '@testing-library/react'
+import type { BoardRow } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
 import { boardOf, boardRow, workView } from '../board/workTestSupport.js'
 import { jsonResponse, renderWithQuery, stubFetch } from '../testSupport.js'
@@ -15,10 +16,29 @@ function rowWith(changes: { dueDate?: string; eta?: string; timeSpentSeconds?: n
 }
 
 it('ticketFacts lists the status, then due, ETA and logged time when set', () => {
-  expect(ticketFacts(boardRow('MDP-1', 'x'))).toEqual(['In Progress'])
+  const texts = (row: BoardRow) =>
+    ticketFacts(row).map((fact) =>
+      fact.label === null ? fact.value : `${fact.label} ${fact.value}`,
+    )
+  expect(texts(boardRow('MDP-1', 'x'))).toEqual(['In Progress'])
   expect(
-    ticketFacts(rowWith({ dueDate: '2026-11-13', eta: '2026-11-12', timeSpentSeconds: 9000 })),
+    texts(rowWith({ dueDate: '2026-11-13', eta: '2026-11-12', timeSpentSeconds: 9000 })),
   ).toEqual(['In Progress', 'Due Nov 13', 'ETA Nov 12', 'Logged 2.5h'])
+})
+
+it('ticketFacts colors the status by its category, an overdue due date red and a near ETA orange', () => {
+  const base = rowWith({ dueDate: '2026-11-13', eta: '2026-11-14' })
+  const row: BoardRow = {
+    ...base,
+    dueUrgency: 'overdue',
+    etaUrgency: 'dueSoon',
+    ticket: { ...base.ticket, statusCategory: 'indeterminate' },
+  }
+  expect(ticketFacts(row).map((fact) => fact.className)).toEqual([
+    'font-medium text-accent',
+    'font-medium text-danger',
+    'font-medium text-warning',
+  ])
 })
 
 it('the info bar shows the key, summary and facts of the ticket tab', async () => {

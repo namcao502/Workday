@@ -110,7 +110,15 @@ export async function listChanges(
   const baseCommit = mergeBase.stdout.trim()
   const diff = await git(
     root,
-    ...['diff', '--name-status', '--no-renames', '-z', baseCommit, ...(isWorkingTree ? [] : [tip]), '--'],
+    ...[
+      'diff',
+      '--name-status',
+      '--no-renames',
+      '-z',
+      baseCommit,
+      ...(isWorkingTree ? [] : [tip]),
+      '--',
+    ],
   )
   const untracked =
     diff.ok && isWorkingTree
@@ -142,12 +150,20 @@ async function readBlob(root: string, revision: string, path: string): Promise<s
 }
 
 // Each side: '' when the file does not exist on it, null when it is not showable (binary or over the limit).
-async function readOriginal(root: string, set: ChangeSet, file: FileChange): Promise<string | null> {
+async function readOriginal(
+  root: string,
+  set: ChangeSet,
+  file: FileChange,
+): Promise<string | null> {
   return file.status === 'A' ? '' : readBlob(root, set.baseCommit, file.path)
 }
 
 // Throws PathOutsideError for a path that leaves the worktree, and I/O errors for a locked file.
-async function readModified(root: string, set: ChangeSet, file: FileChange): Promise<string | null> {
+async function readModified(
+  root: string,
+  set: ChangeSet,
+  file: FileChange,
+): Promise<string | null> {
   if (file.status === 'D') {
     return ''
   }

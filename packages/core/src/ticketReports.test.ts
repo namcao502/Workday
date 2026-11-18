@@ -217,7 +217,12 @@ describe('buildReport', () => {
 
   it('takes the summary from HRM for a ticket off the board', () => {
     const facts: Record<string, TicketReportFacts> = {
-      'ON-1': { summary: 'From board', status: 'In Progress', section: 'started' },
+      'ON-1': {
+        summary: 'From board',
+        status: 'In Progress',
+        statusCategory: 'indeterminate',
+        section: 'started',
+      },
     }
     const report = buildReport(
       input({
@@ -231,7 +236,12 @@ describe('buildReport', () => {
 
     const off = report.rows.find((row) => row.ticketKey === 'OFF-1')
     const on = report.rows.find((row) => row.ticketKey === 'ON-1')
-    expect(off?.facts).toEqual({ summary: 'From HRM', status: null, section: null })
+    expect(off?.facts).toEqual({
+      summary: 'From HRM',
+      status: null,
+      statusCategory: null,
+      section: null,
+    })
     expect(on?.facts).toEqual(facts['ON-1'])
   })
 })

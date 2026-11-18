@@ -198,7 +198,11 @@ describe('WorkspaceService chat and prompt', () => {
     expect(service.prompt('claude', 'two')).toBe('sent')
     expect(agent.handles).toHaveLength(1)
     expect(agent.last().sent).toEqual(['one', 'two'])
-    expect(agent.last().options).toMatchObject({ cwd: devRepo, mode: 'bypassPermissions', resume: null })
+    expect(agent.last().options).toMatchObject({
+      cwd: devRepo,
+      mode: 'bypassPermissions',
+      resume: null,
+    })
     expect(service.view().sessions[0]).toEqual({
       name: 'claude',
       running: true,

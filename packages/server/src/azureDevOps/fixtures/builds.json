@@ -2,7 +2,10 @@
   "value": [
     {
       "id": 119992,
-      "definition": { "name": "Backend - External Portal Service", "path": "\\Development-Pipelines" },
+      "definition": {
+        "name": "Backend - External Portal Service",
+        "path": "\\Development-Pipelines"
+      },
       "repository": { "name": "Backend" },
       "sourceVersion": "c338c33b",
       "queueTime": "2026-10-20T22:18:50Z",

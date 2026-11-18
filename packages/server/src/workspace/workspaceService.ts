@@ -297,6 +297,11 @@ export class WorkspaceService {
     )
   }
 
+  // True while a prompted turn runs or waits in the queue; false once it ended, also on an API error.
+  isWorking(name: string): boolean {
+    return this.sessions.get(name)?.state.working ?? false
+  }
+
   // The folder a session works in, for the git facts under the composer; null for an unknown session.
   sessionDirectory(name: string): string | null {
     if (this.tabOf(name) === undefined) {

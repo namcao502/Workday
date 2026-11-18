@@ -241,3 +241,24 @@ it('Ctrl+K opens the link row with a hint', async () => {
     'Paste a link, then Enter',
   )
 })
+
+it('Ctrl+click on a link in the text opens it; a plain click only places the caret', () => {
+  const opened = vi.fn()
+  vi.stubGlobal('open', opened)
+  render(
+    <TeamsComposer
+      mode="post"
+      people={[]}
+      label="Post"
+      submitLabel="Post"
+      initialHtml='<p><a href="https://dev.azure.com/pr/1">PR</a></p>'
+      onSend={vi.fn()}
+    />,
+  )
+  const link = screen.getByText('PR')
+  fireEvent.click(link)
+  expect(opened).not.toHaveBeenCalled()
+  fireEvent.click(link, { ctrlKey: true })
+  expect(opened).toHaveBeenCalledWith('https://dev.azure.com/pr/1', '_blank', 'noopener,noreferrer')
+  vi.unstubAllGlobals()
+})

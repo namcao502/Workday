@@ -16,6 +16,7 @@ const SECONDS_PER_HOUR = 3600
 export interface TicketReportFacts {
   readonly summary: string | null
   readonly status: string | null
+  readonly statusCategory: string | null // Jira's key, for the status color
   readonly section: string | null
 }
 
@@ -48,7 +49,12 @@ export interface TicketReportInput {
   readonly timeZone?: string // the zone the session days are keyed in
 }
 
-const NO_FACTS: TicketReportFacts = { summary: null, status: null, section: null }
+const NO_FACTS: TicketReportFacts = {
+  summary: null,
+  status: null,
+  statusCategory: null,
+  section: null,
+}
 
 export function totalTokens(usage: AgentDayUsage): number {
   return usage.inputTokens + usage.outputTokens + usage.cacheReadTokens + usage.cacheWriteTokens

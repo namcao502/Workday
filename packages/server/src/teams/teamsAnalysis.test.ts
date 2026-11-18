@@ -89,6 +89,7 @@ describe('TeamsAnalysisRunner', () => {
   function rig(outcome: PromptOutcome = 'sent') {
     const sent: string[] = []
     let replies: string[] = []
+    let working = true
     let now = 1_000_000
     const repo = mkdtempSync(join(tmpdir(), 'repo-'))
     const runner = new TeamsAnalysisRunner({
@@ -99,6 +100,7 @@ describe('TeamsAnalysisRunner', () => {
           return 'sent'
         },
         assistantTexts: () => replies,
+        isWorking: () => working,
       },
       tmpDir: mkdtempSync(join(tmpdir(), 'analysis-')),
       now: () => new Date(now),
@@ -114,6 +116,9 @@ describe('TeamsAnalysisRunner', () => {
       },
       advance: (ms: number) => {
         now += ms
+      },
+      stop: () => {
+        working = false
       },
     }
   }
@@ -150,6 +155,14 @@ describe('TeamsAnalysisRunner', () => {
     advance(21 * 60_000)
     expect(await runner.status('MDP-1', 'conv1', 'm2')).toEqual({ kind: 'failed' })
     expect(await runner.status('MDP-1', 'conv1', 'm2')).toEqual({ kind: 'none' })
+  })
+
+  it('fails at once when the session stopped working without the answer (an API error)', async () => {
+    const { runner, stop } = rig()
+    await runner.start(input)
+    expect(await runner.status('MDP-1', 'conv1', 'm2')).toEqual({ kind: 'running' })
+    stop()
+    expect(await runner.status('MDP-1', 'conv1', 'm2')).toEqual({ kind: 'failed' })
   })
 
   it('refuses when Claude is not running or is waiting for an answer', async () => {

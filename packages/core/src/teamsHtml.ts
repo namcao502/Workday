@@ -104,7 +104,12 @@ export function fullSizeImageUrl(url: string): string | null {
 }
 
 // `lower` is the lower-cased content, made once per call: lower-casing per tag would be quadratic.
-export function indexAfterClosingTag(content: string, lower: string, from: number, name: string): number {
+export function indexAfterClosingTag(
+  content: string,
+  lower: string,
+  from: number,
+  name: string,
+): number {
   const closeStart = lower.indexOf(`</${name}`, from)
   if (closeStart === -1) {
     return content.length

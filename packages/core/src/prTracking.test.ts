@@ -133,7 +133,9 @@ describe('detectChanges', () => {
       'MDP-1|main|1': tracked('active', { build: 'failed', merge: 'conflicts', vote: 'noVote' }),
     }
 
-    const result = detectChanges(tracking, 'MDP-1', [{ ...pr(1, 'main', 'active', 0), vote: 'noVote' }])
+    const result = detectChanges(tracking, 'MDP-1', [
+      { ...pr(1, 'main', 'active', 0), vote: 'noVote' },
+    ])
 
     expect(result.changes).toEqual([])
     expect(result.tracking['MDP-1|main|1']).toMatchObject({ build: 'failed', merge: 'conflicts' })

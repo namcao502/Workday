@@ -30,7 +30,10 @@ interface FileQuery {
   readonly path?: string
 }
 
-function worktreeGroupOf(groups: readonly FileGroup[], id: string | undefined): FileGroup | undefined {
+function worktreeGroupOf(
+  groups: readonly FileGroup[],
+  id: string | undefined,
+): FileGroup | undefined {
   return groups.find((group) => group.id === id && group.kind === 'worktree')
 }
 
@@ -42,23 +45,26 @@ export function registerWorkspaceFilesRoutes(
   const notFound = (response: FastifyReply, what: string): FastifyReply =>
     response.code(404).send({ error: `Unknown ${what}` })
 
-  app.get<{ Params: { id: string } }>('/api/workspace/tabs/:id/changes', async (request, response) => {
-    const groups = await workspace.fileGroups(request.params.id)
-    if (groups === null) {
-      return notFound(response, 'tab')
-    }
-    const ticketKey = isTicketKey(request.params.id) ? request.params.id : null
-    const views: ChangeGroupView[] = []
-    for (const group of groups.filter((item) => item.kind === 'worktree')) {
-      const set = await listChanges(group.root, ticketKey, workspace.localOnlyPaths())
-      views.push(
-        set === null
-          ? { id: group.id, label: group.label, files: [], error: GIT_FAILED }
-          : { id: group.id, label: group.label + bugSuffix(set), files: set.files, error: null },
-      )
-    }
-    return views
-  })
+  app.get<{ Params: { id: string } }>(
+    '/api/workspace/tabs/:id/changes',
+    async (request, response) => {
+      const groups = await workspace.fileGroups(request.params.id)
+      if (groups === null) {
+        return notFound(response, 'tab')
+      }
+      const ticketKey = isTicketKey(request.params.id) ? request.params.id : null
+      const views: ChangeGroupView[] = []
+      for (const group of groups.filter((item) => item.kind === 'worktree')) {
+        const set = await listChanges(group.root, ticketKey, workspace.localOnlyPaths())
+        views.push(
+          set === null
+            ? { id: group.id, label: group.label, files: [], error: GIT_FAILED }
+            : { id: group.id, label: group.label + bugSuffix(set), files: set.files, error: null },
+        )
+      }
+      return views
+    },
+  )
 
   app.get<{ Params: { id: string }; Querystring: FileQuery }>(
     '/api/workspace/tabs/:id/changes/diff',
@@ -93,20 +99,24 @@ export function registerWorkspaceFilesRoutes(
     },
   )
 
-  app.get<{ Params: { id: string } }>('/api/workspace/tabs/:id/files', async (request, response) => {
-    const groups = await workspace.fileGroups(request.params.id)
-    if (groups === null) {
-      return notFound(response, 'tab')
-    }
-    return Promise.all(
-      groups.map(async (group): Promise<FilesGroupView> => {
-        const paths = group.kind === 'docs' ? await listDocs(group.root) : await listWorktree(group.root)
-        return paths === null
-          ? { id: group.id, label: group.label, paths: [], error: GIT_FAILED }
-          : { id: group.id, label: group.label, paths, error: null }
-      }),
-    )
-  })
+  app.get<{ Params: { id: string } }>(
+    '/api/workspace/tabs/:id/files',
+    async (request, response) => {
+      const groups = await workspace.fileGroups(request.params.id)
+      if (groups === null) {
+        return notFound(response, 'tab')
+      }
+      return Promise.all(
+        groups.map(async (group): Promise<FilesGroupView> => {
+          const paths =
+            group.kind === 'docs' ? await listDocs(group.root) : await listWorktree(group.root)
+          return paths === null
+            ? { id: group.id, label: group.label, paths: [], error: GIT_FAILED }
+            : { id: group.id, label: group.label, paths, error: null }
+        }),
+      )
+    },
+  )
 
   // The path of a file read: 404 for an unknown tab / group, 400 for an unsafe path.
   const resolveFile = async (
@@ -167,7 +177,10 @@ export function registerWorkspaceFilesRoutes(
         return await response
           .header('content-type', mimeType)
           .header('x-content-type-options', 'nosniff')
-          .header('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+          .header(
+            'content-security-policy',
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+          )
           .header('cache-control', 'no-store')
           .send(bytes)
       } catch {

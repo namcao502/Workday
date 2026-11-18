@@ -6,7 +6,10 @@
       "mergeStatus": "conflicts",
       "targetRefName": "refs/heads/development",
       "repository": { "name": "Backend", "project": { "id": "proj-1" } },
-      "reviewers": [{ "id": "me", "vote": 10 }, { "id": "lead", "vote": -5 }]
+      "reviewers": [
+        { "id": "me", "vote": 10 },
+        { "id": "lead", "vote": -5 }
+      ]
     },
     {
       "pullRequestId": 102,

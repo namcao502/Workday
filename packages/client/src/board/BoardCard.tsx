@@ -1,10 +1,13 @@
 import { Card } from '@heroui/react'
 import { formatDateOnly, t } from '../i18n.js'
 import { prsOf, readyToTestFor, type BoardListProps } from './BoardTable.js'
+import { dueUrgencyOf, etaUrgencyOf } from './boardView.js'
 import { DueDate } from './DueDate.js'
 import { KeyPill } from './KeyPill.js'
+import { PriorityText } from './PriorityText.js'
 import { PrPills } from './PrPills.js'
 import { RowMenu } from './RowMenu.js'
+import { StatusText } from './StatusText.js'
 
 export function BoardCards({
   rows,
@@ -34,19 +37,33 @@ export function BoardCards({
             <div className="[overflow-wrap:anywhere]">{row.ticket.summary}</div>
             <PrPills prs={prsOf(work, view, row.ticket.key)} repoLabels={work?.repoLabels ?? {}} />
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-              {row.ticket.status === null ? null : <span>{row.ticket.status}</span>}
+              {row.ticket.status === null ? null : (
+                <StatusText status={row.ticket.status} statusCategory={row.ticket.statusCategory} />
+              )}
               {row.ticket.dueDate === null ? null : (
-                <DueDate
-                  row={row}
-                  text={`${t('Due', 'Hạn')} ${formatDateOnly(row.ticket.dueDate, language)}`}
-                />
+                <span>
+                  {t('Due', 'Hạn')}{' '}
+                  <DueDate
+                    urgency={dueUrgencyOf(row)}
+                    text={formatDateOnly(row.ticket.dueDate, language)}
+                  />
+                </span>
               )}
               {row.ticket.eta === null ? null : (
                 <span>
-                  {t('ETA', 'ETA')} {formatDateOnly(row.ticket.eta, language)}
+                  ETA{' '}
+                  <DueDate
+                    urgency={etaUrgencyOf(row)}
+                    text={formatDateOnly(row.ticket.eta, language)}
+                  />
                 </span>
               )}
-              {row.ticket.devPriority === null ? null : <span>P{row.ticket.devPriority}</span>}
+              {row.ticket.devPriority === null ? null : (
+                <PriorityText
+                  devPriority={row.ticket.devPriority}
+                  text={`P${String(row.ticket.devPriority)}`}
+                />
+              )}
             </div>
           </Card>
         </li>

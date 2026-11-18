@@ -35,7 +35,12 @@ describe('selectDaySuggestions', () => {
   ]
   const activity = {
     'MDP-1': { ticketKey: 'MDP-1', commits: 1, claudeLast: null, activeMinutes: 10 },
-    'MDP-2': { ticketKey: 'MDP-2', commits: 0, claudeLast: '2026-11-17T03:00:00Z', activeMinutes: 60 },
+    'MDP-2': {
+      ticketKey: 'MDP-2',
+      commits: 0,
+      claudeLast: '2026-11-17T03:00:00Z',
+      activeMinutes: 60,
+    },
     'MDP-3': { ticketKey: 'MDP-3', commits: 0, claudeLast: null, activeMinutes: 0 },
   }
 

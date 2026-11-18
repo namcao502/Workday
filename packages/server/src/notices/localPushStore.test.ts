@@ -34,6 +34,17 @@ describe('LocalPushStore', () => {
     expect(store.list().at(-1)?.keys.auth).toBe('newer')
   })
 
+  it('keeps the origin a subscription came from across a restart', async () => {
+    const { store, path } = newStore()
+    await store.add(subscription('https://push.example/a'), 'http://127.0.0.1:4870')
+    await store.add(subscription('https://push.example/b'), null)
+
+    expect(new LocalPushStore(path).list().map((item) => item.origin)).toEqual([
+      'http://127.0.0.1:4870',
+      null,
+    ])
+  })
+
   it('persists across a restart and remove deletes by endpoint', async () => {
     const { store, path } = newStore()
     await store.add(subscription('https://push.example/a'))

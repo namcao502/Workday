@@ -275,9 +275,37 @@ describe('BoardService view', () => {
           ticket: makeTicket('MDP-3', { dueDate: '2026-11-01' }),
           section: 'done',
           dueUrgency: 'overdue',
+          etaUrgency: 'none',
           url: 'https://jira.example/browse/MDP-3',
         },
       ],
+    })
+  })
+
+  it('flags a passed due date or ETA only while the next move is the developer', () => {
+    const late = { dueDate: '2026-11-01', eta: '2026-11-02', statusCategory: 'indeterminate' }
+    const service = createService(
+      boardWith({
+        inProgress: {
+          'MDP-1': makeTicket('MDP-1', { ...late, status: 'In Progress' }),
+          'MDP-2': makeTicket('MDP-2', { ...late, status: 'PR & Code Review' }),
+        },
+        new: { 'MDP-3': makeTicket('MDP-3', { ...late, status: 'PR & Code Review' }) },
+      }),
+    )
+    service.configure({
+      jira: { ...JIRA, statusFlow: { ...JIRA.statusFlow, developerStatuses: ['In Progress'] } },
+      tracker,
+      timeZone: 'Asia/Ho_Chi_Minh',
+    })
+    const urgency = Object.fromEntries(
+      service.view().rows.map((row) => [row.ticket.key, [row.dueUrgency, row.etaUrgency]]),
+    )
+    expect(urgency).toEqual({
+      'MDP-1': ['overdue', 'overdue'],
+      'MDP-2': ['none', 'none'],
+      // The status decides, also for a ticket the app has not started.
+      'MDP-3': ['none', 'none'],
     })
   })
 })

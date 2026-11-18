@@ -128,7 +128,11 @@ function toEvent(message: SDKMessage, startMode: AgentMode): AgentEvent | null {
     return mode === null ? null : { type: 'mode', mode }
   }
   if (message.type === 'result') {
-    return { type: 'turnEnded', ok: message.subtype === 'success' }
+    return {
+      type: 'turnEnded',
+      ok: message.subtype === 'success',
+      queued: message.queued_turn_count,
+    }
   }
   if (message.type === 'user' || message.type === 'assistant' || message.type === 'system') {
     return { type: 'message' }

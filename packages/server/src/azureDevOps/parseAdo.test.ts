@@ -36,13 +36,31 @@ describe('parseTargetBranch', () => {
 
 describe('parseVote', () => {
   it("ignores the creator's own vote", () => {
-    const pr = { reviewers: [{ id: 'me', vote: 10 }, { id: 'lead', vote: 0 }] }
+    const pr = {
+      reviewers: [
+        { id: 'me', vote: 10 },
+        { id: 'lead', vote: 0 },
+      ],
+    }
     expect(parseVote(pr, 'me')).toBe('noVote')
   })
 
   it.each([
-    [[{ id: 'a', vote: 10 }, { id: 'b', vote: -5 }, { id: 'c', vote: -10 }], 'rejected'],
-    [[{ id: 'a', vote: 10 }, { id: 'b', vote: -5 }], 'waitingForAuthor'],
+    [
+      [
+        { id: 'a', vote: 10 },
+        { id: 'b', vote: -5 },
+        { id: 'c', vote: -10 },
+      ],
+      'rejected',
+    ],
+    [
+      [
+        { id: 'a', vote: 10 },
+        { id: 'b', vote: -5 },
+      ],
+      'waitingForAuthor',
+    ],
     [[{ id: 'a', vote: 5 }], 'approved'],
     [[], 'noVote'],
   ])('the worst vote wins: %j -> %s', (reviewers, expected) => {

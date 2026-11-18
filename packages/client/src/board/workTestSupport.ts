@@ -44,6 +44,7 @@ export function boardRow(
     },
     section,
     dueUrgency: 'none',
+    etaUrgency: 'none',
     url: `https://example.atlassian.net/browse/${key}`,
   }
 }

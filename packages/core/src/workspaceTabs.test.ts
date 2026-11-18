@@ -33,7 +33,9 @@ describe('workspace tab reducers', () => {
 
   it('opens a ticket tab once and ignores a non-key', () => {
     const opened = openTicket(empty, 'MDP-1')
-    expect(opened.tabs).toEqual([{ id: 'MDP-1', kind: 'ticket', folder: null, sessions: ['MDP-1'] }])
+    expect(opened.tabs).toEqual([
+      { id: 'MDP-1', kind: 'ticket', folder: null, sessions: ['MDP-1'] },
+    ])
     expect(openTicket(opened, 'MDP-1')).toBe(opened)
     expect(openTicket(empty, 'claude')).toBe(empty)
   })
@@ -42,7 +44,12 @@ describe('workspace tab reducers', () => {
     const one = addTerminal(empty, 'C:\\repo')
     const two = addTerminal(one, null)
     expect(two.tabs.map((tab) => tab.id)).toEqual(['claude', 'claude2'])
-    expect(two.tabs[0]).toEqual({ id: 'claude', kind: 'terminal', folder: 'C:\\repo', sessions: ['claude'] })
+    expect(two.tabs[0]).toEqual({
+      id: 'claude',
+      kind: 'terminal',
+      folder: 'C:\\repo',
+      sessions: ['claude'],
+    })
   })
 
   it('adds and closes extra sessions, never the main one', () => {

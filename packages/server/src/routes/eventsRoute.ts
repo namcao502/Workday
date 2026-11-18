@@ -1,13 +1,12 @@
 import type { FastifyInstance } from 'fastify'
-import type { EventHub } from '../events.js'
-import type { RemoteService } from '../remote/remoteService.js'
-import { isAllowedOrigin, remoteOrigin } from '../security/allowedHosts.js'
+import type { EventHub, RemoteSurface } from '../events.js'
+import { isAllowedOrigin } from '../security/allowedHosts.js'
 
 export function registerEventsRoute(
   app: FastifyInstance,
   events: EventHub,
   allowedHosts: ReadonlySet<string>,
-  remote: RemoteService,
+  surface: RemoteSurface,
 ): void {
   app.get(
     '/api/events',
@@ -17,11 +16,10 @@ export function registerEventsRoute(
       // A browser always sends Origin; a page on another site must not read our events.
       preValidation: async (request, reply) => {
         const { origin } = request.headers
-        const publicHost = remote.config?.publicHost ?? null
         const isAllowed =
           origin === undefined ||
           (request.isRemote
-            ? publicHost !== null && origin === remoteOrigin(publicHost)
+            ? request.remoteOrigin !== null && origin === request.remoteOrigin
             : isAllowedOrigin(origin, allowedHosts))
         if (!isAllowed) {
           return reply.code(403).send({ error: 'Forbidden origin' })
@@ -30,7 +28,7 @@ export function registerEventsRoute(
       },
     },
     (socket, request) => {
-      const remove = events.add(socket, request.remoteDevice?.id ?? null)
+      const remove = events.add(socket, request.remoteDevice?.id ?? null, surface)
       socket.on('close', remove)
     },
   )

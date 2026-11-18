@@ -45,7 +45,12 @@ const AGENT: AgentStats = {
 function row(key: string, overrides: Partial<TicketReportRow> = {}): TicketReportRow {
   return {
     ticketKey: key,
-    facts: { summary: `Summary of ${key}`, status: 'In Progress', section: null },
+    facts: {
+      summary: `Summary of ${key}`,
+      status: 'In Progress',
+      statusCategory: 'indeterminate',
+      section: null,
+    },
     hours: 2,
     sessions: 1,
     turns: 3,
@@ -98,6 +103,14 @@ it('insights page reads on open and again when the range changes', async () => {
     ])
   })
   expect(localStorage.getItem(RANGE_STORAGE_KEY)).toContain('lastWeek')
+})
+
+it('the status cell is colored by the Jira status category', async () => {
+  stubFetch((url) =>
+    jsonResponse(url.startsWith('/api/insights') ? view([row('MDP-1')]) : settingsView()),
+  )
+  renderWithQuery(<InsightsPage />)
+  expect(await screen.findByText('In Progress')).toHaveClass('text-accent')
 })
 
 it('a failed read keeps the last report and shows the error', async () => {
