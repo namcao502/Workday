@@ -54,3 +54,16 @@ it('the closed-window button subscribes, and reports a denied permission', async
 
   expect(await screen.findByText(/blocked notifications/)).toBeInTheDocument()
 })
+
+it('a column header switch turns that channel on for every topic', async () => {
+  const fetchMock = stubFetch(() => jsonResponse(settingsView()))
+  renderWithQuery(<NoticesSection settings={settingsView()} />)
+  expect(screen.getByLabelText('All topics: Desktop')).not.toBeChecked()
+  fireEvent.click(screen.getByLabelText('All topics: Desktop'))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalled()
+  })
+  expect(screen.getByLabelText('Jira: Desktop')).toBeChecked()
+  expect(screen.getByLabelText('Other: Desktop')).toBeChecked()
+  expect(screen.getByLabelText('All topics: Desktop')).toBeChecked()
+})

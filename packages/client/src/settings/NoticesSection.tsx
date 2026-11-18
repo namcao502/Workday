@@ -181,6 +181,14 @@ export function NoticesSection({
     void apply(next, prefsFromChannels(next))
   }
 
+  // One switch per column header: every topic on that channel at once.
+  function toggleColumn(channel: keyof NoticeChannels, on: boolean): void {
+    const next = Object.fromEntries(
+      TOPICS.map((topic) => [topic, { ...channels[topic], [channel]: on }]),
+    ) as Record<NoticeTopic, NoticeChannels>
+    void apply(next, prefsFromChannels(next))
+  }
+
   return (
     <Section title={t('Notices', 'Thông báo')}>
       <p className="text-sm text-muted">
@@ -201,7 +209,28 @@ export function NoticesSection({
                 scope="col"
                 className="w-28 py-1 text-center text-xs font-medium uppercase text-muted"
               >
-                {channelName(channel)}
+                <div className="flex flex-col items-center gap-1">
+                  {channelName(channel)}
+                  <Switch
+                    size="sm"
+                    isSelected={TOPICS.every((topic) => channels[topic][channel])}
+                    onChange={(selected) => {
+                      toggleColumn(channel, selected)
+                    }}
+                  >
+                    <Switch.Content>
+                      <Switch.Control>
+                        <Switch.Thumb />
+                      </Switch.Control>
+                      <span className="sr-only">
+                        {t(
+                          `All topics: ${channelName(channel)}`,
+                          `Mọi chủ đề: ${channelName(channel)}`,
+                        )}
+                      </span>
+                    </Switch.Content>
+                  </Switch>
+                </div>
               </th>
             ))}
           </tr>

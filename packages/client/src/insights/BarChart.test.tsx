@@ -25,3 +25,13 @@ it('tokens are shown compactly', () => {
     '1M',
   ])
 })
+
+it('token bars take their own color so they do not read as hours', () => {
+  const bars = [{ label: 'MDP-1', value: 5 }]
+  const { container: hours } = render(<BarChart title="H" bars={bars} formatValue={String} />)
+  const { container: tokens } = render(
+    <BarChart title="T" bars={bars} formatValue={String} measure="tokens" horizontal={false} />,
+  )
+  expect(hours.querySelector('rect.bar')).toHaveClass('fill-accent')
+  expect(tokens.querySelector('rect.bar')).toHaveClass('fill-violet-500')
+})

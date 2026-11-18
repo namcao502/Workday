@@ -10,6 +10,14 @@ interface BarChartProps {
   readonly bars: readonly Bar[]
   readonly formatValue: (value: number) => string
   readonly horizontal?: boolean // by ticket: top 10 + Other; false = one column per day
+  readonly measure?: Measure // each measure has its own color, so hours and tokens side by side never blur
+}
+
+export type Measure = 'hours' | 'tokens'
+
+const MEASURE_FILL: Readonly<Record<Measure, string>> = {
+  hours: 'fill-accent',
+  tokens: 'fill-violet-500',
 }
 
 const MAX_BARS = 10
@@ -40,7 +48,10 @@ function Rows({
   title,
   bars,
   formatValue,
-}: Pick<BarChartProps, 'title' | 'bars' | 'formatValue'>): React.JSX.Element {
+  fill,
+}: Pick<BarChartProps, 'title' | 'bars' | 'formatValue'> & {
+  readonly fill: string
+}): React.JSX.Element {
   const max = Math.max(...bars.map((bar) => bar.value), 0)
   const height = bars.length * ROW_H
   return (
@@ -66,7 +77,7 @@ function Rows({
               {bar.label}
             </text>
             <rect
-              className="bar fill-accent"
+              className={`bar ${fill}`}
               x={LABEL_W}
               y={y + (ROW_H - BAR_H) / 2}
               width={width}
@@ -92,7 +103,10 @@ function Columns({
   title,
   bars,
   formatValue,
-}: Pick<BarChartProps, 'title' | 'bars' | 'formatValue'>): React.JSX.Element {
+  fill,
+}: Pick<BarChartProps, 'title' | 'bars' | 'formatValue'> & {
+  readonly fill: string
+}): React.JSX.Element {
   const max = Math.max(...bars.map((bar) => bar.value), 0)
   const width = Math.max(bars.length, 1) * COLUMN_W
   return (
@@ -110,7 +124,7 @@ function Columns({
           <g key={bar.label} data-bar-row>
             <title>{`${bar.label}: ${formatValue(bar.value)}`}</title>
             <rect
-              className="bar fill-accent"
+              className={`bar ${fill}`}
               x={x + 6}
               y={COLUMN_PLOT_H - barHeight}
               width={COLUMN_W - 12}
@@ -145,7 +159,9 @@ export function BarChart({
   bars,
   formatValue,
   horizontal = true,
+  measure = 'hours',
 }: BarChartProps): React.JSX.Element {
+  const fill = MEASURE_FILL[measure]
   const shown = horizontal ? foldIntoOther(bars) : bars
   return (
     <figure className="m-0">
@@ -153,9 +169,9 @@ export function BarChart({
       {shown.length === 0 ? (
         <p className="text-sm text-muted">{t('No data', 'Không có dữ liệu')}</p>
       ) : horizontal ? (
-        <Rows title={title} bars={shown} formatValue={formatValue} />
+        <Rows title={title} bars={shown} formatValue={formatValue} fill={fill} />
       ) : (
-        <Columns title={title} bars={shown} formatValue={formatValue} />
+        <Columns title={title} bars={shown} formatValue={formatValue} fill={fill} />
       )}
     </figure>
   )

@@ -60,6 +60,7 @@ function Charts({ report }: { readonly report: TicketReport }): React.JSX.Elemen
         title={t('Tokens by ticket', 'Token theo ticket')}
         bars={tokenBars}
         formatValue={formatTokens}
+        measure="tokens"
       />
       {report.hoursRead ? (
         <BarChart
@@ -73,6 +74,7 @@ function Charts({ report }: { readonly report: TicketReport }): React.JSX.Elemen
         title={t('Tokens by day', 'Token theo ngày')}
         bars={dayBars(report.tokensByDay)}
         formatValue={formatTokens}
+        measure="tokens"
         horizontal={false}
       />
     </div>
