@@ -10,6 +10,7 @@ import { errorText } from './errors.js'
 import { setLanguage, t } from './i18n.js'
 import { PairPage } from './remote/PairPage.js'
 import { SeasonLayer } from './season/SeasonLayer.js'
+import { ThemedTooltips } from './ui/ThemedTooltips.js'
 import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
 import { useNarrow } from './shell/useNarrow.js'
@@ -78,6 +79,7 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
   return (
     <>
       <SeasonLayer season={season} level={level} dark={theme === 'dark'} />
+      <ThemedTooltips />
       <Shell page={page} />
     </>
   )
