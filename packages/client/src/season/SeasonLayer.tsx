@@ -145,7 +145,7 @@ const GARLAND_GAP_PX = 34
 // The top wire sags between hooks three ornaments apart; season.css draws the same curve.
 const SWAG_ITEMS = 3
 const WIRE_TOP_PX = 4
-const SWAG_SAG_PX = 12
+const SWAG_SAG_PX = 6
 
 function itemColor(season: GarlandSeason, index: number): string | undefined {
   const colors = GARLAND_COLORS[season]
