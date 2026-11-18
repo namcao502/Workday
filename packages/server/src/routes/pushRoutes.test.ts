@@ -55,6 +55,7 @@ async function timesheetApp(language: 'en' | 'vi'): Promise<TestApp> {
     language,
     jira: null,
     remote: ENABLED_REMOTE,
+    vpn: null,
     timesheet: {
       logTime: '18:00',
       hrm: { mcpUrl: 'https://hrm.example/mcp', projectId: 'P1' },
@@ -231,6 +232,21 @@ describe('local push routes', () => {
     ])
     expect(listed).toEqual([SUBSCRIPTION.endpoint])
     expect(testApp.services.remote.push.local.list()).toEqual([])
+  })
+
+  it('PUT records the page origin of a local subscription and GET lists the origins', async () => {
+    const testApp = await remoteApp()
+    const origin = `http://${LOOPBACK_HEADERS.host}`
+    await testApp.app.inject({
+      method: 'PUT',
+      url: '/api/push/local',
+      headers: { ...LOOPBACK_HEADERS, origin },
+      payload: { subscription: SUBSCRIPTION },
+    })
+
+    const reply = await testApp.app.inject({ url: '/api/push/local', headers: LOOPBACK_HEADERS })
+
+    expect(reply.json()).toEqual({ origins: [origin] })
   })
 
   it('GET /api/push/key works from this PC', async () => {

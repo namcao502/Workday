@@ -22,6 +22,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
       jira: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
       remote: null,
+      vpn: null,
       workspace: {
         devRepoPath: null,
         siblingRepoGlob: null,

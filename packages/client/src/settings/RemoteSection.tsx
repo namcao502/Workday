@@ -1,6 +1,6 @@
 import type { RemoteStatusView, SettingsView } from '@workday/core'
 import { Button, Switch } from '@heroui/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useRemote, useRemoteActions } from '../api/useRemote.js'
 import { useSaveSettings } from '../api/useSettings.js'
@@ -12,6 +12,8 @@ import { formFromRemote, remoteFromForm, type RemoteForm } from './remoteForm.js
 import { Section } from '../ui/Section.js'
 import { TextField } from '../ui/TextField.js'
 import { TokenField } from './TokenField.js'
+import { vpnFormOf, vpnFromForm, type VpnForm } from './vpnForm.js'
+import { VpnSettings } from './VpnSettings.js'
 
 function tunnelText(status: RemoteStatusView): string {
   switch (status.tunnel) {
@@ -31,6 +33,8 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
   const remote = useRemote()
   const actions = useRemoteActions()
   const [form, setForm] = useState<RemoteForm>(() => formFromRemote(settings.config.remote))
+  const [vpnForm, setVpnForm] = useState<VpnForm>(() => vpnFormOf(settings.config.vpn, []))
+  const [vpnProblem, setVpnProblem] = useState<string | null>(null)
   const [tunnelToken, setTunnelToken] = useState('')
   const [replacing, setReplacing] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -38,8 +42,23 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
     null,
   )
 
+  // The address list arrives with the status, after the form is built; prefill only an unsaved, blank form.
+  const firstAddress = remote.data?.vpn.addresses[0]
+  useEffect(() => {
+    if (settings.config.vpn === null && firstAddress !== undefined) {
+      setVpnForm((current) =>
+        current.address === '' ? { ...current, address: firstAddress } : current,
+      )
+    }
+  }, [settings.config.vpn, firstAddress])
+
   function change(changes: Partial<RemoteForm>): void {
     setForm((current) => ({ ...current, ...changes }))
+  }
+
+  function changeVpn(changes: Partial<VpnForm>): void {
+    setVpnForm((current) => ({ ...current, ...changes }))
+    setVpnProblem(null)
   }
 
   const run: RunRemote = (action) => {
@@ -52,11 +71,17 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
   }
 
   async function runSave(): Promise<void> {
+    const checked = vpnFromForm(vpnForm)
+    if ('problem' in checked) {
+      setVpnProblem(checked.problem)
+      return
+    }
     setBusy(true)
     try {
       const token = tunnelToken.trim()
       await save({
         remote: remoteFromForm(form),
+        vpn: checked.vpn,
         ...(token === '' ? {} : { tunnelToken: token }),
       })
       setTunnelToken('')
@@ -75,6 +100,14 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
   const { language, timeZone } = settings.config
   return (
     <Section title={t('Remote access', 'Truy cập từ xa')}>
+      <VpnSettings
+        form={vpnForm}
+        onChange={changeVpn}
+        saved={settings.config.vpn}
+        status={remote.data?.vpn}
+        problem={vpnProblem}
+      />
+      <h3 className="text-sm font-semibold">Cloudflare</h3>
       <Switch
         isSelected={form.enabled}
         onChange={(selected) => {
@@ -176,6 +209,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
           <RemotePairing
             pairing={remote.data.pairing}
             remote={settings.config.remote}
+            vpn={remote.data.vpn}
             actions={actions}
             run={run}
           />

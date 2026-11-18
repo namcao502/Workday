@@ -86,6 +86,16 @@ export async function putLocalPush(subscription: PushSubscriptionJSON): Promise<
   }
 }
 
+export async function getLocalPushOrigins(): Promise<readonly string[]> {
+  const path = '/api/push/local'
+  const raw = await send('GET', path)
+  const origins: unknown = isRecord(raw.body) ? raw.body['origins'] : undefined
+  if (!raw.ok || !Array.isArray(origins)) {
+    throw new ApiError(raw.status, path)
+  }
+  return origins.filter((item): item is string => typeof item === 'string')
+}
+
 export async function deleteLocalPush(endpoint: string): Promise<void> {
   const raw = await send('DELETE', '/api/push/local', { endpoint })
   if (!raw.ok) {
@@ -96,4 +106,21 @@ export async function deleteLocalPush(endpoint: string): Promise<void> {
 export async function sendTestPush(): Promise<boolean> {
   const raw = await send('POST', '/api/push/test')
   return raw.ok && isRecord(raw.body) && raw.body['ok'] === true
+}
+
+export type FirewallResult =
+  { readonly ok: true } | { readonly ok: false; readonly error: AppError }
+
+// A refusal (cancelled prompt, no saved ranges) is returned so the card can say it; only a broken reply throws.
+export async function openRemoteFirewall(): Promise<FirewallResult> {
+  const path = '/api/remote/firewall'
+  const raw = await send('POST', path)
+  if (raw.ok && hasOkFlag(raw.body) && raw.body.ok) {
+    return { ok: true }
+  }
+  const code = errorCodeOf(raw.body)
+  if (code === null) {
+    throw new ApiError(raw.status, path)
+  }
+  return { ok: false, error: { code } }
 }

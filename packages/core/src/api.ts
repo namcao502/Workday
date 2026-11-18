@@ -75,6 +75,14 @@ export interface RemoteConfig {
   readonly cloudflaredPath: string | null // null = the user runs cloudflared
 }
 
+export interface VpnConfig {
+  readonly enabled: boolean
+  readonly address: string // the PC's static IPv4 on the VPN, "10.20.30.40"
+  readonly httpsPort: number // 8443: the app and its API
+  readonly setupPort: number // 8444: plain HTTP, the CA and the setup page while pairing
+  readonly allowedRanges: readonly string[] // IPv4 CIDR, "10.20.0.0/16"
+}
+
 export interface WorkspaceConfig {
   readonly devRepoPath: string | null
   readonly siblingRepoGlob: string | null // "*-Angular"; null = only the dev repo
@@ -129,6 +137,7 @@ export interface WorkdayConfig {
   readonly jira: JiraConfig | null
   readonly timesheet: TimesheetConfig
   readonly remote: RemoteConfig | null // null until publicHost, accessTeamDomain and accessAud are all set
+  readonly vpn: VpnConfig | null // null until a valid address is set
   readonly workspace: WorkspaceConfig
   readonly azureDevOps: AzureDevOpsConfig | null
   readonly teams: TeamsConfig
@@ -158,6 +167,8 @@ export type AppError =
         | 'hrmUnreachable'
         | 'remoteDisabled'
         | 'accessRequired'
+        | 'firewallCancelled'
+        | 'firewallFailed'
         | 'notPaired'
         | 'forbidden'
         | 'pairingClosed'
@@ -209,6 +220,7 @@ export interface SettingsUpdate {
   readonly timesheet?: TimesheetConfig
   readonly hrmApiKey?: string
   readonly remote?: RemoteConfig | null
+  readonly vpn?: VpnConfig | null
   readonly tunnelToken?: string
   readonly workspace?: WorkspaceConfig
   readonly azureDevOps?: AzureDevOpsConfig | null
@@ -242,6 +254,7 @@ export interface BoardRow {
   readonly ticket: Ticket
   readonly section: BoardSection | 'dismissed'
   readonly dueUrgency: DueUrgency
+  readonly etaUrgency: DueUrgency
   readonly url: string
 }
 
@@ -403,6 +416,15 @@ export interface ActivityEntry {
   readonly status: number
 }
 
+export interface VpnStatusView {
+  readonly server: 'off' | 'starting' | 'running' | 'failed'
+  readonly serverDetail: string | null // the error text, untranslated
+  readonly addresses: readonly string[] // this PC's IPv4 addresses, for the address picker
+  readonly httpsUrl: string | null // "https://10.20.30.40:8443" while configured
+  readonly setupUrl: string | null // "http://10.20.30.40:8444/setup" while configured
+  readonly caFingerprint: string | null // SHA-256 of the CA, "AB:CD:...", once the CA exists
+}
+
 export interface RemoteStatusView {
   readonly tunnel: 'off' | 'starting' | 'running' | 'failed'
   readonly tunnelDetail: string | null
@@ -410,6 +432,7 @@ export interface RemoteStatusView {
   readonly pairing: PairingView
   readonly activity: readonly ActivityEntry[] // newest first, at most 50
   readonly vapidPublicKey: string | null
+  readonly vpn: VpnStatusView
 }
 
 // detail: the upstream text, untranslated, for a tooltip.
@@ -500,7 +523,12 @@ export type TeamsConversationView =
       readonly state: 'notPosted'
       readonly options: readonly TeamsOption[]
       readonly channelId: string
-      readonly draft: { readonly subject: string; readonly body: string; readonly bodyHtml: string }
+      readonly draft: {
+        readonly subject: string
+        readonly body: string
+        readonly bodyHtml: string
+        readonly lead: TeamsPerson | null // greeted by name in the body; the composer tags them
+      }
       readonly posted: boolean
       readonly people: readonly TeamsPerson[] // who an @ in the post can name
     }

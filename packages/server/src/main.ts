@@ -5,7 +5,8 @@ import { loadConfig, loadGraphTokenOverride, readPort } from './config.js'
 import { resolveDataDir } from './dataDir.js'
 import { HrmHoursLog } from './hrm/hrmHoursLog.js'
 import { JiraTracker } from './jira/jiraTracker.js'
-import { isLoopbackHost } from './security/allowedHosts.js'
+import { LanServer } from './remote/lanServer.js'
+import { isLoopbackHost, localAppOrigin } from './security/allowedHosts.js'
 import { createServices } from './services.js'
 import { BrowserLock } from './tsc/browserLock.js'
 import { fileGraphTokenStore } from './tsc/graphTokenStore.js'
@@ -33,9 +34,11 @@ async function main(): Promise<void> {
   // One lock for every rebuilt sheet adapter: the browser profile allows a single browser.
   const browserLock = new BrowserLock()
   const browserProfileDir = join(dataDir, TSC_BROWSER_FOLDER)
+  const dev = process.env['WORKDAY_DEV'] === '1'
   const services = createServices({
     dataDir,
     config,
+    localOrigin: localAppOrigin({ port, dev }),
     createTracker: (jira, token) => new JiraTracker(jira, token),
     createHoursLog: (hrm, apiKey) => new HrmHoursLog(hrm, apiKey),
     createSheetLog: (tsc) =>
@@ -47,14 +50,28 @@ async function main(): Promise<void> {
         fileGraphTokenStore(dataDir),
       ),
   })
-  const app = await createApp({
+  const appDeps = {
     port,
-    dev: process.env['WORKDAY_DEV'] === '1',
+    dev,
     version: readVersion(),
     clientDist: join(import.meta.dirname, '..', '..', 'client', 'dist'),
     ...services,
+  }
+  const app = await createApp(appDeps)
+  const lan = new LanServer({
+    dataDir,
+    now: () => new Date(),
+    createApp: (vpn) => createApp({ ...appDeps, vpn }),
+    language: () => services.settings.language,
+    onChange: () => {
+      services.events.broadcast({ type: 'remote.changed' })
+    },
+    logError: (message, error) => {
+      console.error(message, error)
+    },
   })
   await app.listen({ host: LISTEN_HOST, port })
+  services.remote.attachLan(lan)
   services.settings.start()
   services.timesheet.catchUp().catch((error: unknown) => {
     console.error('Startup catch-up failed', error)
@@ -67,7 +84,7 @@ async function main(): Promise<void> {
     services.logScheduler.stop()
     services.scanRunner.stop()
     services.workspace.shutdown()
-    Promise.all([app.close(), services.remote.shutdown()]).then(
+    Promise.all([app.close(), lan.stop(), services.remote.shutdown()]).then(
       () => process.exit(0),
       (error: unknown) => {
         console.error(error)

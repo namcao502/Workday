@@ -3,6 +3,8 @@ import type { ServerEvent } from '@workday/core'
 const SOCKET_OPEN = 1
 const POLICY_VIOLATION = 1008
 
+export type RemoteSurface = 'loopback' | 'vpn'
+
 export interface EventSocket {
   readonly readyState: number
   send(data: string): void
@@ -14,12 +16,19 @@ export interface EventSink {
 }
 
 export class EventHub implements EventSink {
-  // The device each socket belongs to; null for a socket from this machine.
-  private readonly sockets = new Map<EventSocket, string | null>()
+  // The device and surface each socket belongs to; no device for a socket from this machine.
+  private readonly sockets = new Map<
+    EventSocket,
+    { readonly deviceId: string | null; readonly surface: RemoteSurface }
+  >()
 
   // Returns the function that removes the socket again (call it on close).
-  add(socket: EventSocket, deviceId: string | null = null): () => void {
-    this.sockets.set(socket, deviceId)
+  add(
+    socket: EventSocket,
+    deviceId: string | null = null,
+    surface: RemoteSurface = 'loopback',
+  ): () => void {
+    this.sockets.set(socket, { deviceId, surface })
     return () => {
       this.sockets.delete(socket)
     }
@@ -36,17 +45,21 @@ export class EventHub implements EventSink {
 
   // A revoked or downgraded device must reconnect, so the gate checks its new rights.
   closeDevice(deviceId: string): void {
-    this.closeWhere((socketDeviceId) => socketDeviceId === deviceId)
+    this.closeWhere((entry) => entry.deviceId === deviceId)
   }
 
-  // Remote access was turned off: every device socket goes, the PC's own stay.
-  closeAllDevices(): void {
-    this.closeWhere((socketDeviceId) => socketDeviceId !== null)
+  // A surface was turned off: its device sockets go, the PC's own stay. No surface = all of them.
+  closeAllDevices(surface?: RemoteSurface): void {
+    this.closeWhere(
+      (entry) => entry.deviceId !== null && (surface === undefined || entry.surface === surface),
+    )
   }
 
-  private closeWhere(matches: (deviceId: string | null) => boolean): void {
-    for (const [socket, socketDeviceId] of this.sockets) {
-      if (matches(socketDeviceId)) {
+  private closeWhere(
+    matches: (entry: { deviceId: string | null; surface: RemoteSurface }) => boolean,
+  ): void {
+    for (const [socket, entry] of this.sockets) {
+      if (matches(entry)) {
         this.sockets.delete(socket)
         socket.close(POLICY_VIOLATION)
       }

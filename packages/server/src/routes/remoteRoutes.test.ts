@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { RemoteStatusView } from '@workday/core'
+import type { RemoteStatusView, VpnConfig } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -217,5 +217,72 @@ describe('remote routes', () => {
     expect(await closed).toBe(1008)
     expect(localSocket.readyState).toBe(localSocket.OPEN)
     localSocket.terminate()
+  })
+
+  describe('firewall', () => {
+    const VPN: VpnConfig = {
+      enabled: true,
+      address: '10.20.30.40',
+      httpsPort: 8443,
+      setupPort: 8444,
+      allowedRanges: ['10.20.0.0/16', '10.30.0.0/16'],
+    }
+
+    async function firewallApp(vpn?: VpnConfig) {
+      const commands: string[] = []
+      const testApp = await buildRemoteApp(ENABLED_REMOTE, {
+        ...(vpn === undefined ? {} : { vpn }),
+        openFirewall: (command) => {
+          commands.push(command)
+          return Promise.resolve({ ok: true })
+        },
+      })
+      openApps.push(testApp.app)
+      return { testApp, commands }
+    }
+
+    it('firewall builds the rule from the saved vpn config', async () => {
+      const { testApp, commands } = await firewallApp(VPN)
+
+      const reply = await testApp.app.inject({
+        method: 'POST',
+        url: '/api/remote/firewall',
+        headers: LOOPBACK_HEADERS,
+      })
+
+      expect(reply.statusCode).toBe(200)
+      expect(reply.json()).toEqual({ ok: true })
+      expect(commands).toHaveLength(1)
+      expect(commands[0]).toContain('-LocalPort 8443,8444')
+      expect(commands[0]).toContain('-RemoteAddress 10.20.0.0/16,10.30.0.0/16')
+    })
+
+    it('firewall without a vpn config answers 409', async () => {
+      const { testApp, commands } = await firewallApp()
+
+      const reply = await testApp.app.inject({
+        method: 'POST',
+        url: '/api/remote/firewall',
+        headers: LOOPBACK_HEADERS,
+      })
+
+      expect(reply.statusCode).toBe(409)
+      expect(reply.json()).toEqual({ ok: false, error: { code: 'remoteDisabled' } })
+      expect(commands).toEqual([])
+    })
+
+    it('firewall is local-only', async () => {
+      const { testApp, commands } = await firewallApp(VPN)
+      const token = await pairDevice(testApp)
+
+      const reply = await testApp.app.inject({
+        method: 'POST',
+        url: '/api/remote/firewall',
+        headers: remoteHeaders(token),
+      })
+
+      expect(reply.statusCode).toBe(403)
+      expect(commands).toEqual([])
+    })
   })
 })

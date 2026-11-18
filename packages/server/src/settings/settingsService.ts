@@ -20,6 +20,7 @@ import type {
   TscConfig,
   TscSessionResult,
   TscSignInResult,
+  VpnConfig,
   WorkdayConfig,
   WorkspaceConfig,
 } from '@workday/core'
@@ -67,7 +68,10 @@ export interface SettingsServiceDeps {
   readonly suggestions: { configure(settings: SuggestionSettings): void }
   readonly createHoursLog: (hrm: HrmConfig, apiKey: string) => HoursLog
   readonly createSheetLog: (tsc: TscConfig) => SheetLog
-  readonly remote: { configure(remote: RemoteConfig | null): void }
+  readonly remote: {
+    configure(remote: RemoteConfig | null): void
+    configureVpn(vpn: VpnConfig | null): void
+  }
   readonly workspace: { configure(workspace: WorkspaceConfig): void }
   readonly teams: TeamsGateway
   readonly teamsService: { configure(settings: TeamsSettings): boolean }
@@ -143,6 +147,10 @@ export class SettingsService {
     return this.config.notices
   }
 
+  get port(): number {
+    return this.config.port
+  }
+
   get timeZone(): string {
     return this.config.timeZone
   }
@@ -176,6 +184,7 @@ export class SettingsService {
       jira,
       timesheet,
       remote,
+      vpn,
       workspace,
       azureDevOps,
       teams,
@@ -192,6 +201,7 @@ export class SettingsService {
         jira,
         timesheet,
         remote,
+        vpn,
         workspace,
         azureDevOps,
         teams,
@@ -435,6 +445,7 @@ export class SettingsService {
     this.applyAzureDevOps(previous)
     this.applyTimesheet(previous)
     this.deps.remote.configure(this.config.remote)
+    this.deps.remote.configureVpn(this.config.vpn)
     this.deps.workspace.configure(this.config.workspace)
     const teamsChanged = this.deps.teamsService.configure({
       chat: this.teams,

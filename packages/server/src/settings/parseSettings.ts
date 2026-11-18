@@ -6,6 +6,7 @@ import type {
   RemoteConfig,
   SettingsUpdate,
   TimesheetConfig,
+  VpnConfig,
 } from '@workday/core'
 import {
   isLogTime,
@@ -16,6 +17,7 @@ import {
   parseNotices,
   parseRemote,
   parseTimesheet,
+  parseVpn,
   parseWorkspace,
 } from '../config.js'
 import { isRecord } from '../jsonFile.js'
@@ -87,6 +89,17 @@ function parseRemoteField(raw: unknown): RemoteConfig | null | undefined {
   return remote !== null && isEnabledValid && isPathValid ? remote : undefined
 }
 
+// undefined = invalid; null = VPN access not configured. A non-boolean enabled is invalid too.
+function parseVpnField(raw: unknown, appPort: number): VpnConfig | null | undefined {
+  if (raw === null) {
+    return null
+  }
+  if (!isRecord(raw) || (raw['enabled'] !== undefined && typeof raw['enabled'] !== 'boolean')) {
+    return undefined
+  }
+  return parseVpn(raw, appPort) ?? undefined
+}
+
 export interface HrmCheckRequest {
   readonly mcpUrl: string
   readonly hrmApiKey?: string
@@ -101,8 +114,8 @@ function parseTimesheetField(raw: unknown): TimesheetConfig | undefined {
   return timesheet.hrm === null || isHttpUrl(timesheet.hrm.mcpUrl) ? timesheet : undefined
 }
 
-// Null when any field it carries is invalid; unknown fields (host included) are ignored.
-export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
+// Null when any field is invalid; unknown fields are ignored. vpn is checked against the new or current port.
+export function parseSettingsUpdate(raw: unknown, currentPort: number): SettingsUpdate | null {
   if (!isRecord(raw)) {
     return null
   }
@@ -171,6 +184,13 @@ export function parseSettingsUpdate(raw: unknown): SettingsUpdate | null {
       return null
     }
     update = { ...update, remote }
+  }
+  if (Object.hasOwn(raw, 'vpn')) {
+    const vpn = parseVpnField(raw['vpn'], update.port ?? currentPort)
+    if (vpn === undefined) {
+      return null
+    }
+    update = { ...update, vpn }
   }
   if (tunnelToken !== undefined) {
     if (!isNonEmptyText(tunnelToken)) {

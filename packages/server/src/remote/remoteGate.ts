@@ -1,8 +1,15 @@
 import type { IncomingHttpHeaders } from 'node:http'
-import { allows, type AppError, type RemoteArea } from '@workday/core'
+import { allows, isInRanges, type AppError, type RemoteArea } from '@workday/core'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { StoredDevice } from './deviceStore.js'
 import type { RemoteService } from './remoteService.js'
+
+// The VPN listener's identity: its own Host, Origin and TLS pair.
+export interface VpnSurface {
+  readonly host: string // "10.20.30.40:8443", the only Host header this instance accepts
+  readonly origin: string // "https://10.20.30.40:8443"
+  readonly tls: { readonly key: string; readonly cert: string }
+}
 
 // Declared on each route that a paired device may call; a route without it is local-only.
 export type RouteAccess =
@@ -18,6 +25,8 @@ declare module 'fastify' {
     remoteDevice: StoredDevice | null // set by the gate; null for a local request
     isRemote: boolean
     accessEmail: string | null // the Cloudflare Access identity of a remote request
+    remoteOrigin: string | null // the Origin a remote request must carry; null for a local one
+    remoteIp: string | null // cf-connecting-ip through the tunnel, the socket address on the VPN
   }
 }
 
@@ -71,22 +80,13 @@ function isApiRequest(request: FastifyRequest): boolean {
   return routeUrl.startsWith('/api') || request.url.startsWith('/api')
 }
 
-async function checkRemote(
+// The part both surfaces share: device, Origin and the route's right.
+function checkDevice(
   request: FastifyRequest,
   reply: FastifyReply,
   remote: RemoteService,
-): Promise<FastifyReply | undefined> {
-  const config = remote.config
-  if (config === null || !config.enabled) {
-    return deny(reply, 403, 'remoteDisabled')
-  }
-  const jwt =
-    headerText(request.headers, ACCESS_HEADER) ?? readCookie(request.headers, ACCESS_COOKIE)
-  const identity = jwt === null ? null : await remote.verifyAccess(jwt)
-  if (identity === null) {
-    return deny(reply, 403, 'accessRequired')
-  }
-  request.accessEmail = identity.email
+  origin: string,
+): FastifyReply | undefined {
   if (!isApiRequest(request)) {
     return undefined
   }
@@ -94,8 +94,7 @@ async function checkRemote(
   const device = token === null ? null : remote.findDevice(token)
   request.remoteDevice = device
   // Before the unpaired exit, so a page on another site cannot submit a pairing either.
-  const origin = headerText(request.headers, 'origin')
-  if (!READ_METHODS.has(request.method) && origin !== `https://${config.publicHost}`) {
+  if (!READ_METHODS.has(request.method) && headerText(request.headers, 'origin') !== origin) {
     return deny(reply, 403, 'forbidden')
   }
   const { access } = request.routeOptions.config
@@ -115,18 +114,74 @@ async function checkRemote(
   return undefined
 }
 
+async function checkTunnel(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  remote: RemoteService,
+): Promise<FastifyReply | undefined> {
+  const config = remote.config
+  if (config === null || !config.enabled) {
+    return deny(reply, 403, 'remoteDisabled')
+  }
+  request.remoteOrigin = `https://${config.publicHost}`
+  request.remoteIp = headerText(request.headers, 'cf-connecting-ip')
+  const jwt =
+    headerText(request.headers, ACCESS_HEADER) ?? readCookie(request.headers, ACCESS_COOKIE)
+  const identity = jwt === null ? null : await remote.verifyAccess(jwt)
+  if (identity === null) {
+    return deny(reply, 403, 'accessRequired')
+  }
+  request.accessEmail = identity.email
+  return checkDevice(request, reply, remote, request.remoteOrigin)
+}
+
+// A socket address may arrive IPv4-mapped (::ffff:10.0.0.5).
+function socketAddress(request: FastifyRequest): string {
+  return request.socket.remoteAddress?.replace(/^::ffff:/i, '') ?? ''
+}
+
+// The ranges are read per request, so editing them needs no listener rebuild.
+function checkVpn(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  remote: RemoteService,
+  vpn: VpnSurface,
+): FastifyReply | undefined {
+  const config = remote.vpnConfig
+  if (config === null || !config.enabled) {
+    return deny(reply, 403, 'remoteDisabled')
+  }
+  const address = socketAddress(request)
+  if (!isInRanges(address, config.allowedRanges)) {
+    return deny(reply, 403, 'forbidden')
+  }
+  request.remoteOrigin = vpn.origin
+  request.remoteIp = address
+  return checkDevice(request, reply, remote, vpn.origin)
+}
+
 // Register after the Host check: every remote request needs Access, a paired device and the route's right.
-export function registerRemoteGate(app: FastifyInstance, remote: RemoteService): void {
+export function registerRemoteGate(
+  app: FastifyInstance,
+  remote: RemoteService,
+  surface: VpnSurface | null,
+): void {
   app.decorateRequest('remoteDevice', null)
   app.decorateRequest('isRemote', false)
   app.decorateRequest('accessEmail', null)
+  app.decorateRequest('remoteOrigin', null)
+  app.decorateRequest('remoteIp', null)
 
   app.addHook('onRequest', async (request, reply) => {
+    if (surface !== null) {
+      request.isRemote = true
+      return checkVpn(request, reply, remote, surface)
+    }
     if (classifyRequest(request.headers, remote.config?.publicHost ?? null) === 'local') {
       return undefined
     }
     request.isRemote = true
-    return checkRemote(request, reply, remote)
+    return checkTunnel(request, reply, remote)
   })
 
   // Records the route pattern only: never the real URL or the body.

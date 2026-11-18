@@ -3,7 +3,7 @@ import { allows, type PushSubscriptionJson, type RemoteArea } from '@workday/cor
 import { generateVAPIDKeys, sendNotification, WebPushError } from 'web-push'
 import { readFileSecrets, saveSecrets } from '../config.js'
 import { isRecord, readJson, writeJsonAtomic } from '../jsonFile.js'
-import { LocalPushStore } from '../notices/localPushStore.js'
+import { LocalPushStore, type LocalPushEntry } from '../notices/localPushStore.js'
 import type { StoredDevice } from './deviceStore.js'
 
 export interface PushMessage {
@@ -34,7 +34,9 @@ export interface PushDeviceStore {
 export interface PushServiceDeps {
   readonly dataDir: string
   readonly store: PushDeviceStore
-  readonly publicHost: () => string | null
+  readonly origin: () => string | null // the https origin devices reach, null when none
+  // A subscription made from another origin (dev vs start) would otherwise open that origin on click.
+  readonly localOrigin?: string | undefined
   readonly send?: SendPush
   readonly logError?: (message: string, error: unknown) => void
 }
@@ -67,6 +69,11 @@ function parseRemoteFile(raw: unknown): { readonly key: string | null } | null {
   }
   const key = raw['vapidPublicKey']
   return { key: typeof key === 'string' && key !== '' ? key : null }
+}
+
+// localhost and 127.0.0.1 are the same page origin for this purpose.
+function sameMachine(origin: string): string {
+  return origin.replace('://localhost:', '://127.0.0.1:')
 }
 
 function isSuccess(statusCode: number): boolean {
@@ -133,9 +140,11 @@ export class PushService {
       if (vapid === null) {
         return
       }
-      const payload = JSON.stringify(message)
-      for (const subscription of this.local.list()) {
-        await this.deliverLocal(subscription, payload, vapid)
+      const { localOrigin } = this.deps
+      const url = localOrigin === undefined ? message.url : `${localOrigin}${message.url}`
+      const payload = JSON.stringify({ ...message, url })
+      for (const entry of this.localTargets()) {
+        await this.deliverLocal({ endpoint: entry.endpoint, keys: entry.keys }, payload, vapid)
       }
     } catch (error: unknown) {
       this.logError('Sending the local push failed', error)
@@ -190,6 +199,16 @@ export class PushService {
     return false
   }
 
+  // The running origin's subscriptions, whose worker can focus the open tab; without one, every subscription.
+  private localTargets(): readonly LocalPushEntry[] {
+    const all = this.local.list()
+    const running = this.deps.localOrigin === undefined ? null : sameMachine(this.deps.localOrigin)
+    const own = all.filter(
+      (entry) => entry.origin !== null && sameMachine(entry.origin) === running,
+    )
+    return own.length === 0 ? all : own
+  }
+
   private async deliverLocal(
     subscription: PushSubscriptionJson,
     payload: string,
@@ -208,10 +227,9 @@ export class PushService {
     }
   }
 
-  // Null while there is no public host and no fallback subject: devices cannot be reached then.
+  // Null while there is no origin and no fallback subject: devices cannot be reached then.
   private async vapidDetails(fallbackSubject?: string): Promise<VapidDetails | null> {
-    const host = this.deps.publicHost()
-    const subject = host === null ? fallbackSubject : `https://${host}`
+    const subject = this.deps.origin() ?? fallbackSubject
     if (subject === undefined) {
       return null
     }

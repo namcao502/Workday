@@ -63,7 +63,7 @@ export function send(method: string, path: string, payload?: unknown): Promise<R
   // A read shows its own loading state through the query; an action lights the global loading icon.
   return method === 'GET'
     ? request(method, path, payload)
-    : trackAction(() => request(method, path, payload))
+    : trackAction(path, () => request(method, path, payload))
 }
 
 async function request(method: string, path: string, payload?: unknown): Promise<RawResponse> {
@@ -164,6 +164,8 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'hrmRejected',
   'hrmUnreachable',
   'remoteDisabled',
+  'firewallCancelled',
+  'firewallFailed',
   'accessRequired',
   'notPaired',
   'forbidden',

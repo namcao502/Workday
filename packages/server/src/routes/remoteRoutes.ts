@@ -1,10 +1,12 @@
 import { parseRights, type MeView } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { isRecord } from '../jsonFile.js'
-import { deviceCookie, headerText } from '../remote/remoteGate.js'
+import { firewallCommand, openFirewall, type FirewallResult } from '../remote/firewall.js'
+import { deviceCookie } from '../remote/remoteGate.js'
 import { toRemoteDevice, type DeviceChanges, type RemoteService } from '../remote/remoteService.js'
 
 const UNPAIRED = { config: { access: { area: 'unpaired' } } } as const
+const REMOTE_DISABLED = { ok: false, error: { code: 'remoteDisabled' } } as const
 const PAIRING_CLOSED = { ok: false, error: { code: 'pairingClosed' } } as const
 
 function badRequest(reply: FastifyReply, shape: string): FastifyReply {
@@ -36,7 +38,11 @@ function parseDeviceChanges(body: unknown): DeviceChanges | null {
 }
 
 // /api/me and /api/pair* are open to an unpaired device; /api/remote* declares no access, so it is local-only.
-export function registerRemoteRoutes(app: FastifyInstance, remote: RemoteService): void {
+export function registerRemoteRoutes(
+  app: FastifyInstance,
+  remote: RemoteService,
+  runFirewall: (command: string) => Promise<FirewallResult> = (command) => openFirewall(command),
+): void {
   app.get('/api/me', UNPAIRED, (request): MeView => {
     if (!request.isRemote) {
       return { mode: 'local' }
@@ -56,7 +62,7 @@ export function registerRemoteRoutes(app: FastifyInstance, remote: RemoteService
     }
     const result = remote.submitPairing(code, name, {
       email: request.accessEmail,
-      ip: headerText(request.headers, 'cf-connecting-ip'),
+      ip: request.remoteIp,
     })
     if (!result.ok) {
       return reply.code(409).send({ ok: false, error: { code: result.reason } })
@@ -81,6 +87,15 @@ export function registerRemoteRoutes(app: FastifyInstance, remote: RemoteService
   app.get('/api/remote', () => remote.status())
 
   app.post('/api/remote/pairing', () => remote.openPairing())
+
+  // Opens the VPN ports for the allowed ranges; Windows shows the elevation prompt.
+  app.post('/api/remote/firewall', async (_request, reply) => {
+    const vpn = remote.vpnConfig
+    if (vpn === null || vpn.allowedRanges.length === 0) {
+      return reply.code(409).send(REMOTE_DISABLED)
+    }
+    return runFirewall(firewallCommand([vpn.httpsPort, vpn.setupPort], vpn.allowedRanges))
+  })
 
   app.post('/api/remote/pairing/approve', async (_request, reply) => {
     if (!(await remote.approvePairing())) {

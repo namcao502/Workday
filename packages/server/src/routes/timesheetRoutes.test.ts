@@ -32,6 +32,7 @@ async function timesheetApp(): Promise<TestApp> {
     language: 'en',
     jira: null,
     remote: null,
+    vpn: null,
     timesheet: {
       logTime: '18:00',
       hrm: { mcpUrl: 'https://hrm.example/mcp', projectId: 'P1' },

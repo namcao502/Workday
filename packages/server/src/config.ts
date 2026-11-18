@@ -2,6 +2,8 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   parseColumns,
+  isIpv4Cidr,
+  parseIpv4,
   parseTime,
   SCAN_DAYS,
   SCAN_LIMIT_HOURS,
@@ -20,6 +22,7 @@ import {
   type TeamsConfig,
   type TimesheetConfig,
   type TscConfig,
+  type VpnConfig,
   type WorkdayConfig,
   type WorkspaceConfig,
 } from '@workday/core'
@@ -362,9 +365,10 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
   if (!isRecord(raw)) {
     return null
   }
+  const port = wholeNumberOr(raw['port'], DEFAULT_CONFIG.port)
   return {
     host: textOr(raw['host'], DEFAULT_CONFIG.host),
-    port: wholeNumberOr(raw['port'], DEFAULT_CONFIG.port),
+    port,
     timeZone: textOr(raw['timeZone'], DEFAULT_CONFIG.timeZone),
     pollMinutes: parsePollMinutes(raw['pollMinutes']),
     theme: raw['theme'] === 'light' ? 'light' : 'dark',
@@ -372,6 +376,7 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
     jira: parseJira(raw['jira']),
     timesheet: parseTimesheet(raw['timesheet']),
     remote: parseRemote(raw['remote']),
+    vpn: parseVpn(raw['vpn'], port),
     workspace: parseWorkspace(raw['workspace']),
     azureDevOps: parseAzureDevOps(raw['azureDevOps']),
     teams: parseTeams(raw['teams']),
@@ -423,6 +428,42 @@ export function parseRemote(raw: unknown): RemoteConfig | null {
   }
 }
 
+const DEFAULT_VPN_HTTPS_PORT = 8443
+const DEFAULT_VPN_SETUP_PORT = 8444
+
+function parsePortOr(value: unknown, fallback: number): number | null {
+  if (value === undefined) {
+    return fallback
+  }
+  const isPort =
+    typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 65535
+  return isPort ? value : null
+}
+
+// Null on a bad address or port; enabled needs at least one valid range, and the ports must all differ.
+export function parseVpn(raw: unknown, appPort: number): VpnConfig | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const address = textOrNull(raw['address'])
+  const httpsPort = parsePortOr(raw['httpsPort'], DEFAULT_VPN_HTTPS_PORT)
+  const setupPort = parsePortOr(raw['setupPort'], DEFAULT_VPN_SETUP_PORT)
+  if (address === null || parseIpv4(address) === null || httpsPort === null || setupPort === null) {
+    return null
+  }
+  if (httpsPort === setupPort || httpsPort === appPort || setupPort === appPort) {
+    return null
+  }
+  const allowedRanges = [...new Set(stringList(raw['allowedRanges']).filter(isIpv4Cidr))]
+  return {
+    enabled: raw['enabled'] === true && allowedRanges.length !== 0,
+    address,
+    httpsPort,
+    setupPort,
+    allowedRanges,
+  }
+}
+
 export const DEFAULT_WORKSPACE: WorkspaceConfig = {
   devRepoPath: null,
   siblingRepoGlob: null,
@@ -442,6 +483,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   jira: null,
   timesheet: { logTime: DEFAULT_LOG_TIME, hrm: null, tsc: null },
   remote: null,
+  vpn: null,
   workspace: DEFAULT_WORKSPACE,
   azureDevOps: null,
   teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },

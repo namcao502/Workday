@@ -14,10 +14,12 @@
     "@fastify/static": "^10.1.10",
     "@fastify/websocket": "^11.3.7",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@peculiar/x509": "^3.1.0",
     "@workday/core": "*",
     "fastify": "^5.12.8",
     "marked": "^18.2.0",
     "playwright-core": "^1.65.0",
+    "reflect-metadata": "^0.2.2",
     "web-push": "^4.0.0"
   },
   "devDependencies": {

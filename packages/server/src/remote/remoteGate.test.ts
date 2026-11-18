@@ -2,16 +2,19 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { FastifyInstance } from 'fastify'
-import { afterEach, describe, expect, it } from 'vitest'
-import { LOOPBACK_HEADERS, type TestApp } from '../testing/testApp.js'
+import type { VpnConfig } from '@workday/core'
+import { beforeAll, afterEach, describe, expect, it } from 'vitest'
+import { LOOPBACK_HEADERS, newDataDir, type TestApp } from '../testing/testApp.js'
 import {
   buildRemoteApp,
   ENABLED_REMOTE,
   pairDevice,
   PUBLIC_HOST,
+  PUBLIC_ORIGIN,
   remoteHeaders,
 } from '../testing/remoteTestApp.js'
-import { classifyRequest } from './remoteGate.js'
+import { loadOrCreateLanTls } from './lanCertificates.js'
+import { classifyRequest, type VpnSurface } from './remoteGate.js'
 
 const openApps: FastifyInstance[] = []
 
@@ -179,5 +182,187 @@ describe('remote gate', () => {
 
     expect(reply.statusCode).toBe(403)
     expect(reply.json()).toEqual({ ok: false, error: { code: 'forbidden' } })
+  })
+})
+
+const VPN_ADDRESS = '10.20.30.40'
+const VPN_HOST = `${VPN_ADDRESS}:8443`
+const VPN_ORIGIN = `https://${VPN_HOST}`
+const INSIDE = '10.20.5.6'
+const VPN: VpnConfig = {
+  enabled: true,
+  address: VPN_ADDRESS,
+  httpsPort: 8443,
+  setupPort: 8444,
+  allowedRanges: ['10.20.0.0/16'],
+}
+
+describe('vpn surface', () => {
+  let surface: VpnSurface
+
+  beforeAll(async () => {
+    const tls = await loadOrCreateLanTls(newDataDir(), VPN_ADDRESS, new Date())
+    surface = { host: VPN_HOST, origin: VPN_ORIGIN, tls: { key: tls.key, cert: tls.cert } }
+  })
+
+  async function vpnApp(vpn: VpnConfig | null = VPN, clientDist?: string): Promise<TestApp> {
+    const testApp = await buildRemoteApp(ENABLED_REMOTE, {
+      surface,
+      ...(vpn === null ? {} : { vpn }),
+      ...(clientDist === undefined ? {} : { clientDist }),
+    })
+    openApps.push(testApp.app)
+    return testApp
+  }
+
+  const vpnHeaders = (token?: string): Record<string, string> => ({
+    host: VPN_HOST,
+    origin: VPN_ORIGIN,
+    ...(token === undefined ? {} : { cookie: `wd_device=${token}` }),
+  })
+
+  // Pairs the way a phone on the VPN does; returns the device token.
+  async function pairOnVpn(testApp: TestApp): Promise<string> {
+    const { app, services } = testApp
+    const { code } = services.remote.openPairing()
+    const submitted = await app.inject({
+      method: 'POST',
+      url: '/api/pair',
+      remoteAddress: `::ffff:${INSIDE}`,
+      headers: vpnHeaders(),
+      payload: { code, name: 'iPhone' },
+    })
+    const { requestId } = submitted.json<{ requestId: string }>()
+    await services.remote.approvePairing()
+    const status = await app.inject({
+      url: `/api/pair/status?id=${requestId}`,
+      remoteAddress: INSIDE,
+      headers: vpnHeaders(),
+    })
+    return /^wd_device=([^;]+);/.exec(String(status.headers['set-cookie']))?.[1] ?? ''
+  }
+
+  it('a vpn request from outside the allowed ranges gets 403 even for the app shell', async () => {
+    const clientDist = mkdtempSync(join(tmpdir(), 'workday-client-'))
+    writeFileSync(join(clientDist, 'index.html'), '<!doctype html>')
+    const { app } = await vpnApp(VPN, clientDist)
+
+    const outside = await app.inject({
+      url: '/',
+      remoteAddress: '192.168.1.9',
+      headers: vpnHeaders(),
+    })
+    const inside = await app.inject({ url: '/', remoteAddress: INSIDE, headers: vpnHeaders() })
+
+    expect(outside.statusCode).toBe(403)
+    expect(outside.json()).toEqual({ ok: false, error: { code: 'forbidden' } })
+    expect(inside.statusCode).toBe(200)
+  })
+
+  it('a vpn request with a foreign Host gets 403', async () => {
+    const { app } = await vpnApp()
+
+    const replies = await Promise.all(
+      [LOOPBACK_HEADERS.host, PUBLIC_HOST, '10.20.30.40:9999'].map((host) =>
+        app.inject({ url: '/api/me', remoteAddress: INSIDE, headers: { host } }),
+      ),
+    )
+
+    for (const reply of replies) {
+      expect(reply.statusCode).toBe(403)
+    }
+  })
+
+  it('vpn is refused while it is turned off', async () => {
+    const off = await vpnApp({ ...VPN, enabled: false })
+    const unset = await vpnApp(null)
+
+    for (const { app } of [off, unset]) {
+      const reply = await app.inject({
+        url: '/api/me',
+        remoteAddress: INSIDE,
+        headers: vpnHeaders(),
+      })
+      expect(reply.statusCode).toBe(403)
+      expect(reply.json()).toEqual({ ok: false, error: { code: 'remoteDisabled' } })
+    }
+  })
+
+  it('an unpaired vpn api call gets 401 notPaired and needs no Access JWT', async () => {
+    const { app } = await vpnApp()
+
+    const board = await app.inject({
+      url: '/api/board',
+      remoteAddress: INSIDE,
+      headers: vpnHeaders(),
+    })
+    const me = await app.inject({ url: '/api/me', remoteAddress: INSIDE, headers: vpnHeaders() })
+
+    expect(board.statusCode).toBe(401)
+    expect(board.json()).toEqual({ ok: false, error: { code: 'notPaired' } })
+    expect(me.json()).toEqual({ mode: 'unpaired' })
+  })
+
+  it('a view device on the vpn cannot call a board action', async () => {
+    const testApp = await vpnApp()
+    const token = await pairOnVpn(testApp)
+
+    const view = await testApp.app.inject({
+      url: '/api/board',
+      remoteAddress: INSIDE,
+      headers: vpnHeaders(token),
+    })
+    const action = await testApp.app.inject({
+      method: 'POST',
+      url: '/api/board/MDP-1/done',
+      remoteAddress: INSIDE,
+      headers: vpnHeaders(token),
+    })
+
+    expect(view.statusCode).toBe(200)
+    expect(action.statusCode).toBe(403)
+    expect(action.json()).toEqual({ ok: false, error: { code: 'forbidden' } })
+  })
+
+  it('a vpn POST with an Origin other than the vpn origin gets 403', async () => {
+    const { app } = await vpnApp()
+
+    const reply = await app.inject({
+      method: 'POST',
+      url: '/api/pair',
+      remoteAddress: INSIDE,
+      headers: { ...vpnHeaders(), origin: PUBLIC_ORIGIN },
+      payload: { code: 'ABCDEF', name: 'iPhone' },
+    })
+
+    expect(reply.statusCode).toBe(403)
+    expect(reply.json()).toEqual({ ok: false, error: { code: 'forbidden' } })
+  })
+
+  it('pairing over the vpn records the socket address as the ip', async () => {
+    const testApp = await vpnApp()
+    const { code } = testApp.services.remote.openPairing()
+
+    await testApp.app.inject({
+      method: 'POST',
+      url: '/api/pair',
+      remoteAddress: `::ffff:${INSIDE}`,
+      headers: vpnHeaders(),
+      payload: { code, name: 'iPhone' },
+    })
+
+    expect(testApp.services.remote.status().pairing.pending?.ip).toBe(INSIDE)
+  })
+
+  it('the loopback surface still refuses a tunnel request without an Access JWT', async () => {
+    const { app } = await remoteApp()
+    const withoutJwt = Object.fromEntries(
+      Object.entries(remoteHeaders()).filter(([name]) => name !== 'cf-access-jwt-assertion'),
+    )
+
+    const reply = await app.inject({ url: '/api/health', headers: withoutJwt })
+
+    expect(reply.statusCode).toBe(403)
+    expect(reply.json()).toEqual({ ok: false, error: { code: 'accessRequired' } })
   })
 })

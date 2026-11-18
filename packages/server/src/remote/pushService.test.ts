@@ -34,7 +34,13 @@ function setup(statusCode = 201, host: string | null = HOST) {
     return Promise.resolve({ statusCode })
   }
   const create = (): PushService =>
-    new PushService({ dataDir, store, publicHost: () => host, send, logError: () => undefined })
+    new PushService({
+      dataDir,
+      store,
+      origin: () => (host === null ? null : `https://${host}`),
+      send,
+      logError: () => undefined,
+    })
   return { dataDir, store, sent, push: create(), create }
 }
 
@@ -95,7 +101,7 @@ describe('PushService', () => {
     const push = new PushService({
       dataDir,
       store,
-      publicHost: () => HOST,
+      origin: () => `https://${HOST}`,
       send: () => Promise.reject(new Error('network down')),
       logError: (message) => logged.push(message),
     })
@@ -147,13 +153,56 @@ describe('PushService', () => {
     expect(push.local.list()).toEqual([])
   })
 
+  it('a local push links to the origin the app runs on, whichever origin subscribed', async () => {
+    const { dataDir, store } = setup()
+    const sent: Sent[] = []
+    const push = new PushService({
+      dataDir,
+      store,
+      origin: () => null,
+      localOrigin: 'http://127.0.0.1:4870',
+      send: (target, payload, vapid) => {
+        sent.push({ endpoint: target.endpoint, payload, vapid })
+        return Promise.resolve({ statusCode: 201 })
+      },
+    })
+    await push.local.add(subscription('https://push/local'))
+
+    await push.sendToLocal({ ...MESSAGE, url: '/#/workspace/MDP-1' })
+
+    expect(JSON.parse(sent[0]?.payload ?? '{}')).toMatchObject({
+      url: 'http://127.0.0.1:4870/#/workspace/MDP-1',
+    })
+  })
+
+  it('a local push goes only to subscriptions of the running origin, else to all of them', async () => {
+    const { dataDir, store } = setup()
+    const sent: Sent[] = []
+    const push = new PushService({
+      dataDir,
+      store,
+      origin: () => null,
+      localOrigin: 'http://127.0.0.1:4870',
+      send: (target, payload, vapid) => {
+        sent.push({ endpoint: target.endpoint, payload, vapid })
+        return Promise.resolve({ statusCode: 201 })
+      },
+    })
+    await push.local.add(subscription('https://push/dev'), 'http://127.0.0.1:5173')
+    await push.sendToLocal(MESSAGE)
+    await push.local.add(subscription('https://push/start'), 'http://127.0.0.1:4870')
+    await push.sendToLocal(MESSAGE)
+
+    expect(sent.map((item) => item.endpoint)).toEqual(['https://push/dev', 'https://push/start'])
+  })
+
   it('a local subscription stays on another error and sendToLocal never rejects', async () => {
     const { dataDir, store } = setup()
     const logged: string[] = []
     const push = new PushService({
       dataDir,
       store,
-      publicHost: () => null,
+      origin: () => null,
       send: () => Promise.reject(new Error('network down')),
       logError: (message) => logged.push(message),
     })

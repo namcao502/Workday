@@ -65,6 +65,7 @@ async function connectedApp(): Promise<TestApp> {
     jira: JIRA,
     timesheet: { logTime: '18:00', hrm: null, tsc: null },
     remote: null,
+    vpn: null,
   })
   await saveSecrets(dataDir, { ...NO_SECRETS, jiraApiToken: SAVED_TOKEN })
   return track(await buildTestApp({ dataDir }))
@@ -87,6 +88,7 @@ async function hrmApp(): Promise<TestApp> {
     jira: null,
     timesheet: TIMESHEET,
     remote: null,
+    vpn: null,
   })
   await saveSecrets(dataDir, { ...NO_SECRETS, hrmApiKey: SAVED_HRM_KEY })
   return track(await buildTestApp({ dataDir }))
@@ -124,7 +126,12 @@ describe('settings routes', () => {
         pollMinutes: 5,
         workspace: DEFAULT_WORKSPACE,
         azureDevOps: null,
-        teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
+        teams: {
+          watchedChannels: [],
+          postLeadName: null,
+          postGreeting: null,
+          dbReviewChannel: null,
+        },
         notices: {},
         knowledgeScan: null,
         theme: 'dark',
@@ -132,6 +139,7 @@ describe('settings routes', () => {
         jira: JIRA,
         timesheet: { logTime: '18:00', hrm: null, tsc: null },
         remote: null,
+        vpn: null,
       },
       jiraTokenSource: 'file',
       hrmKeySource: null,
@@ -367,5 +375,32 @@ describe('settings routes', () => {
 
     expect(response.statusCode).toBe(400)
     expect(testApp.services.remote.config).toBeNull()
+  })
+
+  it('PUT /api/settings saves vpn and applies it', async () => {
+    const testApp = await connectedApp()
+    const vpn = { enabled: true, address: '10.20.30.40', allowedRanges: ['10.20.0.0/16'] }
+
+    const response = await putSettings(testApp, { vpn })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      config: { vpn: { ...vpn, httpsPort: 8443, setupPort: 8444 } },
+    })
+    expect(testApp.services.remote.vpnConfig).toMatchObject({ enabled: true, httpsPort: 8443 })
+    expect(readFileSync(join(testApp.dataDir, 'config.json'), 'utf8')).toContain('10.20.30.40')
+  })
+
+  it('PUT /api/settings rejects an invalid vpn block and saves nothing', async () => {
+    const testApp = await connectedApp()
+    const vpn = { address: '10.20.30.40', httpsPort: 9000, setupPort: 9000 }
+
+    const badPorts = await putSettings(testApp, { pollMinutes: 7, vpn })
+    const badIp = await putSettings(testApp, { vpn: { address: '10.20.30' } })
+
+    expect(badPorts.statusCode).toBe(400)
+    expect(badIp.statusCode).toBe(400)
+    expect(testApp.services.remote.vpnConfig).toBeNull()
+    expect(readFileSync(join(testApp.dataDir, 'config.json'), 'utf8')).not.toContain('10.20.30')
   })
 })

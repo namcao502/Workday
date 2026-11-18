@@ -1,5 +1,6 @@
-import type { PairingView, RemoteConfig } from '@workday/core'
+import type { PairingView, RemoteConfig, VpnStatusView } from '@workday/core'
 import { Button } from '@heroui/react'
+import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
 import type { RemoteActions } from '../api/useRemote.js'
 import { t } from '../i18n.js'
@@ -7,6 +8,7 @@ import type { RunRemote } from './RemoteDevices.js'
 
 const TICK_MS = 1000
 const SECONDS_PER_MINUTE = 60
+const QR_WIDTH = 180
 
 function useNowMs(active: boolean): number {
   const [now, setNow] = useState(() => Date.now())
@@ -30,9 +32,32 @@ function countdown(expiresAt: string, nowMs: number): string {
   return `${String(Math.floor(seconds / SECONDS_PER_MINUTE))}:${rest}`
 }
 
+function useQrDataUrl(link: string | null): string | null {
+  const [image, setImage] = useState<{ readonly link: string; readonly url: string } | null>(null)
+  useEffect(() => {
+    if (link === null) {
+      return undefined
+    }
+    let live = true
+    QRCode.toDataURL(link, { margin: 1, width: QR_WIDTH }).then(
+      (url) => {
+        if (live) {
+          setImage({ link, url })
+        }
+      },
+      () => undefined,
+    )
+    return () => {
+      live = false
+    }
+  }, [link])
+  return image !== null && image.link === link ? image.url : null
+}
+
 interface RemotePairingProps {
   readonly pairing: PairingView
   readonly remote: RemoteConfig | null
+  readonly vpn: VpnStatusView
   readonly actions: RemoteActions
   readonly run: RunRemote
 }
@@ -40,6 +65,7 @@ interface RemotePairingProps {
 export function RemotePairing({
   pairing,
   remote,
+  vpn,
   actions,
   run,
 }: RemotePairingProps): React.JSX.Element {
@@ -47,6 +73,13 @@ export function RemotePairing({
   const now = useNowMs(open)
   const ready = remote !== null && remote.enabled
   const link = remote === null ? '' : `https://${remote.publicHost}`
+  const vpnRunning = vpn.server === 'running'
+  const setupUrl = vpnRunning ? vpn.setupUrl : null
+  const qr = useQrDataUrl(setupUrl)
+  const links = [
+    ...(vpnRunning && vpn.httpsUrl !== null ? [vpn.httpsUrl] : []),
+    ...(ready ? [link] : []),
+  ]
 
   return (
     <>
@@ -71,6 +104,21 @@ export function RemotePairing({
           </span>
         )}
       </div>
+      {setupUrl === null ? null : (
+        <div className="flex flex-col items-start gap-2">
+          {qr === null ? null : <img src={qr} alt={setupUrl} width={QR_WIDTH} height={QR_WIDTH} />}
+          <a className="text-sm underline" href={setupUrl}>
+            {setupUrl}
+          </a>
+        </div>
+      )}
+      {links.length === 0 ? null : (
+        <ul className="text-sm text-muted">
+          {links.map((url) => (
+            <li key={url}>{url}</li>
+          ))}
+        </ul>
+      )}
       {open ? (
         <div className="flex flex-col items-start gap-2">
           <p

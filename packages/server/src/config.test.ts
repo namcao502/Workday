@@ -11,6 +11,7 @@ import {
   loadSecrets,
   loadTunnelToken,
   NO_SECRETS,
+  parseVpn,
   parseWorkspace,
   readFileSecrets,
   saveConfig,
@@ -45,6 +46,7 @@ describe('loadConfig', () => {
       language: 'en',
       jira: null,
       remote: null,
+      vpn: null,
       workspace: DEFAULT_WORKSPACE,
       azureDevOps: null,
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
@@ -226,6 +228,61 @@ describe('remote config', () => {
     const remote = loadConfig(directory).remote
     expect(remote?.enabled).toBe(false)
     expect(remote?.cloudflaredPath).toBe('C:\\cf.exe')
+  })
+})
+
+const REMOTE_FOR_VPN = {
+  enabled: true,
+  publicHost: 'workday.example.com',
+  accessTeamDomain: 'team.cloudflareaccess.com',
+  accessAud: 'aud123',
+}
+
+describe('vpn config', () => {
+  const VPN = { enabled: true, address: '10.20.30.40', allowedRanges: ['10.20.0.0/16'] }
+
+  it('parseVpn reads the shape with default ports and drops invalid ranges', () => {
+    const raw = {
+      ...VPN,
+      allowedRanges: ['10.20.0.0/16', 'nope', '10.20.0.0/16', 'fd00::/8', '10.0.0.0/8'],
+    }
+    expect(parseVpn(raw, 4870)).toEqual({
+      enabled: true,
+      address: '10.20.30.40',
+      httpsPort: 8443,
+      setupPort: 8444,
+      allowedRanges: ['10.20.0.0/16', '10.0.0.0/8'],
+    })
+    expect(parseVpn({ ...VPN, httpsPort: 9000, setupPort: 9001 }, 4870)).toMatchObject({
+      httpsPort: 9000,
+      setupPort: 9001,
+    })
+  })
+
+  it('parseVpn returns null for a bad address or a port equal to the other or to the app port', () => {
+    expect(parseVpn({ ...VPN, address: '10.20.30' }, 4870)).toBeNull()
+    expect(parseVpn({ allowedRanges: ['10.0.0.0/8'] }, 4870)).toBeNull()
+    expect(parseVpn({ ...VPN, httpsPort: 9000, setupPort: 9000 }, 4870)).toBeNull()
+    expect(parseVpn({ ...VPN, httpsPort: 4870 }, 4870)).toBeNull()
+    expect(parseVpn({ ...VPN, setupPort: 4870 }, 4870)).toBeNull()
+    expect(parseVpn({ ...VPN, httpsPort: 70000 }, 4870)).toBeNull()
+    expect(parseVpn(null, 4870)).toBeNull()
+  })
+
+  it('vpn stays disabled without an allowed range', () => {
+    expect(parseVpn({ ...VPN, enabled: true, allowedRanges: ['junk'] }, 4870)?.enabled).toBe(false)
+    writeConfig({ vpn: { ...VPN, enabled: true, allowedRanges: [] } })
+    expect(loadConfig(directory).vpn?.enabled).toBe(false)
+  })
+
+  it('a saved Cloudflare remote config reads back unchanged next to vpn', async () => {
+    const remote = { ...REMOTE_FOR_VPN }
+    writeConfig({ remote, vpn: VPN })
+    const loaded = loadConfig(directory)
+    await saveConfig(directory, loaded)
+    const reloaded = loadConfig(directory)
+    expect(reloaded.remote).toEqual({ ...remote, cloudflaredPath: null })
+    expect(reloaded.vpn).toEqual(loaded.vpn)
   })
 })
 

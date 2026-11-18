@@ -53,6 +53,13 @@ export function errorText(error: AppError): string {
       return t('HRM could not be reached', 'Không kết nối được tới HRM')
     case 'remoteDisabled':
       return t('Remote access is turned off', 'Truy cập từ xa đang tắt')
+    case 'firewallCancelled':
+      return t(
+        'The Windows firewall prompt was cancelled',
+        'Đã hủy yêu cầu mở tường lửa của Windows',
+      )
+    case 'firewallFailed':
+      return t('The firewall rule could not be added', 'Không thêm được luật tường lửa')
     case 'accessRequired':
       return t(
         'Sign in through Cloudflare Access first',

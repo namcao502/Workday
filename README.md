@@ -1,7 +1,10 @@
 # Workday
 
 A local web app for daily work-log entries. It runs on your machine and listens on 127.0.0.1 only. Optional remote access goes through a Cloudflare tunnel
-(paired devices only; see `docs/remote-access/`).
+(paired devices only; see `docs/remote-access/`). VPN mode is the alternative: an HTTPS listener on the PC's VPN
+address (default port 8443) that accepts only the allowed IP ranges and paired devices, with a self-made CA the phone
+installs once from a plain-HTTP setup page (port 8444, open only while pairing). Settings can open the Windows
+firewall for both ports. Cloudflare stays fully supported; both can run together.
 
 ## Requirements
 

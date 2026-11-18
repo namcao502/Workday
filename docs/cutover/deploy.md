@@ -1,6 +1,6 @@
 # Cài Workday trên Linux
 
-Workday chạy như một systemd user service, nghe ở `127.0.0.1:4870`. Truy cập từ máy khác qua Cloudflare Tunnel (xem phần Remote access trong Settings).
+Workday chạy như một systemd user service, nghe ở `127.0.0.1:4870`. Truy cập từ máy khác qua Cloudflare Tunnel hoặc chế độ VPN (HTTPS trên địa chỉ VPN của máy, chỉ nhận dải IP cho phép và thiết bị đã ghép cặp; xem phần Remote access trong Settings). Nút mở firewall chỉ dành cho Windows; trên Linux tự mở cổng bằng ufw/nftables.
 
 ## Gói cần có
 

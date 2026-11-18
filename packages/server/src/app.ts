@@ -1,16 +1,18 @@
 import { existsSync } from 'node:fs'
+import type { Server } from 'node:https'
 import { basename, join } from 'node:path'
 import fastifyStatic from '@fastify/static'
 import fastifyWebsocket from '@fastify/websocket'
 import Fastify, { type FastifyInstance } from 'fastify'
 import type { BoardService } from './board/boardService.js'
+import type { FirewallResult } from './remote/firewall.js'
 import type { PrService } from './prs/prService.js'
 import type { EventHub } from './events.js'
 import type { ReportReader } from './insights/reportReader.js'
 import type { NoticeService } from './notices/noticeService.js'
 import { registerBoardRoutes } from './routes/boardRoutes.js'
 import { registerNoticeRoutes } from './routes/noticeRoutes.js'
-import { registerRemoteGate } from './remote/remoteGate.js'
+import { registerRemoteGate, type VpnSurface } from './remote/remoteGate.js'
 import type { RemoteService } from './remote/remoteService.js'
 import { registerEventsRoute } from './routes/eventsRoute.js'
 import { registerInsightsRoutes } from './routes/insightsRoutes.js'
@@ -61,15 +63,25 @@ export interface AppDeps {
   teamsWatcher: TeamsWatcher
   insights: ReportReader
   schedules: SchedulesSource
+  // Set on the VPN instance: HTTPS, and `vpn.host` is the only Host it accepts.
+  vpn?: VpnSurface | undefined
+  // Tests pass a fake so no real elevated PowerShell starts.
+  openFirewall?: ((command: string) => Promise<FirewallResult>) | undefined
 }
 
 export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
-  const app = Fastify()
+  const { vpn } = deps
+  const app: FastifyInstance = vpn === undefined ? Fastify() : Fastify<Server>({ https: vpn.tls })
   const allowedHosts = allowedHostHeaders({ port: deps.port, dev: deps.dev })
 
   // Blocks DNS rebinding: a page on another domain pointed at 127.0.0.1 sends its own Host.
   app.addHook('onRequest', async (request, reply) => {
     const { host } = request.headers
+    if (vpn !== undefined) {
+      return isAllowedHost(host, new Set([vpn.host]))
+        ? undefined
+        : reply.code(403).send({ error: 'Forbidden host' })
+    }
     const publicHosts = remoteHostHeaders(deps.remote.config?.publicHost ?? null)
     if (!isAllowedHost(host, allowedHosts) && !isAllowedHost(host, publicHosts)) {
       return reply.code(403).send({ error: 'Forbidden host' })
@@ -77,7 +89,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
     return undefined
   })
 
-  registerRemoteGate(app, deps.remote)
+  registerRemoteGate(app, deps.remote, vpn ?? null)
 
   await app.register(fastifyWebsocket, { options: { maxPayload: SOCKET_MAX_PAYLOAD } })
 
@@ -86,8 +98,8 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
     version: deps.version,
   }))
 
-  registerEventsRoute(app, deps.events, allowedHosts, deps.remote)
-  registerRemoteRoutes(app, deps.remote)
+  registerEventsRoute(app, deps.events, allowedHosts, vpn === undefined ? 'loopback' : 'vpn')
+  registerRemoteRoutes(app, deps.remote, deps.openFirewall)
   registerPushRoutes(app, deps.remote, deps.settings)
   registerBoardRoutes(app, deps.board, deps.prs, deps.ticketUpdates)
   registerWorkRoutes(app, deps)

@@ -1,5 +1,12 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import type { PairingView, RemoteConfig, RemoteDevice, RemoteStatusView } from '@workday/core'
+import type {
+  PairingView,
+  RemoteConfig,
+  RemoteDevice,
+  RemoteStatusView,
+  VpnConfig,
+  VpnStatusView,
+} from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
 import {
   jsonResponse,
@@ -20,11 +27,34 @@ const CONFIG: RemoteConfig = {
   cloudflaredPath: null,
 }
 
+vi.mock('qrcode', () => {
+  const toDataURL = vi.fn(() => Promise.resolve('data:image/png;base64,QR'))
+  return { default: { toDataURL }, toDataURL }
+})
+
+const VPN: VpnConfig = {
+  enabled: true,
+  address: '10.20.30.40',
+  httpsPort: 8443,
+  setupPort: 8444,
+  allowedRanges: ['10.20.0.0/16'],
+}
+
 const CLOSED: PairingView = { code: null, expiresAt: null, pending: null }
+
+const VPN_OFF: VpnStatusView = {
+  server: 'off',
+  serverDetail: null,
+  addresses: [],
+  httpsUrl: null,
+  setupUrl: null,
+  caFingerprint: null,
+}
 
 function status(
   devices: readonly RemoteDevice[] = [],
   pairing: PairingView = CLOSED,
+  vpn: VpnStatusView = VPN_OFF,
 ): RemoteStatusView {
   return {
     tunnel: 'running',
@@ -33,6 +63,7 @@ function status(
     pairing,
     activity: [],
     vapidPublicKey: null,
+    vpn,
   }
 }
 
@@ -139,4 +170,70 @@ it('the remote section is not shown on a remote device', () => {
   renderRemote(<RemoteSection settings={configured()} />, { board: 'act', timesheet: 'act' })
   expect(screen.queryByRole('heading', { name: 'Remote access' })).not.toBeInTheDocument()
   expect(fetchMock).not.toHaveBeenCalled()
+})
+
+function withVpn(): ReturnType<typeof settingsView> {
+  const base = configured()
+  return { ...base, config: { ...base.config, vpn: VPN } }
+}
+
+it('Save sends the vpn block next to the untouched Cloudflare block', async () => {
+  const fetchMock = stubFetch((url, init) =>
+    init?.method === 'PUT' ? jsonResponse(withVpn()) : jsonResponse(status()),
+  )
+  renderWithQuery(<RemoteSection settings={withVpn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/settings',
+      expect.objectContaining({ method: 'PUT' }),
+    )
+  })
+  const body = sentJson(fetchMock)
+  expect(body['vpn']).toEqual(VPN)
+  expect(body['remote']).toEqual(CONFIG)
+})
+
+it('a bad range blocks Save and shows why', () => {
+  const fetchMock = stubFetch(() => jsonResponse(status()))
+  const base = withVpn()
+  const bad = { ...VPN, allowedRanges: ['10.20.0.0/99'] }
+  renderWithQuery(<RemoteSection settings={{ ...base, config: { ...base.config, vpn: bad } }} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  expect(screen.getByRole('alert')).toHaveTextContent('10.20.0.0/99')
+  expect(fetchMock).not.toHaveBeenCalledWith(
+    '/api/settings',
+    expect.objectContaining({ method: 'PUT' }),
+  )
+})
+
+it('the firewall button reports a cancelled prompt', async () => {
+  const fetchMock = stubFetch((url) =>
+    url === '/api/remote/firewall'
+      ? jsonResponse({ ok: false, error: { code: 'firewallCancelled' } }, 409)
+      : jsonResponse(status()),
+  )
+  renderWithQuery(<RemoteSection settings={withVpn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Open firewall' }))
+  expect(await screen.findByText('Cancelled')).toBeInTheDocument()
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/remote/firewall',
+    expect.objectContaining({ method: 'POST' }),
+  )
+})
+
+it('the pairing card shows the setup QR and link while vpn runs', async () => {
+  const running: VpnStatusView = {
+    ...VPN_OFF,
+    server: 'running',
+    httpsUrl: 'https://10.20.30.40:8443',
+    setupUrl: 'http://10.20.30.40:8444/setup',
+    caFingerprint: 'AB:CD',
+  }
+  stubFetch(() => jsonResponse(status([], CLOSED, running)))
+  renderWithQuery(<RemoteSection settings={withVpn()} />)
+  const image = await screen.findByAltText('http://10.20.30.40:8444/setup')
+  expect(image).toHaveAttribute('src', 'data:image/png;base64,QR')
+  expect(screen.getAllByText('http://10.20.30.40:8444/setup').length).not.toBe(0)
+  expect(screen.getAllByText(/https:\/\/10\.20\.30\.40:8443/).length).not.toBe(0)
 })

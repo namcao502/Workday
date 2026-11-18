@@ -1,5 +1,7 @@
-import type { RemoteConfig, WorkdayConfig } from '@workday/core'
+import type { RemoteConfig, VpnConfig, WorkdayConfig } from '@workday/core'
 import { expect } from 'vitest'
+import type { FirewallResult } from '../remote/firewall.js'
+import type { VpnSurface } from '../remote/remoteGate.js'
 import { DEFAULT_WORKSPACE, saveConfig } from '../config.js'
 import {
   buildTestApp,
@@ -35,7 +37,12 @@ export function remoteHeaders(deviceToken?: string): Record<string, string> {
 
 export async function buildRemoteApp(
   remote: RemoteConfig | null = ENABLED_REMOTE,
-  options: { clientDist?: string } = {},
+  options: {
+    clientDist?: string
+    vpn?: VpnConfig
+    surface?: VpnSurface
+    openFirewall?: (command: string) => Promise<FirewallResult>
+  } = {},
 ): Promise<TestApp> {
   const dataDir = newDataDir()
   const config: WorkdayConfig = {
@@ -52,10 +59,16 @@ export async function buildRemoteApp(
     language: 'en',
     jira: null,
     remote,
+    vpn: options.vpn ?? null,
     timesheet: { logTime: '18:00', hrm: null, tsc: null },
   }
   await saveConfig(dataDir, config)
-  return buildTestApp({ dataDir, ...options })
+  return buildTestApp({
+    dataDir,
+    ...(options.clientDist === undefined ? {} : { clientDist: options.clientDist }),
+    ...(options.surface === undefined ? {} : { vpn: options.surface }),
+    ...(options.openFirewall === undefined ? {} : { openFirewall: options.openFirewall }),
+  })
 }
 
 // Pairs a phone the way a user does; returns the device token from the Set-Cookie header.

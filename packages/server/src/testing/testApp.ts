@@ -5,6 +5,8 @@ import type { AzureDevOpsConfig, HrmConfig, JiraConfig } from '@workday/core'
 import type { FastifyInstance } from 'fastify'
 import { createApp } from '../app.js'
 import { loadConfig } from '../config.js'
+import type { FirewallResult } from '../remote/firewall.js'
+import type { VpnSurface } from '../remote/remoteGate.js'
 import { createServices, type Services } from '../services.js'
 import type { WorktreeOptions } from '../workspace/worktreeService.js'
 import { FakeHoursLog, FakePullRequests, FakeSheetLog, FakeTracker } from './fakes.js'
@@ -71,7 +73,12 @@ export function newDataDir(): string {
 
 // Every tracker the app builds is the same FakeTracker; trackerCalls records what it was built with.
 export async function buildTestApp(
-  options: { dataDir?: string; clientDist?: string } = {},
+  options: {
+    dataDir?: string
+    clientDist?: string
+    vpn?: VpnSurface
+    openFirewall?: (command: string) => Promise<FirewallResult>
+  } = {},
 ): Promise<TestApp> {
   const dataDir = options.dataDir ?? newDataDir()
   const tracker = new FakeTracker()
@@ -181,6 +188,8 @@ export async function buildTestApp(
     dev: false,
     version: '9.9.9',
     clientDist: options.clientDist,
+    vpn: options.vpn,
+    openFirewall: options.openFirewall,
     ...services,
   })
   await app.ready()
