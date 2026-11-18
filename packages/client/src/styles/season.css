@@ -163,225 +163,6 @@ html[data-season='tet'][data-theme='dark'] .season-backdrop {
     linear-gradient(170deg, #160d08 0%, #140a0a 100%);
 }
 
-/* The garland: a string draped along the top, and a short drop down each side that fades out. Each side
-   is the same strip as the top (a wire with ornaments hanging down), turned so they hang inward. */
-.garland-edge {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 32px;
-  transform-origin: 0 0;
-}
-
-/* Room under the string so its ornaments do not touch the page title. */
-.season-garland ~ .app-shell {
-  padding-top: 10px;
-}
-
-.garland-edge:is([data-edge='left'], [data-edge='right']) {
-  width: 270px;
-  -webkit-mask-image: linear-gradient(to right, #000 45%, transparent);
-  mask-image: linear-gradient(to right, #000 45%, transparent);
-}
-
-.garland-edge[data-edge='left'] {
-  transform: rotate(90deg) scaleY(-1);
-}
-
-.garland-edge[data-edge='right'] {
-  left: 100%;
-  transform: rotate(90deg);
-}
-
-.garland-edge::before {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: 4px;
-  height: 1px;
-  background: rgba(40, 70, 50, 0.55);
-}
-
-/* The top wire sags between hooks 102px apart (three ornaments), 6px at the middle; SeasonLayer hangs
-   each ornament on the same curve. The wire takes its color from the background through this mask. */
-.garland-edge[data-edge='top']::before {
-  top: 0;
-  height: 32px;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='102' height='32'%3E%3Cpath d='M0 4.5 Q51 16.5 102 4.5' fill='none' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E")
-    0 0 / 102px 32px repeat-x;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='102' height='32'%3E%3Cpath d='M0 4.5 Q51 16.5 102 4.5' fill='none' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E")
-    0 0 / 102px 32px repeat-x;
-}
-
-.season-garland[data-garland='tet'] .garland-edge::before {
-  background: rgba(200, 150, 40, 0.85);
-}
-
-.season-garland[data-garland='winter'] .garland-edge::before {
-  background: rgba(120, 150, 190, 0.55);
-}
-
-.season-garland[data-garland='spring'] .garland-edge::before {
-  background: rgba(110, 140, 80, 0.6);
-}
-
-.season-garland[data-garland='summer'] .garland-edge::before {
-  background: rgba(150, 110, 60, 0.6);
-}
-
-.season-garland[data-garland='autumn'] .garland-edge::before {
-  background: rgba(110, 70, 40, 0.6);
-}
-
-/* Winter: small six-point snowflakes in icy blues, so they show on a light backdrop. */
-.garland-flake {
-  position: absolute;
-  top: 5px;
-  width: 13px;
-  height: 13px;
-  margin-left: -6.5px;
-  background: currentColor;
-  clip-path: polygon(
-    50% 0%,
-    58% 36%,
-    93% 25%,
-    66% 50%,
-    93% 75%,
-    58% 64%,
-    50% 100%,
-    42% 64%,
-    7% 75%,
-    34% 50%,
-    7% 25%,
-    42% 36%
-  );
-  transform-origin: 50% -3px;
-  animation: garland-swing 4s ease-in-out infinite alternate;
-}
-
-/* Spring: five round petals around a yellow heart. */
-.garland-flower {
-  position: absolute;
-  top: 5px;
-  width: 14px;
-  height: 14px;
-  margin-left: -7px;
-  color: #f08aa6;
-  background:
-    radial-gradient(circle at 50% 50%, #f5c542 0 2px, transparent 2.5px),
-    radial-gradient(circle at 50% 20%, currentColor 0 3.4px, transparent 3.9px),
-    radial-gradient(circle at 79% 41%, currentColor 0 3.4px, transparent 3.9px),
-    radial-gradient(circle at 68% 76%, currentColor 0 3.4px, transparent 3.9px),
-    radial-gradient(circle at 32% 76%, currentColor 0 3.4px, transparent 3.9px),
-    radial-gradient(circle at 21% 41%, currentColor 0 3.4px, transparent 3.9px);
-  transform-origin: 50% -3px;
-  animation: garland-swing 3.8s ease-in-out infinite alternate;
-}
-
-/* Summer: bunting, a little triangle flag on each hook. */
-.garland-flag {
-  position: absolute;
-  top: 4px;
-  width: 16px;
-  height: 17px;
-  margin-left: -8px;
-  background: currentColor;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transform-origin: 50% 0;
-  animation: garland-swing 3.4s ease-in-out infinite alternate;
-}
-
-/* Autumn: a leaf, pointed at both ends. */
-.garland-leaf {
-  position: absolute;
-  top: 5px;
-  width: 12px;
-  height: 14px;
-  margin-left: -6px;
-  background: currentColor;
-  border-radius: 2px 90% 2px 90%;
-  transform-origin: 50% -3px;
-  animation: garland-swing 3.6s ease-in-out infinite alternate;
-}
-
-.garland-bulb {
-  position: absolute;
-  top: 5px;
-  width: 7px;
-  height: 10px;
-  margin-left: -3.5px;
-  border-radius: 50% 50% 45% 45% / 40% 40% 60% 60%;
-  background: currentColor;
-  box-shadow: 0 0 8px 2px currentColor;
-  animation: garland-twinkle 2.4s ease-in-out infinite alternate;
-}
-
-.garland-bulb::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: 1.5px;
-  width: 4px;
-  height: 3px;
-  border-radius: 1px;
-  background: #5b6560;
-}
-
-.garland-lantern {
-  position: absolute;
-  top: 5px;
-  width: 12px;
-  height: 14px;
-  margin-left: -6px;
-  border-radius: 40%;
-  border-top: 2px solid #f5c542;
-  border-bottom: 2px solid #f5c542;
-  background: radial-gradient(circle at 50% 40%, #ff5a4a 0%, #c81e1e 70%);
-  box-shadow: 0 0 8px rgba(255, 80, 60, 0.45);
-  transform-origin: 50% -3px;
-  animation: garland-swing 3.2s ease-in-out infinite alternate;
-}
-
-.garland-lantern::after {
-  content: '';
-  position: absolute;
-  left: 4.5px;
-  top: 12px;
-  width: 1.5px;
-  height: 6px;
-  background: #f5c542;
-}
-
-.season-garland.is-still .garland-edge > *,
-.garland-edge > :not(.is-lively) {
-  animation: none;
-}
-
-@keyframes garland-twinkle {
-  from {
-    opacity: 0.45;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes garland-swing {
-  from {
-    transform: rotate(-7deg);
-  }
-  to {
-    transform: rotate(7deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .garland-edge > * {
-    animation: none;
-  }
-}
-
 /* Switching season fades the new backdrop in, and the accent eases over instead of jumping. */
 @property --accent {
   syntax: '<color>';
@@ -430,7 +211,7 @@ html[data-season='summer']:not([data-theme='dark']) .season-backdrop::before {
   }
 }
 
-/* Mid-Autumn: a full moon over dusk (or night), star lanterns on the garland. */
+/* Mid-Autumn: a full moon over dusk (or night), lantern glows rising. */
 html:root[data-season='midautumn'] {
   --accent: oklch(0.62 0.16 58);
 }
@@ -459,33 +240,6 @@ html[data-season='midautumn'][data-theme='dark'] .season-backdrop {
     ),
     radial-gradient(900px 700px at 0% 105%, #3a1c14 0%, transparent 60%),
     linear-gradient(170deg, #0e1230 0%, #1b1640 100%);
-}
-
-.garland-star {
-  position: absolute;
-  top: 5px;
-  width: 16px;
-  height: 16px;
-  margin-left: -8px;
-  background: currentColor;
-  clip-path: polygon(
-    50% 0%,
-    61% 35%,
-    98% 35%,
-    68% 57%,
-    79% 91%,
-    50% 70%,
-    21% 91%,
-    32% 57%,
-    2% 35%,
-    39% 35%
-  );
-  transform-origin: 50% -3px;
-  animation: garland-swing 3.6s ease-in-out infinite alternate;
-}
-
-.season-garland[data-garland='midautumn'] .garland-edge::before {
-  background: rgba(180, 120, 40, 0.8);
 }
 
 /* Rain (picked by hand): a grey sky, slanting streaks, drops beaded on the glass. */
@@ -560,8 +314,7 @@ html[data-season='christmas'] :is(.app-sidebar, .app-tabbar)::before {
 
 @media (prefers-reduced-motion: reduce) {
   .season-fade-in,
-  .season-backdrop::before,
-  .garland-star {
+  .season-backdrop::before {
     animation: none;
   }
   html:root {
