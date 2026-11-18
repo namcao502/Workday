@@ -97,7 +97,7 @@ it('TicketUpdateDialog marks the removed words on the left and the added ones on
   expect([...added].map((part) => part.textContent)).toEqual(['New'])
   // The new attachment line is the only addition there.
   const attachments = cell('Attachments', 'After').querySelectorAll('[data-diff="added"]')
-  expect([...attachments].map((part) => part.textContent?.trim())).toEqual(['b.png'])
+  expect([...attachments].map((part) => part.textContent.trim())).toEqual(['b.png'])
 })
 
 it('TicketUpdateDialog links the ticket in Jira', async () => {
