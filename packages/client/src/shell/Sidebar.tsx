@@ -88,7 +88,7 @@ export function Sidebar({
   )
   return (
     <nav
-      className={`m-3 mr-0 flex shrink-0 flex-col rounded-2xl bg-surface p-2 shadow-surface ${
+      className={`app-sidebar m-3 mr-0 flex shrink-0 flex-col rounded-2xl bg-surface p-2 shadow-surface ${
         collapsed ? 'w-14' : 'w-[200px]'
       }`}
       aria-label={t('Pages', 'Trang')}

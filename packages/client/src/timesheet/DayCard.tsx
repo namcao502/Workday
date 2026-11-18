@@ -213,7 +213,7 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
     <Card
       role="group"
       aria-label={header}
-      className={`gap-2 p-3 ${selected ? 'bg-accent-soft' : ''}`}
+      className={`card-pressable gap-2 p-3 ${selected ? 'bg-accent-soft' : ''}`}
       onClick={(event) => {
         if (!(event.target instanceof Element) || event.target.closest(OWN_PRESS) === null) {
           props.onSelect(day.date)

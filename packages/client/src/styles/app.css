@@ -31,14 +31,38 @@
   --field-border-width: 0px;
 }
 
-/* Cards stand out from the page by a slightly darker page and a soft two-layer shadow, not by a line.
-   HeroUI's grey fills match that page, so straight on the page a grey button or field is white and a
-   segment track is darker; inside a card, dialog or popover they keep HeroUI's grey. */
+/* A white page: cards keep their edge with a hairline ring and a faint shadow, the sidebar is a pale
+   grey frame. Straight on the page a field or a segment track is grey so it does not vanish; inside a
+   card, dialog or popover they keep HeroUI's grey. */
 :root:not([data-theme='dark']) {
-  --background: oklch(0.935 0.002 286);
-  --surface-shadow: 0 1px 2px 0 rgba(24, 24, 27, 0.06), 0 4px 16px 0 rgba(24, 24, 27, 0.08);
-  --default: var(--white);
-  --surface-secondary: oklch(0.895 0.003 286);
+  --background: var(--white);
+  --surface-shadow: 0 0 0 1px oklch(0.915 0.003 286), 0 1px 3px 0 rgba(24, 24, 27, 0.05);
+  --surface-shadow-raised: 0 0 0 1px oklch(0.87 0.004 286), 0 6px 18px -4px rgba(24, 24, 27, 0.12);
+  --default: oklch(0.965 0.002 286);
+  --surface-secondary: oklch(0.955 0.002 286);
+}
+
+:root:not([data-theme='dark']):not([data-season]) .app-sidebar {
+  background: oklch(0.975 0.002 286);
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] {
+  --surface-shadow-raised: 0 0 0 1px oklch(0.34 0.006 286), 0 8px 22px -6px rgba(0, 0, 0, 0.5);
+}
+
+/* A card that does something on a press lifts under the pointer; a card that only shows stays put. */
+.card-pressable {
+  transition:
+    box-shadow 150ms ease-out,
+    transform 150ms ease-out;
+}
+
+@media (hover: hover) {
+  .card-pressable:hover {
+    box-shadow: var(--surface-shadow-raised);
+    transform: translateY(-1px);
+  }
 }
 
 :root:not([data-theme='dark'])
