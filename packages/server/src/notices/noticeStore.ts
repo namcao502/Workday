@@ -7,8 +7,11 @@ const TOPICS: ReadonlySet<string> = new Set([
   'claude',
   'pr',
   'jira',
+  'teams',
+  'teamsMention',
   'suggestions',
   'knowledge',
+  'log',
   'other',
 ])
 const TONES: ReadonlySet<string> = new Set(['info', 'success', 'error'])
@@ -18,6 +21,7 @@ const TARGET_KINDS: ReadonlySet<string> = new Set([
   'url',
   'schedules',
   'teams',
+  'timesheet',
 ])
 
 function isTarget(raw: unknown): raw is NoticeTarget {
@@ -28,6 +32,7 @@ function isTarget(raw: unknown): raw is NoticeTarget {
     case 'board':
       return raw['key'] === null || typeof raw['key'] === 'string'
     case 'schedules':
+    case 'timesheet':
       return true
     case 'teams':
       return typeof raw['key'] === 'string' && typeof raw['conversationId'] === 'string'

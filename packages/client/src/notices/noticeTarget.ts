@@ -23,6 +23,8 @@ export function openNoticeTarget(target: NoticeTarget | null, remote: boolean): 
   }
   if (target.kind === 'url') {
     window.open(target.url, '_blank', 'noopener')
+  } else if (target.kind === 'timesheet') {
+    navigateTo('timesheet')
   } else if (target.kind === 'schedules' && !remote) {
     navigateToSettings('work')
   } else if (target.kind === 'workspace' && !remote) {

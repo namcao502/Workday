@@ -55,6 +55,8 @@ function localUrl(target: NoticeTarget | null): string {
       return target.url
     case 'schedules':
       return '/#/schedules'
+    case 'timesheet':
+      return '/#/timesheet'
     case 'board':
       return '/#/tickets'
     case 'workspace':

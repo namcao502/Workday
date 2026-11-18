@@ -264,6 +264,7 @@ const NOTICE_TOPICS: readonly NoticeTopic[] = [
   'teams',
   'teamsMention',
   'knowledge',
+  'log',
   'other',
 ]
 const NOTICE_CHANNELS: readonly (keyof NoticeChannels)[] = ['toast', 'desktop', 'phone']

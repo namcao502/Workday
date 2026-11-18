@@ -37,6 +37,8 @@ function topicName(topic: NoticeTopic): string {
       return t('Suggestions', 'Gợi ý')
     case 'knowledge':
       return t('Knowledge scan', 'Quét knowledge')
+    case 'log':
+      return t('Auto-log', 'Tự log')
     case 'other':
       return t('Other', 'Khác')
   }
@@ -61,6 +63,7 @@ const TOPICS: readonly NoticeTopic[] = [
   'teamsMention',
   'suggestions',
   'knowledge',
+  'log',
   'other',
 ]
 
@@ -92,6 +95,7 @@ function channelsFromPrefs(prefs: NoticePrefs): Record<NoticeTopic, NoticeChanne
     teamsMention: noticeChannels('teamsMention', prefs),
     suggestions: noticeChannels('suggestions', prefs),
     knowledge: noticeChannels('knowledge', prefs),
+    log: noticeChannels('log', prefs),
     other: noticeChannels('other', prefs),
   }
 }

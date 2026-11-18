@@ -1,4 +1,5 @@
 import { zonedClock, type RunSummary, type WorkdayConfig } from '@workday/core'
+import type { NoticeInput } from '../notices/noticeService.js'
 import type { PushMessage } from '../remote/pushService.js'
 
 const TITLE = 'Workday'
@@ -52,4 +53,26 @@ const TEST_BODY: Readonly<Record<WorkdayConfig['language'], string>> = {
 
 export function testPushMessage(language: WorkdayConfig['language']): PushMessage {
   return { title: TITLE, body: TEST_BODY[language], url: '/', tag: 'test-push' }
+}
+
+// The bell, toast and desktop notice for a run, like the C# app's auto-log balloon: the 18:00 run and the
+// catch-up after it, and the reminder. A run the user started shows its result on the page instead.
+export function runNotice(summary: RunSummary): NoticeInput | null {
+  if (summary.trigger === 'user') {
+    return null
+  }
+  const where = { target: { kind: 'timesheet' }, place: 'timesheet' } as const
+  if (summary.kind === 'reminder') {
+    return { topic: 'log', tone: 'info', event: { type: 'logReminder' }, ...where }
+  }
+  if (summary.kind !== 'drained') {
+    return null
+  }
+  const kept = summary.kept.length
+  return {
+    topic: 'log',
+    tone: kept === 0 && !summary.timedOut ? 'success' : 'error',
+    event: { type: 'logRun', logged: summary.logged, kept, timedOut: summary.timedOut },
+    ...where,
+  }
 }

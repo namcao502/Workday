@@ -46,7 +46,7 @@ import { loadPostIndex, loadTeamsState, savePostIndex, saveTeamsState } from './
 import { BrowserLock } from './tsc/browserLock.js'
 import { SuggestionService } from './suggestions/suggestionService.js'
 import { loadSuggestionState, saveSuggestionState } from './suggestions/suggestionStore.js'
-import { runPushMessage } from './timesheet/runNotification.js'
+import { runNotice, runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
 import { qcBugsOf, readBugFixes } from './workspace/bugFixes.js'
@@ -186,6 +186,11 @@ export function createServices(options: ServicesOptions): Services {
         remote.push.sendToArea('timesheet', message).catch((error: unknown) => {
           reportError('Pushing the run failed', error)
         })
+      }
+      // notices is made below; a run only ever ends after startup, when it exists.
+      const notice = runNotice(summary)
+      if (notice !== null) {
+        void notices.add(notice)
       }
     },
     ...logError,

@@ -4,7 +4,15 @@ import type { PrVote } from './prTracking.js'
 import type { TicketField } from './ticketChanges.js'
 
 export type NoticeTopic =
-  'claude' | 'pr' | 'jira' | 'teams' | 'teamsMention' | 'suggestions' | 'knowledge' | 'other'
+  | 'claude'
+  | 'pr'
+  | 'jira'
+  | 'teams'
+  | 'teamsMention'
+  | 'suggestions'
+  | 'knowledge'
+  | 'log'
+  | 'other'
 export type NoticeTone = 'info' | 'success' | 'error'
 
 export type NoticeEvent =
@@ -61,6 +69,14 @@ export type NoticeEvent =
       readonly fields: readonly TicketField[]
       readonly changedBy: string | null
     }
+  // The 18:00 run or the catch-up: kept entries wait for a retry, timedOut when the run hit its deadline.
+  | {
+      readonly type: 'logRun'
+      readonly logged: number
+      readonly kept: number
+      readonly timedOut: boolean
+    }
+  | { readonly type: 'logReminder' }
 
 export type NoticeTarget =
   | { readonly kind: 'schedules' }
@@ -68,6 +84,7 @@ export type NoticeTarget =
   | { readonly kind: 'workspace'; readonly tab: string; readonly session: string }
   | { readonly kind: 'url'; readonly url: string }
   | { readonly kind: 'teams'; readonly key: string; readonly conversationId: string }
+  | { readonly kind: 'timesheet' }
 
 export interface Notice {
   readonly id: number
@@ -101,6 +118,8 @@ const DEFAULT_CHANNELS: Readonly<Record<NoticeTopic, NoticeChannels>> = {
   teamsMention: { toast: true, desktop: true, phone: true },
   suggestions: { toast: true, desktop: false, phone: false },
   knowledge: { toast: true, desktop: true, phone: false },
+  // The phone gets the run's own push already.
+  log: { toast: true, desktop: true, phone: false },
   other: { toast: true, desktop: true, phone: false },
 }
 
@@ -260,6 +279,20 @@ function ticketUpdatedText(
   return vi ? `${text} (bởi ${changedBy})` : `${text} (by ${changedBy})`
 }
 
+function logRunText(logged: number, kept: number, timedOut: boolean, vi: boolean): string {
+  if (timedOut) {
+    return vi
+      ? `Tự log quá thời gian; đã giữ lại ${String(kept)} để thử lại. Nếu lặp lại, hãy kiểm tra đăng nhập TSC.`
+      : `Auto-log timed out; ${String(kept)} kept for retry. Check the TSC sign-in if this repeats.`
+  }
+  if (kept !== 0) {
+    return vi
+      ? `Tự log: đã log ${String(logged)}, giữ lại ${String(kept)}. Hãy kiểm tra đăng nhập TSC - app sẽ tự thử lại.`
+      : `Auto-log: ${String(logged)} logged, ${String(kept)} kept. Check the TSC sign-in - it retries automatically.`
+  }
+  return vi ? `Tự log: đã log ${String(logged)}.` : `Auto-log: ${String(logged)} logged.`
+}
+
 function scanBadText(outcome: ScanOutcome, vi: boolean): string {
   switch (outcome) {
     case 'stopped':
@@ -343,6 +376,12 @@ export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
         : `${event.key}: DB change approved by ${event.approver}. Run the SQL on dev, then scaffold.`
     case 'ticketUpdated':
       return ticketUpdatedText(event.key, event.fields, event.changedBy, vi)
+    case 'logRun':
+      return logRunText(event.logged, event.kept, event.timedOut, vi)
+    case 'logReminder':
+      return vi
+        ? 'Nhắc nhở: hôm nay chưa có gì trong hàng đợi - hãy log công việc trước khi về.'
+        : 'Reminder: nothing is queued for today - log your work before you leave.'
     default:
       return ''
   }

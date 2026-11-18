@@ -92,6 +92,8 @@ describe('noticeChannels', () => {
     expect(noticeChannels('claude', {})).toEqual({ toast: true, desktop: true, phone: false })
     expect(noticeChannels('pr', {})).toEqual({ toast: true, desktop: false, phone: true })
     expect(noticeChannels('suggestions', {})).toEqual({ toast: true, desktop: false, phone: false })
+    // The phone already gets the run's own push, so the log topic does not push again.
+    expect(noticeChannels('log', {})).toEqual({ toast: true, desktop: true, phone: false })
   })
 
   it('lets a saved choice override one channel', () => {
@@ -106,6 +108,10 @@ describe('noticeChannels', () => {
 describe('noticeText', () => {
   const events: readonly NoticeEvent[] = [
     { type: 'qcBugFixed', key: 'MDP-9323', parentKey: 'MDP-9310' },
+    { type: 'logRun', logged: 1, kept: 0, timedOut: false },
+    { type: 'logRun', logged: 1, kept: 1, timedOut: false },
+    { type: 'logRun', logged: 0, kept: 1, timedOut: true },
+    { type: 'logReminder' },
     { type: 'claudeWait', subject: 'MDP-1', wait: 'permission' },
     { type: 'claudeWait', subject: 'MDP-1', wait: 'finished' },
     { type: 'claudeWait', subject: 'MDP-1', wait: 'question' },
@@ -180,6 +186,23 @@ describe('noticeText', () => {
       expect(vietnamese.trim(), event.type).not.toBe('')
       expect(vietnamese, event.type).not.toBe(english)
     }
+  })
+
+  it('words the auto-log run like the C# app', () => {
+    const clean: NoticeEvent = { type: 'logRun', logged: 2, kept: 0, timedOut: false }
+    expect(noticeText(clean, 'en')).toBe('Auto-log: 2 logged.')
+    expect(noticeText(clean, 'vi')).toBe('Tự log: đã log 2.')
+    const kept: NoticeEvent = { type: 'logRun', logged: 1, kept: 1, timedOut: false }
+    expect(noticeText(kept, 'en')).toBe(
+      'Auto-log: 1 logged, 1 kept. Check the TSC sign-in - it retries automatically.',
+    )
+    const late: NoticeEvent = { type: 'logRun', logged: 0, kept: 2, timedOut: true }
+    expect(noticeText(late, 'vi')).toBe(
+      'Tự log quá thời gian; đã giữ lại 2 để thử lại. Nếu lặp lại, hãy kiểm tra đăng nhập TSC.',
+    )
+    expect(noticeText({ type: 'logReminder' }, 'en')).toBe(
+      'Reminder: nothing is queued for today - log your work before you leave.',
+    )
   })
 
   it('words a fixed QC bug in English and Vietnamese', () => {
