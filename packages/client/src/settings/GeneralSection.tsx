@@ -27,6 +27,10 @@ export function seasonName(season: Season): string {
       return t('Christmas', 'Giáng sinh')
     case 'tet':
       return t('Tet', 'Tết')
+    case 'midautumn':
+      return t('Mid-Autumn', 'Trung thu')
+    case 'rain':
+      return t('Rain', 'Mưa')
   }
 }
 

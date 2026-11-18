@@ -77,7 +77,7 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
   setLanguage(settings.data.config.language)
   return (
     <>
-      <SeasonLayer season={season} level={level} />
+      <SeasonLayer season={season} level={level} dark={theme === 'dark'} />
       <Shell page={page} />
     </>
   )

@@ -258,3 +258,190 @@ html[data-season='tet'][data-theme='dark'] .season-backdrop {
     animation: none;
   }
 }
+
+/* Switching season fades the new backdrop in, and the accent eases over instead of jumping. */
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: oklch(0.6204 0.195 253.83);
+}
+
+html:root {
+  transition: --accent 800ms ease-out;
+}
+
+.season-fade-in {
+  animation: season-fade 900ms ease-out;
+}
+
+@keyframes season-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Summer day: slow light rays from the sun in the top corner. A summer night has fireflies instead. */
+html[data-season='summer']:not([data-theme='dark']) .season-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(
+    from 200deg at 94% -8%,
+    rgba(255, 236, 170, 0) 0deg 5deg,
+    rgba(255, 236, 170, 0.45) 5deg 8deg
+  );
+  -webkit-mask-image: radial-gradient(circle at 94% -8%, #000 0%, transparent 70%);
+  mask-image: radial-gradient(circle at 94% -8%, #000 0%, transparent 70%);
+  animation: sun-shimmer 9s ease-in-out infinite alternate;
+}
+
+@keyframes sun-shimmer {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mid-Autumn: a full moon over dusk (or night), star lanterns on the garland. */
+html:root[data-season='midautumn'] {
+  --accent: oklch(0.62 0.16 58);
+}
+html:root[data-season='midautumn'][data-theme='dark'] {
+  --accent: oklch(0.76 0.14 70);
+}
+
+html[data-season='midautumn'] .season-backdrop {
+  background:
+    radial-gradient(
+      circle at 84% 16%,
+      #fffbe6 0 64px,
+      rgba(255, 238, 180, 0.7) 66px,
+      transparent 170px
+    ),
+    radial-gradient(900px 700px at 0% 105%, #f4c9a8 0%, transparent 60%),
+    linear-gradient(170deg, #fbe9cf 0%, #eadcf0 100%);
+}
+html[data-season='midautumn'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(
+      circle at 84% 16%,
+      #fff6d6 0 60px,
+      rgba(255, 220, 140, 0.35) 64px,
+      transparent 190px
+    ),
+    radial-gradient(900px 700px at 0% 105%, #3a1c14 0%, transparent 60%),
+    linear-gradient(170deg, #0e1230 0%, #1b1640 100%);
+}
+
+.garland-star {
+  position: absolute;
+  top: 5px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  background: currentColor;
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+  transform-origin: 50% -3px;
+  animation: garland-swing 3.6s ease-in-out infinite alternate;
+}
+
+.season-garland[data-garland='midautumn']::before {
+  background: rgba(180, 120, 40, 0.8);
+}
+
+/* Rain (picked by hand): a grey sky, slanting streaks, drops beaded on the glass. */
+html:root[data-season='rain'] {
+  --accent: oklch(0.55 0.08 240);
+}
+html:root[data-season='rain'][data-theme='dark'] {
+  --accent: oklch(0.72 0.08 230);
+}
+
+html[data-season='rain'] .season-backdrop {
+  background:
+    radial-gradient(1200px 500px at 50% -10%, #b9c3cf 0%, transparent 65%),
+    linear-gradient(175deg, #d9e0e8 0%, #c6d0db 100%);
+}
+html[data-season='rain'][data-theme='dark'] .season-backdrop {
+  background:
+    radial-gradient(1200px 500px at 50% -10%, #1f2a36 0%, transparent 65%),
+    linear-gradient(175deg, #0d1218 0%, #151d27 100%);
+}
+
+html[data-season='rain'] :is(.card, .surface, .bg-surface) {
+  background-image:
+    radial-gradient(
+      circle at 22% 30%,
+      rgba(255, 255, 255, 0.6) 0 1.4px,
+      rgba(110, 135, 165, 0.22) 2.4px,
+      transparent 3.4px
+    ),
+    radial-gradient(
+      circle at 70% 64%,
+      rgba(255, 255, 255, 0.5) 0 1px,
+      rgba(110, 135, 165, 0.2) 2px,
+      transparent 3px
+    ),
+    radial-gradient(
+      circle at 45% 12%,
+      rgba(255, 255, 255, 0.55) 0 1.8px,
+      rgba(110, 135, 165, 0.2) 2.8px,
+      transparent 4px
+    );
+  background-size:
+    92px 108px,
+    134px 150px,
+    176px 190px;
+}
+
+/* Winter and Christmas: snow settled on the top edge of the sidebar and the phone tab bar. */
+html[data-season='winter'] .app-sidebar,
+html[data-season='christmas'] .app-sidebar {
+  position: relative;
+}
+
+html[data-season='winter'] :is(.app-sidebar, .app-tabbar)::before,
+html[data-season='christmas'] :is(.app-sidebar, .app-tabbar)::before {
+  content: '';
+  position: absolute;
+  inset-inline: 10px;
+  top: -6px;
+  height: 12px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 100%, #fff 0 8px, transparent 8.5px) 0 0 / 18px 12px repeat-x,
+    linear-gradient(#fff, #fff) 0 9px / 100% 3px no-repeat;
+  filter: drop-shadow(0 1px 1px rgba(70, 100, 140, 0.3));
+}
+
+/* The light level and reduced motion keep the sky still. */
+.season-backdrop[data-still]::before {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .season-fade-in,
+  .season-backdrop::before,
+  .garland-star {
+    animation: none;
+  }
+  html:root {
+    transition: none;
+  }
+}

@@ -2,7 +2,8 @@
 
 import { addDays } from './zonedDate.js'
 
-export type Season = 'spring' | 'summer' | 'autumn' | 'winter' | 'christmas' | 'tet'
+export type Season =
+  'spring' | 'summer' | 'autumn' | 'winter' | 'christmas' | 'tet' | 'midautumn' | 'rain' // picked by hand only: the rainy months overlap summer and autumn
 export type SeasonSetting = 'off' | 'auto' | Season
 // How much moves: 'auto' is full on a wide screen and light on a phone; off keeps colors and backdrop.
 export type SeasonEffects = 'auto' | 'off' | 'light' | 'full'
@@ -14,6 +15,8 @@ export const SEASONS: readonly Season[] = [
   'winter',
   'christmas',
   'tet',
+  'midautumn',
+  'rain',
 ]
 
 const SEASON_SETTINGS: ReadonlySet<string> = new Set<string>(['off', 'auto', ...SEASONS])
@@ -63,26 +66,51 @@ const TET_DAYS: readonly string[] = [
   '2060-02-02',
 ]
 
+// Ram thang 8 (15th of the 8th lunar month), same algorithm and time zone as TET_DAYS.
+// prettier-ignore
+const MID_AUTUMN_DAYS: readonly string[] = [
+  '2024-09-17', '2025-10-06', '2026-09-25', '2027-09-15', '2028-10-03', '2029-09-22', '2030-09-12',
+  '2031-10-01', '2032-09-19', '2033-09-08', '2034-09-26', '2035-09-16', '2036-10-04', '2037-09-24',
+  '2038-09-13', '2039-10-02', '2040-09-20', '2041-09-09', '2042-09-28', '2043-09-17', '2044-10-05',
+  '2045-09-25', '2046-09-15', '2047-10-04', '2048-09-22', '2049-09-11', '2050-09-30', '2051-09-19',
+  '2052-09-07', '2053-09-26', '2054-09-16', '2055-10-05', '2056-09-24', '2057-09-13', '2058-10-02',
+  '2059-09-21', '2060-09-09',
+]
+
+// The lanterns are out for the week around the full moon.
+const MID_AUTUMN_DAYS_BEFORE = 4
+const MID_AUTUMN_DAYS_AFTER = 2
+
 // Tet decorations go up around 23 thang Chap and come down after mung 10.
 const TET_DAYS_BEFORE = 7
 const TET_DAYS_AFTER = 9
 
+function dayInYear(days: readonly string[], year: number): string | null {
+  return days.find((day) => day.startsWith(`${String(year)}-`)) ?? null
+}
+
 export function tetDate(year: number): string | null {
-  return TET_DAYS.find((day) => day.startsWith(`${String(year)}-`)) ?? null
+  return dayInYear(TET_DAYS, year)
 }
 
-function isTet(date: string): boolean {
-  const tet = tetDate(Number(date.slice(0, 4)))
-  return (
-    tet !== null && date >= addDays(tet, -TET_DAYS_BEFORE) && date <= addDays(tet, TET_DAYS_AFTER)
-  )
+export function midAutumnDate(year: number): string | null {
+  return dayInYear(MID_AUTUMN_DAYS, year)
 }
 
-// "2026-12-24" -> christmas. Northern-hemisphere months; Christmas takes Dec 1-26 out of winter and Tet
-// its two weeks out of winter or spring.
+// True when the date is within [day - before, day + after] of that year's festival day.
+function isAround(day: string | null, date: string, before: number, after: number): boolean {
+  return day !== null && date >= addDays(day, -before) && date <= addDays(day, after)
+}
+
+// "2026-12-24" -> christmas. Northern-hemisphere months; Christmas takes Dec 1-26 out of winter, Tet its
+// two weeks out of winter or spring, Mid-Autumn its week out of autumn (or late summer).
 export function seasonForDate(date: string): Season {
-  if (isTet(date)) {
+  const year = Number(date.slice(0, 4))
+  if (isAround(tetDate(year), date, TET_DAYS_BEFORE, TET_DAYS_AFTER)) {
     return 'tet'
+  }
+  if (isAround(midAutumnDate(year), date, MID_AUTUMN_DAYS_BEFORE, MID_AUTUMN_DAYS_AFTER)) {
+    return 'midautumn'
   }
   const month = Number(date.slice(5, 7))
   const day = Number(date.slice(8, 10))

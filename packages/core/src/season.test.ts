@@ -3,6 +3,8 @@ import {
   activeSeason,
   parseSeasonEffects,
   parseSeasonSetting,
+  midAutumnDate,
+  SEASONS,
   seasonForDate,
   tetDate,
 } from './season.js'
@@ -46,6 +48,33 @@ describe('Tet', () => {
 
   it('a year past the table falls back to the plain seasons', () => {
     expect(seasonForDate('2070-02-01')).toBe('winter')
+  })
+})
+
+describe('Mid-Autumn', () => {
+  it('is the 15th of the 8th lunar month', () => {
+    expect(midAutumnDate(2026)).toBe('2026-09-25')
+    expect(midAutumnDate(2025)).toBe('2025-10-06')
+    expect(midAutumnDate(1999)).toBeNull()
+  })
+
+  it('runs for the week around the full moon, out of autumn', () => {
+    // Mid-Autumn 2026 is Sep 25: Sep 21 .. Sep 27.
+    expect(seasonForDate('2026-09-20')).toBe('autumn')
+    expect(seasonForDate('2026-09-21')).toBe('midautumn')
+    expect(seasonForDate('2026-09-27')).toBe('midautumn')
+    expect(seasonForDate('2026-09-28')).toBe('autumn')
+  })
+})
+
+describe('rain', () => {
+  it('can be picked but the date never chooses it, since it overlaps summer and autumn', () => {
+    expect(SEASONS).toContain('rain')
+    expect(parseSeasonSetting('rain')).toBe('rain')
+    const year = Array.from({ length: 366 }, (_, day) =>
+      seasonForDate(new Date(Date.UTC(2026, 0, 1 + day)).toISOString().slice(0, 10)),
+    )
+    expect(year).not.toContain('rain')
   })
 })
 
