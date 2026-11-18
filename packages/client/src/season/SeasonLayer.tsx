@@ -186,10 +186,12 @@ function Garland({
         <div key={edge} className="garland-edge" data-edge={edge}>
           {Array.from({ length: count }, (_, index) => {
             const color = itemColor(season, index + edgeIndex)
+            // Only the middle of each swag moves: every animated ornament costs a style pass each frame.
+            const lively = index % SWAG_ITEMS === 1
             return (
               <span
                 key={index}
-                className={GARLAND_ITEM[season]}
+                className={`${GARLAND_ITEM[season]}${lively ? ' is-lively' : ''}`}
                 style={{
                   left: `${String(index * GARLAND_GAP_PX + GARLAND_GAP_PX / 2)}px`,
                   top: `${String(itemTop(edge, index))}px`,

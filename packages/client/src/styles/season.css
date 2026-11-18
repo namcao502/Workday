@@ -353,7 +353,8 @@ html[data-season='tet'][data-theme='dark'] .season-backdrop {
   background: #f5c542;
 }
 
-.season-garland.is-still .garland-edge > * {
+.season-garland.is-still .garland-edge > *,
+.garland-edge > :not(.is-lively) {
   animation: none;
 }
 

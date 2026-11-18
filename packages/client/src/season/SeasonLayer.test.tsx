@@ -40,6 +40,10 @@ it('the garland drapes along the top and drops a short way down both sides; rain
   const [first, middle, third] = top.map((item) => Number.parseFloat(item.style.top))
   expect(middle).toBeGreaterThan(first ?? 0)
   expect(third).toBe(first)
+  // Only the middle ornament of each swag twinkles or swings: each moving one costs a style pass a frame.
+  const lively = garland.querySelectorAll('[data-edge="top"] .is-lively')
+  expect(lively.length).toBe(Math.floor(top.length / 3))
+  expect(top[1]).toHaveClass('is-lively')
   // The sides are short drops, not full-height strings.
   const side = garland.querySelectorAll('[data-edge="left"] .garland-bulb')
   expect(side.length).toBeLessThan(top.length / 4)
