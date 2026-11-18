@@ -24,17 +24,25 @@ it('draws the backdrop behind the panes and the particles over them, taking no c
   expect(canvas.parentElement).toHaveClass('z-20', 'pointer-events-none')
 })
 
-it('the garland frames all four edges, each season with its own ornament; rain hangs none', () => {
+it('the garland drapes along the top and drops a short way down both sides; rain hangs none', () => {
   stubMatchMedia(false)
   const { rerender } = render(<SeasonLayer season="christmas" level="full" dark={false} />)
   const garland = screen.getByTestId('season-garland')
   const edges = [...garland.querySelectorAll('.garland-edge')].map((edge) =>
     edge.getAttribute('data-edge'),
   )
-  expect(edges).toEqual(['top', 'right', 'bottom', 'left'])
+  expect(edges).toEqual(['top', 'right', 'left'])
   for (const edge of garland.querySelectorAll('.garland-edge')) {
     expect(edge.querySelector('.garland-bulb')).not.toBeNull()
   }
+  // The top string sags between hooks: the middle ornament of a swag hangs lower than its neighbours.
+  const top = [...garland.querySelectorAll<HTMLElement>('[data-edge="top"] .garland-bulb')]
+  const [first, middle, third] = top.map((item) => Number.parseFloat(item.style.top))
+  expect(middle).toBeGreaterThan(first ?? 0)
+  expect(third).toBe(first)
+  // The sides are short drops, not full-height strings.
+  const side = garland.querySelectorAll('[data-edge="left"] .garland-bulb')
+  expect(side.length).toBeLessThan(top.length / 4)
   const ornaments: readonly (readonly [Season, string])[] = [
     ['winter', 'garland-flake'],
     ['spring', 'garland-flower'],

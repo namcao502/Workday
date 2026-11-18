@@ -135,21 +135,39 @@ const GARLAND_COLORS: Readonly<Partial<Record<GarlandSeason, readonly string[]>>
   autumn: ['#d6602a', '#e8963a', '#9c4a26', '#c9a227'],
 }
 
-const GARLAND_EDGES = ['top', 'right', 'bottom', 'left'] as const
+// The top string runs the full width; each side only drops a short way (it fades out in CSS).
+const GARLAND_EDGES = [
+  { edge: 'top', count: 70 }, // long enough for a 2400px window; the frame clips the rest
+  { edge: 'right', count: 8 },
+  { edge: 'left', count: 8 },
+] as const
 const GARLAND_GAP_PX = 34
-const GARLAND_COUNT = 70 // long enough for a 2400px edge; the frame clips the rest
+// The top wire sags between hooks three ornaments apart; season.css draws the same curve.
+const SWAG_ITEMS = 3
+const WIRE_TOP_PX = 4
+const SWAG_SAG_PX = 12
 
 function itemColor(season: GarlandSeason, index: number): string | undefined {
   const colors = GARLAND_COLORS[season]
   return colors === undefined ? undefined : colors[index % colors.length]
 }
 
+// Where an ornament hooks onto the wire: on the sagging top string, lower toward the middle of a swag.
+function itemTop(edge: string, index: number): number {
+  if (edge !== 'top') {
+    return WIRE_TOP_PX + 1
+  }
+  const along = ((index % SWAG_ITEMS) + 0.5) / SWAG_ITEMS
+  return WIRE_TOP_PX + 1 + Math.round(4 * SWAG_SAG_PX * along * (1 - along))
+}
+
 function hasGarland(season: Season): season is GarlandSeason {
   return season !== 'rain'
 }
 
-// A string along each of the four edges, its ornaments hanging inward: Christmas bulbs, Tet lanterns, star
-// lanterns, snowflakes, blossoms, bunting or leaves. It takes no click; on the light level nothing swings.
+// A string draped along the top with a short drop down each side, its ornaments hanging inward: Christmas
+// bulbs, Tet lanterns, star lanterns, snowflakes, blossoms, bunting or leaves. It takes no click; on the light
+// level nothing swings.
 function Garland({
   season,
   still,
@@ -164,9 +182,9 @@ function Garland({
       data-garland={season}
       data-testid="season-garland"
     >
-      {GARLAND_EDGES.map((edge, edgeIndex) => (
+      {GARLAND_EDGES.map(({ edge, count }, edgeIndex) => (
         <div key={edge} className="garland-edge" data-edge={edge}>
-          {Array.from({ length: GARLAND_COUNT }, (_, index) => {
+          {Array.from({ length: count }, (_, index) => {
             const color = itemColor(season, index + edgeIndex)
             return (
               <span
@@ -174,6 +192,7 @@ function Garland({
                 className={GARLAND_ITEM[season]}
                 style={{
                   left: `${String(index * GARLAND_GAP_PX + GARLAND_GAP_PX / 2)}px`,
+                  top: `${String(itemTop(edge, index))}px`,
                   animationDelay: `${String(((index + edgeIndex * 3) % 7) * 0.37)}s`,
                   ...(color === undefined ? {} : { color }),
                 }}
