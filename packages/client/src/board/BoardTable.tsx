@@ -55,6 +55,8 @@ export function BoardTable({
 }: BoardListProps): React.JSX.Element {
   const th = 'px-3 py-2 text-left text-xs font-normal text-muted'
   const td = 'px-3 py-2'
+  // A column of its own so the PR buttons line up; left out when no row has one.
+  const hasPrs = rows.some((row) => prsOf(work, view, row.ticket.key).length !== 0)
   return (
     <Card className="animate-fade-in overflow-hidden p-0">
       <table className="w-full text-sm">
@@ -62,6 +64,7 @@ export function BoardTable({
           <tr>
             <th className={th}>{t('Key', 'Mã')}</th>
             <th className={th}>{t('Summary', 'Tóm tắt')}</th>
+            {hasPrs ? <th className={th}>PR</th> : null}
             <th className={th}>{t('Status', 'Trạng thái')}</th>
             <th className={th}>{t('Due', 'Hạn')}</th>
             <th className={th}>{t('ETA', 'ETA')}</th>
@@ -79,18 +82,19 @@ export function BoardTable({
               </td>
               {/* max-w-0 lets the cell shrink, so a long summary cuts to one line instead of growing the row. */}
               <td className={`${td} w-full max-w-0`}>
-                <div className="flex items-center">
-                  <span className="min-w-0 truncate" title={row.ticket.summary}>
-                    {row.ticket.summary}
-                  </span>
-                  <span className="shrink-0">
-                    <PrPills
-                      prs={prsOf(work, view, row.ticket.key)}
-                      repoLabels={work?.repoLabels ?? {}}
-                    />
-                  </span>
+                <div className="truncate" title={row.ticket.summary}>
+                  {row.ticket.summary}
                 </div>
               </td>
+              {hasPrs ? (
+                <td className={`${td} whitespace-nowrap`}>
+                  <PrPills
+                    prs={prsOf(work, view, row.ticket.key)}
+                    repoLabels={work?.repoLabels ?? {}}
+                    className=""
+                  />
+                </td>
+              ) : null}
               <td className={`${td} whitespace-nowrap`}>
                 {row.ticket.status === null ? null : (
                   <StatusText

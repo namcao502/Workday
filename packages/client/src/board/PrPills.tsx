@@ -42,6 +42,7 @@ function prState(pr: TicketPr['pr']): PrState {
 interface PrPillsProps {
   readonly prs: readonly TicketPr[]
   readonly repoLabels: Readonly<Record<string, string>>
+  readonly className?: string // the gap after the text it follows; none in a column of its own
 }
 
 // The worst state first: a blocker, then work to do, then waiting, then approved, and merged last.
@@ -65,7 +66,11 @@ function worstState(prs: readonly TicketPr[]): PrState | undefined {
 
 // One button for all of a ticket's PRs: its dot is the worst state; a click lists each PR (repo, branch, state)
 // with a link that opens it in a new tab.
-export function PrPills({ prs, repoLabels }: PrPillsProps): React.JSX.Element | null {
+export function PrPills({
+  prs,
+  repoLabels,
+  className = 'ml-2',
+}: PrPillsProps): React.JSX.Element | null {
   if (prs.length === 0) {
     return null
   }
@@ -76,7 +81,7 @@ export function PrPills({ prs, repoLabels }: PrPillsProps): React.JSX.Element | 
       <Button
         size="sm"
         variant="secondary"
-        className="ml-2 align-middle"
+        className={`${className} align-middle`.trim()}
         aria-label={worst === undefined ? label : `${label}: ${worst.word}`}
       >
         {/* The Button drops a title prop, so the hover text sits on its content. */}
