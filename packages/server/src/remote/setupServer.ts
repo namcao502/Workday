@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
-import { isInRanges, type WorkdayConfig } from '@workday/core'
+import { coreText, isInRanges, type CoreTextKey, type WorkdayConfig } from '@workday/core'
 import type { LanTls } from './lanCertificates.js'
 
 const CSP = "default-src 'none'; style-src 'unsafe-inline'"
@@ -13,43 +13,13 @@ export interface SetupServerOptions {
   readonly language: () => WorkdayConfig['language']
 }
 
-interface PageText {
-  readonly title: string
-  readonly intro: string
-  readonly download: string
-  readonly fingerprint: string
-  readonly steps: readonly string[]
-  readonly addressLabel: string
-}
-
-const PAGE_TEXT: Readonly<Record<WorkdayConfig['language'], PageText>> = {
-  en: {
-    title: 'Workday on this iPhone',
-    intro: 'Install the certificate once so Safari trusts Workday on this network.',
-    download: 'Download the profile',
-    fingerprint: 'SHA-256 fingerprint',
-    addressLabel: 'Workday address',
-    steps: [
-      'Tap "Download the profile" and allow it.',
-      'Settings > General > VPN & Device Management > install the profile.',
-      'Settings > General > About > Certificate Trust Settings > turn on Workday Remote CA.',
-      'Open the Workday address below.',
-    ],
-  },
-  vi: {
-    title: 'Workday trên iPhone này',
-    intro: 'Cài chứng nhận một lần để Safari tin cậy Workday trong mạng này.',
-    download: 'Tải hồ sơ',
-    fingerprint: 'Dấu vân tay SHA-256',
-    addressLabel: 'Địa chỉ Workday',
-    steps: [
-      'Chạm "Tải hồ sơ" và cho phép.',
-      'Cài đặt > Cài đặt chung > VPN & Quản lý thiết bị > cài đặt hồ sơ.',
-      'Cài đặt > Cài đặt chung > Giới thiệu > Cài đặt tin cậy chứng nhận > bật Workday Remote CA.',
-      'Mở địa chỉ Workday bên dưới.',
-    ],
-  },
-}
+// The setup page's steps, in order; the text of each language is in core's i18n files.
+const STEP_KEYS: readonly CoreTextKey[] = [
+  'setup.stepDownload',
+  'setup.stepInstall',
+  'setup.stepTrust',
+  'setup.stepOpen',
+]
 
 function escapeHtml(value: string): string {
   return value
@@ -65,18 +35,18 @@ function renderPage(
   httpsUrl: string,
   fingerprint: string,
 ): string {
-  const text = PAGE_TEXT[language]
-  const steps = text.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')
+  const say = (key: CoreTextKey): string => escapeHtml(coreText(language, key))
+  const steps = STEP_KEYS.map((key) => `<li>${say(key)}</li>`).join('')
   const url = escapeHtml(httpsUrl)
   return (
     `<!doctype html><html lang="${language}"><head><meta charset="utf-8">` +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-    `<title>${escapeHtml(text.title)}</title>` +
+    `<title>${say('setup.title')}</title>` +
     '<style>body{font:16px system-ui;margin:1.5rem;line-height:1.5}code{word-break:break-all}</style>' +
-    `</head><body><h1>${escapeHtml(text.title)}</h1><p>${escapeHtml(text.intro)}</p>` +
-    `<p><a href="/ca.cer">${escapeHtml(text.download)}</a></p><ol>${steps}</ol>` +
-    `<p>${escapeHtml(text.addressLabel)}: <a href="${url}">${url}</a></p>` +
-    `<p>${escapeHtml(text.fingerprint)}:<br><code>${escapeHtml(fingerprint)}</code></p>` +
+    `</head><body><h1>${say('setup.title')}</h1><p>${say('setup.intro')}</p>` +
+    `<p><a href="/ca.cer">${say('setup.download')}</a></p><ol>${steps}</ol>` +
+    `<p>${say('setup.addressLabel')}: <a href="${url}">${url}</a></p>` +
+    `<p>${say('setup.fingerprint')}:<br><code>${escapeHtml(fingerprint)}</code></p>` +
     '</body></html>'
   )
 }

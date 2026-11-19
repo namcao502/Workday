@@ -1,5 +1,22 @@
-// English text of core (notices shared by the bell, desktop and phone). vi.ts holds the same keys; {name} is a param.
+// English text of core and the server (notices, phone pushes, the iPhone setup page). vi.ts holds the same keys; {name} is a param.
 export const en = {
+  push: {
+    logReminder: 'Nothing is queued for today - log your work before you leave.',
+    logDrained: 'Auto-log: {logged} logged, {kept} kept for retry.',
+    test: 'Notifications are working on this device.',
+  },
+  setup: {
+    title: 'Workday on this iPhone',
+    intro: 'Install the certificate once so Safari trusts Workday on this network.',
+    download: 'Download the profile',
+    fingerprint: 'SHA-256 fingerprint',
+    addressLabel: 'Workday address',
+    stepDownload: 'Tap "Download the profile" and allow it.',
+    stepInstall: 'Settings > General > VPN & Device Management > install the profile.',
+    stepTrust:
+      'Settings > General > About > Certificate Trust Settings > turn on Workday Remote CA.',
+    stepOpen: 'Open the Workday address below.',
+  },
   notices: {
     claudeFinished: 'Claude is done - your turn.',
     claudePermission: 'Claude needs your permission.',

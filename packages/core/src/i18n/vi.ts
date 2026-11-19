@@ -2,6 +2,23 @@ import type { CoreMessages } from './text.js'
 
 // Vietnamese text of core: the same keys as en.ts.
 export const vi: CoreMessages = {
+  push: {
+    logReminder: 'Hôm nay chưa có gì trong hàng đợi - hãy log công việc trước khi ra về.',
+    logDrained: 'Tự log: đã log {logged}, giữ lại {kept} để thử lại.',
+    test: 'Thông báo đã hoạt động trên thiết bị này.',
+  },
+  setup: {
+    title: 'Workday trên iPhone này',
+    intro: 'Cài chứng nhận một lần để Safari tin cậy Workday trong mạng này.',
+    download: 'Tải hồ sơ',
+    fingerprint: 'Dấu vân tay SHA-256',
+    addressLabel: 'Địa chỉ Workday',
+    stepDownload: 'Chạm "Tải hồ sơ" và cho phép.',
+    stepInstall: 'Cài đặt > Cài đặt chung > VPN & Quản lý thiết bị > cài đặt hồ sơ.',
+    stepTrust:
+      'Cài đặt > Cài đặt chung > Giới thiệu > Cài đặt tin cậy chứng nhận > bật Workday Remote CA.',
+    stepOpen: 'Mở địa chỉ Workday bên dưới.',
+  },
   notices: {
     claudeFinished: 'Claude đã xong - đến lượt bạn.',
     claudePermission: 'Claude cần bạn cho phép.',
