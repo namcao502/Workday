@@ -170,7 +170,9 @@ export function ThemedTooltips(): React.JSX.Element | null {
   return createPortal(
     <div
       ref={tipRef}
-      role="tooltip"
+      // A picture of the element's own description, so no tooltip role: Edge on Windows reports each tooltip
+      // opening and closing to the system, which in the installed app went with raising Edge's other windows.
+      aria-hidden="true"
       className="themed-tooltip pointer-events-none fixed z-[100] max-w-xs whitespace-pre-line"
       style={{
         left: position?.left ?? 0,

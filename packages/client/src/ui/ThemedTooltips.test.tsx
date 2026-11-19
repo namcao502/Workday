@@ -17,6 +17,15 @@ describe('tipPosition', () => {
   })
 })
 
+// The floating tip is only a picture of the text: the element carries it for assistive tech.
+function shownTip(): Element {
+  const tip = document.querySelector('.themed-tooltip')
+  if (tip === null) {
+    throw new Error('no tip shown')
+  }
+  return tip
+}
+
 describe('ThemedTooltips', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -43,7 +52,11 @@ describe('ThemedTooltips', () => {
     )
     const button = screen.getByRole('button', { name: 'Copy' })
     hover(button)
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Copy the key')
+    expect(shownTip()).toHaveTextContent('Copy the key')
+    // No tooltip role: on Windows, Edge reports each one opening and closing to the system, and in the
+    // installed app that went with Edge raising its other windows.
+    expect(shownTip()).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.queryByRole('tooltip')).toBeNull()
     // The browser tip is gone; the text stays with the element.
     expect(button).not.toHaveAttribute('title')
     expect(button).toHaveAttribute('data-tip', 'Copy the key')
@@ -100,12 +113,12 @@ describe('ThemedTooltips', () => {
     )
     const badge = screen.getByText('badge')
     hover(badge)
-    expect(screen.getByRole('tooltip')).toHaveClass('whitespace-pre-line')
+    expect(shownTip()).toHaveClass('whitespace-pre-line')
     fireEvent.pointerOut(badge, { relatedTarget: screen.getByText('elsewhere') })
-    expect(screen.queryByRole('tooltip')).toBeNull()
+    expect(document.querySelector('.themed-tooltip')).toBeNull()
     hover(badge)
     fireEvent.pointerDown(badge)
-    expect(screen.queryByRole('tooltip')).toBeNull()
+    expect(document.querySelector('.themed-tooltip')).toBeNull()
   })
 
   it('a quick pass over an element shows nothing', () => {
@@ -122,6 +135,6 @@ describe('ThemedTooltips', () => {
     act(() => {
       vi.advanceTimersByTime(600)
     })
-    expect(screen.queryByRole('tooltip')).toBeNull()
+    expect(document.querySelector('.themed-tooltip')).toBeNull()
   })
 })
