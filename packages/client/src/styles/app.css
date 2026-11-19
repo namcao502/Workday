@@ -361,32 +361,6 @@ body {
   }
 }
 
-/* ThemedTooltips: the HeroUI tooltip look (overlay color, shadow, radius) for every title in the app. */
-.themed-tooltip {
-  padding: 6px 9px;
-  border-radius: min(12px, var(--radius-xl));
-  background: var(--overlay);
-  color: var(--overlay-foreground);
-  box-shadow: var(--overlay-shadow);
-  font-size: 0.75rem;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-  animation: themed-tooltip-in 120ms ease-out;
-}
-
-@keyframes themed-tooltip-in {
-  from {
-    opacity: 0;
-    transform: translateY(-2px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .themed-tooltip {
-    animation: none;
-  }
-}
-
 /* Installed app with its title bar hidden: the top bar drags the window, its controls still click,
    and the right edge leaves room for the minimize / maximize / close buttons. */
 @media (display-mode: window-controls-overlay) {
