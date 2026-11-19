@@ -21,10 +21,7 @@ export function PageHeading({ title, actions }: PageHeadingProps): React.JSX.Ele
   const slot = useContext(HeaderSlotContext)
   const heading = (
     <>
-      <h1 className="truncate text-2xl font-semibold tracking-tight">
-        {/* season-title: a season tints the title and hangs its ornament after it (season.css). */}
-        <span className="season-title">{title}</span>
-      </h1>
+      <h1 className="truncate text-2xl font-semibold tracking-tight">{title}</h1>
       {actions}
     </>
   )

@@ -157,15 +157,6 @@ it('the selected sidebar item has aria-current and an accent background', () => 
   expect(item).toHaveClass('bg-accent-soft')
 })
 
-it('the page title carries the season decoration, the sidebar labels do not', () => {
-  stubMatchMedia(false)
-  stubFetch(() => jsonResponse({}, 500))
-  renderWithQuery(<Shell page="timesheet" />)
-  const sidebar = screen.getByRole('navigation', { name: 'Pages' })
-  expect(sidebar.querySelector('.nav-label, .season-title')).toBeNull()
-  expect(screen.getByRole('heading', { level: 1 }).querySelector('.season-title')).not.toBeNull()
-})
-
 it('the badge text caps at 99+', () => {
   expect(badgeText(7)).toBe('7')
   expect(badgeText(99)).toBe('99')
