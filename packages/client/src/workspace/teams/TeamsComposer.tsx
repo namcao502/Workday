@@ -21,6 +21,7 @@ import {
   draftFromEditor,
   insertChip,
   insertImage,
+  insertLineBreak,
   insertPlainText,
   makeChip,
   matchPeople,
@@ -298,6 +299,10 @@ export function TeamsComposer({
       if (sends) {
         event.preventDefault()
         void submit()
+      } else if (event.shiftKey && editorRef.current !== null) {
+        event.preventDefault()
+        insertLineBreak(editorRef.current)
+        onChange?.()
       }
     }
   }

@@ -262,3 +262,24 @@ it('Ctrl+click on a link in the text opens it; a plain click only places the car
   expect(opened).toHaveBeenCalledWith('https://dev.azure.com/pr/1', '_blank', 'noopener,noreferrer')
   vi.unstubAllGlobals()
 })
+
+it('Shift+Enter puts a real line break in the draft, so Teams shows the next line on its own', () => {
+  const editor = renderComposer('reply', vi.fn<TeamsComposerProps['onSend']>())
+  type(editor, 'Text before')
+  // The browser's own break in this pre-wrap box is a "\n", which HTML (and so Teams) reads as a space.
+  const notPrevented = fireEvent.keyDown(editor, { key: 'Enter', shiftKey: true })
+  expect(notPrevented).toBe(false)
+  expect(editor.innerHTML).toBe('Text before<br><br>')
+  // Typing goes on the new line: between the break and the one that holds that line open.
+  const selection = window.getSelection()
+  expect(selection?.anchorNode).toBe(editor)
+  expect(selection?.anchorOffset).toBe(2)
+})
+
+it('Shift+Enter in the middle of the text adds a single break', () => {
+  const editor = renderComposer('post', vi.fn<TeamsComposerProps['onSend']>())
+  type(editor, 'ab')
+  window.getSelection()?.collapse(editor.firstChild, 1)
+  fireEvent.keyDown(editor, { key: 'Enter', shiftKey: true })
+  expect(editor.innerHTML).toBe('a<br>b')
+})

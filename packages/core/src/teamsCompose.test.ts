@@ -239,6 +239,14 @@ describe('buildBody images', () => {
     height: 500,
   }
 
+  it('keeps the composer breaks around an image, so it sits on a line of its own', () => {
+    const body = buildBody(
+      { html: 'Text before<br><img data-image="0"><br>Text after', mentions: [], images: [image] },
+      ['0-x-1'],
+    )
+    expect(body?.html).toMatch(/^Text before<br><img [^>]+><br>Text after$/)
+  })
+
   it('writes an AMS image for a marker, scaled to 1000 px, and lists its object id', () => {
     const body = buildBody(
       { html: '<p>see</p><img data-image="0">', mentions: [], images: [image] },

@@ -90,6 +90,34 @@ export function insertPlainText(editor: HTMLElement, text: string): void {
   }
 }
 
+// Nothing but empty text follows the node in its parent.
+function endsItsBlock(node: Node): boolean {
+  for (let next = node.nextSibling; next !== null; next = next.nextSibling) {
+    if (next.nodeType !== Node.TEXT_NODE || next.textContent !== '') {
+      return false
+    }
+  }
+  return true
+}
+
+// Shift+Enter: a real <br>. The browser's own break in this pre-wrap box is a newline character that HTML,
+// and so Teams, reads as a space, which put a picture on the same line as the text before it.
+export function insertLineBreak(editor: HTMLElement): void {
+  const range = currentRange(editor) ?? document.createRange()
+  if (!editor.contains(range.commonAncestorContainer)) {
+    range.selectNodeContents(editor)
+    range.collapse(false)
+  }
+  range.deleteContents()
+  const lineBreak = document.createElement('br')
+  range.insertNode(lineBreak)
+  // A break that ends its block shows no new line until a second one holds that line open.
+  if (endsItsBlock(lineBreak)) {
+    lineBreak.after(document.createElement('br'))
+  }
+  placeCaretAfter(lineBreak)
+}
+
 // An "@" at the start of a word right before the caret, with what was typed after it.
 export function mentionTrigger(editor: HTMLElement): MentionTrigger | null {
   const range = currentRange(editor)
