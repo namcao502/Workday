@@ -175,7 +175,32 @@ describe('PushService', () => {
     })
   })
 
-  it('a local push goes only to subscriptions of the running origin, else to all of them', async () => {
+  it('a local push links to the origin that subscribed, so its worker focuses the window it has', async () => {
+    const { dataDir, store } = setup()
+    const sent: Sent[] = []
+    const push = new PushService({
+      dataDir,
+      store,
+      origin: () => null,
+      localOrigin: 'http://127.0.0.1:4870',
+      send: (target, payload, vapid) => {
+        sent.push({ endpoint: target.endpoint, payload, vapid })
+        return Promise.resolve({ statusCode: 201 })
+      },
+    })
+    // The installed app runs on localhost: a 127.0.0.1 link would be another origin to its worker.
+    await push.local.add(subscription('https://push/app'), 'http://localhost:4870')
+
+    await push.sendToLocal({ ...MESSAGE, url: '/#/tickets' })
+    await push.sendToLocal({ ...MESSAGE, url: 'https://jira.example/browse/MDP-1' })
+
+    expect(sent.map((item) => (JSON.parse(item.payload) as { url: string }).url)).toEqual([
+      'http://localhost:4870/#/tickets',
+      'https://jira.example/browse/MDP-1',
+    ])
+  })
+
+  it('a local push goes to the newest subscription of the running app, else to all of them', async () => {
     const { dataDir, store } = setup()
     const sent: Sent[] = []
     const push = new PushService({
@@ -192,8 +217,15 @@ describe('PushService', () => {
     await push.sendToLocal(MESSAGE)
     await push.local.add(subscription('https://push/start'), 'http://127.0.0.1:4870')
     await push.sendToLocal(MESSAGE)
+    // One notice, one window: the page that subscribed last (the installed app) takes it alone.
+    await push.local.add(subscription('https://push/app'), 'http://localhost:4870')
+    await push.sendToLocal(MESSAGE)
 
-    expect(sent.map((item) => item.endpoint)).toEqual(['https://push/dev', 'https://push/start'])
+    expect(sent.map((item) => item.endpoint)).toEqual([
+      'https://push/dev',
+      'https://push/start',
+      'https://push/app',
+    ])
   })
 
   it('a local subscription stays on another error and sendToLocal never rejects', async () => {

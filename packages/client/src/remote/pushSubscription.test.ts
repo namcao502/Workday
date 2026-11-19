@@ -15,3 +15,13 @@ it('leaves it alone when push is off, already here, or not allowed on this origi
   expect(shouldAdoptLocalPush([START], 'http://localhost:4870', 'granted')).toBe(false)
   expect(shouldAdoptLocalPush([DEV], START, 'default')).toBe(false)
 })
+
+it('the installed app takes push over unless it holds the newest subscription itself', () => {
+  const APP = 'http://localhost:4870'
+  // 127.0.0.1 is another origin to the browser: its worker cannot focus the app's window.
+  expect(shouldAdoptLocalPush([START], APP, 'granted', true)).toBe(true)
+  expect(shouldAdoptLocalPush([APP, START], APP, 'granted', true)).toBe(true)
+  expect(shouldAdoptLocalPush([START, APP], APP, 'granted', true)).toBe(false)
+  expect(shouldAdoptLocalPush([], APP, 'granted', true)).toBe(false)
+  expect(shouldAdoptLocalPush([START], APP, 'default', true)).toBe(false)
+})

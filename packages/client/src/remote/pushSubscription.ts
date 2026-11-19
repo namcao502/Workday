@@ -102,17 +102,28 @@ function sameMachine(origin: string): string {
 }
 
 // Push is on for another origin (dev vs start); a click there opens a new tab instead of focusing this one.
+// The installed app takes it over unless it holds the newest subscription (origins come oldest first): the
+// server pushes only to that one, and only its own origin's worker can focus the app's window.
 export function shouldAdoptLocalPush(
   origins: readonly string[],
   here: string,
   permission: NotificationPermission,
+  installed = false,
 ): boolean {
+  if (permission !== 'granted' || origins.length === 0) {
+    return false
+  }
+  if (installed) {
+    return origins.at(-1) !== here
+  }
   const mine = sameMachine(here)
-  return (
-    permission === 'granted' &&
-    origins.length !== 0 &&
-    !origins.some((origin) => sameMachine(origin) === mine)
-  )
+  return !origins.some((origin) => sameMachine(origin) === mine)
+}
+
+// Running as the installed app (its own window), not in a browser tab.
+function runningInstalled(): boolean {
+  return window.matchMedia('(display-mode: standalone), (display-mode: window-controls-overlay)')
+    .matches
 }
 
 // Moves desktop push to this page's origin, silently: only when the browser already allows notices here.
@@ -121,7 +132,14 @@ export async function adoptLocalPush(): Promise<void> {
     return
   }
   const origins = await getLocalPushOrigins()
-  if (shouldAdoptLocalPush(origins, window.location.origin, Notification.permission)) {
+  if (
+    shouldAdoptLocalPush(
+      origins,
+      window.location.origin,
+      Notification.permission,
+      runningInstalled(),
+    )
+  ) {
     await subscribeLocalPush()
   }
 }

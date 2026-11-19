@@ -71,7 +71,7 @@ function parseRemoteFile(raw: unknown): { readonly key: string | null } | null {
   return { key: typeof key === 'string' && key !== '' ? key : null }
 }
 
-// localhost and 127.0.0.1 are the same page origin for this purpose.
+// localhost and 127.0.0.1 reach the same running app (to a browser they are still two origins).
 function sameMachine(origin: string): string {
   return origin.replace('://localhost:', '://127.0.0.1:')
 }
@@ -140,10 +140,11 @@ export class PushService {
       if (vapid === null) {
         return
       }
-      const { localOrigin } = this.deps
-      const url = localOrigin === undefined ? message.url : `${localOrigin}${message.url}`
-      const payload = JSON.stringify({ ...message, url })
       for (const entry of this.localTargets()) {
+        const payload = JSON.stringify({
+          ...message,
+          url: this.localUrl(message.url, entry.origin),
+        })
         await this.deliverLocal({ endpoint: entry.endpoint, keys: entry.keys }, payload, vapid)
       }
     } catch (error: unknown) {
@@ -199,14 +200,22 @@ export class PushService {
     return false
   }
 
-  // The running origin's subscriptions, whose worker can focus the open tab; without one, every subscription.
+  // The newest subscription of the running app (localhost or 127.0.0.1), so one notice reaches one window;
+  // without any, every subscription.
   private localTargets(): readonly LocalPushEntry[] {
     const all = this.local.list()
     const running = this.deps.localOrigin === undefined ? null : sameMachine(this.deps.localOrigin)
     const own = all.filter(
       (entry) => entry.origin !== null && sameMachine(entry.origin) === running,
     )
-    return own.length === 0 ? all : own
+    return own.length === 0 ? all : own.slice(-1)
+  }
+
+  // An app path gets the origin that subscribed: its worker only focuses windows of its own origin, and
+  // localhost and 127.0.0.1 are two origins to a browser. A full URL (Jira, a PR) stays as it is.
+  private localUrl(url: string, origin: string | null): string {
+    const base = origin ?? this.deps.localOrigin
+    return base === undefined || !url.startsWith('/') ? url : `${base}${url}`
   }
 
   private async deliverLocal(
