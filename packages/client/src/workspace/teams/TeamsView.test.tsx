@@ -159,3 +159,20 @@ it('opening a pending conversation marks it seen', async () => {
     expect(posts(fetchMock)).toContain('/api/teams/MDP-1/seen')
   })
 })
+
+it('Ctrl+F with a word selected in the thread opens the find bar with it', async () => {
+  stubFetch(() => jsonResponse(thread([message({ content: 'deploy is blocked on review' })])))
+  renderView()
+  const body = await screen.findByText('deploy is blocked on review')
+  const text = body.firstChild
+  if (text === null) {
+    throw new Error('no text node')
+  }
+  const range = document.createRange()
+  range.setStart(text, 10)
+  range.setEnd(text, 17)
+  window.getSelection()?.removeAllRanges()
+  window.getSelection()?.addRange(range)
+  fireEvent.keyDown(window, { key: 'f', ctrlKey: true })
+  expect(screen.getByRole('textbox', { name: 'Find in this file' })).toHaveValue('blocked')
+})

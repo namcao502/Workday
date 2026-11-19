@@ -70,17 +70,48 @@ function clearPaint(): void {
 }
 
 function isEditable(target: EventTarget | null): boolean {
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    // The attribute too: jsdom has no isContentEditable.
+    (target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target.closest('[contenteditable]:not([contenteditable="false"])') !== null))
+  )
+}
+
+interface Picked {
+  readonly text: string
+  readonly range: Range
+}
+
+// The text selected inside the pane, as a search: one line only, as an editor's find takes it.
+function selectedIn(root: HTMLElement | null): Picked | null {
+  const selection = window.getSelection()
+  if (root === null || selection === null || selection.rangeCount === 0 || selection.isCollapsed) {
+    return null
+  }
+  const range = selection.getRangeAt(0)
+  if (!root.contains(range.commonAncestorContainer)) {
+    return null
+  }
+  const text = selection.toString().trim()
+  return text === '' || text.includes('\n') ? null : { text, range: range.cloneRange() }
 }
 
 interface FindablePaneProps {
   readonly children: React.ReactNode
   readonly overview?: readonly OverviewMark[] | undefined
+  readonly scrolls?: boolean // false when the content scrolls itself (the Teams thread keeps its newest message in view)
 }
 
 // A scrolling pane (a file or a diff) with Ctrl+A selecting only its text and Ctrl+F opening a find bar:
 // every match highlighted, Enter / Shift+Enter step through them, Esc closes.
-export function FindablePane({ children, overview = [] }: FindablePaneProps): React.JSX.Element {
+export function FindablePane({
+  children,
+  overview = [],
+  scrolls = true,
+}: FindablePaneProps): React.JSX.Element {
   const outer = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -90,6 +121,7 @@ export function FindablePane({ children, overview = [] }: FindablePaneProps): Re
   const [count, setCount] = useState(0)
   const [version, setVersion] = useState(0)
   const ranges = useRef<readonly Range[]>([])
+  const startAt = useRef<Range | null>(null) // a search taken from a selection starts at that match
 
   // Search again whenever the query or the shown text changes.
   useEffect(() => {
@@ -102,7 +134,16 @@ export function FindablePane({ children, overview = [] }: FindablePaneProps): Re
     }
     ranges.current = collectRanges(root, query)
     setCount(ranges.current.length)
-    setCurrent((index) => Math.min(index, Math.max(ranges.current.length - 1, 0)))
+    const from = startAt.current
+    startAt.current = null
+    if (from === null) {
+      setCurrent((index) => Math.min(index, Math.max(ranges.current.length - 1, 0)))
+    } else {
+      const at = ranges.current.findIndex(
+        (range) => range.compareBoundaryPoints(Range.START_TO_START, from) >= 0,
+      )
+      setCurrent(Math.max(at, 0))
+    }
     return clearPaint
   }, [open, query, version])
 
@@ -138,12 +179,20 @@ export function FindablePane({ children, overview = [] }: FindablePaneProps): Re
   useEffect(() => {
     const scope = outer.current?.closest('[data-testid="workspace-left"]') ?? outer.current ?? null
     function handleKey(event: KeyboardEvent): void {
-      if (scope === null || !scope.contains(document.activeElement)) {
+      const key = event.key.toLowerCase()
+      const find = (event.ctrlKey || event.metaKey) && key === 'f'
+      // Text selected in the pane counts too: a mouse selection can leave focus outside it.
+      const picked = find ? selectedIn(content.current) : null
+      if (scope === null || (!scope.contains(document.activeElement) && picked === null)) {
         return
       }
-      const key = event.key.toLowerCase()
-      if ((event.ctrlKey || event.metaKey) && key === 'f') {
+      if (find) {
         event.preventDefault()
+        if (picked !== null) {
+          startAt.current = picked.range
+          setQuery(picked.text)
+          setVersion((value) => value + 1)
+        }
         setOpen(true)
         input.current?.focus()
         input.current?.select()
@@ -233,7 +282,14 @@ export function FindablePane({ children, overview = [] }: FindablePaneProps): Re
           </Button>
         </div>
       ) : null}
-      <div ref={content} className="min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]">
+      <div
+        ref={content}
+        className={
+          scrolls
+            ? 'min-h-0 flex-1 overflow-auto pr-2 [scrollbar-gutter:stable]'
+            : 'flex min-h-0 flex-1 flex-col'
+        }
+      >
         {children}
       </div>
       {overview.length === 0 ? null : <OverviewRuler marks={overview} scroller={content} />}

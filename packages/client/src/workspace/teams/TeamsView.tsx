@@ -12,6 +12,7 @@ import {
 import { useSettings } from '../../api/useSettings.js'
 import { errorText } from '../../errors.js'
 import { formatShortDate, getLanguage, t } from '../../i18n.js'
+import { FindablePane } from '../../ui/FindablePane.js'
 import {
   composeLabel,
   ConversationSelect,
@@ -185,53 +186,56 @@ export function TeamsView({
         }}
       />
       {view.state === 'thread' ? (
-        <TeamsThread
-          thread={view.thread}
-          myId={view.myId}
-          timeZone={timeZone}
-          locked={writing}
-          editingId={editingId}
-          renderEditor={(message) => (
-            <TeamsEditBox
-              ticket={ticket}
-              conversationId={view.conversationId}
-              message={message}
-              isRoot={message.id === view.thread.rootId && !view.thread.isChat}
-              people={view.people}
-              locked={writing}
-              send={send}
-              onClose={() => {
-                setEditingId(null)
-              }}
-            />
-          )}
-          onReact={(message, key) => {
-            void run(() => reactToMessage(ticket, view.conversationId, message.id, key))
-          }}
-          onAskClaude={(message) => {
-            // The task file and the line to Claude take a moment; the chat shows the ask at once.
-            addEcho(
-              firstSession,
-              t(
-                `Look into the Teams message from ${message.senderName}.`,
-                `Xem tin nhắn Teams của ${message.senderName}.`,
-              ),
-            )
-            void run(() =>
-              handOffMessage(ticket, view.conversationId, message.id, firstSession),
-            ).then((ok) => {
-              if (!ok) {
-                dropEchoes(firstSession)
-              }
-            })
-          }}
-          onEdit={(message) => {
-            setEditingId(message.id)
-          }}
-          onDelete={(message) => {
-            void run(() => deleteMessage(ticket, view.conversationId, message.id))
-          }}
-        />
+        // Ctrl+F finds in the thread like in a file; the thread scrolls itself to keep the newest in view.
+        <FindablePane scrolls={false}>
+          <TeamsThread
+            thread={view.thread}
+            myId={view.myId}
+            timeZone={timeZone}
+            locked={writing}
+            editingId={editingId}
+            renderEditor={(message) => (
+              <TeamsEditBox
+                ticket={ticket}
+                conversationId={view.conversationId}
+                message={message}
+                isRoot={message.id === view.thread.rootId && !view.thread.isChat}
+                people={view.people}
+                locked={writing}
+                send={send}
+                onClose={() => {
+                  setEditingId(null)
+                }}
+              />
+            )}
+            onReact={(message, key) => {
+              void run(() => reactToMessage(ticket, view.conversationId, message.id, key))
+            }}
+            onAskClaude={(message) => {
+              // The task file and the line to Claude take a moment; the chat shows the ask at once.
+              addEcho(
+                firstSession,
+                t(
+                  `Look into the Teams message from ${message.senderName}.`,
+                  `Xem tin nhắn Teams của ${message.senderName}.`,
+                ),
+              )
+              void run(() =>
+                handOffMessage(ticket, view.conversationId, message.id, firstSession),
+              ).then((ok) => {
+                if (!ok) {
+                  dropEchoes(firstSession)
+                }
+              })
+            }}
+            onEdit={(message) => {
+              setEditingId(message.id)
+            }}
+            onDelete={(message) => {
+              void run(() => deleteMessage(ticket, view.conversationId, message.id))
+            }}
+          />
+        </FindablePane>
       ) : null}
       {view.state === 'thread' ? (
         <div className="flex flex-col gap-2 py-2" data-testid="teams-compose-slot">

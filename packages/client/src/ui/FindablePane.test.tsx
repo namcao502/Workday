@@ -60,3 +60,65 @@ it('Ctrl+A selects only the pane text', () => {
   expect(window.getSelection()?.toString()).toContain('alpha beta')
   expect(window.getSelection()?.toString()).not.toContain('tree')
 })
+
+function select(node: Node, start: number, end: number): void {
+  const range = document.createRange()
+  range.setStart(node, start)
+  range.setEnd(node, end)
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+}
+
+it('Ctrl+F with text selected in the pane searches for it, starting at the selected match', () => {
+  renderPane()
+  // "beta" at the end of "Beta gamma beta": the third match, so the count starts there, not at the top.
+  const line = screen.getByText('Beta gamma beta').firstChild
+  if (line === null) {
+    throw new Error('no text node')
+  }
+  select(line, 11, 15)
+  // Focus is not in the pane (a selection made with the mouse can leave it on the page): the selection is enough.
+  ;(document.activeElement as HTMLElement | null)?.blur()
+  fireEvent.keyDown(window, { key: 'f', ctrlKey: true })
+  expect(screen.getByRole('textbox', { name: 'Find in this file' })).toHaveValue('beta')
+  expect(screen.getByRole('status')).toHaveTextContent('3/3')
+})
+
+it('a selection spanning lines is not taken as the search', () => {
+  render(
+    <div data-testid="workspace-left">
+      <button type="button">tree</button>
+      <FindablePane>
+        <pre data-testid="two-lines">{'one gamma\ntwo'}</pre>
+      </FindablePane>
+    </div>,
+  )
+  const box = openFind()
+  fireEvent.change(box, { target: { value: 'gamma' } })
+  const text = screen.getByTestId('two-lines').firstChild
+  if (text === null) {
+    throw new Error('no text node')
+  }
+  select(text, 0, 13)
+  fireEvent.keyDown(window, { key: 'f', ctrlKey: true })
+  expect(box).toHaveValue('gamma')
+})
+
+it('Ctrl+A in an editable box inside the pane area keeps the browser select-all', () => {
+  render(
+    <div data-testid="workspace-left">
+      <FindablePane>
+        <p>thread text</p>
+      </FindablePane>
+      <div contentEditable suppressContentEditableWarning data-testid="composer">
+        draft
+      </div>
+    </div>,
+  )
+  const composer = screen.getByTestId('composer')
+  composer.focus()
+  const event = fireEvent.keyDown(composer, { key: 'a', ctrlKey: true })
+  // Not prevented: the browser selects the draft, not the thread.
+  expect(event).toBe(true)
+})
