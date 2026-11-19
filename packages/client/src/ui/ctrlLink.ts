@@ -14,7 +14,7 @@ export function openLinkOnCtrl(event: ClickLike): void {
 }
 
 export function ctrlLinkHint(): string {
-  return t('Ctrl+click to open', 'Ctrl+click để mở')
+  return t('ui.ctrlClickToOpen')
 }
 
 // For HTML set as a string: the click lands on the container, so the link is found from the target.

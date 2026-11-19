@@ -145,13 +145,13 @@ export function FileTree(props: FileTreeProps): React.JSX.Element {
     <div className="flex flex-col gap-1">
       <SearchField
         fullWidth
-        aria-label={t('Filter files', 'Lọc tệp')}
+        aria-label={t('workspace.filterFiles')}
         value={filter}
         onChange={setFilter}
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder={t('Filter files', 'Lọc tệp')} />
+          <SearchField.Input placeholder={t('workspace.filterFiles')} />
           <SearchField.ClearButton />
         </SearchField.Group>
       </SearchField>

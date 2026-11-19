@@ -69,9 +69,7 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
 
   if (settings.data === undefined) {
     return settings.isError ? (
-      <CenteredAlert
-        message={t('Cannot reach the Workday server', 'Không kết nối được tới máy chủ Workday')}
-      />
+      <CenteredAlert message={t('app.cannotReachTheWorkdayServer')} />
     ) : null
   }
   setLanguage(settings.data.config.language)
@@ -103,7 +101,7 @@ function BootError({ error }: { readonly error: unknown }): React.JSX.Element {
       message={
         refusal === 'accessRequired' || refusal === 'remoteDisabled'
           ? errorText({ code: refusal })
-          : t('Cannot reach the Workday server', 'Không kết nối được tới máy chủ Workday')
+          : t('app.cannotReachTheWorkdayServer')
       }
     />
   )

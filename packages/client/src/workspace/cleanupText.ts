@@ -7,13 +7,13 @@ const BYTES_PER_MEGABYTE = 1024 * 1024
 export function verdictText(verdict: CleanupVerdict): string {
   switch (verdict) {
     case 'ready':
-      return t('Ready', 'Sẵn sàng')
+      return t('workspace.ready')
     case 'check':
-      return t('Check', 'Kiểm tra')
+      return t('workspace.check')
     case 'keep':
-      return t('Keep', 'Giữ lại')
+      return t('workspace.keep')
     case 'noWorktree':
-      return t('No worktree', 'Không có worktree')
+      return t('workspace.noWorktree')
   }
 }
 
@@ -33,30 +33,27 @@ export function verdictColor(verdict: CleanupVerdict): ChipColor {
 export function reasonText(reason: CleanupReason): string {
   switch (reason.code) {
     case 'inspectFailed':
-      return t('could not inspect the worktree', 'không kiểm tra được worktree')
+      return t('workspace.couldNotInspectTheWorktree')
     case 'sessionRunning':
-      return t('a session is running', 'có phiên đang chạy')
+      return t('workspace.aSessionIsRunning')
     case 'broken':
-      return t('the worktree is broken', 'worktree bị hỏng')
+      return t('workspace.theWorktreeIsBroken')
     case 'localConfig':
-      return t('has local-only config files', 'có tệp cấu hình chỉ có trên máy')
+      return t('workspace.hasLocalOnlyConfigFiles')
     case 'inProgress':
-      return t('the ticket is still in progress', 'ticket vẫn đang làm')
+      return t('workspace.theTicketIsStillInProgress')
     case 'abandoned':
-      return t('the ticket was abandoned', 'ticket đã bị bỏ')
+      return t('workspace.theTicketWasAbandoned')
     case 'mainMergedPrOpen':
-      return t('main is merged, the PR is still open', 'đã merge main, PR vẫn đang mở')
+      return t('workspace.mainIsMergedThePrIs')
     case 'notMerged':
-      return t('not merged yet', 'chưa merge')
+      return t('workspace.notMergedYet')
     case 'unpushed':
-      return t(
-        `${String(reason.count)} unpushed commit(s)`,
-        `${String(reason.count)} commit chưa push`,
-      )
+      return t('workspace.unpushedCommitS', { count: String(reason.count) })
     case 'dirty':
-      return t(`${String(reason.count)} changed file(s)`, `${String(reason.count)} tệp thay đổi`)
+      return t('workspace.changedFileS', { count: String(reason.count) })
     case 'otherBranch':
-      return t(`on branch ${reason.branch}`, `đang ở nhánh ${reason.branch}`)
+      return t('workspace.onBranch', { branch: reason.branch })
   }
 }
 
@@ -70,46 +67,34 @@ export function megabytesText(bytes: number): string {
 
 export function docsText(row: CleanupRow): string {
   const base = row.isMined
-    ? t('mined', 'đã mine')
+    ? t('workspace.mined')
     : row.isMerged
-      ? t('merged, not mined yet', 'đã merge, chưa mine')
-      : t('not merged, nothing to mine yet', 'chưa merge, chưa cần mine')
+      ? t('workspace.mergedNotMinedYet')
+      : t('workspace.notMergedNothingToMineYet')
   if (row.slimBytes <= 0) {
     return base
   }
   const megabytes = megabytesText(row.slimBytes)
-  return `${base}${t(`, ${megabytes} MB freeable`, `, giải phóng được ${megabytes} MB`)}`
+  return `${base}${t('workspace.mbFreeable', { megabytes })}`
 }
 
 export function cleanupErrorText(error: CleanupError): string {
   switch (error.code) {
     case 'invalidKey':
-      return t('That is not a ticket key', 'Đó không phải mã ticket')
+      return t('workspace.thatIsNotATicketKey')
     case 'workspaceNotConfigured':
-      return t(
-        'Set the dev repo folder in Settings first',
-        'Hãy đặt thư mục dev repo trong Cài đặt trước',
-      )
+      return t('workspace.setTheDevRepoFolderIn')
     case 'stateChanged':
-      return t(
-        'The worktree changed since the list was loaded. Reload and check again.',
-        'Worktree đã thay đổi từ lúc tải danh sách. Hãy tải lại và kiểm tra lại.',
-      )
+      return t('workspace.theWorktreeChangedSinceTheList')
     case 'hasWorktree':
-      return t('The ticket still has a worktree', 'Ticket vẫn còn worktree')
+      return t('workspace.theTicketStillHasAWorktree')
     case 'ioFailed':
-      return t('Deleting the files failed', 'Xóa tệp thất bại')
+      return t('workspace.deletingTheFilesFailed')
     case 'kept':
-      return t(`Kept: ${reasonsText(error.reasons)}`, `Giữ lại: ${reasonsText(error.reasons)}`)
+      return t('workspace.kept', { reasons: reasonsText(error.reasons) })
     case 'worktreeUnreadable':
-      return t(
-        `Could not read the worktree in ${error.repository}`,
-        `Không đọc được worktree trong ${error.repository}`,
-      )
+      return t('workspace.couldNotReadTheWorktreeIn', { repository: error.repository })
     case 'worktreeFailed':
-      return t(
-        `Could not remove the worktree in ${error.repository}`,
-        `Không xóa được worktree trong ${error.repository}`,
-      )
+      return t('workspace.couldNotRemoveTheWorktreeIn', { repository: error.repository })
   }
 }

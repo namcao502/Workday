@@ -17,12 +17,9 @@ interface StatusLine {
 
 function failureText(failure: unknown): string {
   if (failure instanceof ApiError && failure.status === 400) {
-    return t(
-      'Rejected. Check the values; a new organization needs a PAT.',
-      'Bị từ chối. Kiểm tra các giá trị; organization mới cần PAT.',
-    )
+    return t('settings.rejectedCheckTheValuesANew')
   }
-  return t('Could not reach the Workday server', 'Không kết nối được tới máy chủ Workday')
+  return t('settings.couldNotReachTheWorkdayServer')
 }
 
 export function AzureDevOpsSection({
@@ -54,7 +51,7 @@ export function AzureDevOpsSection({
         result.ok
           ? {
               kind: 'ok',
-              text: t(`Connected as ${result.displayName}`, `Đã kết nối: ${result.displayName}`),
+              text: t('settings.connectedAs', { displayName: result.displayName }),
             }
           : { kind: 'error', text: errorText(result.error) },
       )
@@ -75,7 +72,7 @@ export function AzureDevOpsSection({
       })
       setPat('')
       setReplacing(false)
-      setStatus({ kind: 'ok', text: t('Saved', 'Đã lưu') })
+      setStatus({ kind: 'ok', text: t('settings.saved') })
     } catch (failure) {
       setStatus({ kind: 'error', text: failureText(failure) })
     } finally {
@@ -87,11 +84,8 @@ export function AzureDevOpsSection({
     <Section title="Azure DevOps">
       <TextField
         id="ado-organization"
-        label={t('Organization', 'Organization')}
-        hint={t(
-          'The name in dev.azure.com/<organization>',
-          'Tên trong dev.azure.com/<organization>',
-        )}
+        label={t('settings.organization')}
+        hint={t('settings.theNameInDevAzureCom')}
         value={form.organization}
         onChange={(value) => {
           change({ organization: value })
@@ -99,8 +93,8 @@ export function AzureDevOpsSection({
       />
       <TextField
         id="ado-project"
-        label={t('Project', 'Project')}
-        hint={t('The project that holds the repos', 'Project chứa các repo')}
+        label={t('settings.project')}
+        hint={t('settings.theProjectThatHoldsTheRepos')}
         value={form.project}
         onChange={(value) => {
           change({ project: value })
@@ -108,11 +102,8 @@ export function AzureDevOpsSection({
       />
       <TextField
         id="ado-repo-labels"
-        label={t('Repo labels', 'Nhãn repo')}
-        hint={t(
-          'One Repo=Label per line, in the order shown. Example: MDP-Portal=Portal',
-          'Mỗi dòng một Repo=Nhãn, theo thứ tự hiển thị. Ví dụ: MDP-Portal=Portal',
-        )}
+        label={t('settings.repoLabels')}
+        hint={t('settings.oneRepoLabelPerLineIn')}
         multiline
         value={form.repoLabels}
         onChange={(value) => {
@@ -121,11 +112,8 @@ export function AzureDevOpsSection({
       />
       <TextField
         id="ado-dev-pipeline-folder"
-        label={t('Dev pipeline folder', 'Thư mục pipeline dev')}
-        hint={t(
-          'e.g. \\Development-Pipelines. Empty = no deploy watch',
-          'Ví dụ \\Development-Pipelines. Để trống = không theo dõi deploy',
-        )}
+        label={t('settings.devPipelineFolder')}
+        hint={t('settings.eGDevelopmentPipelinesEmptyNo')}
         value={form.devPipelineFolder}
         onChange={(value) => {
           change({ devPipelineFolder: value })
@@ -133,15 +121,9 @@ export function AzureDevOpsSection({
       />
       <TokenField
         id="ado-pat"
-        label={t('Azure DevOps PAT', 'Azure DevOps PAT')}
-        envText={t(
-          'Taken from WORKDAY_ADO_PAT in .env - nothing to enter',
-          'Lấy từ WORKDAY_ADO_PAT trong .env - không cần nhập',
-        )}
-        helpText={t(
-          'A personal access token with Code (read) and Build (read) scopes.',
-          'Personal access token có quyền Code (read) và Build (read).',
-        )}
+        label={t('settings.azureDevopsPat')}
+        envText={t('settings.takenFromWorkdayAdoPatIn')}
+        helpText={t('settings.aPersonalAccessTokenWithCode')}
         source={settings.adoPatSource}
         replacing={replacing}
         value={pat}
@@ -159,7 +141,7 @@ export function AzureDevOpsSection({
             void runCheck()
           }}
         >
-          {t('Check', 'Kiểm tra')}
+          {t('settings.check')}
         </Button>
         <Button
           variant="primary"
@@ -169,7 +151,7 @@ export function AzureDevOpsSection({
             void runSave()
           }}
         >
-          {t('Save', 'Lưu')}
+          {t('settings.save')}
         </Button>
       </div>
       {status === null ? null : (

@@ -42,7 +42,7 @@ export function BoardCards({
               )}
               {row.ticket.dueDate === null ? null : (
                 <span>
-                  {t('Due', 'Hạn')}{' '}
+                  {t('board.due')}{' '}
                   <DueDate
                     urgency={dueUrgencyOf(row)}
                     text={formatDateOnly(row.ticket.dueDate, language)}

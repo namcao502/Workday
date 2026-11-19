@@ -11,17 +11,17 @@ import { Section } from '../ui/Section.js'
 import { pushSupported, subscribePush, unsubscribePush } from './pushSubscription.js'
 
 function areaLabel(area: RemoteArea): string {
-  return area === 'board' ? t('Tickets', 'Ticket') : t('Timesheet', 'Bảng công')
+  return area === 'board' ? t('remote.tickets') : t('remote.timesheet')
 }
 
 function levelLabel(level: AccessLevel): string {
   switch (level) {
     case 'off':
-      return t('Off', 'Tắt')
+      return t('remote.off')
     case 'view':
-      return t('View', 'Xem')
+      return t('remote.view')
     case 'act':
-      return t('Act', 'Thao tác')
+      return t('remote.act')
   }
 }
 
@@ -44,21 +44,14 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
       setMessage(await action())
       await queryClient.invalidateQueries({ queryKey: queryKeys.me })
     } catch {
-      setMessage(t('That did not work. Try again.', 'Không thực hiện được. Hãy thử lại.'))
+      setMessage(t('remote.thatDidNotWorkTryAgain'))
     } finally {
       setBusy(false)
     }
   }
 
   if (!pushSupported()) {
-    return (
-      <p className="text-sm text-muted">
-        {t(
-          'Add Workday to the Home Screen first to get notifications',
-          'Hãy thêm Workday vào Màn hình chính trước để nhận thông báo',
-        )}
-      </p>
-    )
+    return <p className="text-sm text-muted">{t('remote.addWorkdayToTheHomeScreen')}</p>
   }
   const subscribed = device.hasPushSubscription
   return (
@@ -66,7 +59,7 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
       {subscribed ? (
         <>
           <Button variant="secondary" size="sm" isDisabled={busy} onPress={() => void run(turnOff)}>
-            {t('Turn off', 'Tắt')}
+            {t('remote.turnOff')}
           </Button>
           <Button
             variant="secondary"
@@ -74,13 +67,11 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
             isDisabled={busy}
             onPress={() =>
               void run(async () =>
-                (await sendTestPush())
-                  ? t('Test sent', 'Đã gửi thử')
-                  : t('The test was not sent', 'Chưa gửi được thông báo thử'),
+                (await sendTestPush()) ? t('remote.testSent') : t('remote.theTestWasNotSent'),
               )
             }
           >
-            {t('Send test', 'Gửi thử')}
+            {t('remote.sendTest')}
           </Button>
         </>
       ) : (
@@ -91,12 +82,12 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
           onPress={() =>
             void run(async () =>
               (await subscribePush()) === 'denied'
-                ? t('Notifications are blocked in the browser', 'Trình duyệt đang chặn thông báo')
+                ? t('remote.notificationsAreBlockedInTheBrowser')
                 : null,
             )
           }
         >
-          {t('Turn on notifications', 'Bật thông báo')}
+          {t('remote.turnOnNotifications')}
         </Button>
       )}
       {message === null ? null : <p className="text-sm text-muted">{message}</p>}
@@ -109,14 +100,14 @@ export function DevicePage(): React.JSX.Element {
   const me = useMe()
   const device = me.data?.mode === 'remote' ? me.data.device : null
   return (
-    <Page title={t('Settings', 'Cài đặt')}>
+    <Page title={t('remote.settings')}>
       {device === null ? (
-        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+        <p className="text-sm text-muted">{t('remote.loading')}</p>
       ) : (
         <>
-          <Section title={t('Device', 'Thiết bị')}>
+          <Section title={t('remote.device')}>
             <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
-              <dt className="text-muted">{t('Device', 'Thiết bị')}</dt>
+              <dt className="text-muted">{t('remote.device')}</dt>
               <dd>{device.name}</dd>
               {AREAS.map((area) => (
                 <Fragment key={area}>
@@ -126,7 +117,7 @@ export function DevicePage(): React.JSX.Element {
               ))}
             </dl>
           </Section>
-          <Section title={t('Notifications', 'Thông báo')}>
+          <Section title={t('remote.notifications')}>
             <PushSection device={device} />
           </Section>
         </>

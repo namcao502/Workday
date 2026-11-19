@@ -15,7 +15,7 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
         <Button
           isIconOnly
           variant="secondary"
-          aria-label={t('Collapse or expand the menu', 'Thu gọn / mở rộng menu')}
+          aria-label={t('shell.collapseOrExpandTheMenu')}
           onPress={onToggleMenu}
         >
           <Bars width={18} height={18} aria-hidden="true" />

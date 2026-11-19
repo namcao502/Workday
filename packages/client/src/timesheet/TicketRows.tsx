@@ -41,16 +41,16 @@ function CheckDot({ check }: { readonly check: TicketCheck | undefined }): React
     return (
       <Tip
         className="w-2 flex-none text-center font-bold text-warning"
-        content={t('Not your ticket', 'Không phải ticket của anh')}
+        content={t('timesheet.notYourTicket')}
       >
         !
       </Tip>
     )
   }
   const labels = {
-    valid: t('Ticket found', 'Có ticket'),
-    notFound: t('Ticket not found', 'Không có ticket'),
-    unknown: t('Could not check the ticket', 'Chưa kiểm tra được ticket'),
+    valid: t('timesheet.ticketFound'),
+    notFound: t('timesheet.ticketNotFound'),
+    unknown: t('timesheet.couldNotCheckTheTicket'),
   } as const
   const dot = { valid: 'bg-success', notFound: 'bg-danger', unknown: 'bg-warning' } as const
   return (
@@ -86,7 +86,7 @@ function HoursInput({ ticketKey, minutes, tooltip, onHours }: HoursInputProps): 
         variant="secondary"
         className="w-16 text-right"
         inputMode="decimal"
-        aria-label={t(`Hours for ${ticketKey}`, `Số giờ cho ${ticketKey}`)}
+        aria-label={t('timesheet.hoursFor', { ticketKey })}
         value={draft ?? hoursText(minutes)}
         onChange={(event) => {
           setDraft(event.target.value)
@@ -138,7 +138,7 @@ export function TicketRows({
                   isIconOnly
                   variant="secondary"
                   size="sm"
-                  aria-label={t(`Remove ${row.key}`, `Bỏ ${row.key}`)}
+                  aria-label={t('timesheet.remove', { key: row.key })}
                   onPress={() => {
                     onRemove(row.key)
                   }}
@@ -149,7 +149,7 @@ export function TicketRows({
             </div>
             {check?.isMine === false ? (
               <div className="flex items-center gap-2 pl-4 text-sm text-warning">
-                <span>{t('Not your ticket', 'Không phải ticket của anh')}</span>
+                <span>{t('timesheet.notYourTicket')}</span>
                 {check.suggestedKey === null || onUseKey === undefined ? null : (
                   <Button
                     variant="secondary"
@@ -160,7 +160,7 @@ export function TicketRows({
                       }
                     }}
                   >
-                    {t(`Use ${check.suggestedKey}`, `Dùng ${check.suggestedKey}`)}
+                    {t('timesheet.use', { suggestedKey: check.suggestedKey })}
                   </Button>
                 )}
               </div>

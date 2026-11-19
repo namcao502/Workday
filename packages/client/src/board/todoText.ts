@@ -46,16 +46,16 @@ export interface TodoTextContext {
 export function prProblems(pr: TicketPr['pr']): readonly string[] {
   const problems: string[] = []
   if (pr.build === 'failed') {
-    problems.push(t('build failed', 'build lỗi'))
+    problems.push(t('board.buildFailed2'))
   }
   if (pr.merge === 'conflicts') {
-    problems.push(t('conflict', 'conflict'))
+    problems.push(t('board.conflict2'))
   }
   if (pr.vote === 'rejected') {
-    problems.push(t('rejected', 'bị từ chối'))
+    problems.push(t('board.rejected2'))
   }
   if (pr.vote === 'waitingForAuthor') {
-    problems.push(t('needs work', 'cần sửa'))
+    problems.push(t('board.needsWork2'))
   }
   return problems
 }
@@ -63,26 +63,26 @@ export function prProblems(pr: TicketPr['pr']): readonly string[] {
 function claudeWaitingText(item: Extract<TodoItem, { kind: 'claudeWaiting' }>): string {
   switch (item.wait) {
     case 'permission':
-      return t('Claude needs your permission', 'Claude cần bạn cấp quyền')
+      return t('board.claudeNeedsYourPermission')
     case 'question':
-      return t('Claude is asking you something', 'Claude đang hỏi bạn')
+      return t('board.claudeIsAskingYouSomething')
     case 'finished':
-      return t('Claude is done - your turn', 'Claude đã xong, tới lượt bạn')
+      return t('board.claudeIsDoneYourTurn')
   }
 }
 
 export function deployTitle(deploy: DevDeploy | null): string {
   switch (deploy?.state) {
     case 'deploying':
-      return t('dev PR merged - deploying to dev', 'PR dev đã merge - đang deploy dev')
+      return t('board.devPrMergedDeployingToDev')
     case 'deployed':
-      return t('on dev now', 'đã lên dev')
+      return t('board.onDevNow')
     case 'failed': {
       const pipeline = deploy.failedBuild?.pipelineName ?? ''
-      return t(`dev deploy failed (${pipeline})`, `deploy dev lỗi (${pipeline})`)
+      return t('board.devDeployFailed', { pipeline })
     }
     case undefined:
-      return t('dev PR merged', 'PR dev đã merge')
+      return t('board.devPrMerged')
   }
 }
 
@@ -98,7 +98,7 @@ export function todoText(item: TodoItem, context: TodoTextContext): TodoTextPart
     case 'claudeWaiting':
       return {
         title: claudeWaitingText(item),
-        detail: summary === '' ? t('Open the tab to answer', 'Mở tab để trả lời') : summary,
+        detail: summary === '' ? t('board.openTheTabToAnswer') : summary,
         tone: 'accent',
       }
     case 'teamsMessage': {
@@ -122,7 +122,7 @@ export function todoText(item: TodoItem, context: TodoTextContext): TodoTextPart
     case 'prReview': {
       const { review } = item
       const repo = repoLabel(review.repository, context.repoLabels)
-      const required = review.isRequired ? t(' - required', ' - bắt buộc') : ''
+      const required = review.isRequired ? t('board.required') : ''
       return {
         title: `Review: ${review.title}`,
         detail: `${review.authorName} - ${repo} #${String(review.pullRequestId)}${required}`,
@@ -142,37 +142,34 @@ export function todoText(item: TodoItem, context: TodoTextContext): TodoTextPart
     }
     case 'prComments':
       return {
-        title: t(
-          `${String(item.count)} new PR ${plural(item.count, 'comment', 'comments')}`,
-          `${String(item.count)} comment PR mới`,
-        ),
+        title: t('board.newPr', {
+          count: String(item.count),
+          plural: plural(item.count, 'comment', 'comments'),
+        }),
         detail: summary,
         tone: 'accent',
       }
     case 'dbReview':
       return {
-        title: t(
-          `${item.ticketKey}: DB change approved by ${item.approval.approverName}. Run the SQL on dev, then scaffold.`,
-          `${item.ticketKey}: DB đã được ${item.approval.approverName} duyệt. Chạy SQL trên dev rồi scaffold.`,
-        ),
+        title: t('board.dbChangeApprovedByRunThe', {
+          ticketKey: item.ticketKey,
+          approverName: item.approval.approverName,
+        }),
         detail: summary,
         tone: 'warning',
       }
     case 'qcBug':
       return {
-        title: t(
-          `${item.ticketKey}: QC bug on ${item.parentKey}`,
-          `${item.ticketKey}: bug QC trên ${item.parentKey}`,
-        ),
+        title: t('board.qcBugOn', { ticketKey: item.ticketKey, parentKey: item.parentKey }),
         detail: summary,
         tone: 'danger',
       }
     case 'qcBugReply':
       return {
-        title: t(
-          `${item.ticketKey} is fixed - answer QC on ${item.parentKey}`,
-          `${item.ticketKey} đã sửa xong - trả lời QC trên ${item.parentKey}`,
-        ),
+        title: t('board.isFixedAnswerQcOn', {
+          ticketKey: item.ticketKey,
+          parentKey: item.parentKey,
+        }),
         detail: item.fix.summary,
         tone: 'accent',
       }
@@ -198,7 +195,7 @@ export function todoText(item: TodoItem, context: TodoTextContext): TodoTextPart
           ? ''
           : formatDateOnly(ticket.dueDate, context.language)
       return {
-        title: t(`overdue since ${due}`, `quá hạn từ ${due}`),
+        title: t('board.overdueSince', { due }),
         detail: summary,
         tone: 'danger',
       }

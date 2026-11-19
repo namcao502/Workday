@@ -48,17 +48,13 @@ function usePulse(count: number): boolean {
 // What a row's badge counts, one line each, shown in the tooltip while the badge is up.
 function badgeTip(page: PageId, workspaceBadge: number, boardBadge: number, settingsBadge: number) {
   if (page === 'workspace' && workspaceBadge !== 0) {
-    return [
-      t(`${String(workspaceBadge)} session(s) waiting`, `${String(workspaceBadge)} phiên đang chờ`),
-    ]
+    return [t('shell.sessionSWaiting', { workspaceBadge: String(workspaceBadge) })]
   }
   if (page === 'tickets' && boardBadge !== 0) {
-    return [
-      t(`${String(boardBadge)} ticket(s) need action`, `${String(boardBadge)} ticket cần xử lý`),
-    ]
+    return [t('shell.ticketSNeedAction', { boardBadge: String(boardBadge) })]
   }
   if (page === 'settings' && settingsBadge !== 0) {
-    return [t('A knowledge scan failed', 'Một lần quét knowledge bị lỗi')]
+    return [t('shell.aKnowledgeScanFailed')]
   }
   return []
 }
@@ -92,7 +88,7 @@ export function Sidebar({
       className={`app-sidebar m-3 mr-0 flex shrink-0 flex-col rounded-2xl bg-surface p-2 shadow-surface ${
         collapsed ? 'w-14' : 'w-[200px]'
       }`}
-      aria-label={t('Pages', 'Trang')}
+      aria-label={t('shell.pages')}
     >
       <div className="flex flex-col">
         {mainPages.map((page, index) => (

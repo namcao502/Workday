@@ -40,7 +40,7 @@ export function foldIntoOther(bars: readonly Bar[]): readonly Bar[] {
   const sum = folded.reduce((total, bar) => total + bar.value, 0)
   return [
     ...sorted.slice(0, MAX_BARS),
-    { label: `${t('Other', 'Khác')} (${String(folded.length)})`, value: sum },
+    { label: `${t('insights.other')} (${String(folded.length)})`, value: sum },
   ]
 }
 
@@ -167,7 +167,7 @@ export function BarChart({
     <figure className="m-0">
       <figcaption className="mb-1 text-xs font-medium text-muted">{title}</figcaption>
       {shown.length === 0 ? (
-        <p className="text-sm text-muted">{t('No data', 'Không có dữ liệu')}</p>
+        <p className="text-sm text-muted">{t('insights.noData')}</p>
       ) : horizontal ? (
         <Rows title={title} bars={shown} formatValue={formatValue} fill={fill} />
       ) : (

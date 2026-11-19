@@ -58,7 +58,7 @@ function QuestionBlock({
     onChange({ labels, otherOn, otherText: otherOn ? pick.otherText : '' })
   }
   const items = [...question.options.map((option) => option.label), OTHER]
-  const renderLabel = (value: string): string => (value === OTHER ? t('Other', 'Khác') : value)
+  const renderLabel = (value: string): string => (value === OTHER ? t('workspace.other') : value)
   // Claude writes a line on what each option means; it sits under the option, indented to its label.
   const descriptionOf = (value: string): React.ReactNode => {
     const text = question.options.find((option) => option.label === value)?.description ?? ''
@@ -116,7 +116,7 @@ function QuestionBlock({
       {pick.otherOn ? (
         <Input
           variant="secondary"
-          aria-label={`${question.question} ${t('Other', 'Khác')}`}
+          aria-label={`${question.question} ${t('workspace.other')}`}
           disabled={disabled}
           value={pick.otherText}
           onChange={(event) => {
@@ -163,7 +163,7 @@ function QuestionCard({ request, onAnswer, busy }: ChatRequestCardProps): React.
             })
           }}
         >
-          {t('Submit', 'Gửi')}
+          {t('workspace.submit')}
         </Button>
       </div>
     </>
@@ -234,7 +234,7 @@ function PermissionCard({ request, onAnswer, busy }: ChatRequestCardProps): Reac
             onAnswer({ kind: 'allow', always: false })
           }}
         >
-          {t('Allow', 'Cho phép')}
+          {t('workspace.allow')}
         </Button>
         {request.canAlwaysAllow ? (
           <Button
@@ -245,7 +245,7 @@ function PermissionCard({ request, onAnswer, busy }: ChatRequestCardProps): Reac
               onAnswer({ kind: 'allow', always: true })
             }}
           >
-            {t('Always allow', 'Luôn cho phép')}
+            {t('workspace.alwaysAllow')}
           </Button>
         ) : null}
         <Button
@@ -256,13 +256,13 @@ function PermissionCard({ request, onAnswer, busy }: ChatRequestCardProps): Reac
             setDenying(true)
           }}
         >
-          {t('Deny', 'Từ chối')}
+          {t('workspace.deny')}
         </Button>
       </div>
       <ReasonBox
         open={denying}
-        label={t('Reason (optional)', 'Lý do (không bắt buộc)')}
-        sendLabel={t('Send denial', 'Gửi từ chối')}
+        label={t('workspace.reasonOptional')}
+        sendLabel={t('workspace.sendDenial')}
         busy={busy}
         onSend={(message) => {
           onAnswer({ kind: 'deny', message })
@@ -288,7 +288,7 @@ function PlanCard({ request, onAnswer, busy }: ChatRequestCardProps): React.JSX.
             onAnswer({ kind: 'approvePlan' })
           }}
         >
-          {t('Approve', 'Duyệt')}
+          {t('workspace.approve')}
         </Button>
         <Button
           variant="secondary"
@@ -298,13 +298,13 @@ function PlanCard({ request, onAnswer, busy }: ChatRequestCardProps): React.JSX.
             setRevising(true)
           }}
         >
-          {t('Keep planning', 'Tiếp tục lập kế hoạch')}
+          {t('workspace.keepPlanning')}
         </Button>
       </div>
       <ReasonBox
         open={revising}
-        label={t('Feedback', 'Góp ý')}
-        sendLabel={t('Send feedback', 'Gửi góp ý')}
+        label={t('workspace.feedback')}
+        sendLabel={t('workspace.sendFeedback')}
         busy={busy}
         onSend={(feedback) => {
           onAnswer({ kind: 'revisePlan', feedback })
@@ -316,12 +316,12 @@ function PlanCard({ request, onAnswer, busy }: ChatRequestCardProps): React.JSX.
 
 function titleOf(request: ChatRequest): string {
   if (request.kind === 'plan') {
-    return t('Claude has a plan', 'Claude có một kế hoạch')
+    return t('workspace.claudeHasAPlan')
   }
   if (request.kind === 'question') {
-    return t('Claude has a question', 'Claude có câu hỏi')
+    return t('workspace.claudeHasAQuestion')
   }
-  return t(`Claude wants to use ${request.toolName}`, `Claude muốn dùng ${request.toolName}`)
+  return t('workspace.claudeWantsToUse', { toolName: request.toolName })
 }
 
 export function ChatRequestCard(props: ChatRequestCardProps): React.JSX.Element {

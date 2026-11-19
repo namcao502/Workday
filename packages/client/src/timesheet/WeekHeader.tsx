@@ -34,12 +34,12 @@ interface WeekNavProps {
 
 function titleFor(monday: string, thisMonday: string): string {
   if (monday === thisMonday) {
-    return t('THIS WEEK', 'TUẦN NÀY')
+    return t('timesheet.thisWeek')
   }
   if (monday === addDays(thisMonday, -7)) {
-    return t('LAST WEEK', 'TUẦN TRƯỚC')
+    return t('timesheet.lastWeek')
   }
-  return monday === addDays(thisMonday, 7) ? t('NEXT WEEK', 'TUẦN SAU') : t('WEEK', 'TUẦN')
+  return monday === addDays(thisMonday, 7) ? t('timesheet.nextWeek') : t('timesheet.week')
 }
 
 // Days up to today that are not off: how many carry TSC text, out of how many.
@@ -71,7 +71,7 @@ export function WeekNav({
         isIconOnly
         variant="secondary"
         size="sm"
-        aria-label={t('Previous week', 'Tuần trước')}
+        aria-label={t('timesheet.previousWeek')}
         isDisabled={reading}
         onPress={() => {
           onShift(-1)
@@ -83,7 +83,7 @@ export function WeekNav({
         isIconOnly
         variant="secondary"
         size="sm"
-        aria-label={t('Next week', 'Tuần sau')}
+        aria-label={t('timesheet.nextWeek2')}
         isDisabled={reading}
         onPress={() => {
           onShift(1)
@@ -96,17 +96,11 @@ export function WeekNav({
         size="sm"
         isDisabled={reading}
         onPress={onReread}
-        aria-label={t('Read again', 'Đọc lại')}
+        aria-label={t('timesheet.readAgain')}
       >
-        <Tip
-          content={t(
-            'Reads TSC again; a browser runs in the background with the saved sign-in',
-            'Đọc lại TSC; trình duyệt chạy ngầm bằng phiên đăng nhập đã lưu',
-          )}
-          className="flex items-center gap-1"
-        >
+        <Tip content={t('timesheet.readsTscAgainABrowserRuns')} className="flex items-center gap-1">
           <ArrowRotateRight />
-          {t('Read again', 'Đọc lại')}
+          {t('timesheet.readAgain')}
         </Tip>
       </Button>
     </div>
@@ -116,15 +110,15 @@ export function WeekNav({
 function stepLabel(id: WeekStepId): string {
   switch (id) {
     case 'tsc':
-      return t('TSC sheet', 'Sheet TSC')
+      return t('timesheet.tscSheet')
     case 'hrmHours':
-      return t('HRM hours', 'Giờ HRM')
+      return t('timesheet.hrmHours')
     case 'hrmOff':
-      return t('Days off', 'Ngày nghỉ')
+      return t('timesheet.daysOff')
     case 'hrmTasks':
-      return t('HRM tasks', 'Task HRM')
+      return t('timesheet.hrmTasks')
     case 'jira':
-      return t('Jira tickets', 'Ticket Jira')
+      return t('timesheet.jiraTickets')
   }
 }
 
@@ -142,7 +136,7 @@ function StepMark({ state }: { readonly state: WeekStep['state'] }): React.JSX.E
 function ReadSteps({ steps }: { readonly steps: readonly WeekStep[] }): React.JSX.Element {
   return (
     <span className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-      <span>{t("Reading the week's logs:", 'Đang đọc log của tuần:')}</span>
+      <span>{t('timesheet.readingTheWeekSLogs')}</span>
       {steps.map((step) => (
         <span key={step.id} className="inline-flex items-center gap-1" data-state={step.state}>
           <StepMark state={step.state} />
@@ -162,10 +156,10 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
   if (steps.length !== 0) {
     status = <ReadSteps steps={steps} />
   } else if (props.reading) {
-    status = t("Reading the week's logs...", 'Đang đọc log của tuần...')
+    status = t('timesheet.readingTheWeekSLogs2')
   } else if (week?.readAt != null) {
     const clock = formatClock(new Date(week.readAt), language, props.timeZone)
-    status = t(`Read at ${clock}`, `Đã đọc lúc ${clock}`)
+    status = t('timesheet.readAt', { clock })
   }
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
@@ -174,12 +168,7 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
       )}
       {coverage === null ? null : <span>{`TSC ${tscCount(coverage, today)}`}</span>}
       {coverage?.some((day) => day.tscState === 'noToken') === true ? (
-        <span>
-          {t(
-            'TSC not read yet: Read again reads it (a browser runs in the background).',
-            'Chưa đọc TSC: bấm Đọc lại để đọc (trình duyệt chạy ngầm).',
-          )}
-        </span>
+        <span>{t('timesheet.tscNotReadYetReadAgain')}</span>
       ) : null}
       <span className="ml-auto" aria-live="polite">
         {status}

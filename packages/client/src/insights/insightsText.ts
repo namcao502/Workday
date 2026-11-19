@@ -29,7 +29,7 @@ export function formatClaudeTime(seconds: number): string {
   if (minutes === 0) {
     return EMPTY_CELL
   }
-  const unit = t('m', 'p')
+  const unit = t('insights.m')
   return `${String(Math.floor(minutes / MINUTES_PER_HOUR))}h ${String(minutes % MINUTES_PER_HOUR)}${unit}`
 }
 

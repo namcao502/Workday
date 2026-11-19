@@ -57,12 +57,12 @@ function UsageStat({ window }: { readonly window: UsageWindow }): React.JSX.Elem
   const reset = formatReset(window.resetsAt)
   return (
     <span>
-      {t('Usage', 'Mức dùng')}:{' '}
+      {t('workspace.usage')}:{' '}
       <span className={usageTone(window.percent)}>{String(Math.round(window.percent))}%</span>
       {reset === null ? null : (
         <span className="opacity-70">
           {' '}
-          ({t('resets', 'đặt lại')} {reset})
+          ({t('workspace.resets')} {reset})
         </span>
       )}
     </span>
@@ -93,7 +93,7 @@ function ModelPicker({ session, model, models, disabled }: ModelPickerProps): Re
       <Button
         size="sm"
         variant="secondary"
-        aria-label={t('Switch model', 'Đổi model')}
+        aria-label={t('workspace.switchModel')}
         isDisabled={disabled}
       >
         {name}
@@ -134,34 +134,34 @@ interface RewindCardProps {
 function RewindCard({ rewind, onConfirm, onCancel }: RewindCardProps): React.JSX.Element {
   const { preview, failed, busy } = rewind
   const blocked = failed || (preview !== null && !preview.canRewind)
-  let message = t('Checking what would change...', 'Đang kiểm tra những gì sẽ đổi...')
+  let message = t('workspace.checkingWhatWouldChange')
   if (failed) {
-    message = t('Could not rewind the files.', 'Không hoàn tác được file.')
+    message = t('workspace.couldNotRewindTheFiles')
   } else if (preview !== null && !preview.canRewind) {
-    message = t(
-      `Cannot rewind to this message: ${preview.error ?? 'unknown reason'}`,
-      `Không thể hoàn tác về tin nhắn này: ${preview.error ?? 'không rõ lý do'}`,
-    )
+    message = t('workspace.cannotRewindToThisMessage', {
+      reason: preview.error ?? t('workspace.unknownReason'),
+    })
   } else if (preview !== null) {
-    message = t(
-      `Put ${String(preview.files)} file(s) back to how they were at this message (+${String(preview.insertions)} -${String(preview.deletions)})? Changes made since will be lost.`,
-      `Đưa ${String(preview.files)} file về trạng thái lúc tin nhắn này (+${String(preview.insertions)} -${String(preview.deletions)})? Các thay đổi sau đó sẽ mất.`,
-    )
+    message = t('workspace.putFileSBackToHow', {
+      files: String(preview.files),
+      insertions: String(preview.insertions),
+      deletions: String(preview.deletions),
+    })
   }
   return (
     <div
       className="mx-2 flex flex-wrap items-center gap-2 rounded-2xl bg-warning-soft px-3 py-2 text-sm"
       role="alertdialog"
-      aria-label={t('Rewind files', 'Hoàn tác file')}
+      aria-label={t('workspace.rewindFiles')}
     >
       <span className="min-w-0 flex-1">{message}</span>
       {blocked || preview === null ? null : (
         <Button size="sm" variant="danger" isDisabled={busy} onPress={onConfirm}>
-          {t('Rewind', 'Hoàn tác')}
+          {t('workspace.rewind')}
         </Button>
       )}
       <Button size="sm" variant="secondary" onPress={onCancel}>
-        {blocked ? t('Close', 'Đóng') : t('Cancel', 'Hủy')}
+        {blocked ? t('workspace.close') : t('workspace.cancel')}
       </Button>
     </div>
   )
@@ -289,22 +289,19 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
           >
             {chat.data?.hasMore === true ? (
               <p className="text-center text-xs text-muted">
-                {t('Earlier messages are not shown.', 'Tin nhắn cũ hơn không hiển thị.')}
+                {t('workspace.earlierMessagesAreNotShown')}
               </p>
             ) : null}
             {chat.data === undefined ? (
               <p className="text-center text-sm text-muted" role="status">
-                {t('Loading the conversation...', 'Đang tải cuộc trò chuyện...')}
+                {t('workspace.loadingTheConversation')}
               </p>
             ) : null}
             {empty ? (
               <p className="m-auto max-w-sm text-center text-sm text-muted" role="status">
                 {running
-                  ? t('Claude is starting...', 'Claude đang khởi động...')
-                  : t(
-                      'No conversation yet. Send a message to start one.',
-                      'Chưa có cuộc trò chuyện. Gửi một tin nhắn để bắt đầu.',
-                    )}
+                  ? t('workspace.claudeIsStarting')
+                  : t('workspace.noConversationYetSendAMessage')}
               </p>
             ) : null}
             <ChatRows
@@ -324,10 +321,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
                 className="rounded-2xl bg-surface-secondary px-3 py-2 text-center text-xs text-muted"
                 role="status"
               >
-                {t(
-                  'This is the history of an earlier session. Send a message to continue it.',
-                  'Đây là lịch sử của phiên trước. Gửi một tin nhắn để nối tiếp.',
-                )}
+                {t('workspace.thisIsTheHistoryOfAn')}
               </p>
             ) : null}
             {(requests ?? []).map((request) => (
@@ -347,7 +341,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
               size="sm"
               variant="secondary"
               className="absolute bottom-3 right-4 rounded-full shadow-overlay"
-              aria-label={t('Go to the latest message', 'Tới tin nhắn mới nhất')}
+              aria-label={t('workspace.goToTheLatestMessage')}
               onPress={() => {
                 const list = listRef.current
                 if (list !== null) {
@@ -374,12 +368,12 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
         {working || background.length === 0 ? null : (
           <div
             role="status"
-            aria-label={t('Running in the background', 'Đang chạy nền')}
+            aria-label={t('workspace.runningInTheBackground')}
             className="flex min-w-0 items-center gap-2 px-3 pb-1 text-xs text-muted"
           >
             <Spinner size="sm" />
             <span className="truncate">
-              {t('Running in the background', 'Đang chạy nền')}: {background.join(', ')}
+              {t('workspace.runningInTheBackground')}: {background.join(', ')}
             </span>
           </div>
         )}
@@ -421,7 +415,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
           )}
           {tokens === null ? null : (
             <span>
-              {t('Tokens', 'Token')}:{' '}
+              {t('workspace.tokens')}:{' '}
               <span className="font-semibold text-foreground">{formatTokens(tokens)}</span>
               {usage === null || usage.contextPercent === null
                 ? ''
@@ -429,9 +423,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
             </span>
           )}
           {usage === null || usage.usage === null ? null : <UsageStat window={usage.usage} />}
-          {mode === 'bypassPermissions' ? (
-            <span>{t('Bypass permissions on', 'Đang bỏ qua quyền')}</span>
-          ) : null}
+          {mode === 'bypassPermissions' ? <span>{t('workspace.bypassPermissionsOn')}</span> : null}
         </div>
       </div>
     </ChatFileLinks>

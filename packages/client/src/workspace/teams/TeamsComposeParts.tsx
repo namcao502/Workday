@@ -40,7 +40,7 @@ export function TeamsReplyBox({
       initialMentions={loaded?.mentions ?? []}
       people={people}
       label={label}
-      submitLabel={t('Send', 'Gửi')}
+      submitLabel={t('teams.send')}
       locked={locked}
       onSend={(draft, _subject, confirm) =>
         send(() => replyToThread(ticket, { conversationId, rootId, draft, confirm }))
@@ -76,8 +76,8 @@ export function TeamsEditBox({
     <TeamsComposer
       mode="edit"
       people={people}
-      label={t('Edit message', 'Sửa tin nhắn')}
-      submitLabel={t('Save', 'Lưu')}
+      label={t('teams.editMessage')}
+      submitLabel={t('teams.save')}
       initialHtml={loaded.html}
       initialMentions={loaded.mentions}
       withSubject={isRoot}

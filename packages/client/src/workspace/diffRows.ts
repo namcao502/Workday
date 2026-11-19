@@ -111,7 +111,7 @@ function excerptRows(view: Extract<TextDiff, { kind: 'excerpt' }>): readonly Dif
     rows.push(...segment)
   })
   if (view.truncated) {
-    rows.push(gapRow(t('(truncated)', '(đã cắt bớt)'), 0))
+    rows.push(gapRow(t('workspace.truncated'), 0))
   }
   return rows
 }

@@ -47,13 +47,13 @@ function stateLabel(props: DayCardProps): string {
   const { day } = props
   switch (day.state) {
     case 'off':
-      return t('Day off', 'Nghỉ')
+      return t('timesheet.dayOff')
     case 'logged':
       return `${DONE_MARK} ${formatMinutes(Math.round((day.coverage?.hrmHours ?? 0) * MINUTES_PER_HOUR))}`
     case 'queued':
-      return t('Queued', 'Trong hàng đợi')
+      return t('timesheet.queued')
     case 'future':
-      return t('not yet', 'chưa tới')
+      return t('timesheet.notYet')
     case 'empty':
       return ''
   }
@@ -68,9 +68,7 @@ function tscLine(day: LogDayView): string {
     const text = (coverage.tscText ?? '').trim()
     return text === '' ? 'TSC -' : `TSC ${DONE_MARK} ${text}`
   }
-  return coverage.tscState === 'failed'
-    ? t('TSC not read', 'Chưa đọc được TSC')
-    : t('TSC not read yet', 'TSC chưa đọc')
+  return coverage.tscState === 'failed' ? t('timesheet.tscNotRead') : t('timesheet.tscNotReadYet')
 }
 
 function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Element {
@@ -93,10 +91,7 @@ function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
       {items.length === 0 ? null : (
         <p className="text-sm text-warning">
           <Tip content={tooltip}>
-            {t(
-              `${String(items.length)} ticket(s) to check`,
-              `${String(items.length)} ticket cần xem`,
-            )}
+            {t('timesheet.ticketSToCheck', { length: String(items.length) })}
           </Tip>
         </p>
       )}
@@ -121,11 +116,11 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
     entry.date > clock.date ? entry.date : null,
     language,
   )
-  const base = state === 'due' ? t('Retry', 'Thử lại') : t('Log now', 'Log ngay')
+  const base = state === 'due' ? t('timesheet.retry') : t('timesheet.logNow')
   const label = props.working
-    ? t('Working...', 'Đang chạy...')
+    ? t('timesheet.working')
     : closed
-      ? `${base} ${t('(after 6 PM)', '(sau 6 PM)')}`
+      ? `${base} ${t('timesheet.after6Pm')}`
       : base
   return (
     <>
@@ -172,12 +167,12 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
 
 function EmptyBody({ props }: { readonly props: DayCardProps }): React.JSX.Element {
   if (props.reading) {
-    return <p className="text-sm text-muted">{t('Reading...', 'Đang đọc...')}</p>
+    return <p className="text-sm text-muted">{t('timesheet.reading')}</p>
   }
   const past = props.day.date < props.clock.date
   return (
     <p className={past ? 'text-sm text-warning' : 'text-sm text-muted'}>
-      {t('Nothing logged - type a ticket above', 'Chưa log gì - hãy gõ ticket ở trên')}
+      {t('timesheet.nothingLoggedTypeATicketAbove')}
     </p>
   )
 }

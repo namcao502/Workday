@@ -54,7 +54,7 @@ function NoticeItem({
             {formatShortDate(new Date(notice.at), getLanguage(), timeZone)}
           </span>
         </span>
-        {notice.read ? null : <span className="visually-hidden">{t('Unread', 'Chưa đọc')}</span>}
+        {notice.read ? null : <span className="visually-hidden">{t('notices.unread')}</span>}
       </button>
     </li>
   )
@@ -67,7 +67,7 @@ function RunningWork({ labels }: { readonly labels: readonly string[] }): React.
   }
   return (
     <section className="mb-2 rounded-xl bg-surface-secondary p-2" aria-live="polite">
-      <h3 className="m-0 pb-1 text-sm font-semibold">{t('Running now', 'Đang chạy')}</h3>
+      <h3 className="m-0 pb-1 text-sm font-semibold">{t('notices.runningNow')}</h3>
       <ul className="m-0 flex list-none flex-col gap-1 p-0">
         {labels.map((label) => (
           <li key={label} className="flex items-start gap-2 text-sm text-muted">
@@ -105,11 +105,7 @@ export function NoticeBell(): React.JSX.Element {
         <Button
           isIconOnly
           variant="secondary"
-          aria-label={
-            busy
-              ? t('Notices, work running', 'Thông báo, đang chạy việc')
-              : t('Notices', 'Thông báo')
-          }
+          aria-label={busy ? t('notices.noticesWorkRunning') : t('notices.notices')}
         >
           {busy ? (
             <Spinner size="sm" aria-hidden="true" />
@@ -128,7 +124,7 @@ export function NoticeBell(): React.JSX.Element {
           <RunningWork labels={running} />
           <div className="flex items-center justify-between pb-2">
             <Popover.Heading className="font-semibold">
-              {t('Notifications', 'Thông báo')}
+              {t('notices.notifications')}
             </Popover.Heading>
             <Button
               size="sm"
@@ -138,13 +134,13 @@ export function NoticeBell(): React.JSX.Element {
                 void actions.readAll()
               }}
             >
-              {t('Mark all read', 'Đánh dấu đã đọc tất cả')}
+              {t('notices.markAllRead')}
             </Button>
           </div>
           {view === undefined ? (
-            <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+            <p className="text-sm text-muted">{t('notices.loading')}</p>
           ) : newestFirst.length === 0 ? (
-            <p className="text-sm text-muted">{t('No notifications yet', 'Chưa có thông báo')}</p>
+            <p className="text-sm text-muted">{t('notices.noNotificationsYet')}</p>
           ) : (
             <ul className="m-0 max-h-[420px] list-none overflow-auto p-0">
               {newestFirst.map((notice) => (

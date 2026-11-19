@@ -76,7 +76,7 @@ export function SelectionQuote({
           setOffer(null)
         }}
       >
-        {t('Quote', 'Trích dẫn')}
+        {t('workspace.quote')}
       </Button>
     </div>,
     document.body,

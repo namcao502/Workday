@@ -16,21 +16,21 @@ type Theme = SettingsView['config']['theme']
 export function seasonName(season: Season): string {
   switch (season) {
     case 'spring':
-      return t('Spring', 'Xuân')
+      return t('settings.spring')
     case 'summer':
-      return t('Summer', 'Hạ')
+      return t('settings.summer')
     case 'autumn':
-      return t('Autumn', 'Thu')
+      return t('settings.autumn')
     case 'winter':
-      return t('Winter', 'Đông')
+      return t('settings.winter')
     case 'christmas':
-      return t('Christmas', 'Giáng sinh')
+      return t('settings.christmas')
     case 'tet':
-      return t('Tet', 'Tết')
+      return t('settings.tet')
     case 'midautumn':
-      return t('Mid-Autumn', 'Trung thu')
+      return t('settings.midAutumn')
     case 'rain':
-      return t('Rain', 'Mưa')
+      return t('settings.rain')
   }
 }
 
@@ -43,15 +43,15 @@ export function GeneralSection({
   const { theme, language, season, seasonEffects, timeZone } = settings.config
   const shown = useActiveSeason(season, timeZone)
   return (
-    <Section title={t('General', 'Chung')}>
+    <Section title={t('settings.general')}>
       <div className="flex flex-wrap items-center gap-3">
-        <span className="w-24 text-sm text-muted">{t('Theme', 'Giao diện')}</span>
+        <span className="w-24 text-sm text-muted">{t('settings.theme')}</span>
         <Segmented<Theme>
-          label={t('Theme', 'Giao diện')}
+          label={t('settings.theme')}
           value={theme}
           options={[
-            { value: 'dark', label: t('Dark', 'Tối') },
-            { value: 'light', label: t('Light', 'Sáng') },
+            { value: 'dark', label: t('settings.dark') },
+            { value: 'light', label: t('settings.light') },
           ]}
           onChange={(next) => {
             void save({ theme: next })
@@ -59,14 +59,14 @@ export function GeneralSection({
         />
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <span className="w-24 text-sm text-muted">{t('Season', 'Theo mùa')}</span>
+        <span className="w-24 text-sm text-muted">{t('settings.season')}</span>
         <Segmented<SeasonSetting>
-          label={t('Season', 'Theo mùa')}
+          label={t('settings.season')}
           value={season}
           options={[
-            { value: 'off', label: t('Off', 'Tắt') },
-            { value: 'auto', label: t('By date', 'Theo ngày') },
-            { value: 'shuffle', label: t('Shuffle', 'Ngẫu nhiên') },
+            { value: 'off', label: t('settings.off') },
+            { value: 'auto', label: t('settings.byDate') },
+            { value: 'shuffle', label: t('settings.shuffle') },
             ...SEASONS.map((value) => ({ value, label: seasonName(value) })),
           ]}
           onChange={(next) => {
@@ -75,38 +75,33 @@ export function GeneralSection({
         />
         {(season === 'auto' || season === 'shuffle') && shown !== null ? (
           <span className="text-sm text-muted" data-testid="season-now">
-            {t(`Now: ${seasonName(shown)}`, `Hiện tại: ${seasonName(shown)}`)}
+            {t('settings.now', { shown: seasonName(shown) })}
           </span>
         ) : null}
       </div>
       {season === 'off' ? null : (
         <div className="flex flex-wrap items-center gap-3">
-          <span className="w-24 text-sm text-muted">{t('Effects', 'Hiệu ứng')}</span>
+          <span className="w-24 text-sm text-muted">{t('settings.effects')}</span>
           <Segmented<SeasonEffects>
-            label={t('Effects', 'Hiệu ứng')}
+            label={t('settings.effects')}
             value={seasonEffects}
             options={[
-              { value: 'auto', label: t('Auto', 'Tự động') },
-              { value: 'off', label: t('Off', 'Tắt') },
-              { value: 'light', label: t('Light', 'Nhẹ') },
-              { value: 'full', label: t('Full', 'Đầy đủ') },
+              { value: 'auto', label: t('settings.auto') },
+              { value: 'off', label: t('settings.off') },
+              { value: 'light', label: t('settings.light2') },
+              { value: 'full', label: t('settings.full') },
             ]}
             onChange={(next) => {
               void save({ seasonEffects: next })
             }}
           />
-          <span className="text-sm text-muted">
-            {t(
-              'Auto: full on a computer, light on a phone. Off keeps the colors.',
-              'Tự động: đầy đủ trên máy tính, nhẹ trên điện thoại. Tắt vẫn giữ màu.',
-            )}
-          </span>
+          <span className="text-sm text-muted">{t('settings.autoFullOnAComputerLight')}</span>
         </div>
       )}
       <div className="flex flex-wrap items-center gap-3">
-        <span className="w-24 text-sm text-muted">{t('Language', 'Ngôn ngữ')}</span>
+        <span className="w-24 text-sm text-muted">{t('settings.language')}</span>
         <Segmented<Language>
-          label={t('Language', 'Ngôn ngữ')}
+          label={t('settings.language')}
           value={language}
           options={[
             { value: 'en', label: 'English' },

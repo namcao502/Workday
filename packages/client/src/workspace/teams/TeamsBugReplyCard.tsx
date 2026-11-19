@@ -22,7 +22,7 @@ export function TeamsBugReplyCard({
       data-testid="teams-bug-reply"
     >
       <span className="text-sm font-medium">
-        {t(`Answer QC for ${reply.fix.bugKey}`, `Trả lời QC cho ${reply.fix.bugKey}`)}
+        {t('teams.answerQcFor', { bugKey: reply.fix.bugKey })}
       </span>
       <div
         className="teams-content max-h-32 overflow-y-auto text-sm"
@@ -38,7 +38,7 @@ export function TeamsBugReplyCard({
             onUse(reply)
           }}
         >
-          {t('Use reply', 'Dùng câu trả lời')}
+          {t('teams.useReply')}
         </Button>
       </div>
     </div>

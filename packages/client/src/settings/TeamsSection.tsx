@@ -14,14 +14,12 @@ const STATUS_KEY = ['teams', 'status'] as const
 
 function statusText(configured: boolean, signedIn: boolean | null): string {
   if (!configured) {
-    return t('Teams is off: no watched channels.', 'Teams đang tắt: chưa có kênh theo dõi.')
+    return t('settings.teamsIsOffNoWatchedChannels')
   }
   if (signedIn === null) {
-    return t('Not checked yet.', 'Chưa kiểm tra.')
+    return t('settings.notCheckedYet')
   }
-  return signedIn
-    ? t('Signed in to Teams.', 'Đã đăng nhập Teams.')
-    : t('Signed out of Teams.', 'Chưa đăng nhập Teams.')
+  return signedIn ? t('settings.signedInToTeams') : t('settings.signedOutOfTeams')
 }
 
 export function TeamsSection({ settings }: { readonly settings: SettingsView }): React.JSX.Element {
@@ -40,22 +38,19 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
     if (dbReviewIncomplete(form)) {
       setStatus({
         ok: false,
-        text: t(
-          'Fill both Database Review fields, or leave both empty',
-          'Điền cả hai ô Database Review, hoặc để trống cả hai',
-        ),
+        text: t('settings.fillBothDatabaseReviewFieldsOr'),
       })
       return
     }
     setBusy(true)
     try {
       await save({ teams: teamsFromForm(form) })
-      setStatus({ ok: true, text: t('Saved', 'Đã lưu') })
+      setStatus({ ok: true, text: t('settings.saved') })
       await queryClient.invalidateQueries({ queryKey: STATUS_KEY })
     } catch {
       setStatus({
         ok: false,
-        text: t('Could not save the Teams settings', 'Không lưu được cài đặt Teams'),
+        text: t('settings.couldNotSaveTheTeamsSettings'),
       })
     } finally {
       setBusy(false)
@@ -71,7 +66,7 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
     } catch {
       setStatus({
         ok: false,
-        text: t('Could not reach the Workday server', 'Không kết nối được tới Workday server'),
+        text: t('settings.couldNotReachTheWorkdayServer2'),
       })
     } finally {
       setBusy(false)
@@ -82,11 +77,8 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
     <Section title="Teams">
       <TextField
         id="teams-watched-channels"
-        label={t('Watched channels', 'Kênh theo dõi')}
-        hint={t(
-          'One "Team > Channel" per line. The first is where new posts go. Empty = Teams off',
-          'Mỗi dòng một "Team > Channel". Dòng đầu là nơi đăng bài mới. Để trống = tắt Teams',
-        )}
+        label={t('settings.watchedChannels')}
+        hint={t('settings.oneTeamChannelPerLineThe')}
         multiline
         value={form.watchedChannels}
         onChange={(value) => {
@@ -95,11 +87,8 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
       />
       <TextField
         id="teams-lead-name"
-        label={t('Lead name', 'Tên lead')}
-        hint={t(
-          'Greeted in a new post when this name is found among the people',
-          'Được chào trong bài mới khi tìm thấy tên này trong danh sách người',
-        )}
+        label={t('settings.leadName')}
+        hint={t('settings.greetedInANewPostWhen')}
         value={form.postLeadName}
         onChange={(value) => {
           change({ postLeadName: value })
@@ -107,8 +96,8 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
       />
       <TextField
         id="teams-greeting"
-        label={t('Greeting template', 'Mẫu lời chào')}
-        hint={t('{lead} is the lead name', '{lead} là tên lead')}
+        label={t('settings.greetingTemplate')}
+        hint={t('settings.isTheLeadName')}
         value={form.postGreeting}
         onChange={(value) => {
           change({ postGreeting: value })
@@ -116,11 +105,8 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
       />
       <TextField
         id="teams-db-review-team"
-        label={t('Database Review team', 'Team Database Review')}
-        hint={t(
-          'Where schema changes go for approval. Empty = no DB review to-dos',
-          'Nơi gửi thay đổi schema để duyệt. Để trống = không có to-do DB review',
-        )}
+        label={t('settings.databaseReviewTeam')}
+        hint={t('settings.whereSchemaChangesGoForApproval')}
         value={form.dbReviewTeam}
         onChange={(value) => {
           change({ dbReviewTeam: value })
@@ -128,11 +114,8 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
       />
       <TextField
         id="teams-db-review-channel"
-        label={t('Database Review channel', 'Kênh Database Review')}
-        hint={t(
-          'Must also be one of the watched channels',
-          'Cũng phải nằm trong các kênh theo dõi',
-        )}
+        label={t('settings.databaseReviewChannel')}
+        hint={t('settings.mustAlsoBeOneOfThe')}
         value={form.dbReviewChannel}
         onChange={(value) => {
           change({ dbReviewChannel: value })
@@ -147,7 +130,7 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
             void runSave()
           }}
         >
-          {t('Save', 'Lưu')}
+          {t('settings.save')}
         </Button>
         <Button
           variant="secondary"
@@ -157,7 +140,7 @@ export function TeamsSection({ settings }: { readonly settings: SettingsView }):
             void runSignIn()
           }}
         >
-          {t('Sign in to Teams', 'Đăng nhập Teams')}
+          {t('settings.signInToTeams')}
         </Button>
       </div>
       {teamsStatus.data === undefined ? null : (

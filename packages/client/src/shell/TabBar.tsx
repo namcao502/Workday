@@ -21,7 +21,7 @@ export function TabBar({
   return (
     <nav
       className="app-tabbar fixed inset-x-2 bottom-2 z-20 flex rounded-2xl bg-surface shadow-surface"
-      aria-label={t('Tabs', 'Thẻ')}
+      aria-label={t('shell.tabs')}
     >
       {pages.map((page) => {
         const selected = page === current

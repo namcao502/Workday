@@ -12,11 +12,8 @@ export function TscAdvancedFields({ form, onChange }: TscAdvancedFieldsProps): R
     <>
       <TextField
         id="tsc-header-rows"
-        label={t('Header rows', 'Số dòng tiêu đề')}
-        hint={t(
-          'Rows at the top of the sheet before the first day. Default 2.',
-          'Số dòng đầu sheet trước ngày đầu tiên. Mặc định 2.',
-        )}
+        label={t('settings.headerRows')}
+        hint={t('settings.rowsAtTheTopOfThe')}
         value={form.headerRows}
         onChange={(value) => {
           onChange({ headerRows: value })
@@ -24,11 +21,8 @@ export function TscAdvancedFields({ form, onChange }: TscAdvancedFieldsProps): R
       />
       <TextField
         id="tsc-off-marker"
-        label={t('Day-off marker', 'Ký hiệu ngày nghỉ')}
-        hint={t(
-          'The text a day-off row carries. Default OFF.',
-          'Chữ trên dòng ngày nghỉ. Mặc định OFF.',
-        )}
+        label={t('settings.dayOffMarker')}
+        hint={t('settings.theTextADayOffRow')}
         value={form.offMarker}
         onChange={(value) => {
           onChange({ offMarker: value })
@@ -36,11 +30,8 @@ export function TscAdvancedFields({ form, onChange }: TscAdvancedFieldsProps): R
       />
       <TextField
         id="tsc-off-fill-color"
-        label={t('Day-off fill color', 'Màu nền ngày nghỉ')}
-        hint={t(
-          'The cell color of a day-off row, as #RRGGBB. Default #FFFF00.',
-          'Màu ô của dòng ngày nghỉ, dạng #RRGGBB. Mặc định #FFFF00.',
-        )}
+        label={t('settings.dayOffFillColor')}
+        hint={t('settings.theCellColorOfADay')}
         value={form.offFillColor}
         onChange={(value) => {
           onChange({ offFillColor: value })
@@ -48,11 +39,8 @@ export function TscAdvancedFields({ form, onChange }: TscAdvancedFieldsProps): R
       />
       <TextField
         id="tsc-drive-id"
-        label={t('Drive id', 'Mã drive')}
-        hint={t(
-          'With the item id, skips resolving the share URL. Empty: resolve it.',
-          'Cùng mã item, bỏ qua bước phân giải share URL. Để trống: tự phân giải.',
-        )}
+        label={t('settings.driveId')}
+        hint={t('settings.withTheItemIdSkipsResolving')}
         value={form.driveId}
         onChange={(value) => {
           onChange({ driveId: value })
@@ -60,11 +48,8 @@ export function TscAdvancedFields({ form, onChange }: TscAdvancedFieldsProps): R
       />
       <TextField
         id="tsc-item-id"
-        label={t('Item id', 'Mã item')}
-        hint={t(
-          'The workbook item id that goes with the drive id.',
-          'Mã item của workbook đi cùng mã drive.',
-        )}
+        label={t('settings.itemId')}
+        hint={t('settings.theWorkbookItemIdThatGoes')}
         value={form.itemId}
         onChange={(value) => {
           onChange({ itemId: value })

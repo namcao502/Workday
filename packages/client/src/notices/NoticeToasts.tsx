@@ -46,7 +46,7 @@ function Toast({
       </button>
       <CloseButton
         className="m-1.5"
-        aria-label={t('Dismiss', 'Đóng')}
+        aria-label={t('notices.dismiss')}
         onPress={() => {
           alerts.dismiss(notice)
         }}

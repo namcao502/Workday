@@ -45,19 +45,13 @@ export function DiffView({ tabId, group, path, onOverview }: DiffViewProps): Rea
     }
   }, [rows, onOverview])
   if (isError) {
-    return (
-      <p className="text-sm text-danger">{t('Could not load the diff.', 'Không tải được diff.')}</p>
-    )
+    return <p className="text-sm text-danger">{t('workspace.couldNotLoadTheDiff')}</p>
   }
   if (data === undefined) {
-    return <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+    return <p className="text-sm text-muted">{t('workspace.loading')}</p>
   }
   if (data.kind === 'binary') {
-    return (
-      <p className="text-sm text-muted">
-        {t('(binary or too large to show)', '(tệp nhị phân hoặc quá lớn để hiển thị)')}
-      </p>
-    )
+    return <p className="text-sm text-muted">{t('workspace.binaryOrTooLargeToShow')}</p>
   }
   return (
     <table ref={table} className="diff-view" onCopy={copyNewSide}>
@@ -67,10 +61,7 @@ export function DiffView({ tabId, group, path, onOverview }: DiffViewProps): Rea
             <tr key={index} className="diff-gap">
               <td colSpan={4}>
                 {row.text === ''
-                  ? t(
-                      `${String(row.hiddenCount)} unchanged lines`,
-                      `${String(row.hiddenCount)} dòng không đổi`,
-                    )
+                  ? t('workspace.unchangedLines', { hiddenCount: String(row.hiddenCount) })
                   : row.text}
               </td>
             </tr>

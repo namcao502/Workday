@@ -56,9 +56,7 @@ export function OverviewRuler({ marks, scroller }: OverviewRulerProps): React.JS
           type="button"
           tabIndex={-1}
           aria-label={
-            mark.kind === 'added'
-              ? t('Go to the added lines', 'Tới các dòng thêm')
-              : t('Go to the removed lines', 'Tới các dòng xóa')
+            mark.kind === 'added' ? t('ui.goToTheAddedLines') : t('ui.goToTheRemovedLines')
           }
           className={`pointer-events-auto absolute left-0 w-full cursor-pointer rounded-sm ${
             mark.kind === 'added' ? 'bg-success' : 'bg-danger'

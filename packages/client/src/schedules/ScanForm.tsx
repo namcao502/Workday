@@ -85,11 +85,11 @@ export function ScanForm({
   return (
     <div className="flex flex-col gap-3">
       <HeroTextField fullWidth value={command} onChange={setCommand} onBlur={saveText}>
-        <Label>{t('Command', 'Lệnh')}</Label>
+        <Label>{t('schedules.command')}</Label>
         <Input id="scan-command" variant="secondary" />
       </HeroTextField>
       <HeroTextField fullWidth value={argsText} onChange={setArgsText} onBlur={saveText}>
-        <Label>{t('Arguments (one per line)', 'Đối số (mỗi dòng một đối số)')}</Label>
+        <Label>{t('schedules.argumentsOnePerLine')}</Label>
         <TextArea
           id="scan-args"
           rows={TEXTAREA_ROWS}
@@ -98,11 +98,11 @@ export function ScanForm({
         />
       </HeroTextField>
       <HeroTextField fullWidth value={logFile} onChange={setLogFile} onBlur={saveText}>
-        <Label>{t('Log file', 'File log')}</Label>
+        <Label>{t('schedules.logFile')}</Label>
         <Input
           id="scan-log-file"
           variant="secondary"
-          placeholder={t('Optional: the script writes its own log', 'Tùy chọn: script tự ghi log')}
+          placeholder={t('schedules.optionalTheScriptWritesItsOwn')}
         />
       </HeroTextField>
       <div className="flex flex-wrap items-center gap-2">
@@ -116,11 +116,11 @@ export function ScanForm({
             <Switch.Control>
               <Switch.Thumb />
             </Switch.Control>
-            <Label>{t('Run on schedule', 'Chạy theo lịch')}</Label>
+            <Label>{t('schedules.runOnSchedule')}</Label>
           </Switch.Content>
         </Switch>
         <Segmented
-          label={t('Day', 'Ngày')}
+          label={t('schedules.day')}
           value={current.day}
           options={SCAN_DAYS.map((day) => ({ value: day, label: dayLabel(day) }))}
           onChange={(day) => {
@@ -128,7 +128,7 @@ export function ScanForm({
           }}
         />
         <Select
-          aria-label={t('Start time', 'Giờ bắt đầu')}
+          aria-label={t('schedules.startTime')}
           variant="secondary"
           className="w-28"
           value={current.time}
@@ -155,11 +155,9 @@ export function ScanForm({
         </Select>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted">
-          {t('Stop a run after (hours)', 'Dừng lần chạy sau (giờ)')}
-        </span>
+        <span className="text-sm text-muted">{t('schedules.stopARunAfterHours')}</span>
         <Segmented
-          label={t('Time limit', 'Giới hạn thời gian')}
+          label={t('schedules.timeLimit')}
           value={String(current.limitHours)}
           options={SCAN_LIMIT_HOURS.map((hours) => ({
             value: String(hours),
@@ -175,7 +173,7 @@ export function ScanForm({
       </div>
       {failed ? (
         <p className="text-sm text-danger" role="status">
-          {t('Could not save the scan settings', 'Không lưu được cài đặt quét')}
+          {t('schedules.couldNotSaveTheScanSettings')}
         </p>
       ) : null}
     </div>

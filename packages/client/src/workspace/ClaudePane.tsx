@@ -38,7 +38,7 @@ export function ClaudePane({
       <div
         className="flex flex-wrap items-center gap-1 pb-2"
         role="tablist"
-        aria-label={t('Claude sessions', 'Phiên Claude')}
+        aria-label={t('workspace.claudeSessions')}
       >
         {tab.sessions.map((name, index) => (
           <div
@@ -60,7 +60,7 @@ export function ClaudePane({
             {index === 0 ? null : (
               <CloseButton
                 className="ml-1 size-6 hover:bg-danger hover:text-danger-foreground"
-                aria-label={t(`Close ${sessionLabel(name)}`, `Đóng ${sessionLabel(name)}`)}
+                aria-label={t('workspace.close2', { name: sessionLabel(name) })}
                 onPress={() => {
                   onClose(name)
                 }}
@@ -72,7 +72,7 @@ export function ClaudePane({
           isIconOnly
           variant="secondary"
           size="sm"
-          aria-label={t('New Claude session', 'Phiên Claude mới')}
+          aria-label={t('workspace.newClaudeSession')}
           onPress={onAdd}
         >
           <Plus />

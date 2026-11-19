@@ -45,7 +45,7 @@ export function ChatLink({
   const target = href === undefined || links === null ? null : links.resolve(href)
   if (target !== null && links !== null) {
     return (
-      <Tip className="inline" content={t('Open in Files', 'Mở trong Files')}>
+      <Tip className="inline" content={t('workspace.openInFiles')}>
         <a
           href={href}
           onClick={(event) => {
@@ -83,7 +83,7 @@ export function ChatCode({
     return <code className={className}>{children}</code>
   }
   return (
-    <Tip className="inline" content={t('Open in Files', 'Mở trong Files')}>
+    <Tip className="inline" content={t('workspace.openInFiles')}>
       <button
         type="button"
         className="cursor-pointer text-accent hover:underline"

@@ -15,7 +15,7 @@ export function ActionMenu({
 }): React.JSX.Element {
   return (
     <Dropdown>
-      <Button isIconOnly variant="secondary" aria-label={t('More actions', 'Thêm thao tác')}>
+      <Button isIconOnly variant="secondary" aria-label={t('timesheet.moreActions')}>
         <EllipsisVertical />
       </Button>
       <Dropdown.Popover>

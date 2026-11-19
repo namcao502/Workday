@@ -20,7 +20,7 @@ function StatusLine({ status }: { readonly status: VpnStatusView }): React.JSX.E
   if (status.server === 'running') {
     return (
       <p className="text-sm">
-        {t('Listening at', 'Đang nghe tại')} {status.httpsUrl}
+        {t('settings.listeningAt')} {status.httpsUrl}
       </p>
     )
   }
@@ -29,9 +29,7 @@ function StatusLine({ status }: { readonly status: VpnStatusView }): React.JSX.E
   }
   return (
     <p className="text-sm text-muted">
-      {status.server === 'starting'
-        ? t('VPN starting', 'VPN đang khởi động')
-        : t('VPN off', 'VPN tắt')}
+      {status.server === 'starting' ? t('settings.vpnStarting') : t('settings.vpnOff')}
     </p>
   )
 }
@@ -44,14 +42,14 @@ function FirewallRow({ saved }: { readonly saved: VpnConfig | null }): React.JSX
     try {
       const outcome = await openRemoteFirewall()
       if (outcome.ok) {
-        setResult(t('Firewall rule added', 'Đã thêm luật tường lửa'))
+        setResult(t('settings.firewallRuleAdded'))
       } else if (outcome.error.code === 'firewallCancelled') {
-        setResult(t('Cancelled', 'Đã hủy'))
+        setResult(t('settings.cancelled'))
       } else {
         setResult(errorText(outcome.error))
       }
     } catch {
-      setResult(t('Could not reach the Workday server', 'Không kết nối được tới Workday server'))
+      setResult(t('settings.couldNotReachTheWorkdayServer2'))
     }
   }
 
@@ -65,11 +63,9 @@ function FirewallRow({ saved }: { readonly saved: VpnConfig | null }): React.JSX
           void open()
         }}
       >
-        {t('Open firewall', 'Mở tường lửa')}
+        {t('settings.openFirewall')}
       </Button>
-      <span className="text-sm text-muted">
-        {result ?? t('Save the IP ranges first', 'Hãy lưu các dải IP trước')}
-      </span>
+      <span className="text-sm text-muted">{result ?? t('settings.saveTheIpRangesFirst')}</span>
     </div>
   )
 }
@@ -84,7 +80,7 @@ export function VpnSettings({
   const addresses = status?.addresses ?? []
   return (
     <>
-      <h3 className="text-sm font-semibold">{t('VPN access', 'Truy cập qua VPN')}</h3>
+      <h3 className="text-sm font-semibold">{t('settings.vpnAccess')}</h3>
       <Switch
         isSelected={form.enabled}
         onChange={(selected) => {
@@ -95,7 +91,7 @@ export function VpnSettings({
           <Switch.Control>
             <Switch.Thumb />
           </Switch.Control>
-          {t('Allow access over the VPN', 'Cho phép truy cập qua VPN')}
+          {t('settings.allowAccessOverTheVpn')}
         </Switch.Content>
       </Switch>
       <ComboBox
@@ -106,7 +102,7 @@ export function VpnSettings({
           onChange({ address: value })
         }}
       >
-        <Label>{t('PC address on the VPN', 'Địa chỉ của máy trên VPN')}</Label>
+        <Label>{t('settings.pcAddressOnTheVpn')}</Label>
         <ComboBox.InputGroup>
           <Input id="vpn-address" variant="secondary" placeholder="10.20.30.40" />
           <ComboBox.Trigger />
@@ -124,8 +120,8 @@ export function VpnSettings({
       <div className="grid grid-cols-2 gap-2">
         <TextField
           id="vpn-https-port"
-          label={t('HTTPS port', 'Cổng HTTPS')}
-          hint={t('The app and its API', 'App và API')}
+          label={t('settings.httpsPort')}
+          hint={t('settings.theAppAndItsApi')}
           value={form.httpsPort}
           onChange={(value) => {
             onChange({ httpsPort: value })
@@ -133,8 +129,8 @@ export function VpnSettings({
         />
         <TextField
           id="vpn-setup-port"
-          label={t('Setup port', 'Cổng cài đặt')}
-          hint={t('Plain HTTP, only for pairing', 'HTTP thường, chỉ để ghép nối')}
+          label={t('settings.setupPort')}
+          hint={t('settings.plainHttpOnlyForPairing')}
           value={form.setupPort}
           onChange={(value) => {
             onChange({ setupPort: value })
@@ -143,11 +139,8 @@ export function VpnSettings({
       </div>
       <TextField
         id="vpn-ranges"
-        label={t('Allowed IP ranges', 'Dải IP được phép')}
-        hint={t(
-          'One IPv4 range per line, e.g. 10.20.0.0/16',
-          'Mỗi dòng một dải IPv4, ví dụ 10.20.0.0/16',
-        )}
+        label={t('settings.allowedIpRanges')}
+        hint={t('settings.oneIpv4RangePerLineE')}
         value={form.allowedRanges}
         multiline
         onChange={(value) => {
@@ -162,7 +155,7 @@ export function VpnSettings({
       {status === undefined ? null : <StatusLine status={status} />}
       {status?.caFingerprint == null ? null : (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted">{t('CA fingerprint', 'Vân tay CA')}</span>
+          <span className="text-sm text-muted">{t('settings.caFingerprint')}</span>
           <code className="break-all font-mono text-xs">{status.caFingerprint}</code>
           <CopyButton text={status.caFingerprint} />
         </div>

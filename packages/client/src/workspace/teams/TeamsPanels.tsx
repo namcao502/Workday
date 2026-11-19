@@ -4,7 +4,7 @@ import { t } from '../../i18n.js'
 import { navigateTo } from '../../shell/pages.js'
 
 function optionLabel(option: TeamsOption): string {
-  return option.posted ? option.label : `${option.label} ${t('(not posted)', '(chưa đăng)')}`
+  return option.posted ? option.label : `${option.label} ${t('teams.notPosted')}`
 }
 
 function UnreadDot({ label }: { readonly label: string }): React.JSX.Element {
@@ -37,13 +37,13 @@ export function ConversationSelect({
   const item = (option: TeamsOption): React.JSX.Element => (
     <ListBox.Item key={option.id} id={option.id} textValue={optionLabel(option)}>
       {optionLabel(option)}
-      {waiting.has(option.id) ? <UnreadDot label={t('Unread', 'Chưa đọc')} /> : null}
+      {waiting.has(option.id) ? <UnreadDot label={t('teams.unread')} /> : null}
       <ListBox.ItemIndicator />
     </ListBox.Item>
   )
   return (
     <Select
-      aria-label={t('Conversation', 'Hội thoại')}
+      aria-label={t('teams.conversation')}
       className="min-w-0 max-w-full flex-1"
       value={value}
       onChange={(key) => {
@@ -54,11 +54,7 @@ export function ConversationSelect({
     >
       <Select.Trigger>
         <Select.Value />
-        {otherWaiting ? (
-          <UnreadDot
-            label={t('Unread in another conversation', 'Có tin chưa đọc ở hội thoại khác')}
-          />
-        ) : null}
+        {otherWaiting ? <UnreadDot label={t('teams.unreadInAnotherConversation')} /> : null}
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover>
@@ -66,7 +62,7 @@ export function ConversationSelect({
           {channels.map(item)}
           {chats.length === 0 ? null : (
             <ListBox.Section>
-              <Header>{t('Chats', 'Trò chuyện')}</Header>
+              <Header>{t('teams.chats')}</Header>
               {chats.map(item)}
             </ListBox.Section>
           )}
@@ -80,12 +76,12 @@ export function ConversationSelect({
 export function composeLabel(view: TeamsReadView, selected: TeamsOption | undefined): string {
   const name = selected?.label ?? ''
   if (view.state === 'notPosted') {
-    return t(`New post: ${name}`, `Bài mới: ${name}`)
+    return t('teams.newPost', { name })
   }
   if (selected?.kind === 'chat') {
-    return t(`Chat: ${name}`, `Trò chuyện: ${name}`)
+    return t('teams.chat', { name })
   }
-  return t(`Post: ${name}`, `Bài đăng: ${name}`)
+  return t('teams.post', { name })
 }
 
 export function optionsOf(view: TeamsReadView): readonly TeamsOption[] {
@@ -112,16 +108,16 @@ export function StatePanel({
     case 'signedOut':
       return (
         <div className="flex flex-col items-start gap-2 py-3">
-          <p>{t('You are signed out of Teams.', 'Bạn chưa đăng nhập Teams.')}</p>
+          <p>{t('teams.youAreSignedOutOfTeams')}</p>
           <Button variant="primary" size="sm" isDisabled={writing} onPress={onSignIn}>
-            {t('Sign in to Teams', 'Đăng nhập Teams')}
+            {t('teams.signInToTeams')}
           </Button>
         </div>
       )
     case 'notConfigured':
       return (
         <div className="flex flex-col items-start gap-2 py-3">
-          <p>{t('Teams is not set up.', 'Chưa cấu hình Teams.')}</p>
+          <p>{t('teams.teamsIsNotSetUp')}</p>
           <Button
             variant="primary"
             size="sm"
@@ -129,22 +125,14 @@ export function StatePanel({
               navigateTo('settings')
             }}
           >
-            {t('Open Settings > Teams', 'Mở Cài đặt > Teams')}
+            {t('teams.openSettingsTeams')}
           </Button>
         </div>
       )
     case 'searching':
-      return (
-        <p className="py-3 text-sm text-muted">
-          {t('Looking for an older post...', 'Đang tìm bài đăng cũ hơn...')}
-        </p>
-      )
+      return <p className="py-3 text-sm text-muted">{t('teams.lookingForAnOlderPost')}</p>
     case 'notPosted':
-      return (
-        <p className="py-3 text-sm text-muted">
-          {t('This ticket has no post here yet.', 'Ticket này chưa có bài đăng ở đây.')}
-        </p>
-      )
+      return <p className="py-3 text-sm text-muted">{t('teams.thisTicketHasNoPostHere')}</p>
     case 'thread':
       return null
   }

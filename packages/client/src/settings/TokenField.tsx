@@ -23,15 +23,9 @@ export function TokenField({
   onChange,
   onReplace,
   id = 'jira-api-token',
-  label = t('Jira API token', 'Jira API token'),
-  envText = t(
-    'Taken from WORKDAY_JIRA_API_TOKEN in .env - nothing to enter',
-    'Lấy từ WORKDAY_JIRA_API_TOKEN trong .env - không cần nhập',
-  ),
-  helpText = t(
-    'Create one at id.atlassian.com > Security > API tokens. It is not your password.',
-    'Tạo tại id.atlassian.com > Security > API tokens. Đây không phải mật khẩu.',
-  ),
+  label = t('settings.jiraApiToken'),
+  envText = t('settings.takenFromWorkdayJiraApiToken'),
+  helpText = t('settings.createOneAtIdAtlassianCom'),
 }: TokenFieldProps): React.JSX.Element {
   if (source === 'env') {
     return (
@@ -58,7 +52,7 @@ export function TokenField({
         <Input id={id} variant="secondary" autoComplete="off" className="flex-1" />
         {showMask ? (
           <Button variant="secondary" size="sm" onPress={onReplace}>
-            {t('Replace', 'Thay thế')}
+            {t('settings.replace')}
           </Button>
         ) : null}
       </div>

@@ -14,8 +14,8 @@ function detailOf(item: DaySuggestion): string {
   if (item.commits !== 0) {
     parts.push(
       item.commits === 1
-        ? t('1 commit', '1 commit')
-        : t(`${String(item.commits)} commits`, `${String(item.commits)} commit`),
+        ? t('timesheet.n1Commit')
+        : t('timesheet.commits', { commits: String(item.commits) }),
     )
   }
   if (item.claude) {
@@ -41,10 +41,10 @@ export function DaySuggestions({
   return (
     <section
       className="flex flex-wrap items-center gap-2"
-      aria-label={t('Worked on today', 'Đã làm trong ngày')}
+      aria-label={t('timesheet.workedOnToday')}
     >
       <span className="text-xs font-semibold tracking-wide text-muted">
-        {t('WORKED ON', 'ĐÃ LÀM')}
+        {t('timesheet.workedOn')}
       </span>
       {suggestions.map((item) => (
         <Button
@@ -75,7 +75,7 @@ export function DaySuggestions({
             )
           }}
         >
-          {t('Queue all', 'Thêm tất cả')}
+          {t('timesheet.queueAll')}
         </Button>
       ) : null}
     </section>

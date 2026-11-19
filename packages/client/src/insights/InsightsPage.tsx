@@ -36,10 +36,10 @@ export function InsightsPage(): React.JSX.Element {
     }
     navigator.clipboard.writeText(reportMarkdown(view.report)).then(
       () => {
-        setNotice(t('Report copied as markdown', 'Đã sao chép báo cáo dạng markdown'))
+        setNotice(t('insights.reportCopiedAsMarkdown'))
       },
       () => {
-        setNotice(t('Could not copy the report', 'Không sao chép được báo cáo'))
+        setNotice(t('insights.couldNotCopyTheReport'))
       },
     )
   }
@@ -49,19 +49,22 @@ export function InsightsPage(): React.JSX.Element {
       return
     }
     downloadCsv(view.report)
-    setNotice(t('Report exported as CSV', 'Đã xuất báo cáo ra CSV'))
+    setNotice(t('insights.reportExportedAsCsv'))
   }
 
   const readAt =
     view === null
       ? ''
-      : t(
-          `Read at ${formatClock(new Date(view.readAt), getLanguage(), settings?.timeZone ?? 'UTC')}`,
-          `Đã đọc lúc ${formatClock(new Date(view.readAt), getLanguage(), settings?.timeZone ?? 'UTC')}`,
-        )
+      : t('insights.readAt', {
+          formatClock: formatClock(
+            new Date(view.readAt),
+            getLanguage(),
+            settings?.timeZone ?? 'UTC',
+          ),
+        })
 
   return (
-    <Page title={t('Insights', 'Thống kê')} wide>
+    <Page title={t('insights.insights')} wide>
       <ReportHeader
         range={insights.range}
         reading={insights.reading}

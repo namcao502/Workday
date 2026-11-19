@@ -39,11 +39,7 @@ export function suggestionDetail(
   }
   if (ticket.dueDate !== null) {
     const due = formatDateOnly(ticket.dueDate, language)
-    parts.push(
-      ticket.dueDate < today
-        ? t(`Overdue (${due})`, `Trễ hạn (${due})`)
-        : t(`Due ${due}`, `Hạn ${due}`),
-    )
+    parts.push(ticket.dueDate < today ? t('board.overdue', { due }) : t('board.due2', { due }))
   }
   if (ticket.priority !== null && isHighPriority(ticket.priority)) {
     parts.push(ticket.priority)
@@ -59,7 +55,7 @@ export function suggestionDetail(
     parts.push(ticket.status)
   }
   if (similarKey !== null) {
-    parts.push(t(`like ${similarKey}`, `giống ${similarKey}`))
+    parts.push(t('board.like', { similarKey }))
   }
   return parts.join(SEPARATOR)
 }
@@ -89,9 +85,7 @@ export function SuggestionsCard({
     try {
       const outcome = await actions.take(key)
       if (!outcome.ok) {
-        setMessage(
-          t(`${outcome.holder} already took ${key}`, `Đã có ${outcome.holder} nhận ${key}`),
-        )
+        setMessage(t('board.alreadyTook', { holder: outcome.holder, key }))
       }
     } catch (error: unknown) {
       setMessage(actionErrorText(error))
@@ -109,7 +103,7 @@ export function SuggestionsCard({
 
   return (
     <Section
-      title={t('Available to take', 'Có thể nhận')}
+      title={t('board.availableToTake')}
       actions={
         suggestions.epicKey === null ? null : <Chip size="sm">{`Epic ${suggestions.epicKey}`}</Chip>
       }
@@ -121,8 +115,8 @@ export function SuggestionsCard({
       )}
       {taking === null ? null : (
         <ConfirmDialog
-          message={t(`Take ${taking}?`, `Nhận ${taking}?`)}
-          confirmLabel={t('Take', 'Nhận')}
+          message={t('board.take', { taking })}
+          confirmLabel={t('board.take2')}
           onConfirm={() => {
             const key = taking
             setTaking(null)
@@ -178,7 +172,7 @@ export function SuggestionsCard({
                       setTaking(ticket.key)
                     }}
                   >
-                    {t('Take', 'Nhận')}
+                    {t('board.take2')}
                   </Button>
                   <Button
                     variant="secondary"
@@ -187,7 +181,7 @@ export function SuggestionsCard({
                       void hide(ticket.key)
                     }}
                   >
-                    {t('Hide', 'Ẩn')}
+                    {t('board.hide')}
                   </Button>
                 </div>
               ) : null}
@@ -204,10 +198,10 @@ export function SuggestionsCard({
               setShown(shown + SHOW_MORE_STEP)
             }}
           >
-            {t(
-              `Show ${String(Math.min(SHOW_MORE_STEP, left))} more (${String(left)} left)`,
-              `Xem thêm ${String(Math.min(SHOW_MORE_STEP, left))} (${String(left)} còn lại)`,
-            )}
+            {t('board.showMoreLeft', {
+              min: String(Math.min(SHOW_MORE_STEP, left)),
+              left: String(left),
+            })}
           </Button>
         </div>
       )}

@@ -125,11 +125,11 @@ function MarkdownWithSource(props: FileViewerProps & { readonly text: string }):
     <>
       <div className="flex items-center justify-between gap-2 pb-1">
         <Segmented
-          label={t('View mode', 'Chế độ xem')}
+          label={t('workspace.viewMode')}
           value={source ? 'source' : 'rendered'}
           options={[
-            { value: 'source', label: t('Source', 'Mã nguồn') },
-            { value: 'rendered', label: t('Rendered', 'Hiển thị') },
+            { value: 'source', label: t('workspace.source') },
+            { value: 'rendered', label: t('workspace.rendered') },
           ]}
           onChange={(value) => {
             setSource(value === 'source')
@@ -160,11 +160,11 @@ export function FileViewer(props: FileViewerProps): React.JSX.Element {
         <div className="flex flex-col items-start gap-2">
           <p className="text-sm text-muted">
             {content.kind === 'tooLarge'
-              ? t('This file is too large to show.', 'Tệp quá lớn để hiển thị.')
-              : t('This is a binary file.', 'Đây là tệp nhị phân.')}
+              ? t('workspace.thisFileIsTooLargeTo')
+              : t('workspace.thisIsABinaryFile')}
           </p>
           <Button variant="secondary" size="sm" onPress={onOpenInEditor}>
-            {t('Open in VS Code', 'Mở trong VS Code')}
+            {t('workspace.openInVsCode')}
           </Button>
         </div>
       )

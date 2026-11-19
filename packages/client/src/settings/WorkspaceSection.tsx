@@ -29,14 +29,11 @@ export function WorkspaceSection({
     setBusy(true)
     try {
       await save({ workspace: workspaceFromForm(form) })
-      setStatus({ ok: true, text: t('Saved', 'Đã lưu') })
+      setStatus({ ok: true, text: t('settings.saved') })
     } catch {
       setStatus({
         ok: false,
-        text: t(
-          'Could not save the workspace settings',
-          'Không lưu được cài đặt không gian làm việc',
-        ),
+        text: t('settings.couldNotSaveTheWorkspaceSettings'),
       })
     } finally {
       setBusy(false)
@@ -44,14 +41,11 @@ export function WorkspaceSection({
   }
 
   return (
-    <Section title={t('Workspace', 'Không gian làm việc')}>
+    <Section title={t('settings.workspace')}>
       <TextField
         id="workspace-dev-repo"
-        label={t('Dev repo', 'Dev repo')}
-        hint={t(
-          'The main checkout every ticket worktree is made from',
-          'Bản checkout chính để tạo worktree cho từng ticket',
-        )}
+        label={t('settings.devRepo')}
+        hint={t('settings.theMainCheckoutEveryTicketWorktree')}
         value={form.devRepoPath}
         onChange={(value) => {
           change({ devRepoPath: value })
@@ -59,11 +53,8 @@ export function WorkspaceSection({
       />
       <TextField
         id="workspace-sibling-glob"
-        label={t('Sibling repo pattern', 'Mẫu repo anh em')}
-        hint={t(
-          'e.g. *-Angular. Empty = only the dev repo',
-          'Ví dụ *-Angular. Để trống = chỉ dev repo',
-        )}
+        label={t('settings.siblingRepoPattern')}
+        hint={t('settings.eGAngularEmptyOnlyThe')}
         value={form.siblingRepoGlob}
         onChange={(value) => {
           change({ siblingRepoGlob: value })
@@ -71,11 +62,8 @@ export function WorkspaceSection({
       />
       <TextField
         id="workspace-start-prompt"
-        label={t('Start prompt', 'Lời nhắc khi bắt đầu')}
-        hint={t(
-          '{key} is the ticket. Empty = plain claude',
-          '{key} là ticket. Để trống = chạy claude thường',
-        )}
+        label={t('settings.startPrompt')}
+        hint={t('settings.isTheTicketEmptyPlainClaude')}
         value={form.startPrompt}
         onChange={(value) => {
           change({ startPrompt: value })
@@ -91,19 +79,13 @@ export function WorkspaceSection({
           <Switch.Control>
             <Switch.Thumb />
           </Switch.Control>
-          {t(
-            'Start a newly assigned ticket by itself (worktree, start prompt, today in the queue)',
-            'Tự bắt đầu ticket mới được giao (worktree, lời nhắc, đưa vào queue hôm nay)',
-          )}
+          {t('settings.startANewlyAssignedTicketBy')}
         </Switch.Content>
       </Switch>
       <TextField
         id="workspace-claude-executable"
-        label={t('Claude executable', 'File chạy Claude')}
-        hint={t(
-          'Empty = ~/.local/bin/claude, else PATH',
-          'Để trống = ~/.local/bin/claude, nếu không thì PATH',
-        )}
+        label={t('settings.claudeExecutable')}
+        hint={t('settings.emptyLocalBinClaudeElsePath')}
         value={form.claudeExecutable}
         onChange={(value) => {
           change({ claudeExecutable: value })
@@ -111,11 +93,8 @@ export function WorkspaceSection({
       />
       <TextField
         id="workspace-local-only"
-        label={t('Local-only paths', 'Đường dẫn chỉ ở máy')}
-        hint={t(
-          'One per line. Never listed in Changes',
-          'Mỗi dòng một đường dẫn. Không hiện trong Changes',
-        )}
+        label={t('settings.localOnlyPaths')}
+        hint={t('settings.onePerLineNeverListedIn')}
         multiline
         value={form.localOnlyPaths}
         onChange={(value) => {
@@ -131,7 +110,7 @@ export function WorkspaceSection({
             void runSave()
           }}
         >
-          {t('Save', 'Lưu')}
+          {t('settings.save')}
         </Button>
         <Button
           variant="secondary"
@@ -140,7 +119,7 @@ export function WorkspaceSection({
             setCleaning(true)
           }}
         >
-          {t('Clean up worktrees', 'Dọn worktree')}
+          {t('settings.cleanUpWorktrees')}
         </Button>
       </div>
       {status === null ? null : (

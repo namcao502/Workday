@@ -53,7 +53,7 @@ export function TeamsPostCard({
         mode="post"
         people={view.people}
         label={label}
-        submitLabel={t('Post', 'Đăng')}
+        submitLabel={t('teams.post2')}
         withSubject
         initialSubject={draft.subject}
         initialHtml={initial.html}
@@ -67,10 +67,7 @@ export function TeamsPostCard({
             setWarned(true)
             return {
               ok: false,
-              message: t(
-                'This ticket was already posted. Press Post again to post anyway.',
-                'Ticket này đã được đăng. Bấm Đăng lần nữa để vẫn đăng.',
-              ),
+              message: t('teams.thisTicketWasAlreadyPostedPress'),
               uncertain: false,
             }
           }
@@ -90,7 +87,7 @@ export function TeamsPostCard({
           void queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
         }}
       >
-        {t('Reload draft', 'Nạp lại bản nháp')}
+        {t('teams.reloadDraft')}
       </Button>
     </div>
   )

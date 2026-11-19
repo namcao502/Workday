@@ -26,32 +26,32 @@ function topicName(topic: NoticeTopic): string {
     case 'claude':
       return 'Claude'
     case 'pr':
-      return t('Pull requests', 'Pull request')
+      return t('settings.pullRequests')
     case 'jira':
       return 'Jira'
     case 'teams':
       return 'Teams'
     case 'teamsMention':
-      return t('Teams mentions', 'Teams nhắc đến bạn')
+      return t('settings.teamsMentions')
     case 'suggestions':
-      return t('Suggestions', 'Gợi ý')
+      return t('settings.suggestions')
     case 'knowledge':
-      return t('Knowledge scan', 'Quét knowledge')
+      return t('settings.knowledgeScan')
     case 'log':
-      return t('Auto-log', 'Tự log')
+      return t('settings.autoLog')
     case 'other':
-      return t('Other', 'Khác')
+      return t('settings.other')
   }
 }
 
 function channelName(channel: keyof NoticeChannels): string {
   switch (channel) {
     case 'toast':
-      return t('Toast', 'Toast')
+      return t('settings.toast')
     case 'desktop':
-      return t('Desktop', 'Desktop')
+      return t('settings.desktop')
     case 'phone':
-      return t('Phone', 'Điện thoại')
+      return t('settings.phone')
   }
 }
 
@@ -136,20 +136,17 @@ function ClosedWindowToggle(): React.JSX.Element {
         }}
       >
         {state === 'on'
-          ? t('Stop notifying when Workday is closed', 'Thôi thông báo khi đã đóng Workday')
-          : t('Notify even when Workday is closed', 'Thông báo cả khi đã đóng Workday')}
+          ? t('settings.stopNotifyingWhenWorkdayIsClosed')
+          : t('settings.notifyEvenWhenWorkdayIsClosed')}
       </Button>
       {state === 'denied' ? (
         <p className="text-sm text-danger" role="status">
-          {t(
-            'The browser blocked notifications; allow them in the site settings.',
-            'Trình duyệt đã chặn thông báo; hãy cho phép trong cài đặt trang.',
-          )}
+          {t('settings.theBrowserBlockedNotificationsAllowThem')}
         </p>
       ) : null}
       {state === 'failed' ? (
         <p className="text-sm text-danger" role="status">
-          {t('Could not change the setting', 'Không đổi được cài đặt')}
+          {t('settings.couldNotChangeTheSetting')}
         </p>
       ) : null}
     </>
@@ -194,18 +191,13 @@ export function NoticesSection({
   }
 
   return (
-    <Section title={t('Notices', 'Thông báo')}>
-      <p className="text-sm text-muted">
-        {t(
-          'The bell keeps every notice; these choose what also pops up.',
-          'Chuông luôn giữ mọi thông báo; đây là chọn cái nào hiện thêm.',
-        )}
-      </p>
+    <Section title={t('settings.notices')}>
+      <p className="text-sm text-muted">{t('settings.theBellKeepsEveryNoticeThese')}</p>
       <table className="w-full text-sm">
         <thead>
           <tr>
             <th scope="col" className="py-1 text-left text-xs font-medium uppercase text-muted">
-              {t('Topic', 'Chủ đề')}
+              {t('settings.topic')}
             </th>
             {CHANNELS.map((channel) => (
               <th
@@ -227,10 +219,7 @@ export function NoticesSection({
                         <Switch.Thumb />
                       </Switch.Control>
                       <span className="sr-only">
-                        {t(
-                          `All topics: ${channelName(channel)}`,
-                          `Mọi chủ đề: ${channelName(channel)}`,
-                        )}
+                        {t('settings.allTopics', { channel: channelName(channel) })}
                       </span>
                     </Switch.Content>
                   </Switch>
@@ -277,18 +266,18 @@ export function NoticesSection({
             void apply(channelsFromPrefs({}), {})
           }}
         >
-          {t('Restore defaults', 'Khôi phục mặc định')}
+          {t('settings.restoreDefaults')}
         </Button>
         {askPermission ? (
           <Button variant="secondary" size="sm" onPress={requestNoticePermission}>
-            {t('Allow desktop notifications', 'Cho phép thông báo desktop')}
+            {t('settings.allowDesktopNotifications')}
           </Button>
         ) : null}
         {local && pushSupported() ? <ClosedWindowToggle /> : null}
       </div>
       {failed ? (
         <p className="text-sm text-danger" role="status">
-          {t('Could not save the notice settings', 'Không lưu được cài đặt thông báo')}
+          {t('settings.couldNotSaveTheNoticeSettings')}
         </p>
       ) : null}
     </Section>

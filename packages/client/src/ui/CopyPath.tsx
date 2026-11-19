@@ -19,7 +19,7 @@ export function CopyPath({ text }: { readonly text: string }): React.JSX.Element
     }
   }, [copied])
   return (
-    <Tip className="block min-w-0 flex-1" content={`${text}\n${t('Click to copy', 'Bấm để chép')}`}>
+    <Tip className="block min-w-0 flex-1" content={`${text}\n${t('ui.clickToCopy')}`}>
       <button
         type="button"
         className="w-full cursor-pointer truncate rounded-lg px-2 py-1 text-left text-sm text-muted hover:bg-surface-secondary hover:text-foreground"
@@ -34,7 +34,7 @@ export function CopyPath({ text }: { readonly text: string }): React.JSX.Element
           )
         }}
       >
-        {copied ? t('Copied', 'Đã chép') : text}
+        {copied ? t('ui.copied') : text}
       </button>
     </Tip>
   )

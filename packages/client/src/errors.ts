@@ -4,136 +4,100 @@ import { t } from './i18n.js'
 export function errorText(error: AppError): string {
   switch (error.code) {
     case 'invalidKey':
-      return t('That is not a ticket key', 'Đó không phải mã ticket')
+      return t('app.thatIsNotATicketKey')
     case 'notConnected':
-      return t('Jira is not connected', 'Chưa kết nối Jira')
+      return t('app.jiraIsNotConnected')
     case 'jiraRejected':
-      return t(
-        'Jira rejected the sign-in. Check the email and API token.',
-        'Jira từ chối đăng nhập. Kiểm tra email và API token.',
-      )
+      return t('app.jiraRejectedTheSignInCheck')
     case 'jiraUnreachable':
-      return t('Jira could not be reached', 'Không kết nối được tới Jira')
+      return t('app.jiraCouldNotBeReached')
     case 'pollFailed':
-      return t('The last refresh failed', 'Lần làm mới gần nhất thất bại')
+      return t('app.theLastRefreshFailed')
     case 'notFound':
-      return t(`${error.key} was not found`, `Không tìm thấy ${error.key}`)
+      return t('app.wasNotFound', { key: error.key })
     case 'alreadyOnBoard':
-      return t(`${error.key} is already on the board`, `${error.key} đã có trên bảng`)
+      return t('app.isAlreadyOnTheBoard', { key: error.key })
     case 'timesheetNotConfigured':
-      return t('TSC or HRM is not connected', 'Chưa kết nối TSC hoặc HRM')
+      return t('app.tscOrHrmIsNotConnected')
     case 'invalidTicket':
-      return t('Enter valid ticket keys', 'Hãy nhập mã ticket hợp lệ')
+      return t('app.enterValidTicketKeys')
     case 'overEightHours':
-      return t('The day would go over 8h', 'Ngày này sẽ vượt quá 8h')
+      return t('app.theDayWouldGoOver8h')
     case 'hrmClosedForToday':
-      return t(
-        "HRM takes today's hours only from 6:00 PM. Queue it, or use TSC only.",
-        'HRM chỉ nhận giờ hôm nay từ 6:00 PM. Hãy thêm vào hàng đợi, hoặc chỉ log TSC.',
-      )
+      return t('app.hrmTakesTodaySHoursOnly')
     case 'tscNoToken':
-      return t(
-        'No TSC sign-in. Use Sign in to TSC in Settings.',
-        'Chưa đăng nhập TSC. Hãy dùng Đăng nhập TSC trong Cài đặt.',
-      )
+      return t('app.noTscSignInUseSign')
     case 'tscDateMismatch':
-      return t(
-        'The TSC row does not match the date, nothing was written',
-        'Dòng TSC không khớp ngày, chưa ghi gì',
-      )
+      return t('app.theTscRowDoesNotMatch')
     case 'tscFailed':
-      return t('Writing to TSC failed', 'Ghi vào TSC thất bại')
+      return t('app.writingToTscFailed')
     case 'browserMissing':
-      return t('Microsoft Edge is not installed', 'Chưa cài Microsoft Edge')
+      return t('app.microsoftEdgeIsNotInstalled')
     case 'browserBusy':
-      return t('The browser is busy with another task', 'Trình duyệt đang bận việc khác')
+      return t('app.theBrowserIsBusyWithAnother')
     case 'hrmRejected':
-      return t('HRM rejected the entry', 'HRM từ chối mục này')
+      return t('app.hrmRejectedTheEntry')
     case 'hrmUnreachable':
-      return t('HRM could not be reached', 'Không kết nối được tới HRM')
+      return t('app.hrmCouldNotBeReached')
     case 'remoteDisabled':
-      return t('Remote access is turned off', 'Truy cập từ xa đang tắt')
+      return t('app.remoteAccessIsTurnedOff')
     case 'firewallCancelled':
-      return t(
-        'The Windows firewall prompt was cancelled',
-        'Đã hủy yêu cầu mở tường lửa của Windows',
-      )
+      return t('app.theWindowsFirewallPromptWasCancelled')
     case 'firewallFailed':
-      return t('The firewall rule could not be added', 'Không thêm được luật tường lửa')
+      return t('app.theFirewallRuleCouldNotBe')
     case 'accessRequired':
-      return t(
-        'Sign in through Cloudflare Access first',
-        'Hãy đăng nhập qua Cloudflare Access trước',
-      )
+      return t('app.signInThroughCloudflareAccessFirst')
     case 'notPaired':
-      return t('This device is not paired yet', 'Thiết bị này chưa được ghép nối')
+      return t('app.thisDeviceIsNotPairedYet')
     case 'forbidden':
-      return t(
-        'This device is not allowed to do that',
-        'Thiết bị này không có quyền thực hiện việc đó',
-      )
+      return t('app.thisDeviceIsNotAllowedTo')
     case 'pairingClosed':
-      return t('Pairing is closed. Open it on the PC.', 'Ghép nối đã đóng. Hãy mở lại trên PC.')
+      return t('app.pairingIsClosedOpenItOn')
     case 'wrongCode':
-      return t('That code is not right', 'Mã không đúng')
+      return t('app.thatCodeIsNotRight')
     case 'workspaceNotConfigured':
-      return t(
-        'Set the dev repo folder in Settings first',
-        'Hãy đặt thư mục dev repo trong Cài đặt trước',
-      )
+      return t('app.setTheDevRepoFolderIn')
     case 'worktreeMissing':
-      return t('The ticket has no worktree yet', 'Ticket chưa có worktree')
+      return t('app.theTicketHasNoWorktreeYet')
     case 'worktreeFailed':
-      return t('The worktree could not be created', 'Không tạo được worktree')
+      return t('app.theWorktreeCouldNotBeCreated')
     case 'parentBranchMissing':
-      return t('The parent ticket branch was not found', 'Không tìm thấy nhánh của ticket cha')
+      return t('app.theParentTicketBranchWasNot')
     case 'mainNotMerged':
-      return t('Main is not merged into the branch yet', 'Nhánh chưa được merge main')
+      return t('app.mainIsNotMergedIntoThe')
     case 'sessionNotFound':
-      return t('That session no longer exists', 'Phiên này không còn nữa')
+      return t('app.thatSessionNoLongerExists')
     case 'pathOutside':
-      return t('That path is outside the worktree', 'Đường dẫn nằm ngoài worktree')
+      return t('app.thatPathIsOutsideTheWorktree')
     case 'insightsFailed':
-      return t('The report could not be read', 'Không đọc được báo cáo')
+      return t('app.theReportCouldNotBeRead')
     case 'gitFailed':
-      return t('A git command failed', 'Lệnh git thất bại')
+      return t('app.aGitCommandFailed')
     case 'adoRejected':
-      return t('Azure DevOps rejected the token', 'Azure DevOps từ chối token')
+      return t('app.azureDevopsRejectedTheToken')
     case 'adoUnreachable':
-      return t('Azure DevOps could not be reached', 'Không kết nối được tới Azure DevOps')
+      return t('app.azureDevopsCouldNotBeReached')
     case 'adoNotConfigured':
-      return t('Azure DevOps is not set up', 'Chưa cấu hình Azure DevOps')
+      return t('app.azureDevopsIsNotSetUp')
     case 'teamsSignedOut':
-      return t('Teams is signed out. Sign in again.', 'Teams đã đăng xuất. Hãy đăng nhập lại.')
+      return t('app.teamsIsSignedOutSignIn')
     case 'teamsBusy':
-      return t('Teams sign-in or read is already running', 'Đang đăng nhập hoặc đọc Teams')
+      return t('app.teamsSignInOrReadIs')
     case 'teamsNotConfigured':
-      return t('Teams is not set up', 'Chưa cấu hình Teams')
+      return t('app.teamsIsNotSetUp')
     case 'teamsUncertain':
-      return t(
-        'Teams did not confirm; check the channel before trying again',
-        'Teams chưa xác nhận; hãy kiểm tra kênh trước khi thử lại',
-      )
+      return t('app.teamsDidNotConfirmCheckThe')
     case 'teamsFailed':
-      return t('Teams request failed', 'Yêu cầu Teams thất bại')
+      return t('app.teamsRequestFailed')
     case 'claudeNotRunning':
-      return t('Claude is not running in that session', 'Claude không chạy trong phiên này')
+      return t('app.claudeIsNotRunningInThat')
     case 'notABug':
-      return t(
-        'That ticket is not a QC bug of one of your tickets',
-        'Ticket này không phải bug QC của ticket của bạn',
-      )
+      return t('app.thatTicketIsNotAQc')
     case 'busy':
-      return t('That is already running', 'Việc này đang chạy')
+      return t('app.thatIsAlreadyRunning')
     case 'parentWorktreeMissing':
-      return t(
-        `${error.parentKey} has no worktree yet; start or open it first`,
-        `${error.parentKey} chưa có worktree; hãy bắt đầu hoặc mở nó trước`,
-      )
+      return t('app.hasNoWorktreeYetStartOr', { parentKey: error.parentKey })
     case 'claudeWaiting':
-      return t(
-        'Claude is waiting for your answer; answer it, then try again',
-        'Claude đang chờ bạn trả lời; trả lời xong rồi thử lại',
-      )
+      return t('app.claudeIsWaitingForYourAnswer')
   }
 }

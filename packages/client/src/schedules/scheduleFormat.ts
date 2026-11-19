@@ -27,50 +27,50 @@ export function formatDuration(ms: number): string {
 export function outcomeText(outcome: ScanOutcome): string {
   switch (outcome) {
     case 'running':
-      return t('Running', 'Đang chạy')
+      return t('schedules.running')
     case 'ok':
-      return t('Finished', 'Xong')
+      return t('schedules.finished')
     case 'withProblems':
-      return t('With problems', 'Có lỗi')
+      return t('schedules.withProblems')
     case 'stopped':
-      return t('Stopped', 'Bị dừng')
+      return t('schedules.stopped')
     case 'failed':
-      return t('Failed', 'Thất bại')
+      return t('schedules.failed')
   }
 }
 
 export function dayLabel(day: ScanDay): string {
   switch (day) {
     case 'daily':
-      return t('Every day', 'Mỗi ngày')
+      return t('schedules.everyDay')
     case 'mon':
-      return t('Mon', 'Thứ 2')
+      return t('schedules.mon')
     case 'tue':
-      return t('Tue', 'Thứ 3')
+      return t('schedules.tue')
     case 'wed':
-      return t('Wed', 'Thứ 4')
+      return t('schedules.wed')
     case 'thu':
-      return t('Thu', 'Thứ 5')
+      return t('schedules.thu')
     case 'fri':
-      return t('Fri', 'Thứ 6')
+      return t('schedules.fri')
     case 'sat':
-      return t('Sat', 'Thứ 7')
+      return t('schedules.sat')
     case 'sun':
-      return t('Sun', 'CN')
+      return t('schedules.sun')
   }
 }
 
 export function jobName(job: AppJobName): string {
   switch (job) {
     case 'jiraPoll':
-      return t('Jira check', 'Kiểm tra Jira')
+      return t('schedules.jiraCheck')
     case 'prCheck':
-      return t('Pull request check', 'Kiểm tra pull request')
+      return t('schedules.pullRequestCheck')
     case 'teamsCheck':
-      return t('Teams check', 'Kiểm tra Teams')
+      return t('schedules.teamsCheck')
     case 'timesheetRun':
-      return t('Auto-log to TSC + HRM', 'Tự log TSC + HRM')
+      return t('schedules.autoLogToTscHrm')
     case 'catchUp':
-      return t('Catch-up log', 'Log bù')
+      return t('schedules.catchUpLog')
   }
 }

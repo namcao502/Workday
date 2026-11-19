@@ -62,16 +62,10 @@ export function SplitView({
         {left}
       </div>
       {split ? (
-        <Tip
-          className="flex shrink-0"
-          content={t(
-            'Drag to resize (double-click: back to the default width)',
-            'Kéo để đổi độ rộng (nhấp đúp: về độ rộng mặc định)',
-          )}
-        >
+        <Tip className="flex shrink-0" content={t('ui.dragToResizeDoubleClickBack')}>
           <button
             type="button"
-            aria-label={t('Resize the panes', 'Đổi độ rộng hai bên')}
+            aria-label={t('ui.resizeThePanes')}
             className="group flex shrink-0 cursor-col-resize touch-none items-center justify-center"
             style={{ width: HANDLE_PX }}
             onPointerDown={(event) => {

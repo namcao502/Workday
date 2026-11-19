@@ -158,7 +158,7 @@ export function TeamsComposer({
         setProblem(null)
         onChange?.()
       } catch {
-        setProblem(t('Could not read the image.', 'Không đọc được ảnh.'))
+        setProblem(t('teams.couldNotReadTheImage'))
       }
     }
   }
@@ -179,7 +179,7 @@ export function TeamsComposer({
         setProblem(null)
         onChange?.()
       } catch {
-        setProblem(t('Could not read the file.', 'Không đọc được file.'))
+        setProblem(t('teams.couldNotReadTheFile'))
       }
     }
   }
@@ -315,7 +315,7 @@ export function TeamsComposer({
         <Input
           variant="secondary"
           className="w-full"
-          aria-label={t('Subject', 'Tiêu đề')}
+          aria-label={t('teams.subject')}
           value={subject}
           onChange={(event) => {
             setSubject(event.target.value)
@@ -392,7 +392,7 @@ export function TeamsComposer({
       {files.length === 0 ? null : (
         <ul
           className="m-0 flex list-none flex-wrap gap-1 p-0"
-          aria-label={t('Attached files', 'File đính kèm')}
+          aria-label={t('teams.attachedFiles')}
         >
           {files.map((file) => (
             <li
@@ -403,7 +403,7 @@ export function TeamsComposer({
               <span className="text-xs text-muted">{sizeText(file.size)}</span>
               <CloseButton
                 className="size-6 hover:bg-danger hover:text-danger-foreground"
-                aria-label={t(`Remove ${file.name}`, `Bỏ ${file.name}`)}
+                aria-label={t('teams.remove', { name: file.name })}
                 onPress={() => {
                   setFiles((current) => current.filter((item) => item.id !== file.id))
                 }}
@@ -416,7 +416,7 @@ export function TeamsComposer({
         <ul
           className="m-0 list-none rounded-2xl bg-overlay p-1 shadow-overlay"
           role="listbox"
-          aria-label={t('People', 'Mọi người')}
+          aria-label={t('teams.people')}
         >
           {suggestions.map((person, index) => (
             <li
@@ -443,7 +443,7 @@ export function TeamsComposer({
               hidden
               multiple
               accept="image/png,image/jpeg,image/gif"
-              aria-label={t('Choose images', 'Chọn ảnh')}
+              aria-label={t('teams.chooseImages')}
               onChange={(event) => {
                 void addImages([...(event.target.files ?? [])])
                 event.target.value = ''
@@ -454,7 +454,7 @@ export function TeamsComposer({
               type="file"
               hidden
               multiple
-              aria-label={t('Choose files', 'Chọn file')}
+              aria-label={t('teams.chooseFiles')}
               onChange={(event) => {
                 void addFiles(Array.from(event.target.files ?? []))
                 event.target.value = ''
@@ -464,13 +464,13 @@ export function TeamsComposer({
               isIconOnly
               variant="secondary"
               size="sm"
-              aria-label={t('Attach a file', 'Đính kèm file')}
+              aria-label={t('teams.attachAFile')}
               isDisabled={sending}
               onPress={() => {
                 attachInput.current?.click()
               }}
             >
-              <Tip content={t('Attach a file', 'Đính kèm file')} className="flex">
+              <Tip content={t('teams.attachAFile')} className="flex">
                 <Paperclip />
               </Tip>
             </Button>
@@ -478,13 +478,13 @@ export function TeamsComposer({
               isIconOnly
               variant="secondary"
               size="sm"
-              aria-label={t('Add an image', 'Thêm ảnh')}
+              aria-label={t('teams.addAnImage')}
               isDisabled={sending}
               onPress={() => {
                 fileInput.current?.click()
               }}
             >
-              <Tip content={t('Add an image', 'Thêm ảnh')} className="flex">
+              <Tip content={t('teams.addAnImage')} className="flex">
                 <Picture />
               </Tip>
             </Button>
@@ -494,14 +494,14 @@ export function TeamsComposer({
           isIconOnly
           variant="secondary"
           size="sm"
-          aria-label={t('Tag someone', 'Tag người')}
+          aria-label={t('teams.tagSomeone')}
           isDisabled={sending}
           onMouseDown={(event) => {
             event.preventDefault()
           }}
           onPress={startMention}
         >
-          <Tip content={t('Tag someone', 'Tag người')} className="flex">
+          <Tip content={t('teams.tagSomeone')} className="flex">
             <At />
           </Tip>
         </Button>
@@ -517,17 +517,12 @@ export function TeamsComposer({
         </Button>
         {onCancel === undefined ? null : (
           <Button variant="secondary" size="sm" onPress={onCancel}>
-            {t('Cancel', 'Hủy')}
+            {t('teams.cancel')}
           </Button>
         )}
         {problem === null ? null : (
           <span className="text-sm text-danger" role="alert">
-            {uncertain
-              ? t(
-                  'May have been sent - check the thread before sending again',
-                  'Có thể đã gửi - kiểm tra thread trước khi gửi lại',
-                )
-              : problem}
+            {uncertain ? t('teams.mayHaveBeenSentCheckThe') : problem}
           </span>
         )}
       </div>

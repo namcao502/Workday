@@ -18,16 +18,16 @@ interface JobsCardProps {
 function scheduleText(job: AppJobName, pollMinutes: number, logTime: string): string {
   switch (job) {
     case 'jiraPoll':
-      return t(`every ${String(pollMinutes)} min`, `mỗi ${String(pollMinutes)} phút`)
+      return t('schedules.everyMin', { pollMinutes: String(pollMinutes) })
     // Fixed server intervals (PrScheduler 5 min, Teams watcher 2 min), not the Jira poll setting.
     case 'prCheck':
-      return t('every 5 min', 'mỗi 5 phút')
+      return t('schedules.every5Min')
     case 'teamsCheck':
-      return t('every 2 min', 'mỗi 2 phút')
+      return t('schedules.every2Min')
     case 'timesheetRun':
-      return t(`every day at ${logTime}`, `mỗi ngày lúc ${logTime}`)
+      return t('schedules.everyDayAt', { logTime })
     case 'catchUp':
-      return t('when the app starts', 'khi app khởi động')
+      return t('schedules.whenTheAppStarts')
   }
 }
 
@@ -38,7 +38,7 @@ export function JobsCard({
   logTime,
 }: JobsCardProps): React.JSX.Element {
   return (
-    <Section title={t('In-app jobs', 'Việc chạy trong app')}>
+    <Section title={t('schedules.inAppJobs')}>
       <ul className="m-0 list-none p-0">
         {JOBS.map((job) => {
           const { runs, nextRunAt } = jobs[job]
@@ -46,7 +46,7 @@ export function JobsCard({
           const last = runs.at(-1)
           const tooltip =
             runs.length === 0
-              ? t('No runs yet', 'Chưa chạy lần nào')
+              ? t('schedules.noRunsYet')
               : runs
                   .toReversed()
                   .slice(0, SHOWN_RUNS)
@@ -63,10 +63,7 @@ export function JobsCard({
                   <span className="text-muted">
                     {nextRunAt === null
                       ? ''
-                      : t(
-                          `Next ${formatWhen(nextRunAt, timeZone)}`,
-                          `Lần tới ${formatWhen(nextRunAt, timeZone)}`,
-                        )}
+                      : t('schedules.next', { formatWhen: formatWhen(nextRunAt, timeZone) })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-muted">
@@ -78,7 +75,7 @@ export function JobsCard({
                       </Chip>
                     )}
                     {last === undefined
-                      ? t('No runs yet', 'Chưa chạy lần nào')
+                      ? t('schedules.noRunsYet')
                       : [formatWhen(last.startedAt, timeZone), last.summary ?? '']
                           .filter((part) => part !== '')
                           .join(': ')}

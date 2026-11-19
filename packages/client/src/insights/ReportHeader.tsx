@@ -18,15 +18,15 @@ interface ReportHeaderProps {
 function kindLabel(kind: ReportRangeKind): string {
   switch (kind) {
     case 'thisWeek':
-      return t('This week', 'Tuần này')
+      return t('insights.thisWeek')
     case 'lastWeek':
-      return t('Last week', 'Tuần trước')
+      return t('insights.lastWeek')
     case 'thisMonth':
-      return t('This month', 'Tháng này')
+      return t('insights.thisMonth')
     case 'lastMonth':
-      return t('Last month', 'Tháng trước')
+      return t('insights.lastMonth')
     case 'custom':
-      return t('Custom', 'Tùy chọn')
+      return t('insights.custom')
   }
 }
 
@@ -71,7 +71,7 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Segmented
-          label={t('Range', 'Khoảng thời gian')}
+          label={t('insights.range')}
           value={range.kind}
           options={KINDS.map((kind) => ({ value: kind, label: kindLabel(kind) }))}
           onChange={(kind) => {
@@ -82,7 +82,7 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
           <>
             <DateField
               id="insights-from"
-              label={t('From', 'Từ')}
+              label={t('insights.from')}
               value={range.from}
               onChange={(from) => {
                 props.onRange({ ...range, from })
@@ -90,7 +90,7 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
             />
             <DateField
               id="insights-to"
-              label={t('To', 'Đến')}
+              label={t('insights.to')}
               value={range.to}
               onChange={(to) => {
                 props.onRange({ ...range, to })
@@ -99,10 +99,10 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
           </>
         ) : null}
         <Button variant="secondary" size="sm" isDisabled={reading} onPress={props.onRefresh}>
-          {t('Refresh', 'Làm mới')}
+          {t('insights.refresh')}
         </Button>
         <Button variant="secondary" size="sm" isDisabled={!props.hasReport} onPress={props.onCopy}>
-          {t('Copy markdown', 'Sao chép markdown')}
+          {t('insights.copyMarkdown')}
         </Button>
         <Button
           variant="secondary"
@@ -110,11 +110,11 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
           isDisabled={!props.hasReport}
           onPress={props.onExport}
         >
-          {t('Export CSV...', 'Xuất CSV...')}
+          {t('insights.exportCsv')}
         </Button>
       </div>
       <div className="min-h-6 text-sm text-muted" aria-live="polite">
-        {reading ? t('Reading the report...', 'Đang đọc báo cáo...') : props.status}
+        {reading ? t('insights.readingTheReport') : props.status}
       </div>
     </div>
   )

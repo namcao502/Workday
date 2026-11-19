@@ -29,7 +29,7 @@ export function WeekTotals({
     <Card>
       <Card.Header>
         <Card.Title className="text-base font-semibold" render={(props) => <h2 {...props} />}>
-          {t('This week by ticket', 'Tuần này theo ticket')}
+          {t('timesheet.thisWeekByTicket')}
         </Card.Title>
       </Card.Header>
       <Card.Content className="flex flex-col gap-2">
@@ -38,10 +38,9 @@ export function WeekTotals({
             <KeyPill ticketKey={total.key} url={urlFor(total.key)} />
             <Tip
               className="block h-2 flex-1 rounded-full bg-surface-secondary"
-              content={t(
-                `${String(Math.round((total.minutes / scale) * 100))}% of the week`,
-                `${String(Math.round((total.minutes / scale) * 100))}% của tuần`,
-              )}
+              content={t('timesheet.ofTheWeek', {
+                percent: String(Math.round((total.minutes / scale) * 100)),
+              })}
             >
               <div
                 className="h-full rounded-full bg-accent"

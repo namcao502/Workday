@@ -63,14 +63,14 @@ export function BoardTable({
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th className={th}>{t('Key', 'Mã')}</th>
-            <th className={th}>{t('Summary', 'Tóm tắt')}</th>
+            <th className={th}>{t('board.key')}</th>
+            <th className={th}>{t('board.summary')}</th>
             {hasPrs ? <th className={th.replace('text-left', 'text-center')}>PR</th> : null}
-            <th className={th}>{t('Status', 'Trạng thái')}</th>
-            <th className={th}>{t('Due', 'Hạn')}</th>
-            <th className={th}>{t('ETA', 'ETA')}</th>
+            <th className={th}>{t('board.status')}</th>
+            <th className={th}>{t('board.due')}</th>
+            <th className={th}>{t('board.eta')}</th>
             <th className={th}>
-              <Tip content={t('Dev priority', 'Độ ưu tiên dev')}>{t('Priority', 'Ưu tiên')}</Tip>
+              <Tip content={t('board.devPriority')}>{t('board.priority')}</Tip>
             </th>
             <th className={th} />
           </tr>

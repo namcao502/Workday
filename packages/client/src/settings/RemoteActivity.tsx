@@ -16,24 +16,24 @@ export function RemoteActivity({
 }: RemoteActivityProps): React.JSX.Element {
   return (
     <>
-      <h3 className="text-sm font-semibold">{t('Activity', 'Nhật ký hoạt động')}</h3>
+      <h3 className="text-sm font-semibold">{t('settings.activity')}</h3>
       {activity.length === 0 ? (
-        <p className="text-sm text-muted">{t('No remote changes yet', 'Chưa có thao tác từ xa')}</p>
+        <p className="text-sm text-muted">{t('settings.noRemoteChangesYet')}</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
             <tr>
               <th scope="col" className="py-1 text-left text-xs font-medium uppercase text-muted">
-                {t('Time', 'Giờ')}
+                {t('settings.time')}
               </th>
               <th scope="col" className="py-1 text-left text-xs font-medium uppercase text-muted">
-                {t('Device', 'Thiết bị')}
+                {t('settings.device')}
               </th>
               <th scope="col" className="py-1 text-left text-xs font-medium uppercase text-muted">
-                {t('Request', 'Yêu cầu')}
+                {t('settings.request')}
               </th>
               <th scope="col" className="py-1 text-left text-xs font-medium uppercase text-muted">
-                {t('Status', 'Trạng thái')}
+                {t('settings.status')}
               </th>
             </tr>
           </thead>

@@ -19,13 +19,13 @@ import { Tip } from '../ui/Tip.js'
 function tunnelText(status: RemoteStatusView): string {
   switch (status.tunnel) {
     case 'off':
-      return t('Tunnel off', 'Tunnel tắt')
+      return t('settings.tunnelOff')
     case 'starting':
-      return t('Tunnel starting', 'Tunnel đang khởi động')
+      return t('settings.tunnelStarting')
     case 'running':
-      return t('Tunnel running', 'Tunnel đang chạy')
+      return t('settings.tunnelRunning')
     case 'failed':
-      return t('Tunnel failed', 'Tunnel lỗi')
+      return t('settings.tunnelFailed')
   }
 }
 
@@ -66,7 +66,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
     action().catch(() => {
       setMessage({
         ok: false,
-        text: t('Could not reach the Workday server', 'Không kết nối được tới Workday server'),
+        text: t('settings.couldNotReachTheWorkdayServer2'),
       })
     })
   }
@@ -87,11 +87,11 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
       })
       setTunnelToken('')
       setReplacing(false)
-      setMessage({ ok: true, text: t('Saved', 'Đã lưu') })
+      setMessage({ ok: true, text: t('settings.saved') })
     } catch {
       setMessage({
         ok: false,
-        text: t('Could not reach the Workday server', 'Không kết nối được tới Workday server'),
+        text: t('settings.couldNotReachTheWorkdayServer2'),
       })
     } finally {
       setBusy(false)
@@ -100,7 +100,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
 
   const { language, timeZone } = settings.config
   return (
-    <Section title={t('Remote access', 'Truy cập từ xa')}>
+    <Section title={t('settings.remoteAccess')}>
       <VpnSettings
         form={vpnForm}
         onChange={changeVpn}
@@ -119,16 +119,13 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
           <Switch.Control>
             <Switch.Thumb />
           </Switch.Control>
-          {t('Allow remote access', 'Cho phép truy cập từ xa')}
+          {t('settings.allowRemoteAccess')}
         </Switch.Content>
       </Switch>
       <TextField
         id="remote-public-host"
-        label={t('Public host', 'Public host')}
-        hint={t(
-          "Point the tunnel's public hostname at http://127.0.0.1:<port> and protect it with a Cloudflare Access application.",
-          'Trỏ public hostname của tunnel về http://127.0.0.1:<port> và bảo vệ nó bằng một ứng dụng Cloudflare Access.',
-        )}
+        label={t('settings.publicHost')}
+        hint={t('settings.pointTheTunnelSPublicHostname')}
         placeholder="workday.example.com"
         value={form.publicHost}
         onChange={(value) => {
@@ -137,8 +134,8 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
       />
       <TextField
         id="remote-access-team"
-        label={t('Access team domain', 'Team domain của Access')}
-        hint={t('The Cloudflare Access team domain', 'Team domain của Cloudflare Access')}
+        label={t('settings.accessTeamDomain')}
+        hint={t('settings.theCloudflareAccessTeamDomain')}
         placeholder="myteam.cloudflareaccess.com"
         value={form.accessTeamDomain}
         onChange={(value) => {
@@ -147,8 +144,8 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
       />
       <TextField
         id="remote-access-aud"
-        label={t('Access AUD tag', 'AUD tag của Access')}
-        hint={t('Shown on the Access application', 'Hiện trên ứng dụng Access')}
+        label={t('settings.accessAudTag')}
+        hint={t('settings.shownOnTheAccessApplication')}
         value={form.accessAud}
         onChange={(value) => {
           change({ accessAud: value })
@@ -156,11 +153,8 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
       />
       <TextField
         id="remote-cloudflared-path"
-        label={t('cloudflared path', 'Đường dẫn cloudflared')}
-        hint={t(
-          'Leave empty to run cloudflared yourself, outside the app',
-          'Để trống nếu tự chạy cloudflared ngoài app',
-        )}
+        label={t('settings.cloudflaredPath')}
+        hint={t('settings.leaveEmptyToRunCloudflaredYourself')}
         value={form.cloudflaredPath}
         onChange={(value) => {
           change({ cloudflaredPath: value })
@@ -168,12 +162,9 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
       />
       <TokenField
         id="remote-tunnel-token"
-        label={t('Tunnel token', 'Tunnel token')}
-        envText={t('Set by WORKDAY_TUNNEL_TOKEN', 'Được đặt bởi WORKDAY_TUNNEL_TOKEN')}
-        helpText={t(
-          'Handed to cloudflared through the environment.',
-          'Được đưa cho cloudflared qua biến môi trường.',
-        )}
+        label={t('settings.tunnelToken')}
+        envText={t('settings.setByWorkdayTunnelToken')}
+        helpText={t('settings.handedToCloudflaredThroughTheEnvironment')}
         source={settings.tunnelTokenSource}
         replacing={replacing}
         value={tunnelToken}
@@ -191,7 +182,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
             void runSave()
           }}
         >
-          {t('Save', 'Lưu')}
+          {t('settings.save')}
         </Button>
       </div>
       {message === null ? null : (
@@ -211,7 +202,7 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
             actions={actions}
             run={run}
           />
-          <h3 className="text-sm font-semibold">{t('Devices', 'Thiết bị')}</h3>
+          <h3 className="text-sm font-semibold">{t('settings.devices')}</h3>
           <RemoteDevices
             devices={remote.data.devices}
             actions={actions}

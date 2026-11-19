@@ -39,15 +39,15 @@ const SEARCH_DEBOUNCE_MS = 200
 function viewLabel(view: BoardViewId, count: number): string {
   switch (view) {
     case 'todo':
-      return t(`To do (${String(count)})`, `Việc cần làm (${String(count)})`)
+      return t('board.toDo', { count: String(count) })
     case 'working':
-      return t(`Working (${String(count)})`, `Đang làm (${String(count)})`)
+      return t('board.working', { count: String(count) })
     case 'available':
-      return t(`Available (${String(count)})`, `Có thể nhận (${String(count)})`)
+      return t('board.available', { count: String(count) })
     case 'done':
-      return t(`Done (${String(count)})`, `Xong (${String(count)})`)
+      return t('board.done', { count: String(count) })
     case 'dismissed':
-      return t(`Dismissed (${String(count)})`, `Đã bỏ qua (${String(count)})`)
+      return t('board.dismissed', { count: String(count) })
   }
 }
 
@@ -95,7 +95,7 @@ function PollStatus({
           : 'text-sm text-muted'
       }
     >
-      {t(`Checked at ${clock}`, `Đã kiểm tra lúc ${clock}`)}
+      {t('board.checkedAt', { clock })}
     </span>
   )
 }
@@ -213,10 +213,10 @@ export function BoardPage(): React.JSX.Element {
   }
 
   return (
-    <Page title={t('Tickets', 'Ticket')} wide>
+    <Page title={t('board.tickets')} wide>
       <div className="flex flex-wrap items-center gap-2">
         <Segmented
-          label={t('Board view', 'Chế độ xem')}
+          label={t('board.boardView')}
           value={activeView}
           options={viewIds.map((id) => ({
             value: id,
@@ -231,11 +231,7 @@ export function BoardPage(): React.JSX.Element {
         <SearchField
           variant="secondary"
           className="min-w-48 flex-1"
-          aria-label={
-            canAct
-              ? t('Search or add a ticket', 'Tìm hoặc thêm ticket')
-              : t('Search tickets', 'Tìm ticket')
-          }
+          aria-label={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
           value={search}
           onChange={(value) => {
             setSearch(value)
@@ -248,11 +244,7 @@ export function BoardPage(): React.JSX.Element {
           <SearchField.Group>
             <SearchField.SearchIcon />
             <SearchField.Input
-              placeholder={
-                canAct
-                  ? t('Search or add a ticket', 'Tìm hoặc thêm ticket')
-                  : t('Search tickets', 'Tìm ticket')
-              }
+              placeholder={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
             />
             <SearchField.ClearButton />
           </SearchField.Group>
@@ -265,7 +257,7 @@ export function BoardPage(): React.JSX.Element {
               void addTypedTicket()
             }}
           >
-            {t(`Add ${addableKey}`, `Thêm ${addableKey}`)}
+            {t('board.add', { addableKey })}
           </Button>
         )}
         {canAct ? (
@@ -278,7 +270,7 @@ export function BoardPage(): React.JSX.Element {
             }}
           >
             {check.isPending ? <Spinner size="sm" /> : null}
-            {t('Check now', 'Kiểm tra ngay')}
+            {t('board.checkNow')}
           </Button>
         ) : null}
         {board.data === undefined ? null : (
@@ -297,11 +289,8 @@ export function BoardPage(): React.JSX.Element {
       {launcher.error === null ? null : <p className="text-sm text-danger">{launcher.error}</p>}
       {launcher.recreateKey === null ? null : (
         <ConfirmDialog
-          message={t(
-            `Recreate the ${launcher.recreateKey} worktree?`,
-            `Tạo lại worktree của ${launcher.recreateKey}?`,
-          )}
-          confirmLabel={t('Recreate', 'Tạo lại')}
+          message={t('board.recreateTheWorktree', { recreateKey: launcher.recreateKey })}
+          confirmLabel={t('board.recreate')}
           onConfirm={launcher.confirmRecreate}
           onCancel={launcher.cancelRecreate}
         />
@@ -313,24 +302,22 @@ export function BoardPage(): React.JSX.Element {
         </p>
       )}
       {board.data === undefined ? (
-        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+        <p className="text-sm text-muted">{t('board.loading')}</p>
       ) : !board.data.connected ? (
         <div className="flex flex-col items-start gap-3">
-          <p className="text-sm text-muted">
-            {t('Jira is not connected - open Settings', 'Chưa kết nối Jira - mở Cài đặt')}
-          </p>
+          <p className="text-sm text-muted">{t('board.jiraIsNotConnectedOpenSettings')}</p>
           <Button
             variant="primary"
             onPress={() => {
               navigateTo('settings')
             }}
           >
-            {t('Open Settings', 'Mở Cài đặt')}
+            {t('board.openSettings')}
           </Button>
         </div>
       ) : activeView === 'available' && suggestions !== null ? (
         availableItems.length === 0 ? (
-          <p className="text-sm text-muted">{t('Nothing to take', 'Không có ticket để nhận')}</p>
+          <p className="text-sm text-muted">{t('board.nothingToTake')}</p>
         ) : (
           <SuggestionsCard
             suggestions={{ ...suggestions, items: availableItems }}
@@ -340,7 +327,7 @@ export function BoardPage(): React.JSX.Element {
         )
       ) : activeView === 'todo' ? (
         todoGroups.length === 0 ? (
-          <p className="text-sm text-muted">{t('Nothing to do', 'Không có việc cần làm')}</p>
+          <p className="text-sm text-muted">{t('board.nothingToDo')}</p>
         ) : (
           <TodoView
             groups={todoGroups}
@@ -354,7 +341,7 @@ export function BoardPage(): React.JSX.Element {
           />
         )
       ) : listProps.rows.length === 0 ? (
-        <p className="text-sm text-muted">{t('No tickets', 'Không có ticket')}</p>
+        <p className="text-sm text-muted">{t('board.noTickets')}</p>
       ) : narrow ? (
         <BoardCards {...listProps} />
       ) : (

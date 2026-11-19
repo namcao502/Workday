@@ -41,7 +41,7 @@ export function useTicketLauncher(): TicketLauncher {
       await queryClient.invalidateQueries({ queryKey: queryKeys.workspace })
       navigateToWorkspace(key)
     } catch {
-      setError(t('Could not reach the Workday server', 'Không kết nối được tới Workday server'))
+      setError(t('board.couldNotReachTheWorkdayServer'))
     }
   }
 

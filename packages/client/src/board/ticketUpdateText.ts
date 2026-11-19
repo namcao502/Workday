@@ -5,11 +5,11 @@ import { t } from '../i18n.js'
 export function fieldLabel(field: TicketField): string {
   switch (field) {
     case 'summary':
-      return t('Title', 'Tiêu đề')
+      return t('board.title')
     case 'description':
-      return t('Description', 'Mô tả')
+      return t('board.description')
     case 'attachments':
-      return t('Attachments', 'File đính kèm')
+      return t('board.attachments')
     case 'dueDate':
       return 'Due'
     case 'eta':

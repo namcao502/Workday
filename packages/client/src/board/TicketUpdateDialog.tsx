@@ -66,11 +66,11 @@ function FieldRow({
       <span className="text-xs font-medium text-muted uppercase">{fieldLabel(field)}</span>
       <div className="grid grid-cols-2 gap-3 text-sm [overflow-wrap:anywhere]">
         <div>
-          <span className="text-xs text-muted">{t('Before', 'Trước')}</span>
+          <span className="text-xs text-muted">{t('board.before')}</span>
           <DiffSide parts={parts} change="removed" className={valueClass} />
         </div>
         <div>
-          <span className="text-xs text-muted">{t('After', 'Sau')}</span>
+          <span className="text-xs text-muted">{t('board.after')}</span>
           <DiffSide parts={parts} change="added" className={valueClass} />
         </div>
       </div>
@@ -81,7 +81,7 @@ function FieldRow({
 function changedByText(update: TicketUpdateView, timeZone: string): string {
   const parts: string[] = []
   if (update.changedBy !== null) {
-    parts.push(t(`Changed by ${update.changedBy}`, `Người sửa: ${update.changedBy}`))
+    parts.push(t('board.changedBy', { changedBy: update.changedBy }))
   }
   if (update.changedAt !== null) {
     parts.push(formatShortDate(new Date(update.changedAt), getLanguage(), timeZone))
@@ -116,13 +116,13 @@ export function TicketUpdateDialog({
   if (query.isError) {
     body = (
       <p role="alert" className="text-sm text-danger">
-        {t('The changes could not be loaded', 'Không tải được thay đổi')}
+        {t('board.theChangesCouldNotBeLoaded')}
       </p>
     )
   } else if (query.data === undefined) {
-    body = <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+    body = <p className="text-sm text-muted">{t('board.loading')}</p>
   } else if (update === null) {
-    body = <p className="text-sm text-muted">{t('Nothing changed', 'Không có thay đổi')}</p>
+    body = <p className="text-sm text-muted">{t('board.nothingChanged')}</p>
   } else {
     body = (
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -133,7 +133,7 @@ export function TicketUpdateDialog({
     )
   }
 
-  const title = t(`${ticketKey} changes`, `Thay đổi của ${ticketKey}`)
+  const title = t('board.changes', { ticketKey })
   return (
     <Modal.Backdrop
       isOpen
@@ -168,7 +168,7 @@ export function TicketUpdateDialog({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('Open in Jira', 'Mở Jira')}
+                {t('board.openInJira')}
               </a>
             )}
             {canAct && update !== null ? (
@@ -177,11 +177,11 @@ export function TicketUpdateDialog({
                   void markSeen(update.current)
                 }}
               >
-                {t('Mark as seen', 'Đánh dấu đã xem')}
+                {t('board.markAsSeen')}
               </Button>
             ) : null}
             <Button variant="secondary" onPress={onClose}>
-              {t('Close', 'Đóng')}
+              {t('board.close')}
             </Button>
           </Modal.Footer>
         </Modal.Dialog>

@@ -21,7 +21,7 @@ export function FolderPickerDialog({
   const [path, setPath] = useState<string | null>(startPath)
   const listing = useQuery({ queryKey: ['folders', path], queryFn: () => getFolders(path) })
   const current = listing.data
-  const title = t('Choose a folder', 'Chọn thư mục')
+  const title = t('workspace.chooseAFolder')
   return (
     <Modal.Backdrop
       isOpen
@@ -49,7 +49,7 @@ export function FolderPickerDialog({
                   }
                 }}
               >
-                {t('Up', 'Lên trên')}
+                {t('workspace.up')}
               </Button>
               <Tip
                 className="block min-w-0 flex-1 truncate text-sm text-muted"
@@ -58,19 +58,17 @@ export function FolderPickerDialog({
                 {current === undefined
                   ? ''
                   : current.path === ''
-                    ? t('This computer', 'Máy tính này')
+                    ? t('workspace.thisComputer')
                     : current.path}
               </Tip>
             </div>
             <div className="flex max-h-80 min-h-40 flex-col gap-1 overflow-y-auto">
               {listing.isError ? (
-                <p className="text-sm text-danger">
-                  {t('The folder could not be read', 'Không đọc được thư mục')}
-                </p>
+                <p className="text-sm text-danger">{t('workspace.theFolderCouldNotBeRead')}</p>
               ) : current === undefined ? (
-                <Spinner size="sm" aria-label={t('Loading...', 'Đang tải...')} />
+                <Spinner size="sm" aria-label={t('workspace.loading')} />
               ) : current.folders.length === 0 ? (
-                <p className="text-sm text-muted">{t('No subfolders', 'Không có thư mục con')}</p>
+                <p className="text-sm text-muted">{t('workspace.noSubfolders')}</p>
               ) : (
                 current.folders.map((folder) => (
                   <button
@@ -90,7 +88,7 @@ export function FolderPickerDialog({
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onPress={onClose}>
-              {t('Cancel', 'Hủy')}
+              {t('workspace.cancel')}
             </Button>
             <Button
               variant="primary"
@@ -101,7 +99,7 @@ export function FolderPickerDialog({
                 }
               }}
             >
-              {t('Choose this folder', 'Chọn thư mục này')}
+              {t('workspace.chooseThisFolder')}
             </Button>
           </Modal.Footer>
         </Modal.Dialog>

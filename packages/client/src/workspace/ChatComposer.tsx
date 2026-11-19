@@ -70,7 +70,7 @@ function failureText(error: unknown): string {
   if (error instanceof ApiError && error.code !== null) {
     return errorText({ code: error.code })
   }
-  return t('Could not send.', 'Không gửi được.')
+  return t('workspace.couldNotSend')
 }
 
 // The prompt box: Enter sends, Shift+Enter adds a line, while Claude works Stop appears and a message typed now queues behind the turn.
@@ -175,7 +175,7 @@ export function ChatComposer({
   async function attach(files: readonly File[]): Promise<void> {
     const room = MAX_IMAGES - images.length
     if (files.length > room || files.some((file) => file.size > MAX_IMAGE_BYTES)) {
-      setFailure(t('At most 5 images of 5 MB each.', 'Tối đa 5 ảnh, mỗi ảnh 5 MB.'))
+      setFailure(t('workspace.atMost5ImagesOf5'))
     }
     const accepted = files
       .filter((file) => file.size <= MAX_IMAGE_BYTES)
@@ -191,7 +191,7 @@ export function ChatComposer({
       )
       setImages((current) => [...current, ...added])
     } catch {
-      setFailure(t('Could not read the image.', 'Không đọc được ảnh.'))
+      setFailure(t('workspace.couldNotReadTheImage'))
     }
   }
 
@@ -274,7 +274,7 @@ export function ChatComposer({
       {suggestions.length === 0 ? null : (
         <ul
           role="listbox"
-          aria-label={t('Suggestions', 'Gợi ý')}
+          aria-label={t('workspace.suggestions')}
           className="absolute inset-x-2 bottom-full z-10 mb-1 flex max-h-64 flex-col gap-0.5 overflow-auto rounded-2xl bg-surface p-1 shadow-surface"
         >
           {suggestions.map((suggestion, index) => (
@@ -302,17 +302,17 @@ export function ChatComposer({
         </p>
       )}
       {images.length === 0 ? null : (
-        <ul className="flex flex-wrap gap-2" aria-label={t('Attached images', 'Ảnh đính kèm')}>
+        <ul className="flex flex-wrap gap-2" aria-label={t('workspace.attachedImages')}>
           {images.map((image) => (
             <li key={image.id} className="relative">
               <img
-                alt={t('Pasted image', 'Ảnh đã dán')}
+                alt={t('workspace.pastedImage')}
                 className="size-16 rounded-lg object-cover"
                 src={`data:${image.mediaType};base64,${image.data}`}
               />
               <CloseButton
                 className="absolute -right-1 -top-1 size-5 bg-surface shadow-sm hover:bg-danger hover:text-danger-foreground"
-                aria-label={t('Remove image', 'Bỏ ảnh')}
+                aria-label={t('workspace.removeImage')}
                 onPress={() => {
                   setImages((current) => current.filter((item) => item.id !== image.id))
                 }}
@@ -329,14 +329,9 @@ export function ChatComposer({
             variant="secondary"
             rows={1}
             className="block resize-none overflow-y-auto pr-14"
-            aria-label={t('Message to Claude', 'Tin nhắn cho Claude')}
+            aria-label={t('workspace.messageToClaude')}
             placeholder={
-              narrow
-                ? t('Message Claude', 'Nhắn cho Claude')
-                : t(
-                    'Enter to send, Shift+Enter for a new line',
-                    'Enter để gửi, Shift+Enter xuống dòng',
-                  )
+              narrow ? t('workspace.messageClaude') : t('workspace.enterToSendShiftEnterFor')
             }
             value={text}
             onChange={(event) => {
@@ -355,7 +350,7 @@ export function ChatComposer({
             {text === '' ? null : (
               <CloseButton
                 className="size-6"
-                aria-label={t('Clear text', 'Xóa nội dung')}
+                aria-label={t('workspace.clearText')}
                 onPress={() => {
                   setText('')
                   setRecall(null)
@@ -365,14 +360,14 @@ export function ChatComposer({
             )}
             {working ? (
               <span className="flex items-center" role="status">
-                <Spinner size="sm" aria-label={t('Working...', 'Đang làm việc...')} />
+                <Spinner size="sm" aria-label={t('workspace.working')} />
               </span>
             ) : null}
           </div>
         </div>
         {working ? (
           <Button variant="danger" size="md" className="h-auto" onPress={stop}>
-            {t('Stop', 'Dừng')}
+            {t('workspace.stop')}
           </Button>
         ) : null}
         <Button
@@ -383,7 +378,7 @@ export function ChatComposer({
           isDisabled={!canSend}
           onPress={submit}
         >
-          {working ? t('Queue', 'Xếp hàng') : t('Send', 'Gửi')}
+          {working ? t('workspace.queue') : t('workspace.send')}
         </Button>
       </div>
     </div>

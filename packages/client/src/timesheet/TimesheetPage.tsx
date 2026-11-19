@@ -97,9 +97,9 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
       return errorText({ code: 'invalidTicket' })
     }
     if (typedMinutes.some((minutes) => !(minutes > 0))) {
-      return t('each ticket needs > 0h', 'mỗi ticket cần > 0h')
+      return t('timesheet.eachTicketNeeds0h')
     }
-    return total > WORK_MINUTES ? `${formatMinutes(total)} - ${t('over 8h', 'quá 8h')}` : null
+    return total > WORK_MINUTES ? `${formatMinutes(total)} - ${t('timesheet.over8h')}` : null
   })()
 
   const week = view.week !== null && view.week.monday === monday ? view.week : null
@@ -165,10 +165,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         onRejected={() => {
           actions.setStatus({
             tone: 'danger',
-            text: t(
-              'Each ticket needs > 0h and the day up to 8h',
-              'Mỗi ticket cần > 0h và cả ngày tối đa 8h',
-            ),
+            text: t('timesheet.eachTicketNeeds0hAndThe'),
             detail: null,
           })
         }}
@@ -180,7 +177,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
     entries.map((entry) => ({ date: entry.date, state: 'queued', coverage: null, queued: entry }))
 
   return (
-    <Page title={t('Timesheet', 'Bảng công')} wide className="max-w-[1300px]">
+    <Page title={t('timesheet.timesheet')} wide className="max-w-[1300px]">
       <TimesheetBanners view={view} reminder={showReminder(view, clock, timeZone)} />
       {canAct ? (
         <DaySuggestions
@@ -232,7 +229,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
       {outside.length === 0 ? null : (
         <section className="flex flex-col gap-2">
           <span className="text-xs font-semibold tracking-wide text-muted">
-            {t('QUEUED', 'HÀNG ĐỢI')}
+            {t('timesheet.queued2')}
           </span>
           <div
             className="grid gap-3"
@@ -281,15 +278,10 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         <ConfirmDialog
           message={
             confirming === 'off'
-              ? t(
-                  `Mark ${dateLabel(date, language)} as OFF in TSC? This overwrites the day's cell.`,
-                  `Đánh dấu ${dateLabel(date, language)} là OFF trong TSC? Ô của ngày này sẽ bị ghi đè.`,
-                )
-              : t('Remove everything from the queue?', 'Xóa mọi mục trong hàng đợi?')
+              ? t('timesheet.markAsOffInTscThis', { dateLabel: dateLabel(date, language) })
+              : t('timesheet.removeEverythingFromTheQueue')
           }
-          confirmLabel={
-            confirming === 'off' ? t('Log OFF', 'Log nghỉ') : t('Clear queue', 'Xóa hàng đợi')
-          }
+          confirmLabel={confirming === 'off' ? t('timesheet.logOff2') : t('timesheet.clearQueue2')}
           onCancel={() => {
             setConfirming(null)
           }}
@@ -308,8 +300,8 @@ export function TimesheetPage(): React.JSX.Element {
   const view = useTimesheetView()
   if (settings.data === undefined || view.data === undefined) {
     return (
-      <Page title={t('Timesheet', 'Bảng công')} wide className="max-w-[1300px]">
-        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+      <Page title={t('timesheet.timesheet')} wide className="max-w-[1300px]">
+        <p className="text-sm text-muted">{t('timesheet.loading')}</p>
       </Page>
     )
   }

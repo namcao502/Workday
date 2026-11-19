@@ -84,7 +84,7 @@ export function RemotePairing({
 
   return (
     <>
-      <h3 className="text-sm font-semibold">{t('Pair a device', 'Ghép nối thiết bị')}</h3>
+      <h3 className="text-sm font-semibold">{t('settings.pairADevice')}</h3>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="primary"
@@ -94,15 +94,10 @@ export function RemotePairing({
             run(actions.openPairing)
           }}
         >
-          {t('Pair a device', 'Ghép nối thiết bị')}
+          {t('settings.pairADevice')}
         </Button>
         {ready ? null : (
-          <span className="text-sm text-muted">
-            {t(
-              'Turn on remote access and save the settings first',
-              'Hãy bật truy cập từ xa và lưu cài đặt trước',
-            )}
-          </span>
+          <span className="text-sm text-muted">{t('settings.turnOnRemoteAccessAndSave')}</span>
         )}
       </div>
       {setupUrl === null ? null : (
@@ -124,14 +119,14 @@ export function RemotePairing({
         <div className="flex flex-col items-start gap-2">
           <p
             className="rounded-2xl bg-surface-secondary px-4 py-2 font-mono text-2xl tracking-widest"
-            aria-label={t('Pairing code', 'Mã ghép nối')}
+            aria-label={t('settings.pairingCode')}
           >
             {pairing.code}
           </p>
           <p className="text-sm text-muted">
-            {t('Expires in', 'Hết hạn sau')} {countdown(pairing.expiresAt, now)}
+            {t('settings.expiresIn')} {countdown(pairing.expiresAt, now)}
           </p>
-          <Tip content={t('Click to copy', 'Bấm để sao chép')}>
+          <Tip content={t('settings.clickToCopy')}>
             <Button
               variant="secondary"
               size="sm"
@@ -159,7 +154,7 @@ export function RemotePairing({
                 run(() => actions.decidePairing('approve'))
               }}
             >
-              {t('Approve', 'Chấp nhận')}
+              {t('settings.approve')}
             </Button>
             <Button
               variant="secondary"
@@ -168,7 +163,7 @@ export function RemotePairing({
                 run(() => actions.decidePairing('reject'))
               }}
             >
-              {t('Reject', 'Từ chối')}
+              {t('settings.reject')}
             </Button>
           </div>
         </div>

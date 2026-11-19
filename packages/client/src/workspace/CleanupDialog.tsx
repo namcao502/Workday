@@ -28,19 +28,13 @@ function canSlim(row: CleanupRow): boolean {
 function confirmMessage(run: CleanupRun, row: CleanupRow): string {
   if (run.kind === 'slim') {
     const size = megabytesText(row.slimBytes)
-    return t(
-      `Delete the mined docs of ${row.ticketKey} (${size} MB)?`,
-      `Xóa tài liệu đã mine của ${row.ticketKey} (${size} MB)?`,
-    )
+    return t('workspace.deleteTheMinedDocsOfMb', { ticketKey: row.ticketKey, size })
   }
   const dirty = String(run.dirtyFiles)
   if (run.dirtyFiles > 0) {
-    return t(
-      `Remove the worktree of ${row.ticketKey}? ${dirty} changed file(s) will be lost.`,
-      `Xóa worktree của ${row.ticketKey}? ${dirty} tệp thay đổi sẽ bị mất.`,
-    )
+    return t('workspace.removeTheWorktreeOfChangedFile', { ticketKey: row.ticketKey, dirty })
   }
-  return t(`Remove the worktree of ${row.ticketKey}?`, `Xóa worktree của ${row.ticketKey}?`)
+  return t('workspace.removeTheWorktreeOf', { ticketKey: row.ticketKey })
 }
 
 interface RowItemProps {
@@ -74,7 +68,7 @@ function RowItem({ row, error, busy, onAsk }: RowItemProps): React.JSX.Element {
               onAsk({ kind: 'remove', key: row.ticketKey, dirtyFiles: row.dirtyFiles })
             }}
           >
-            {t('Remove', 'Xóa')}
+            {t('workspace.remove')}
           </Button>
         ) : null}
         {canSlim(row) ? (
@@ -86,7 +80,7 @@ function RowItem({ row, error, busy, onAsk }: RowItemProps): React.JSX.Element {
               onAsk({ kind: 'slim', key: row.ticketKey, dirtyFiles: 0 })
             }}
           >
-            {t('Slim docs', 'Thu gọn tài liệu')}
+            {t('workspace.slimDocs')}
           </Button>
         ) : null}
       </div>
@@ -129,22 +123,11 @@ export function CleanupDialog({ onClose }: CleanupDialogProps): React.JSX.Elemen
 
   let body: React.JSX.Element
   if (cleanup.isError) {
-    body = (
-      <p className="text-sm text-danger">
-        {t('The list could not be loaded', 'Không tải được danh sách')}
-      </p>
-    )
+    body = <p className="text-sm text-danger">{t('workspace.theListCouldNotBeLoaded')}</p>
   } else if (rows === undefined) {
-    body = <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+    body = <p className="text-sm text-muted">{t('workspace.loading')}</p>
   } else if (rows.length === 0) {
-    body = (
-      <p className="text-sm text-muted">
-        {t(
-          'Nothing to clean up. If you expected tickets here, set the dev repo path in Settings > Workspace.',
-          'Không có gì để dọn. Nếu bạn mong thấy ticket ở đây, hãy đặt đường dẫn dev repo trong Cài đặt > Workspace.',
-        )}
-      </p>
-    )
+    body = <p className="text-sm text-muted">{t('workspace.nothingToCleanUpIfYou')}</p>
   } else {
     body = (
       <ul className="flex flex-col gap-2">
@@ -172,13 +155,10 @@ export function CleanupDialog({ onClose }: CleanupDialogProps): React.JSX.Elemen
         }}
       >
         <Modal.Container>
-          <Modal.Dialog
-            aria-label={t('Clean up worktrees', 'Dọn worktree')}
-            className="sm:max-w-3xl"
-          >
+          <Modal.Dialog aria-label={t('workspace.cleanUpWorktrees')} className="sm:max-w-3xl">
             <Modal.CloseTrigger />
             <Modal.Header>
-              <Modal.Heading>{t('Clean up worktrees', 'Dọn worktree')}</Modal.Heading>
+              <Modal.Heading>{t('workspace.cleanUpWorktrees')}</Modal.Heading>
             </Modal.Header>
             <Modal.Body>{body}</Modal.Body>
           </Modal.Dialog>
@@ -188,9 +168,7 @@ export function CleanupDialog({ onClose }: CleanupDialogProps): React.JSX.Elemen
         <ConfirmDialog
           message={confirmMessage(asking, askingRow)}
           confirmLabel={
-            asking.kind === 'remove'
-              ? t('Remove worktree', 'Xóa worktree')
-              : t('Slim docs', 'Thu gọn tài liệu')
+            asking.kind === 'remove' ? t('workspace.removeWorktree') : t('workspace.slimDocs')
           }
           onConfirm={() => {
             void confirmRun(asking)

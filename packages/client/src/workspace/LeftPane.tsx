@@ -45,7 +45,7 @@ function TeamsTabButton({
         <span
           className="size-2 flex-none rounded-full bg-danger"
           role="img"
-          aria-label={t('New messages', 'Có tin mới')}
+          aria-label={t('workspace.newMessages')}
         />
       ) : null}
     </button>
@@ -91,7 +91,7 @@ export function LeftPane({
               setTab('changes')
             }}
           >
-            {t('Changes', 'Thay đổi')}
+            {t('workspace.changes')}
           </button>
           <button
             type="button"
@@ -102,7 +102,7 @@ export function LeftPane({
               setTab('files')
             }}
           >
-            {t('Files', 'Tệp')}
+            {t('workspace.files')}
           </button>
           {isTicket ? (
             <TeamsTabButton

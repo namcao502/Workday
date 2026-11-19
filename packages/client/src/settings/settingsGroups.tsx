@@ -33,17 +33,17 @@ export function settingsGroups(): readonly SettingsGroup[] {
   return [
     {
       id: 'general',
-      label: t('General', 'Chung'),
+      label: t('settings.general'),
       entries: [
         {
           id: 'general',
-          title: t('General', 'Chung'),
+          title: t('settings.general'),
           keywords: 'theme dark light language english vietnamese time zone port',
           render: (settings) => <GeneralSection settings={settings} />,
         },
         {
           id: 'notices',
-          title: t('Notices', 'Thông báo'),
+          title: t('settings.notices'),
           keywords: 'notification toast sound topic bell alert',
           render: (settings) => <NoticesSection settings={settings} />,
         },
@@ -51,11 +51,11 @@ export function settingsGroups(): readonly SettingsGroup[] {
     },
     {
       id: 'integrations',
-      label: t('Integrations', 'Tích hợp'),
+      label: t('settings.integrations'),
       entries: [
         {
           id: 'connections',
-          title: t('Connections', 'Kết nối'),
+          title: t('settings.connections'),
           keywords: 'jira url email api token project key eta dev priority jql poll',
           render: (settings) => <ConnectionsSection settings={settings} />,
         },
@@ -75,23 +75,23 @@ export function settingsGroups(): readonly SettingsGroup[] {
     },
     {
       id: 'work',
-      label: t('Work', 'Công việc'),
+      label: t('settings.work'),
       entries: [
         {
           id: 'timesheet',
-          title: t('Timesheet', 'Chấm công'),
+          title: t('settings.timesheet2'),
           keywords: 'hrm tsc log time hours reminder sign in work log',
           render: (settings) => <TimesheetSection settings={settings} />,
         },
         {
           id: 'workspace',
-          title: t('Workspace', 'Không gian làm việc'),
+          title: t('settings.workspace'),
           keywords: 'dev repo folder worktree clean up slim claude terminal model',
           render: (settings) => <WorkspaceSection settings={settings} />,
         },
         {
           id: 'schedules',
-          title: t('Schedules', 'Lịch chạy'),
+          title: t('settings.schedules'),
           keywords: 'knowledge scan jobs cron run now in-app',
           render: () => <SchedulesSection />,
         },
@@ -99,11 +99,11 @@ export function settingsGroups(): readonly SettingsGroup[] {
     },
     {
       id: 'remote',
-      label: t('Remote access', 'Truy cập từ xa'),
+      label: t('settings.remoteAccess'),
       entries: [
         {
           id: 'remote',
-          title: t('Remote access', 'Truy cập từ xa'),
+          title: t('settings.remoteAccess'),
           keywords: 'tunnel cloudflare access device pair phone mobile jwt',
           render: (settings) => <RemoteSection settings={settings} />,
         },
@@ -111,11 +111,11 @@ export function settingsGroups(): readonly SettingsGroup[] {
     },
     {
       id: 'guide',
-      label: t('Guide', 'Hướng dẫn'),
+      label: t('settings.guide'),
       entries: [
         {
           id: 'guide',
-          title: t('Guide', 'Hướng dẫn'),
+          title: t('settings.guide'),
           keywords: 'help how to token setup',
           render: () => <GuideSection />,
         },

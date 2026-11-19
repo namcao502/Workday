@@ -32,7 +32,7 @@ function workspaceItems(ticketKey: string, workspace: RowWorkspace): readonly Me
   const starting = workspace.starting.has(ticketKey)
   const open: MenuItem = {
     id: 'open',
-    label: t('Open', 'Mở'),
+    label: t('board.open'),
     run: () => {
       workspace.onOpen(ticketKey)
     },
@@ -42,7 +42,7 @@ function workspaceItems(ticketKey: string, workspace: RowWorkspace): readonly Me
   }
   const start: MenuItem = {
     id: 'start',
-    label: starting ? t('Starting...', 'Đang bắt đầu...') : t('Start', 'Bắt đầu'),
+    label: starting ? t('board.starting') : t('board.start'),
     disabled: starting,
     run: () => {
       workspace.onStart(ticketKey)
@@ -60,23 +60,23 @@ function itemsFor(props: RowMenuProps): readonly MenuItem[] {
       onAction(id)
     },
   })
-  const dismiss = action('dismiss', t('Dismiss', 'Bỏ qua'))
+  const dismiss = action('dismiss', t('board.dismiss'))
   const readyToTest: readonly MenuItem[] =
     onReadyToTest === undefined
       ? []
-      : [{ id: 'readyToTest', label: t('Ready to Test', 'Ready to Test'), run: onReadyToTest }]
+      : [{ id: 'readyToTest', label: t('board.readyToTest'), run: onReadyToTest }]
   switch (view) {
     case 'working':
       return [
         ...(workspace === undefined ? [] : workspaceItems(ticketKey, workspace)),
         ...readyToTest,
-        action('done', t('Done', 'Hoàn thành')),
+        action('done', t('board.done2')),
         dismiss,
       ]
     case 'done':
-      return [...readyToTest, action('reopen', t('Reopen', 'Mở lại')), dismiss]
+      return [...readyToTest, action('reopen', t('board.reopen')), dismiss]
     case 'dismissed':
-      return [action('restore', t('Restore', 'Khôi phục'))]
+      return [action('restore', t('board.restore'))]
   }
 }
 
@@ -92,7 +92,7 @@ export function RowMenu(props: RowMenuProps): React.JSX.Element | null {
         isIconOnly
         variant="secondary"
         size="sm"
-        aria-label={t(`Actions for ${ticketKey}`, `Thao tác cho ${ticketKey}`)}
+        aria-label={t('board.actionsFor', { ticketKey })}
       >
         <EllipsisVertical />
       </Button>

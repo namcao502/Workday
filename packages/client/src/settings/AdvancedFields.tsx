@@ -12,11 +12,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
     <>
       <TextField
         id="jira-eta-field"
-        label={t('ETA date field id', 'Mã trường ngày ETA')}
-        hint={t(
-          'The Jira custom field that holds the ETA date. Empty: no ETA column.',
-          'Trường tùy chỉnh của Jira chứa ngày ETA. Để trống: không có cột ETA.',
-        )}
+        label={t('settings.etaDateFieldId')}
+        hint={t('settings.theJiraCustomFieldThatHolds')}
         placeholder="customfield_10735"
         value={form.etaFieldId}
         onChange={(value) => {
@@ -25,11 +22,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-dev-priority-field"
-        label={t('Dev priority field id', 'Mã trường Dev priority')}
-        hint={t(
-          'The Jira custom field that holds the dev priority (the P column). Empty: no P column.',
-          'Trường tùy chỉnh của Jira chứa độ ưu tiên dev (cột P). Để trống: không có cột P.',
-        )}
+        label={t('settings.devPriorityFieldId')}
+        hint={t('settings.theJiraCustomFieldThatHolds2')}
         placeholder="customfield_11111"
         value={form.devPriorityFieldId}
         onChange={(value) => {
@@ -38,11 +32,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-assigned-jql"
-        label={t('Assigned tickets query (JQL)', 'Truy vấn ticket được giao (JQL)')}
-        hint={t(
-          'Which tickets the board checks. Empty: your open tickets, newest first.',
-          'Những ticket board sẽ kiểm. Để trống: ticket chưa xong của bạn, mới nhất trước.',
-        )}
+        label={t('settings.assignedTicketsQueryJql')}
+        hint={t('settings.whichTicketsTheBoardChecksEmpty')}
         multiline
         value={form.assignedJql}
         onChange={(value) => {
@@ -51,11 +42,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-mine-jql"
-        label={t('Query for my tickets', 'Truy vấn ticket của tôi')}
-        hint={t(
-          'Which tickets count as yours when you log time. Empty: assigned to you now or before.',
-          'Những ticket được tính là của bạn khi log giờ. Để trống: được giao cho bạn hiện tại hoặc trước đây.',
-        )}
+        label={t('settings.queryForMyTickets')}
+        hint={t('settings.whichTicketsCountAsYoursWhen')}
         multiline
         value={form.mineJql}
         onChange={(value) => {
@@ -64,11 +52,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-pre-work-statuses"
-        label={t('Statuses before work starts', 'Trạng thái trước khi bắt đầu làm')}
-        hint={t(
-          'One per line, as Jira names them: Backlog, Selected for Development, In Progress, Hold.',
-          'Mỗi dòng một tên, đúng như Jira: Backlog, Selected for Development, In Progress, Hold.',
-        )}
+        label={t('settings.statusesBeforeWorkStarts')}
+        hint={t('settings.onePerLineAsJiraNames')}
         multiline
         value={form.preWorkStatuses}
         onChange={(value) => {
@@ -77,11 +62,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-rework-statuses"
-        label={t('Statuses that mean sent back', 'Trạng thái nghĩa là bị trả lại')}
-        hint={t(
-          'One per line. A Done ticket that moves to one of these returns to Working: In Progress, QA Failed, Reopened.',
-          'Mỗi dòng một tên. Ticket đã Done chuyển sang một trong các trạng thái này sẽ quay về Working: In Progress, QA Failed, Reopened.',
-        )}
+        label={t('settings.statusesThatMeanSentBack')}
+        hint={t('settings.onePerLineADoneTicket')}
         multiline
         value={form.reworkStatuses}
         onChange={(value) => {
@@ -90,11 +72,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-ready-to-test-path"
-        label={t('Ready to Test path', 'Đường đi tới Ready to Test')}
-        hint={t(
-          'One status per line, in order; the last is Ready to Test. Empty: the feature is off.',
-          'Mỗi dòng một trạng thái, theo thứ tự; dòng cuối là Ready to Test. Để trống: tắt tính năng.',
-        )}
+        label={t('settings.readyToTestPath')}
+        hint={t('settings.oneStatusPerLineInOrder')}
         multiline
         value={form.readyToTestPath}
         onChange={(value) => {
@@ -103,25 +82,19 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-developer-statuses"
-        label={t('Statuses on the developer', 'Trạng thái đang chờ developer')}
-        hint={t(
-          'One per line. A ticket in one of these is yours to move. Empty: every status counts.',
-          'Mỗi dòng một tên. Ticket ở các trạng thái này là việc của bạn. Để trống: mọi trạng thái đều tính.',
-        )}
+        label={t('settings.statusesOnTheDeveloper')}
+        hint={t('settings.onePerLineATicketIn')}
         multiline
         value={form.developerStatuses}
         onChange={(value) => {
           onChange({ developerStatuses: value })
         }}
       />
-      <h4 className="pt-2 text-sm font-semibold">{t('Suggestions', 'Gợi ý')}</h4>
+      <h4 className="pt-2 text-sm font-semibold">{t('settings.suggestions')}</h4>
       <TextField
         id="jira-suggestions-epic-jql"
-        label={t('Epic query (JQL)', 'Truy vấn epic (JQL)')}
-        hint={t(
-          'Finds the epic that holds the tickets to take.',
-          'Tìm epic chứa các ticket để nhận.',
-        )}
+        label={t('settings.epicQueryJql')}
+        hint={t('settings.findsTheEpicThatHoldsThe')}
         multiline
         value={form.suggestionsEpicJql}
         onChange={(value) => {
@@ -130,8 +103,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-suggestions-epic-prefix"
-        label={t('Epic title prefix', 'Tiền tố tên epic')}
-        hint={t('e.g. "MDP Issues - ".', 'Ví dụ "MDP Issues - ".')}
+        label={t('settings.epicTitlePrefix')}
+        hint={t('settings.eGMdpIssues')}
         value={form.suggestionsEpicTitlePrefix}
         onChange={(value) => {
           onChange({ suggestionsEpicTitlePrefix: value })
@@ -139,8 +112,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-suggestions-candidates-jql"
-        label={t('Candidates query (JQL)', 'Truy vấn ticket ứng viên (JQL)')}
-        hint={t('{epic} is replaced by the epic key.', '{epic} được thay bằng mã epic.')}
+        label={t('settings.candidatesQueryJql')}
+        hint={t('settings.isReplacedByTheEpicKey')}
         multiline
         value={form.suggestionsCandidatesJql}
         onChange={(value) => {
@@ -149,8 +122,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-suggestions-mine-jql"
-        label={t('My tickets in the epic (JQL)', 'Ticket của tôi trong epic (JQL)')}
-        hint={t('{epic} is replaced by the epic key.', '{epic} được thay bằng mã epic.')}
+        label={t('settings.myTicketsInTheEpicJql')}
+        hint={t('settings.isReplacedByTheEpicKey')}
         multiline
         value={form.suggestionsMineJql}
         onChange={(value) => {
@@ -159,11 +132,8 @@ export function AdvancedFields({ form, onChange }: AdvancedFieldsProps): React.J
       />
       <TextField
         id="jira-suggestions-status"
-        label={t('Preferred status', 'Trạng thái ưu tiên')}
-        hint={t(
-          'Tickets in this status are listed first. Empty: none.',
-          'Ticket ở trạng thái này lên đầu. Để trống: không ưu tiên.',
-        )}
+        label={t('settings.preferredStatus')}
+        hint={t('settings.ticketsInThisStatusAreListed')}
         value={form.suggestionsSelectedStatus}
         onChange={(value) => {
           onChange({ suggestionsSelectedStatus: value })

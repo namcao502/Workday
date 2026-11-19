@@ -59,7 +59,7 @@ export function useTimesheetActions(language: Language): TimesheetActions {
     try {
       setStatus(await job())
     } catch {
-      setStatus(failure(t('The request failed', 'Yêu cầu thất bại')))
+      setStatus(failure(t('timesheet.theRequestFailed')))
     } finally {
       setWorking(null)
       await refresh()
@@ -81,7 +81,7 @@ export function useTimesheetActions(language: Language): TimesheetActions {
         const day = dateLabel(typed.date, language)
         return {
           tone: 'ok',
-          text: t(`Queued ${count} ticket(s) for ${day}`, `Đã thêm ${count} ticket cho ${day}`),
+          text: t('timesheet.queuedTicketSFor', { count, day }),
           detail: null,
         }
       }),
@@ -102,7 +102,7 @@ export function useTimesheetActions(language: Language): TimesheetActions {
     clear: () =>
       run({ action: 'clear', date: '' }, async () => {
         await clearQueue()
-        return { tone: 'ok', text: t('Queue cleared', 'Đã xóa hàng đợi'), detail: null }
+        return { tone: 'ok', text: t('timesheet.queueCleared'), detail: null }
       }),
     drainDay: (date) =>
       run({ action: 'drain', date }, async () => {

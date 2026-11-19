@@ -32,16 +32,16 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
   const busy = working !== null
   const hasTickets = typed.length !== 0
   const ready = hasTickets && problem === null && !busy
-  const closedNote = hrmClosed ? ` ${t('(after 6 PM)', '(sau 6 PM)')}` : ''
+  const closedNote = hrmClosed ? ` ${t('timesheet.after6Pm')}` : ''
   const label = (action: LogAction, idle: string): string =>
-    working === action ? t('Working...', 'Đang chạy...') : idle
+    working === action ? t('timesheet.working') : idle
 
   return (
     <Card>
       <Card.Content className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <DateInput
-            label={t('Date', 'Ngày')}
+            label={t('timesheet.date')}
             name="log-date"
             className="w-44"
             value={props.date}
@@ -50,8 +50,8 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
           <Input
             variant="secondary"
             className="min-w-48 flex-1"
-            aria-label={t('Tickets', 'Ticket')}
-            placeholder={t('MDP-123, 456 ...', 'MDP-123, 456 ...')}
+            aria-label={t('timesheet.tickets')}
+            placeholder={t('timesheet.mdp123456')}
             value={props.text}
             onChange={(event) => {
               props.onText(event.target.value)
@@ -67,7 +67,7 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
           <Button
             isIconOnly
             variant="primary"
-            aria-label={t('Add to queue', 'Thêm vào hàng đợi')}
+            aria-label={t('timesheet.addToQueue')}
             isDisabled={!ready}
             onPress={() => {
               props.onAction('add')
@@ -82,33 +82,33 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
               props.onAction('now')
             }}
           >
-            {label('now', `${t('Log now', 'Log ngay')}${closedNote}`)}
+            {label('now', `${t('timesheet.logNow')}${closedNote}`)}
           </Button>
           <ActionMenu
             actions={[
               {
-                label: t('Log OFF...', 'Log nghỉ...'),
+                label: t('timesheet.logOff'),
                 disabled: busy || !tscConnected,
                 onSelect: () => {
                   props.onAction('off')
                 },
               },
               {
-                label: t('Log now: TSC only', 'Log ngay: chỉ TSC'),
+                label: t('timesheet.logNowTscOnly'),
                 disabled: !ready || !tscConnected,
                 onSelect: () => {
                   props.onAction('tsc')
                 },
               },
               {
-                label: `${t('Log now: HRM only', 'Log ngay: chỉ HRM')}${closedNote}`,
+                label: `${t('timesheet.logNowHrmOnly')}${closedNote}`,
                 disabled: !ready || hrmClosed || !hrmConnected,
                 onSelect: () => {
                   props.onAction('hrm')
                 },
               },
               {
-                label: t('Clear queue...', 'Xóa hàng đợi...'),
+                label: t('timesheet.clearQueue'),
                 disabled: busy || props.queueEmpty,
                 onSelect: () => {
                   props.onAction('clear')
@@ -121,7 +121,7 @@ export function LogInput(props: LogInputProps): React.JSX.Element {
         {hasTickets ? (
           <div className="flex flex-col gap-1">
             <span className="text-xs font-semibold tracking-wide text-muted">
-              {t('not added yet', 'chưa thêm')}
+              {t('timesheet.notAddedYet')}
             </span>
             <TicketRows
               rows={typed}

@@ -18,9 +18,9 @@ interface ScanCardProps {
 
 function startErrorText(error: unknown): string {
   if (error instanceof ApiError && error.status === 409) {
-    return t('A scan is already running', 'Đang có một lần quét chạy')
+    return t('schedules.aScanIsAlreadyRunning')
   }
-  return t('Could not start the knowledge scan', 'Không khởi động được quét knowledge')
+  return t('schedules.couldNotStartTheKnowledgeScan')
 }
 
 export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JSX.Element {
@@ -32,7 +32,7 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
     setAsking(false)
     try {
       await runScanNow()
-      setMessage(t('Scan started', 'Đã bắt đầu quét'))
+      setMessage(t('schedules.scanStarted'))
     } catch (error: unknown) {
       setMessage(startErrorText(error))
     }
@@ -41,15 +41,12 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
 
   const nextText =
     scan.nextRunAt === null
-      ? t('No next run', 'Không có lần chạy tới')
-      : t(
-          `Next run ${formatWhen(scan.nextRunAt, timeZone)}`,
-          `Lần tới ${formatWhen(scan.nextRunAt, timeZone)}`,
-        )
+      ? t('schedules.noNextRun')
+      : t('schedules.nextRun', { formatWhen: formatWhen(scan.nextRunAt, timeZone) })
 
   return (
     <Section
-      title={t('Knowledge scan', 'Quét knowledge base')}
+      title={t('schedules.knowledgeScan')}
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -60,10 +57,10 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
               setAsking(true)
             }}
           >
-            {t('Run now', 'Chạy ngay')}
+            {t('schedules.runNow')}
           </Button>
           <Button variant="secondary" size="sm" onPress={onRefresh}>
-            {t('Refresh', 'Làm mới')}
+            {t('schedules.refresh')}
           </Button>
         </div>
       }
@@ -75,11 +72,8 @@ export function ScanCard({ scan, timeZone, onRefresh }: ScanCardProps): React.JS
       <ScanRuns runs={scan.runs} timeZone={timeZone} />
       {asking ? (
         <ConfirmDialog
-          message={t(
-            'Run the knowledge scan now? It mines every ticket that reached Done since the last complete run and refreshes the codebase maps, with claude running headless. It can take an hour or more.',
-            'Chạy quét knowledge ngay? Việc này mine mọi ticket đã lên Done kể từ lần chạy trọn vẹn gần nhất và làm mới các map của codebase, với claude chạy ngầm. Có thể mất một giờ hoặc hơn.',
-          )}
-          confirmLabel={t('Run now', 'Chạy ngay')}
+          message={t('schedules.runTheKnowledgeScanNowIt')}
+          confirmLabel={t('schedules.runNow')}
           onConfirm={() => {
             void start()
           }}

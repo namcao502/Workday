@@ -29,17 +29,17 @@ function linesCell(row: TicketReportRow): string {
 
 function headers(): readonly string[] {
   return [
-    t('TICKET', 'TICKET'),
-    t('SUMMARY', 'TÓM TẮT'),
-    t('STATUS', 'TRẠNG THÁI'),
-    t('HOURS', 'GIỜ'),
-    t('SESSIONS', 'PHIÊN'),
-    t('TURNS', 'LƯỢT'),
-    t('CLAUDE TIME', 'THỜI GIAN CLAUDE'),
+    t('insights.ticket'),
+    t('insights.summary'),
+    t('insights.status'),
+    t('insights.hours'),
+    t('insights.sessions'),
+    t('insights.turns'),
+    t('insights.claudeTime'),
     'TOKENS',
     'COMMITS',
-    t('FILES', 'FILE'),
-    t('LINES', 'DÒNG'),
+    t('insights.files'),
+    t('insights.lines'),
   ]
 }
 

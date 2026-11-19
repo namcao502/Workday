@@ -35,9 +35,9 @@ function StatusText({ status }: { readonly status: StatusLine | null }): React.J
 
 function failureText(failure: unknown): string {
   if (failure instanceof ApiError && failure.status === 400) {
-    return t('Enter the HRM key again for the new URL', 'Hãy nhập lại key HRM cho địa chỉ mới')
+    return t('settings.enterTheHrmKeyAgainFor')
   }
-  return t('Could not reach the Workday server', 'Không kết nối được tới Workday server')
+  return t('settings.couldNotReachTheWorkdayServer2')
 }
 
 export function TimesheetSection({
@@ -71,7 +71,7 @@ export function TimesheetSection({
       })
       setHrmKey('')
       setReplacing(false)
-      setSaveStatus({ kind: 'ok', text: t('Saved', 'Đã lưu') })
+      setSaveStatus({ kind: 'ok', text: t('settings.saved') })
     } catch (failure) {
       setSaveStatus({ kind: 'error', text: failureText(failure) })
     } finally {
@@ -89,7 +89,7 @@ export function TimesheetSection({
       })
       setHrmStatus(
         result.ok
-          ? { kind: 'ok', text: t('HRM accepted the key', 'HRM đã chấp nhận key') }
+          ? { kind: 'ok', text: t('settings.hrmAcceptedTheKey') }
           : { kind: 'error', text: errorText(result.error) },
       )
     } catch (failure) {
@@ -106,8 +106,8 @@ export function TimesheetSection({
       if ('signedIn' in result) {
         setTscStatus(
           result.signedIn
-            ? { kind: 'ok', text: t('Signed in to TSC', 'Đã đăng nhập TSC') }
-            : { kind: 'error', text: t('Not signed in to TSC', 'Chưa đăng nhập TSC') },
+            ? { kind: 'ok', text: t('settings.signedInToTsc') }
+            : { kind: 'error', text: t('settings.notSignedInToTsc') },
         )
       } else {
         setTscStatus({ kind: 'error', text: errorText(result.error), detail: result.detail })
@@ -115,7 +115,7 @@ export function TimesheetSection({
     } catch {
       setTscStatus({
         kind: 'error',
-        text: t('Could not reach the Workday server', 'Không kết nối được tới Workday server'),
+        text: t('settings.couldNotReachTheWorkdayServer2'),
       })
     } finally {
       setBusy(false)
@@ -128,13 +128,13 @@ export function TimesheetSection({
       const result = await signInTsc()
       setTscStatus(
         result.ok
-          ? { kind: 'ok', text: t('Signed in to TSC', 'Đã đăng nhập TSC') }
+          ? { kind: 'ok', text: t('settings.signedInToTsc') }
           : { kind: 'error', text: errorText(result.error), detail: result.detail },
       )
     } catch {
       setTscStatus({
         kind: 'error',
-        text: t('Could not reach the Workday server', 'Không kết nối được tới Workday server'),
+        text: t('settings.couldNotReachTheWorkdayServer2'),
       })
     } finally {
       setSigningIn(false)
@@ -142,15 +142,12 @@ export function TimesheetSection({
   }
 
   return (
-    <Section title={t('Timesheet', 'Chấm công')}>
-      <h3 className="text-sm font-semibold">{t('Auto-log', 'Tự động log')}</h3>
+    <Section title={t('settings.timesheet2')}>
+      <h3 className="text-sm font-semibold">{t('settings.autoLog2')}</h3>
       <TextField
         id="timesheet-log-time"
-        label={t('Log time', 'Giờ log')}
-        hint={t(
-          "HH:mm. HRM accepts today's hours only from 6:00 PM.",
-          'HH:mm. HRM chỉ nhận giờ của hôm nay từ 6:00 PM.',
-        )}
+        label={t('settings.logTime')}
+        hint={t('settings.hhMmHrmAcceptsTodayS')}
         placeholder="18:00"
         value={form.logTime}
         onChange={(value) => {
@@ -160,8 +157,8 @@ export function TimesheetSection({
       <h3 className="text-sm font-semibold">HRM</h3>
       <TextField
         id="hrm-mcp-url"
-        label={t('HRM MCP URL', 'Địa chỉ MCP của HRM')}
-        hint={t('The address of the HRM MCP server', 'Địa chỉ máy chủ MCP của HRM')}
+        label={t('settings.hrmMcpUrl')}
+        hint={t('settings.theAddressOfTheHrmMcp')}
         value={form.mcpUrl}
         onChange={(value) => {
           change({ mcpUrl: value })
@@ -169,8 +166,8 @@ export function TimesheetSection({
       />
       <TextField
         id="hrm-project-id"
-        label={t('HRM project id', 'Mã dự án HRM')}
-        hint={t('The project your hours are logged to', 'Dự án mà giờ làm được log vào')}
+        label={t('settings.hrmProjectId')}
+        hint={t('settings.theProjectYourHoursAreLogged')}
         value={form.projectId}
         onChange={(value) => {
           change({ projectId: value })
@@ -178,12 +175,9 @@ export function TimesheetSection({
       />
       <TokenField
         id="hrm-api-key"
-        label={t('HRM API key', 'HRM API key')}
-        envText={t('Set by WORKDAY_HRM_API_KEY', 'Được đặt bởi WORKDAY_HRM_API_KEY')}
-        helpText={t(
-          'Sent only to the MCP URL it was saved with.',
-          'Chỉ được gửi tới địa chỉ MCP đã lưu cùng nó.',
-        )}
+        label={t('settings.hrmApiKey')}
+        envText={t('settings.setByWorkdayHrmApiKey')}
+        helpText={t('settings.sentOnlyToTheMcpUrl')}
         source={settings.hrmKeySource}
         replacing={replacing}
         value={hrmKey}
@@ -201,15 +195,15 @@ export function TimesheetSection({
             void runCheckHrm()
           }}
         >
-          {t('Check HRM', 'Kiểm tra HRM')}
+          {t('settings.checkHrm')}
         </Button>
       </div>
       <StatusText status={hrmStatus} />
       <h3 className="text-sm font-semibold">TSC</h3>
       <TextField
         id="tsc-share-url"
-        label={t('TSC share URL', 'Share URL của TSC')}
-        hint={t('The share link of the timesheet workbook', 'Link chia sẻ của workbook chấm công')}
+        label={t('settings.tscShareUrl')}
+        hint={t('settings.theShareLinkOfTheTimesheet')}
         value={form.shareUrl}
         onChange={(value) => {
           change({ shareUrl: value })
@@ -217,8 +211,8 @@ export function TimesheetSection({
       />
       <TextField
         id="tsc-worksheet-pattern"
-        label={t('Sheet name pattern', 'Mẫu tên sheet')}
-        hint={t('{year} is replaced by the current year', '{year} được thay bằng năm hiện tại')}
+        label={t('settings.sheetNamePattern')}
+        hint={t('settings.isReplacedByTheCurrentYear')}
         placeholder="Daily Reports - {year}"
         value={form.worksheetPattern}
         onChange={(value) => {
@@ -227,11 +221,8 @@ export function TimesheetSection({
       />
       <TextField
         id="tsc-columns"
-        label={t('Hour columns', 'Cột giờ')}
-        hint={t(
-          'Sheet columns the hours are written to, comma separated',
-          'Các cột của sheet nhận giờ, cách nhau bằng dấu phẩy',
-        )}
+        label={t('settings.hourColumns')}
+        hint={t('settings.sheetColumnsTheHoursAreWritten')}
         placeholder="M, J"
         value={form.columns}
         onChange={(value) => {
@@ -240,18 +231,15 @@ export function TimesheetSection({
       />
       <TextField
         id="tsc-token-pages"
-        label={t('Sign-in pages', 'Trang lấy token')}
-        hint={t(
-          'One URL per line, tried in order, to read the Microsoft token from',
-          'Mỗi dòng một URL, thử lần lượt, để lấy token Microsoft',
-        )}
+        label={t('settings.signInPages')}
+        hint={t('settings.oneUrlPerLineTriedIn')}
         multiline
         value={form.tokenPages}
         onChange={(value) => {
           change({ tokenPages: value })
         }}
       />
-      <AdvancedDisclosure title={t('Advanced TSC', 'TSC nâng cao')}>
+      <AdvancedDisclosure title={t('settings.advancedTsc')}>
         <TscAdvancedFields form={form} onChange={change} />
       </AdvancedDisclosure>
       <div className="flex flex-wrap items-center gap-2">
@@ -263,7 +251,7 @@ export function TimesheetSection({
             void runCheckTsc()
           }}
         >
-          {t('Check TSC session', 'Kiểm tra phiên TSC')}
+          {t('settings.checkTscSession')}
         </Button>
         <Button
           variant="secondary"
@@ -273,7 +261,7 @@ export function TimesheetSection({
             void runSignIn()
           }}
         >
-          {t('Sign in to TSC', 'Đăng nhập TSC')}
+          {t('settings.signInToTsc')}
         </Button>
         {signingIn ? <Spinner size="sm" /> : null}
       </div>
@@ -287,7 +275,7 @@ export function TimesheetSection({
             void runSave()
           }}
         >
-          {t('Save', 'Lưu')}
+          {t('settings.save')}
         </Button>
       </div>
       <StatusText status={saveStatus} />

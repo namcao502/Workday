@@ -41,7 +41,7 @@ function waitingLineOf(
   const at = new Date(last.sentAt)
   const language = getLanguage()
   const when = formatShortDate(at, language, timeZone)
-  return t(`${last.senderName} is waiting since ${when}`, `${last.senderName} đang chờ từ ${when}`)
+  return t('teams.isWaitingSince', { senderName: last.senderName, when })
 }
 
 export interface TeamsViewProps {
@@ -91,7 +91,7 @@ export function TeamsView({
       }
       await queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
     } catch {
-      setProblem(t('Could not reach the Workday server', 'Không kết nối được tới Workday server'))
+      setProblem(t('teams.couldNotReachTheWorkdayServer'))
     } finally {
       setWriting(false)
     }
@@ -108,7 +108,7 @@ export function TeamsView({
     } catch {
       return {
         ok: false,
-        message: t('Could not reach the Workday server', 'Không kết nối được tới Workday server'),
+        message: t('teams.couldNotReachTheWorkdayServer'),
         uncertain: true,
       }
     } finally {
@@ -120,9 +120,7 @@ export function TeamsView({
     return (
       <div className="flex h-full min-h-0 flex-col">
         <p className={isError ? 'py-2 text-sm text-danger' : 'py-2 text-sm text-muted'}>
-          {isError
-            ? t('Could not read Teams.', 'Không đọc được Teams.')
-            : t('Loading...', 'Đang tải...')}
+          {isError ? t('teams.couldNotReadTeams') : t('teams.loading')}
         </p>
       </div>
     )
@@ -153,7 +151,7 @@ export function TeamsView({
               window.open(view.deepLink, '_blank', 'noopener')
             }}
           >
-            {t('Open in Teams', 'Mở trong Teams')}
+            {t('teams.openInTeams')}
           </Button>
         ) : null}
         <Button
@@ -163,14 +161,14 @@ export function TeamsView({
             void queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
           }}
         >
-          {t('Refresh', 'Làm mới')}
+          {t('teams.refresh')}
         </Button>
         {/* A fixed-size slot: the 10 s background read must not change the header's layout. */}
         <span
           className="absolute right-1 top-2.5 flex size-5 items-center justify-center"
           role="status"
         >
-          {isFetching ? <Spinner size="sm" aria-label={t('Reading...', 'Đang đọc...')} /> : null}
+          {isFetching ? <Spinner size="sm" aria-label={t('teams.reading')} /> : null}
         </span>
         {problem === null ? null : (
           <span className="min-w-0 basis-full text-sm text-danger" role="alert">
@@ -215,10 +213,7 @@ export function TeamsView({
               // The task file and the line to Claude take a moment; the chat shows the ask at once.
               addEcho(
                 firstSession,
-                t(
-                  `Look into the Teams message from ${message.senderName}.`,
-                  `Xem tin nhắn Teams của ${message.senderName}.`,
-                ),
+                t('teams.lookIntoTheTeamsMessageFrom', { senderName: message.senderName }),
               )
               void run(() =>
                 handOffMessage(ticket, view.conversationId, message.id, firstSession),

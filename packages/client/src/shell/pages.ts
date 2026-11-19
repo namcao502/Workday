@@ -17,15 +17,15 @@ export const DEFAULT_PAGE: PageId = 'tickets'
 export function pageLabel(page: PageId): string {
   switch (page) {
     case 'tickets':
-      return t('Tickets', 'Ticket')
+      return t('shell.tickets')
     case 'workspace':
-      return t('Workspace', 'Không gian làm việc')
+      return t('shell.workspace')
     case 'timesheet':
-      return t('Timesheet', 'Bảng công')
+      return t('shell.timesheet')
     case 'insights':
-      return t('Insights', 'Thống kê')
+      return t('shell.insights')
     case 'settings':
-      return t('Settings', 'Cài đặt')
+      return t('shell.settings')
   }
 }
 

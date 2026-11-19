@@ -22,19 +22,17 @@ export function issueText(item: WeekReviewItem): string {
   const issue = ((): string => {
     switch (item.issue) {
       case 'notFound':
-        return t('no such ticket in Jira', 'không có ticket này trên Jira')
+        return t('timesheet.noSuchTicketInJira')
       case 'notMine':
-        return t('not yours', 'không phải ticket của anh')
+        return t('timesheet.notYours')
       case 'tscOnly':
-        return t('in TSC but not HRM', 'có ở TSC nhưng không có ở HRM')
+        return t('timesheet.inTscButNotHrm')
       case 'hrmOnly':
-        return t('in HRM but not TSC', 'có ở HRM nhưng không có ở TSC')
+        return t('timesheet.inHrmButNotTsc')
     }
   })()
   const suggestion =
-    item.suggestedKey === null
-      ? ''
-      : t(`, did you mean ${item.suggestedKey}?`, `, có phải ${item.suggestedKey}?`)
+    item.suggestedKey === null ? '' : t('timesheet.didYouMean', { suggestedKey: item.suggestedKey })
   return `${issue}${suggestion}`
 }
 
@@ -79,15 +77,15 @@ export function queueStatusText(
   language: Language = 'en',
 ): string {
   if (state === 'due') {
-    return t('Past the auto-log time, not logged yet', 'Đã qua giờ tự log, chưa được log')
+    return t('timesheet.pastTheAutoLogTimeNot')
   }
   const at = clockText(logTime)
   if (futureDate !== null) {
     const day = formatDateOnly(futureDate, language)
-    return t(`Auto-logs on ${day} at ${at}`, `Tự log ngày ${day} lúc ${at}`)
+    return t('timesheet.autoLogsOnAt', { day, at })
   }
   const left = formatMinutes(minutesLeft)
-  return t(`Auto-logs at ${at} (${left} left)`, `Tự log lúc ${at} (còn ${left})`)
+  return t('timesheet.autoLogsAtLeft', { at, left })
 }
 
 function failedSides(outcome: EntryOutcome): readonly { side: string; step: StepOutcome }[] {
@@ -107,7 +105,7 @@ export function entryStatus(outcome: EntryOutcome, language: Language): StatusLi
   const failed = failedSides(outcome)
   const day = dateLabel(outcome.date, language)
   if (failed.length === 0) {
-    const text = t(`Logged ${day} ${DONE_MARK}`, `Đã log ${day} ${DONE_MARK}`)
+    const text = t('timesheet.logged', { day, DONE_MARK })
     return { tone: 'ok', text, detail: null }
   }
   const parts = failed.map(({ side, step }) =>
@@ -128,11 +126,11 @@ export function runStatus(summary: RunSummary, language: Language): StatusLine {
     case 'drained': {
       const text =
         summary.kept.length === 0
-          ? t(`${String(summary.logged)} logged`, `Đã log ${String(summary.logged)}`)
-          : t(
-              `${String(summary.logged)} logged, ${String(summary.kept.length)} kept for retry`,
-              `Đã log ${String(summary.logged)}, giữ lại ${String(summary.kept.length)} để thử lại`,
-            )
+          ? t('timesheet.logged2', { logged: String(summary.logged) })
+          : t('timesheet.loggedKeptForRetry', {
+              logged: String(summary.logged),
+              length: String(summary.kept.length),
+            })
       const lines = summary.kept.map((outcome) => entryStatus(outcome, language))
       const detail = lines.map((line) => [line.text, line.detail].join(' ')).join('\n')
       return { tone: summary.kept.length === 0 ? 'ok' : 'danger', text, detail: detail || null }
@@ -140,13 +138,13 @@ export function runStatus(summary: RunSummary, language: Language): StatusLine {
     case 'joined':
       return {
         tone: 'ok',
-        text: t('A log run is already in progress', 'Đang có một lượt log'),
+        text: t('timesheet.aLogRunIsAlreadyIn'),
         detail: null,
       }
     case 'notConfigured':
       return { tone: 'danger', text: errorText({ code: 'timesheetNotConfigured' }), detail: null }
     default:
-      return { tone: 'ok', text: t('Nothing is due yet', 'Chưa có gì tới hạn'), detail: null }
+      return { tone: 'ok', text: t('timesheet.nothingIsDueYet'), detail: null }
   }
 }
 

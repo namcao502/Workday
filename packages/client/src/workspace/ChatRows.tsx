@@ -110,11 +110,9 @@ function ToolLine({ message }: { readonly message: ChatMessage }): React.JSX.Ele
       <span className="font-semibold">{message.toolName ?? ''}</span>
       {message.toolDetail === null ? null : <span>{message.toolDetail}</span>}
       {message.status === 'running' ? (
-        <Spinner size="sm" aria-label={t('running', 'đang chạy')} />
+        <Spinner size="sm" aria-label={t('workspace.running')} />
       ) : null}
-      {message.status === 'background' ? (
-        <Chip size="sm">{t('Background', 'Chạy nền')}</Chip>
-      ) : null}
+      {message.status === 'background' ? <Chip size="sm">{t('workspace.background')}</Chip> : null}
     </>
   )
   return (
@@ -174,7 +172,7 @@ function MessageRow({ message, onRewind }: MessageRowProps): React.JSX.Element {
               onRewind(uuid)
             }}
           >
-            {t('Rewind files to here', 'Hoàn tác file về đây')}
+            {t('workspace.rewindFilesToHere')}
           </Button>
         )}
       </div>
@@ -199,14 +197,9 @@ function NoticeRow({
       <Alert status="danger" data-auth-error="true">
         <Alert.Indicator />
         <Alert.Content>
-          <Alert.Title>
-            {t('Claude sign-in expired', 'Phiên đăng nhập Claude đã hết hạn')}
-          </Alert.Title>
+          <Alert.Title>{t('workspace.claudeSignInExpired')}</Alert.Title>
           <Alert.Description>
-            {t(
-              'Run "claude" in a terminal and type /login, then send your message again.',
-              'Mở terminal, chạy "claude" rồi gõ /login, sau đó gửi lại tin nhắn.',
-            )}
+            {t('workspace.runClaudeInATerminalAnd')}
             <span className="mt-1 block text-xs wrap-anywhere opacity-70">{text}</span>
           </Alert.Description>
         </Alert.Content>
@@ -214,9 +207,7 @@ function NoticeRow({
     )
   }
   // Claude writes this marker itself when a turn is stopped; show it as a plain status line.
-  const shown = text.startsWith(INTERRUPT_MARKER)
-    ? t('Stopped by you', 'Bạn đã dừng yêu cầu')
-    : text
+  const shown = text.startsWith(INTERRUPT_MARKER) ? t('workspace.stoppedByYou') : text
   return (
     <div
       className={`self-center text-center text-xs whitespace-pre-wrap wrap-anywhere ${isError ? 'text-danger' : 'text-muted'}`}
@@ -240,7 +231,7 @@ export function ChatRows({
           <Disclosure key={row.tools[0]?.id}>
             <Disclosure.Heading>
               <Disclosure.Trigger className="flex items-center gap-1 text-xs text-muted">
-                {t(`${String(row.tools.length)} steps`, `${String(row.tools.length)} bước`)}
+                {t('workspace.steps', { length: String(row.tools.length) })}
                 <Disclosure.Indicator />
               </Disclosure.Trigger>
             </Disclosure.Heading>

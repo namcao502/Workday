@@ -32,7 +32,7 @@ export function ConfirmDialog({
           </AlertDialog.Body>
           <AlertDialog.Footer>
             <Button variant="secondary" onPress={onCancel}>
-              {t('Cancel', 'Hủy')}
+              {t('ui.cancel')}
             </Button>
             <Button variant="danger" onPress={onConfirm}>
               {confirmLabel}

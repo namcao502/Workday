@@ -56,35 +56,29 @@ export function vpnFromForm(
   }
   if (parseIpv4(address) === null) {
     return {
-      problem: t(
-        'The VPN address is not a valid IPv4 address',
-        'Địa chỉ VPN không phải IPv4 hợp lệ',
-      ),
+      problem: t('settings.theVpnAddressIsNotA'),
     }
   }
   const httpsPort = parsePort(form.httpsPort)
   const setupPort = parsePort(form.setupPort)
   if (httpsPort === null || setupPort === null) {
     return {
-      problem: t(
-        'Ports must be whole numbers from 1 to 65535',
-        'Cổng phải là số nguyên từ 1 đến 65535',
-      ),
+      problem: t('settings.portsMustBeWholeNumbersFrom'),
     }
   }
   if (httpsPort === setupPort) {
-    return { problem: t('The two ports must differ', 'Hai cổng phải khác nhau') }
+    return { problem: t('settings.theTwoPortsMustDiffer') }
   }
   const allowedRanges = rangesOf(form.allowedRanges)
   const badRange = allowedRanges.find((range) => !isIpv4Cidr(range))
   if (badRange !== undefined) {
     return {
-      problem: t(`Not a valid IPv4 range: ${badRange}`, `Dải IPv4 không hợp lệ: ${badRange}`),
+      problem: t('settings.notAValidIpv4Range', { badRange }),
     }
   }
   if (form.enabled && allowedRanges.length === 0) {
     return {
-      problem: t('Add at least one allowed IP range', 'Hãy thêm ít nhất một dải IP được phép'),
+      problem: t('settings.addAtLeastOneAllowedIp'),
     }
   }
   return { vpn: { enabled: form.enabled, address, httpsPort, setupPort, allowedRanges } }

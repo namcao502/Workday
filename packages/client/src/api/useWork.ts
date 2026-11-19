@@ -35,7 +35,7 @@ export function actionErrorText(error: unknown): string {
   if (error instanceof ApiError && error.code !== null) {
     return errorText({ code: error.code })
   }
-  return t('Could not reach the Workday server', 'Không kết nối được tới Workday server')
+  return t('api.couldNotReachTheWorkdayServer')
 }
 
 async function dbReviewDoneChecked(conversationKey: string): Promise<void> {

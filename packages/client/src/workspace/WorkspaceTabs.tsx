@@ -8,7 +8,7 @@ import { Tip } from '../ui/Tip.js'
 
 export function folderName(folder: string | null): string {
   if (folder === null) {
-    return t('Dev repo', 'Dev repo')
+    return t('workspace.devRepo')
   }
   const parts = folder.split(/[\\/]/).filter((part) => part !== '')
   return parts[parts.length - 1] ?? folder
@@ -38,12 +38,7 @@ function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Elem
   return (
     <div className="flex items-center gap-1">
       <Dropdown>
-        <Button
-          isIconOnly
-          variant="secondary"
-          size="sm"
-          aria-label={t('New terminal', 'Terminal mới')}
-        >
+        <Button isIconOnly variant="secondary" size="sm" aria-label={t('workspace.newTerminal')}>
           <Plus />
         </Button>
         <Dropdown.Popover>
@@ -62,12 +57,12 @@ function AddTerminalMenu({ recentFolders, onAdd }: AddMenuProps): React.JSX.Elem
             ))}
             <Dropdown.Item
               id="choose"
-              textValue={t('Choose another folder...', 'Chọn thư mục khác...')}
+              textValue={t('workspace.chooseAnotherFolder')}
               onAction={() => {
                 setPicking(true)
               }}
             >
-              {t('Choose another folder...', 'Chọn thư mục khác...')}
+              {t('workspace.chooseAnotherFolder')}
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown.Popover>
@@ -115,7 +110,7 @@ export function WorkspaceTabs(props: WorkspaceTabsProps): React.JSX.Element {
       <div
         className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
         role="tablist"
-        aria-label={t('Workspace tabs', 'Thẻ không gian làm việc')}
+        aria-label={t('workspace.workspaceTabs')}
       >
         {props.tabs.map((tab, index) => {
           const selected = tab.id === props.selectedId
@@ -177,7 +172,7 @@ export function WorkspaceTabs(props: WorkspaceTabsProps): React.JSX.Element {
               </Tip>
               <CloseButton
                 className="ml-1 size-6 hover:bg-danger hover:text-danger-foreground"
-                aria-label={t(`Close ${tabLabel(tab)}`, `Đóng ${tabLabel(tab)}`)}
+                aria-label={t('workspace.close5', { tab: tabLabel(tab) })}
                 onPress={() => {
                   props.onClose(tab)
                 }}

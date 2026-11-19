@@ -35,7 +35,7 @@ export function ticketFacts(row: BoardRow, flow?: StatusFlow): readonly TicketFa
   }
   if (ticket.dueDate !== null) {
     facts.push({
-      label: t('Due', 'Hạn'),
+      label: t('workspace.due'),
       value: formatDateOnly(ticket.dueDate, language),
       className: `font-medium ${urgencyColor(dueUrgencyOf(row))}`,
     })
@@ -50,7 +50,7 @@ export function ticketFacts(row: BoardRow, flow?: StatusFlow): readonly TicketFa
   if (ticket.timeSpentSeconds !== null && ticket.timeSpentSeconds !== 0) {
     const hours = Math.round((ticket.timeSpentSeconds / SECONDS_PER_HOUR) * 10) / 10
     facts.push({
-      label: t('Logged', 'Đã log'),
+      label: t('workspace.logged'),
       value: `${String(hours)}h`,
       className: 'font-medium text-foreground',
     })

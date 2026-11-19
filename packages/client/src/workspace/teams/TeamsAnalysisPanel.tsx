@@ -23,21 +23,18 @@ const STATUS_TEXT: Readonly<Record<TeamsIssueStatus, string>> = {
 
 function statusLabel(status: TeamsIssueStatus): string {
   if (status === 'fixed') {
-    return t('Fixed', 'Đã sửa')
+    return t('teams.fixed')
   }
-  return status === 'answered' ? t('Answered', 'Đã trả lời') : t('Open', 'Còn mở')
+  return status === 'answered' ? t('teams.answered') : t('teams.open')
 }
 
 function summaryOf(analysis: TeamsAnalysis): string {
   const total = analysis.issues.length
   if (total === 0) {
-    return t("Claude's analysis", 'Phân tích của Claude')
+    return t('teams.claudeSAnalysis')
   }
   const open = analysis.issues.filter((issue) => issue.status === 'open').length
-  return t(
-    `Claude: ${String(total)} issue(s), ${String(open)} open`,
-    `Claude: ${String(total)} vấn đề, ${String(open)} còn mở`,
-  )
+  return t('teams.claudeIssueSOpen', { total: String(total), open: String(open) })
 }
 
 function Section({
@@ -59,7 +56,7 @@ function AnalysisBody({ analysis }: { readonly analysis: TeamsAnalysis }): React
   return (
     <div className="flex flex-col gap-2 pt-2 text-sm">
       {analysis.issues.length === 0 ? null : (
-        <Section title={t('Problems raised', 'Vấn đề được nêu')}>
+        <Section title={t('teams.problemsRaised')}>
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {analysis.issues.map((issue, index) => (
               <li key={`${String(index)}-${issue.text}`} className="flex items-start gap-2">
@@ -77,12 +74,12 @@ function AnalysisBody({ analysis }: { readonly analysis: TeamsAnalysis }): React
         </Section>
       )}
       {analysis.diagnosis === '' ? null : (
-        <Section title={t('Diagnosis', 'Chẩn đoán')}>
+        <Section title={t('teams.diagnosis')}>
           <p className="m-0">{analysis.diagnosis}</p>
         </Section>
       )}
       {analysis.nextStep === '' ? null : (
-        <Section title={t('Next step', 'Bước tiếp theo')}>
+        <Section title={t('teams.nextStep')}>
           <p className="m-0">{analysis.nextStep}</p>
         </Section>
       )}
@@ -140,7 +137,7 @@ export function TeamsAnalysisPanel({
       }
       await queryClient.invalidateQueries({ queryKey: key })
     } catch {
-      setProblem(t('Could not reach the Workday server', 'Không kết nối được tới Workday server'))
+      setProblem(t('teams.couldNotReachTheWorkdayServer'))
     } finally {
       setStarting(false)
     }
@@ -148,33 +145,25 @@ export function TeamsAnalysisPanel({
 
   let summary: string | null = null
   if (running) {
-    summary = t('Claude is analyzing in the session...', 'Claude đang phân tích trong phiên...')
+    summary = t('teams.claudeIsAnalyzingInTheSession')
   } else if (view.kind === 'failed') {
-    summary = t(
-      'Claude stopped without an analysis; the Claude pane shows why. Press Analyze to try again.',
-      'Claude dừng mà chưa trả phân tích; lý do ở khung Claude. Bấm Phân tích để thử lại.',
-    )
+    summary = t('teams.claudeStoppedWithoutAnAnalysisThe')
   } else if (view.kind === 'done') {
     summary = summaryOf(view.analysis)
   }
   const stale =
-    view.kind === 'done' && view.stale
-      ? t(
-          'New messages since this analysis: press Analyze again.',
-          'Có tin mới sau phân tích này: bấm Phân tích lại.',
-        )
-      : null
+    view.kind === 'done' && view.stale ? t('teams.newMessagesSinceThisAnalysisPress') : null
   const parts = [summary, stale, waitingLine].filter((part) => part !== null)
   const done = view.kind === 'done' ? view.analysis : null
-  const hint = t('Main point of the reply (optional)', 'Ý chính của câu trả lời (không bắt buộc)')
+  const hint = t('teams.mainPointOfTheReplyOptional')
 
   return (
     <div className="flex flex-col gap-2 py-1" data-testid="teams-analysis">
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm" isDisabled={running} onPress={() => void analyze()}>
           {view.kind === 'done' || waitingLine !== null
-            ? t('Analyze again', 'Phân tích lại')
-            : t('Analyze', 'Phân tích')}
+            ? t('teams.analyzeAgain')
+            : t('teams.analyze')}
         </Button>
         <Input
           variant="secondary"
@@ -212,7 +201,7 @@ export function TeamsAnalysisPanel({
                 isIconOnly
                 size="sm"
                 variant="ghost"
-                aria-label={open ? t('Collapse', 'Thu gọn') : t('Expand', 'Mở rộng')}
+                aria-label={open ? t('teams.collapse') : t('teams.expand')}
                 onPress={() => {
                   setOpen((value) => !value)
                 }}
@@ -227,7 +216,7 @@ export function TeamsAnalysisPanel({
               <div
                 className="flex flex-col gap-1 pt-2"
                 role="group"
-                aria-label={t('Suggested replies', 'Gợi ý trả lời')}
+                aria-label={t('teams.suggestedReplies')}
               >
                 {done.replies.map((reply, index) => (
                   <Button

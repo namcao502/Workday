@@ -80,7 +80,7 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
           isIconOnly
           variant="secondary"
           size="sm"
-          aria-label={t('Show or hide the file list', 'Ẩn / hiện danh sách file')}
+          aria-label={t('workspace.showOrHideTheFileList')}
           aria-pressed={pane.listShown}
           onPress={() => {
             pane.toggleList()
@@ -96,7 +96,7 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
             void refresh()
           }}
         >
-          {t('Refresh', 'Làm mới')}
+          {t('workspace.refresh')}
         </Button>
         {selected === null ? null : <CopyPath text={selected.path} />}
       </div>
@@ -118,7 +118,7 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
               defaultOpen
             />
             {data !== undefined && order.length === 0 ? (
-              <p className="text-sm text-muted">{t('No changes', 'Không có thay đổi')}</p>
+              <p className="text-sm text-muted">{t('workspace.noChanges')}</p>
             ) : null}
           </div>
         }

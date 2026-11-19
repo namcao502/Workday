@@ -30,10 +30,10 @@ export function GuideSection(): React.JSX.Element {
   }
 
   return (
-    <Section title={t('Guide', 'Hướng dẫn')}>
+    <Section title={t('settings.guide')}>
       {intro === undefined ? null : <GuideMarkdown text={intro.body} />}
-      <nav aria-label={t('Contents', 'Mục lục')} className="flex flex-col gap-1">
-        <p className="text-sm font-semibold">{t('Contents', 'Mục lục')}</p>
+      <nav aria-label={t('settings.contents')} className="flex flex-col gap-1">
+        <p className="text-sm font-semibold">{t('settings.contents')}</p>
         <div className="flex flex-wrap gap-1">
           {chapters.map((section) => (
             <Button

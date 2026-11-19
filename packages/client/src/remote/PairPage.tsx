@@ -45,7 +45,7 @@ function useWaiting(
       if (Date.now() - startedAt >= timeoutMs) {
         stopped = true
         clearInterval(timer)
-        onFailed(t('The pairing window closed. Try again.', 'Đã hết thời gian ghép nối. Thử lại.'))
+        onFailed(t('remote.thePairingWindowClosedTryAgain'))
         return
       }
       getPairingStatus(requestId)
@@ -58,7 +58,7 @@ function useWaiting(
           if (status === 'approved') {
             onApproved()
           } else {
-            onFailed(t('The PC rejected this device', 'Máy tính đã từ chối thiết bị này'))
+            onFailed(t('remote.thePcRejectedThisDevice'))
           }
         })
         .catch(() => undefined)
@@ -76,11 +76,7 @@ function WaitingView(props: {
   readonly onFailed: (notice: string) => void
 }): React.JSX.Element {
   useWaiting(props.requestId, props.options, props.onFailed)
-  return (
-    <p className="text-sm text-muted">
-      {t('Waiting for approval on the PC...', 'Đang chờ duyệt trên máy tính...')}
-    </p>
-  )
+  return <p className="text-sm text-muted">{t('remote.waitingForApprovalOnThePc')}</p>
 }
 
 export function PairPage({
@@ -108,7 +104,7 @@ export function PairPage({
     } catch {
       setPhase({
         kind: 'form',
-        notice: t('Cannot reach the Workday server', 'Không kết nối được tới máy chủ Workday'),
+        notice: t('remote.cannotReachTheWorkdayServer'),
       })
     } finally {
       setSending(false)
@@ -117,9 +113,7 @@ export function PairPage({
 
   return (
     <main className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        {t('Pair this device', 'Ghép nối thiết bị này')}
-      </h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{t('remote.pairThisDevice')}</h1>
       {phase.kind === 'waiting' ? (
         <WaitingView
           requestId={phase.requestId}
@@ -134,12 +128,7 @@ export function PairPage({
             void pair()
           }}
         >
-          <p className="text-sm text-muted">
-            {t(
-              'Enter the code shown on the PC in Settings > Remote access.',
-              'Nhập mã đang hiện trên máy tính ở Cài đặt > Truy cập từ xa.',
-            )}
-          </p>
+          <p className="text-sm text-muted">{t('remote.enterTheCodeShownOnThe')}</p>
           <TextField
             fullWidth
             value={code}
@@ -147,7 +136,7 @@ export function PairPage({
               setCode(value.replace(/\s+/g, '').toUpperCase())
             }}
           >
-            <Label>{t('Code', 'Mã')}</Label>
+            <Label>{t('remote.code')}</Label>
             <Input
               variant="secondary"
               maxLength={CODE_LENGTH}
@@ -156,7 +145,7 @@ export function PairPage({
             />
           </TextField>
           <TextField fullWidth value={name} onChange={setName}>
-            <Label>{t('Device name', 'Tên thiết bị')}</Label>
+            <Label>{t('remote.deviceName')}</Label>
             <Input variant="secondary" />
           </TextField>
           {phase.notice === null ? null : <p className="text-sm text-danger">{phase.notice}</p>}
@@ -165,7 +154,7 @@ export function PairPage({
             variant="primary"
             isDisabled={sending || code.length !== CODE_LENGTH || name.trim() === ''}
           >
-            {t('Pair', 'Ghép nối')}
+            {t('remote.pair')}
           </Button>
         </form>
       )}

@@ -41,7 +41,7 @@ function overdueButton(ticketKey: string, workspace: RowWorkspace): TodoButton {
   if (workspace.openKeys.has(ticketKey)) {
     return {
       id: 'open',
-      label: t('Open', 'Mở'),
+      label: t('board.open'),
       onClick: () => {
         workspace.onOpen(ticketKey)
       },
@@ -49,7 +49,7 @@ function overdueButton(ticketKey: string, workspace: RowWorkspace): TodoButton {
   }
   return {
     id: 'start',
-    label: t('Start', 'Bắt đầu'),
+    label: t('board.start'),
     disabled: workspace.starting.has(ticketKey),
     onClick: () => {
       workspace.onStart(ticketKey)
@@ -125,9 +125,9 @@ export function TodoView({
   async function copySql(sql: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(sql)
-      setMessage(t('SQL copied', 'Đã sao chép SQL'))
+      setMessage(t('board.sqlCopied'))
     } catch {
-      setMessage(t('Could not copy the SQL', 'Không sao chép được SQL'))
+      setMessage(t('board.couldNotCopyTheSql'))
     }
   }
 
@@ -139,7 +139,7 @@ export function TodoView({
           : [
               {
                 id: 'open',
-                label: t('Open', 'Mở'),
+                label: t('board.open'),
                 onClick: () => {
                   navigateToWorkspace(item.tab, item.session)
                 },
@@ -161,15 +161,15 @@ export function TodoView({
         const build: readonly TodoButton[] =
           failedBuild === null
             ? []
-            : [{ id: 'build', label: t('View build', 'Xem build'), href: failedBuild.url }]
+            : [{ id: 'build', label: t('board.viewBuild'), href: failedBuild.url }]
         return [...move, ...build]
       }
       case 'prReview': {
         const { review } = item
-        const view: TodoButton = { id: 'view', label: t('View PR', 'Xem PR'), href: review.url }
+        const view: TodoButton = { id: 'view', label: t('board.viewPr'), href: review.url }
         const hide: TodoButton = {
           id: 'hide',
-          label: t('Hide', 'Ẩn'),
+          label: t('board.hide'),
           onClick: () => {
             void run(() => actions.hideReview(review.repository, review.pullRequestId))
           },
@@ -177,7 +177,7 @@ export function TodoView({
         return canAct ? [view, hide] : [view]
       }
       case 'prBlocked':
-        return [{ id: 'view', label: t('View PR', 'Xem PR'), href: item.pr.pr.url }]
+        return [{ id: 'view', label: t('board.viewPr'), href: item.pr.pr.url }]
       case 'prComments': {
         // Claude already got pr-comments for them (auto lines); Seen only clears the row, View PR also opens it.
         const seen = (): void => {
@@ -185,7 +185,7 @@ export function TodoView({
         }
         const view: TodoButton = {
           id: 'view',
-          label: t('View PR', 'Xem PR'),
+          label: t('board.viewPr'),
           href: item.url,
           onClick: () => {
             if (canAct) {
@@ -193,14 +193,14 @@ export function TodoView({
             }
           },
         }
-        return canAct ? [view, { id: 'seen', label: t('Seen', 'Đã xem'), onClick: seen }] : [view]
+        return canAct ? [view, { id: 'seen', label: t('board.seen'), onClick: seen }] : [view]
       }
       case 'jiraDone':
         return canAct
           ? [
               {
                 id: 'done',
-                label: t('Mark done', 'Đánh dấu xong'),
+                label: t('board.markDone'),
                 onClick: () => {
                   onDone(item.ticketKey)
                 },
@@ -213,14 +213,14 @@ export function TodoView({
           : [
               {
                 id: 'open',
-                label: t('Open', 'Mở'),
+                label: t('board.open'),
                 onClick: () => {
                   navigateToWorkspace(item.ticketKey, null, item.item.conversationId)
                 },
               },
               {
                 id: 'seen',
-                label: t('Seen', 'Đã xem'),
+                label: t('board.seen'),
                 onClick: () => {
                   void run(() => actions.teamsSeen(item.ticketKey, item.item.conversationId))
                 },
@@ -230,7 +230,7 @@ export function TodoView({
         const { sql, conversationKey } = item.approval
         const copy: TodoButton = {
           id: 'copy',
-          label: t('Copy SQL', 'Sao chép SQL'),
+          label: t('board.copySql'),
           disabled: sql === '',
           onClick: () => {
             void copySql(sql)
@@ -238,7 +238,7 @@ export function TodoView({
         }
         const done: TodoButton = {
           id: 'done',
-          label: t('Done', 'Xong'),
+          label: t('board.done3'),
           onClick: () => {
             void run(() => actions.dbReviewDone(conversationKey))
           },
@@ -251,7 +251,7 @@ export function TodoView({
             ? [
                 {
                   id: 'seen',
-                  label: t('Seen', 'Đã xem'),
+                  label: t('board.seen'),
                   onClick: () => {
                     void run(() => actions.ticketUpdateSeen(item.ticketKey))
                   },
@@ -260,7 +260,7 @@ export function TodoView({
             : []),
           {
             id: 'changes',
-            label: t('View changes', 'Xem thay đổi'),
+            label: t('board.viewChanges'),
             onClick: () => {
               setChangesKey(item.ticketKey)
             },
@@ -271,7 +271,7 @@ export function TodoView({
           ? [
               {
                 id: 'fix',
-                label: t('Fix', 'Sửa'),
+                label: t('board.fix'),
                 onClick: () => {
                   void fixBug(item.ticketKey)
                 },
@@ -282,7 +282,7 @@ export function TodoView({
         return [
           {
             id: 'reply',
-            label: t('Reply', 'Trả lời'),
+            label: t('board.reply'),
             onClick: () => {
               navigateToWorkspace(item.parentKey, null, '')
             },

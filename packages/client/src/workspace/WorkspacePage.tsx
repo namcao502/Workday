@@ -145,17 +145,15 @@ export function WorkspacePage(): React.JSX.Element {
 
   if (view === undefined) {
     return (
-      <Page title={t('Workspace', 'Không gian làm việc')}>
-        <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+      <Page title={t('workspace.workspace')}>
+        <p className="text-sm text-muted">{t('workspace.loading')}</p>
       </Page>
     )
   }
   if (!view.configured) {
     return (
-      <Page title={t('Workspace', 'Không gian làm việc')}>
-        <p className="text-sm text-muted">
-          {t('Set the dev repo in Settings', 'Hãy đặt dev repo trong Cài đặt')}
-        </p>
+      <Page title={t('workspace.workspace')}>
+        <p className="text-sm text-muted">{t('workspace.setTheDevRepoInSettings')}</p>
         <div>
           <Button
             variant="primary"
@@ -163,7 +161,7 @@ export function WorkspacePage(): React.JSX.Element {
               navigateTo('settings')
             }}
           >
-            {t('Open Settings', 'Mở Cài đặt')}
+            {t('workspace.openSettings')}
           </Button>
         </div>
       </Page>
@@ -205,7 +203,7 @@ export function WorkspacePage(): React.JSX.Element {
   return (
     <section className="flex h-full min-h-0 flex-col gap-3 px-3 pb-4 md:px-6">
       <PageHeading
-        title={t('Workspace', 'Không gian làm việc')}
+        title={t('workspace.workspace')}
         actions={
           <div className="min-w-0 flex-1">
             <WorkspaceTabs
@@ -240,13 +238,13 @@ export function WorkspacePage(): React.JSX.Element {
               setWarning(null)
             }}
           >
-            {t('Dismiss', 'Bỏ qua')}
+            {t('workspace.dismiss')}
           </Button>
         </Alert>
       )}
       {tab?.kind === 'ticket' ? <TicketInfoBar ticketKey={tab.id} /> : null}
       {tab === null || session === null ? (
-        <p className="text-sm text-muted">{t('No open tabs', 'Chưa có thẻ nào')}</p>
+        <p className="text-sm text-muted">{t('workspace.noOpenTabs')}</p>
       ) : (
         <SplitView
           className="flex-1"
@@ -265,11 +263,11 @@ export function WorkspacePage(): React.JSX.Element {
                 toggle={
                   hidden === 'right'
                     ? {
-                        label: narrow ? 'Claude' : t('Show Claude', 'Hiện Claude'),
+                        label: narrow ? 'Claude' : t('workspace.showClaude'),
                         onPress: showBothNow,
                       }
                     : {
-                        label: t('Hide', 'Ẩn'),
+                        label: t('workspace.hide'),
                         onPress: () => {
                           split.setHidden('left')
                         },
@@ -291,11 +289,11 @@ export function WorkspacePage(): React.JSX.Element {
                 toggle={
                   hidden === 'left'
                     ? {
-                        label: narrow ? t('Files', 'Tệp') : t('Show files', 'Hiện tệp'),
+                        label: narrow ? t('workspace.files') : t('workspace.showFiles'),
                         onPress: showBothNow,
                       }
                     : {
-                        label: t('Hide Claude', 'Ẩn Claude'),
+                        label: t('workspace.hideClaude'),
                         onPress: () => {
                           split.setHidden('right')
                         },
@@ -321,13 +319,10 @@ export function WorkspacePage(): React.JSX.Element {
             view.sessions.some(
               (candidate) => candidate.running && closing.sessions.includes(candidate.name),
             )
-              ? t(
-                  `${tabLabel(closing)} has a running session. Close the tab and stop it?`,
-                  `${tabLabel(closing)} có phiên đang chạy. Đóng tab và dừng nó?`,
-                )
-              : t(`Close ${tabLabel(closing)}?`, `Đóng ${tabLabel(closing)}?`)
+              ? t('workspace.hasARunningSessionCloseThe', { closing: tabLabel(closing) })
+              : t('workspace.close3', { closing: tabLabel(closing) })
           }
-          confirmLabel={t(`Close ${tabLabel(closing)}`, `Đóng ${tabLabel(closing)}`)}
+          confirmLabel={t('workspace.close4', { closing: tabLabel(closing) })}
           onConfirm={confirmClose}
           onCancel={() => {
             setClosing(null)
@@ -336,14 +331,10 @@ export function WorkspacePage(): React.JSX.Element {
       )}
       {closingSession === null ? null : (
         <ConfirmDialog
-          message={t(
-            `${sessionLabel(closingSession.name)} is still running. Close it and stop it?`,
-            `${sessionLabel(closingSession.name)} vẫn đang chạy. Đóng và dừng nó?`,
-          )}
-          confirmLabel={t(
-            `Close ${sessionLabel(closingSession.name)}`,
-            `Đóng ${sessionLabel(closingSession.name)}`,
-          )}
+          message={t('workspace.isStillRunningCloseItAnd', {
+            name: sessionLabel(closingSession.name),
+          })}
+          confirmLabel={t('workspace.close2', { name: sessionLabel(closingSession.name) })}
           onConfirm={() => {
             void actions.closeSession(closingSession.name)
             navigateToWorkspace(closingSession.tabId)

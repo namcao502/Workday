@@ -47,12 +47,10 @@ function OpenFile({
     }
   }, [loaded, line])
   if (isError) {
-    return (
-      <p className="text-sm text-danger">{t('Could not read the file.', 'Không đọc được tệp.')}</p>
-    )
+    return <p className="text-sm text-danger">{t('workspace.couldNotReadTheFile')}</p>
   }
   if (data === undefined) {
-    return <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+    return <p className="text-sm text-muted">{t('workspace.loading')}</p>
   }
   return (
     <div ref={shown}>
@@ -102,7 +100,7 @@ export function FilesView({ tabId, request = null }: FilesViewProps): React.JSX.
           isIconOnly
           variant="secondary"
           size="sm"
-          aria-label={t('Show or hide the file list', 'Ẩn / hiện danh sách file')}
+          aria-label={t('workspace.showOrHideTheFileList')}
           aria-pressed={pane.listShown}
           onPress={() => {
             pane.toggleList()
@@ -118,7 +116,7 @@ export function FilesView({ tabId, request = null }: FilesViewProps): React.JSX.
             void refresh()
           }}
         >
-          {t('Refresh', 'Làm mới')}
+          {t('workspace.refresh')}
         </Button>
         {selected === null ? null : <CopyPath text={selected.path} />}
       </div>

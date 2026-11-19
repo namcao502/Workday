@@ -56,7 +56,7 @@ export function TeamsMessageRow({
           <strong className="text-sm font-medium">{message.senderName}</strong>
           <span className="text-xs text-muted">{time}</span>
           {message.editedAt === null ? null : (
-            <span className="text-xs text-muted">{t('(edited)', '(đã sửa)')}</span>
+            <span className="text-xs text-muted">{t('teams.edited')}</span>
           )}
         </header>
         {message.subject === null || message.subject === '' ? null : (
@@ -114,7 +114,7 @@ export function TeamsMessageRow({
             isIconOnly
             variant="ghost"
             size="sm"
-            aria-label={t(`React ${key}`, `Phản ứng ${key}`)}
+            aria-label={t('teams.react', { key })}
             isDisabled={locked}
             onPress={() => {
               onReact(key)
@@ -124,11 +124,11 @@ export function TeamsMessageRow({
           </Button>
         ))}
         <Button variant="ghost" size="sm" onPress={onAskClaude}>
-          {t('Ask Claude', 'Hỏi Claude')}
+          {t('teams.askClaude')}
         </Button>
         {own && isEditable(message) ? (
           <Button variant="ghost" size="sm" onPress={onEdit}>
-            {t('Edit', 'Sửa')}
+            {t('teams.edit')}
           </Button>
         ) : null}
         {own ? (
@@ -139,14 +139,14 @@ export function TeamsMessageRow({
               setConfirming(true)
             }}
           >
-            {t('Delete', 'Xóa')}
+            {t('teams.delete')}
           </Button>
         ) : null}
       </div>
       {confirming ? (
         <ConfirmDialog
-          message={t('Delete this message from Teams?', 'Xóa tin nhắn này khỏi Teams?')}
-          confirmLabel={t('Delete', 'Xóa')}
+          message={t('teams.deleteThisMessageFromTeams')}
+          confirmLabel={t('teams.delete')}
           onConfirm={() => {
             setConfirming(false)
             onDelete()

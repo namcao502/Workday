@@ -230,8 +230,8 @@ export function FindablePane({
             ref={input}
             autoFocus
             variant="secondary"
-            aria-label={t('Find in this file', 'Tìm trong tệp này')}
-            placeholder={t('Find', 'Tìm')}
+            aria-label={t('ui.findInThisFile')}
+            placeholder={t('ui.find')}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
@@ -251,7 +251,7 @@ export function FindablePane({
             isIconOnly
             size="sm"
             variant="secondary"
-            aria-label={t('Previous match', 'Kết quả trước')}
+            aria-label={t('ui.previousMatch')}
             onPress={() => {
               step(-1)
             }}
@@ -262,7 +262,7 @@ export function FindablePane({
             isIconOnly
             size="sm"
             variant="secondary"
-            aria-label={t('Next match', 'Kết quả sau')}
+            aria-label={t('ui.nextMatch')}
             onPress={() => {
               step(1)
             }}
@@ -273,7 +273,7 @@ export function FindablePane({
             isIconOnly
             size="sm"
             variant="secondary"
-            aria-label={t('Close find', 'Đóng tìm kiếm')}
+            aria-label={t('ui.closeFind')}
             onPress={() => {
               setOpen(false)
             }}

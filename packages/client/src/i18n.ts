@@ -1,4 +1,7 @@
 import type { WorkdayConfig } from '@workday/core'
+import { en } from './i18n/en.js'
+import type { MessageKey, MessageParams, Messages } from './i18n/messages.js'
+import { vi } from './i18n/vi.js'
 
 export type Language = WorkdayConfig['language']
 
@@ -13,8 +16,22 @@ export function getLanguage(): Language {
   return currentLanguage
 }
 
-export function t(en: string, vi: string): string {
-  return currentLanguage === 'vi' ? vi : en
+const CATALOGS: Readonly<Record<Language, Messages>> = { en, vi }
+const PLACEHOLDER = /\{(\w+)\}/g
+
+// The text of "area.key" in the current language (i18n/en.ts, i18n/vi.ts), its {name} placeholders filled.
+export function t(key: MessageKey, params?: MessageParams): string {
+  const [area = '', name = ''] = key.split('.')
+  const texts = CATALOGS[currentLanguage] as Readonly<
+    Record<string, Readonly<Record<string, string>>>
+  >
+  const text = texts[area]?.[name] ?? key
+  if (params === undefined) {
+    return text
+  }
+  return text.replace(PLACEHOLDER, (match, param: string) =>
+    Object.hasOwn(params, param) ? String(params[param]) : match,
+  )
 }
 
 // "YYYY-MM-DD" as a short date with no time and no zone shift, e.g. "Nov 20".

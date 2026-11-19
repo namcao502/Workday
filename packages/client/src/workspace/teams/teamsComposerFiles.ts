@@ -15,20 +15,20 @@ export interface AttachedFile {
 // The reason a file may not join the message, or null.
 export function fileProblem(file: File, attached: readonly AttachedFile[]): string | null {
   if (file.size === 0) {
-    return t(`${file.name} is empty.`, `${file.name} đang trống.`)
+    return t('teams.isEmpty', { name: file.name })
   }
   if (file.size > MAX_FILE_BYTES) {
     const limit = String(MAX_FILE_BYTES / BYTES_PER_MB)
-    return t(`${file.name} is over ${limit} MB.`, `${file.name} lớn hơn ${limit} MB.`)
+    return t('teams.isOverMb', { name: file.name, limit })
   }
   if (attached.length >= MAX_FILES) {
     const limit = String(MAX_FILES)
-    return t(`At most ${limit} files per message.`, `Tối đa ${limit} file mỗi tin.`)
+    return t('teams.atMostFilesPerMessage', { limit })
   }
   const total = attached.reduce((sum, item) => sum + item.size, 0) + file.size
   if (total > MAX_TOTAL_FILE_BYTES) {
     const limit = String(MAX_TOTAL_FILE_BYTES / BYTES_PER_MB)
-    return t(`Files together may be at most ${limit} MB.`, `Các file cộng lại tối đa ${limit} MB.`)
+    return t('teams.filesTogetherMayBeAtMost', { limit })
   }
   return null
 }

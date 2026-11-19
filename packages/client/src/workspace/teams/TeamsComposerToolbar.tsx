@@ -36,39 +36,39 @@ function formatGroups(): readonly (readonly FormatButton[])[] {
     [
       {
         command: 'bold',
-        label: t('Bold (Ctrl+B) - select text first', 'Đậm (Ctrl+B) - chọn chữ trước'),
+        label: t('teams.boldCtrlBSelectTextFirst'),
         Icon: Bold,
       },
       {
         command: 'italic',
-        label: t('Italic (Ctrl+I) - select text first', 'Nghiêng (Ctrl+I) - chọn chữ trước'),
+        label: t('teams.italicCtrlISelectTextFirst'),
         Icon: Italic,
       },
       {
         command: 'underline',
-        label: t('Underline (Ctrl+U) - select text first', 'Gạch chân (Ctrl+U) - chọn chữ trước'),
+        label: t('teams.underlineCtrlUSelectTextFirst'),
         Icon: Underline,
       },
       {
         command: 'strikeThrough',
-        label: t('Strikethrough - select text first', 'Gạch ngang - chọn chữ trước'),
+        label: t('teams.strikethroughSelectTextFirst'),
         Icon: Strikethrough,
       },
     ],
     [
       {
         command: 'insertUnorderedList',
-        label: t('Bulleted list - press again to undo', 'Danh sách - bấm lại để bỏ'),
+        label: t('teams.bulletedListPressAgainToUndo'),
         Icon: ListUl,
       },
       {
         command: 'insertOrderedList',
-        label: t('Numbered list - press again to undo', 'Danh sách số - bấm lại để bỏ'),
+        label: t('teams.numberedListPressAgainToUndo'),
         Icon: ListOl,
       },
       {
         command: 'blockquote',
-        label: t('Quote - press again to undo', 'Trích dẫn - bấm lại để bỏ'),
+        label: t('teams.quotePressAgainToUndo'),
         Icon: QuoteOpen,
       },
     ],
@@ -139,7 +139,7 @@ export function TeamsComposerToolbar({
         isIconOnly
         variant={active.has('codeBlock') ? 'primary' : 'secondary'}
         size="sm"
-        aria-label={t('Insert code block - press again to undo', 'Chèn khối code - bấm lại để bỏ')}
+        aria-label={t('teams.insertCodeBlockPressAgainTo')}
         aria-pressed={active.has('codeBlock')}
         isDisabled={disabled}
         onMouseDown={(event) => {
@@ -149,10 +149,7 @@ export function TeamsComposerToolbar({
           onFormat('codeBlock')
         }}
       >
-        <Tip
-          content={t('Insert code block - press again to undo', 'Chèn khối code - bấm lại để bỏ')}
-          className="flex"
-        >
+        <Tip content={t('teams.insertCodeBlockPressAgainTo')} className="flex">
           <Code />
         </Tip>
       </Button>
@@ -160,7 +157,7 @@ export function TeamsComposerToolbar({
         isIconOnly
         variant="secondary"
         size="sm"
-        aria-label={t('Link (Ctrl+K)', 'Liên kết (Ctrl+K)')}
+        aria-label={t('teams.linkCtrlK')}
         isDisabled={disabled}
         onMouseDown={(event) => {
           event.preventDefault()
@@ -170,13 +167,7 @@ export function TeamsComposerToolbar({
           setLinking(true)
         }}
       >
-        <Tip
-          content={t(
-            'Link (Ctrl+K) - select text to link it, or put the caret where the link goes',
-            'Liên kết (Ctrl+K) - chọn chữ để gắn link, hoặc đặt con trỏ nơi cần chèn link',
-          )}
-          className="flex"
-        >
+        <Tip content={t('teams.linkCtrlKSelectTextTo')} className="flex">
           <Link />
         </Tip>
       </Button>
@@ -184,8 +175,8 @@ export function TeamsComposerToolbar({
         <span className="inline-flex items-center gap-1">
           <Input
             variant="secondary"
-            aria-label={t('Link address', 'Địa chỉ liên kết')}
-            placeholder={t('Paste a link, then Enter', 'Dán liên kết rồi nhấn Enter')}
+            aria-label={t('teams.linkAddress')}
+            placeholder={t('teams.pasteALinkThenEnter')}
             autoFocus
             value={url}
             onChange={(event) => {
@@ -204,7 +195,7 @@ export function TeamsComposerToolbar({
             }}
           />
           <Button variant="secondary" size="sm" onPress={confirmLink}>
-            {t('Add link', 'Thêm liên kết')}
+            {t('teams.addLink')}
           </Button>
           <Button
             variant="secondary"
@@ -214,11 +205,11 @@ export function TeamsComposerToolbar({
               setInvalid(false)
             }}
           >
-            {t('Cancel', 'Hủy')}
+            {t('teams.cancel')}
           </Button>
           {invalid ? (
             <span className="text-sm text-danger" role="alert">
-              {t('Only http(s) links', 'Chỉ nhận liên kết http(s)')}
+              {t('teams.onlyHttpSLinks')}
             </span>
           ) : null}
         </span>

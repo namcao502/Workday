@@ -19,12 +19,9 @@ interface StatusLine {
 
 function failureText(failure: unknown): string {
   if (failure instanceof ApiError && failure.status === 400) {
-    return t(
-      'Rejected. Check the values; a new Jira URL needs an API token.',
-      'Bị từ chối. Kiểm tra các giá trị; địa chỉ Jira mới cần API token.',
-    )
+    return t('settings.rejectedCheckTheValuesANew2')
   }
-  return t('Could not reach the Workday server', 'Không kết nối được tới máy chủ Workday')
+  return t('settings.couldNotReachTheWorkdayServer')
 }
 
 export function ConnectionsSection({
@@ -57,7 +54,7 @@ export function ConnectionsSection({
         result.ok
           ? {
               kind: 'ok',
-              text: t(`Connected as ${result.displayName}`, `Đã kết nối: ${result.displayName}`),
+              text: t('settings.connectedAs', { displayName: result.displayName }),
             }
           : { kind: 'error', text: errorText(result.error) },
       )
@@ -78,7 +75,7 @@ export function ConnectionsSection({
       })
       setToken('')
       setReplacing(false)
-      setStatus({ kind: 'ok', text: t('Saved', 'Đã lưu') })
+      setStatus({ kind: 'ok', text: t('settings.saved') })
     } catch (failure) {
       setStatus({ kind: 'error', text: failureText(failure) })
     } finally {
@@ -87,15 +84,12 @@ export function ConnectionsSection({
   }
 
   return (
-    <Section title={t('Connections', 'Kết nối')}>
+    <Section title={t('settings.connections')}>
       <h3 className="text-sm font-semibold">Jira</h3>
       <TextField
         id="jira-base-url"
-        label={t('Jira site URL', 'Địa chỉ trang Jira')}
-        hint={t(
-          'The address you open Jira at, without a path',
-          'Địa chỉ bạn mở Jira, không kèm đường dẫn phía sau',
-        )}
+        label={t('settings.jiraSiteUrl')}
+        hint={t('settings.theAddressYouOpenJiraAt')}
         placeholder="https://yourcompany.atlassian.net"
         value={form.baseUrl}
         onChange={(value) => {
@@ -104,8 +98,8 @@ export function ConnectionsSection({
       />
       <TextField
         id="jira-email"
-        label={t('Jira account email', 'Email tài khoản Jira')}
-        hint={t('The email you sign in to Jira with', 'Email bạn dùng để đăng nhập Jira')}
+        label={t('settings.jiraAccountEmail')}
+        hint={t('settings.theEmailYouSignInTo')}
         type="email"
         value={form.email}
         onChange={(value) => {
@@ -123,18 +117,15 @@ export function ConnectionsSection({
       />
       <TextField
         id="jira-project-key"
-        label={t('Ticket key prefix', 'Tiền tố mã ticket')}
-        hint={t(
-          'The letters before the number in a ticket key: MDP for MDP-1234',
-          'Phần chữ trước số trong mã ticket: MDP cho MDP-1234',
-        )}
+        label={t('settings.ticketKeyPrefix')}
+        hint={t('settings.theLettersBeforeTheNumberIn')}
         placeholder="MDP"
         value={form.projectKey}
         onChange={(value) => {
           change({ projectKey: value })
         }}
       />
-      <AdvancedDisclosure title={t('Advanced', 'Nâng cao')}>
+      <AdvancedDisclosure title={t('settings.advanced')}>
         <AdvancedFields form={form} onChange={change} />
       </AdvancedDisclosure>
       <div className="flex flex-wrap items-center gap-2">
@@ -146,7 +137,7 @@ export function ConnectionsSection({
             void runCheck()
           }}
         >
-          {t('Check', 'Kiểm tra')}
+          {t('settings.check')}
         </Button>
         <Button
           variant="primary"
@@ -156,7 +147,7 @@ export function ConnectionsSection({
             void runSave()
           }}
         >
-          {t('Save', 'Lưu')}
+          {t('settings.save')}
         </Button>
       </div>
       {status === null ? null : (

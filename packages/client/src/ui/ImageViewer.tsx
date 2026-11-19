@@ -201,7 +201,7 @@ export function ImageViewer({ images, startIndex, onClose }: ImageViewerProps): 
       className="fixed inset-0 z-50 flex flex-col bg-black/85 text-white"
       role="dialog"
       aria-modal="true"
-      aria-label={t('Image viewer', 'Xem ảnh')}
+      aria-label={t('ui.imageViewer')}
     >
       <div className="flex items-center gap-2 px-4 py-2">
         <span className="text-sm">
@@ -215,7 +215,7 @@ export function ImageViewer({ images, startIndex, onClose }: ImageViewerProps): 
               isIconOnly
               size="sm"
               variant="secondary"
-              aria-label={t('Previous', 'Trước')}
+              aria-label={t('ui.previous')}
               onPress={() => {
                 step(-1)
               }}
@@ -226,7 +226,7 @@ export function ImageViewer({ images, startIndex, onClose }: ImageViewerProps): 
               isIconOnly
               size="sm"
               variant="secondary"
-              aria-label={t('Next', 'Sau')}
+              aria-label={t('ui.next')}
               onPress={() => {
                 step(1)
               }}
@@ -242,14 +242,14 @@ export function ImageViewer({ images, startIndex, onClose }: ImageViewerProps): 
             zoomTo(zoomed ? 0 : 1)
           }}
         >
-          {zoomed ? t('Fit', 'Vừa khung') : t('Actual size', 'Kích thước thật')}
+          {zoomed ? t('ui.fit') : t('ui.actualSize')}
         </Button>
         <Button
           isIconOnly
           size="sm"
           variant="secondary"
           autoFocus
-          aria-label={t('Close', 'Đóng')}
+          aria-label={t('ui.close')}
           onPress={onClose}
         >
           <Xmark />

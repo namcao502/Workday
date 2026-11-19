@@ -27,11 +27,14 @@ function totals(report: TicketReport): readonly Fact[] {
     ? formatHours(sumOf(rows.map((row) => row.hours ?? 0)))
     : EMPTY_CELL
   return [
-    { label: t('TICKETS', 'TICKET'), value: String(rows.length) },
-    { label: t('HOURS', 'GIỜ'), value: hours },
+    { label: t('insights.tickets'), value: String(rows.length) },
+    { label: t('insights.hours'), value: hours },
     { label: 'TOKENS', value: formatTokens(sumOf(rows.map((row) => totalTokens(row.tokens)))) },
     { label: 'COMMITS', value: String(sumOf(rows.map((row) => row.commits?.commits ?? 0))) },
-    { label: t('FILES', 'FILE'), value: String(sumOf(rows.map((row) => row.commits?.files ?? 0))) },
+    {
+      label: t('insights.files'),
+      value: String(sumOf(rows.map((row) => row.commits?.files ?? 0))),
+    },
   ]
 }
 
@@ -50,28 +53,24 @@ function Charts({ report }: { readonly report: TicketReport }): React.JSX.Elemen
   return (
     <div className="grid grid-cols-[repeat(auto-fit,minmax(380px,1fr))] items-start gap-x-6 gap-y-4">
       {report.hoursRead ? (
-        <BarChart
-          title={t('Hours by ticket', 'Giờ theo ticket')}
-          bars={hoursBars}
-          formatValue={formatHours}
-        />
+        <BarChart title={t('insights.hoursByTicket')} bars={hoursBars} formatValue={formatHours} />
       ) : null}
       <BarChart
-        title={t('Tokens by ticket', 'Token theo ticket')}
+        title={t('insights.tokensByTicket')}
         bars={tokenBars}
         formatValue={formatTokens}
         measure="tokens"
       />
       {report.hoursRead ? (
         <BarChart
-          title={t('Hours by day', 'Giờ theo ngày')}
+          title={t('insights.hoursByDay')}
           bars={dayBars(report.hoursByDay)}
           formatValue={formatHours}
           horizontal={false}
         />
       ) : null}
       <BarChart
-        title={t('Tokens by day', 'Token theo ngày')}
+        title={t('insights.tokensByDay')}
         bars={dayBars(report.tokensByDay)}
         formatValue={formatTokens}
         measure="tokens"
@@ -84,14 +83,7 @@ function Charts({ report }: { readonly report: TicketReport }): React.JSX.Elemen
 export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Element {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   if (report.rows.length === 0) {
-    return (
-      <p className="text-sm text-muted">
-        {t(
-          'No work in this range - pick another range',
-          'Không có việc trong khoảng này - chọn khoảng khác',
-        )}
-      </p>
-    )
+    return <p className="text-sm text-muted">{t('insights.noWorkInThisRangePick')}</p>
   }
   const selected = report.rows.find((row) => row.ticketKey === selectedKey) ?? null
   return (
@@ -110,9 +102,7 @@ export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Eleme
         </Card.Content>
       </Card>
       {report.hoursRead ? null : (
-        <p className="text-sm text-muted">
-          {t('HRM hours could not be read (see log)', 'Không đọc được giờ HRM (xem log)')}
-        </p>
+        <p className="text-sm text-muted">{t('insights.hrmHoursCouldNotBeRead')}</p>
       )}
       <ReportTable
         report={report}

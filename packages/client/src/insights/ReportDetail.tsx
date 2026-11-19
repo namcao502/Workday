@@ -69,32 +69,28 @@ function toolRows(stats: AgentStats): readonly (readonly string[])[] {
 export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.JSX.Element {
   const stats = row.agent
   if (stats === null) {
-    return (
-      <p className="text-sm text-muted">
-        {t('No Claude activity in this range', 'Không có hoạt động Claude trong khoảng này')}
-      </p>
-    )
+    return <p className="text-sm text-muted">{t('insights.noClaudeActivityInThisRange')}</p>
   }
-  const time = t('TIME', 'THỜI GIAN')
-  const status = t('STATUS', 'TRẠNG THÁI')
+  const time = t('insights.time')
+  const status = t('insights.status')
   return (
     <div className="flex flex-col gap-4">
       <StatsTable
         title="Skills"
-        headers={[time, 'SKILL', t('ARGS', 'THAM SỐ')]}
+        headers={[time, 'SKILL', t('insights.args')]}
         rows={stats.skills.map((skill) => [timeText(skill.at), skill.skill, skill.args ?? ''])}
       />
       <StatsTable
         title="Tools"
-        headers={['TOOL', t('CALLS', 'LƯỢT GỌI'), t('ERRORS', 'LỖI')]}
+        headers={['TOOL', t('insights.calls'), t('insights.errors')]}
         rows={toolRows(stats)}
       />
       <StatsTable
         title="Subagents"
         headers={[
-          t('STARTED', 'BẮT ĐẦU'),
-          t('TYPE', 'LOẠI'),
-          t('DESCRIPTION', 'MÔ TẢ'),
+          t('insights.started'),
+          t('insights.type'),
+          t('insights.description'),
           'MODEL',
           'TOOLS',
           'OUTPUT',
@@ -107,17 +103,12 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
           sub.model ?? EMPTY_CELL,
           String(sub.toolCalls),
           formatTokens(sub.outputTokens),
-          sub.isFinished ? t('done', 'xong') : t('running', 'đang chạy'),
+          sub.isFinished ? t('insights.done') : t('insights.running'),
         ])}
       />
       <StatsTable
         title="Compacts"
-        headers={[
-          time,
-          t('TYPE', 'LOẠI'),
-          t('BEFORE → AFTER', 'TRƯỚC → SAU'),
-          t('DURATION', 'THỜI LƯỢNG'),
-        ]}
+        headers={[time, t('insights.type'), t('insights.beforeAfter'), t('insights.duration')]}
         rows={stats.compacts.map((compact) => [
           timeText(compact.at),
           compact.isAuto ? 'auto' : 'manual',
@@ -126,8 +117,8 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
         ])}
       />
       <StatsTable
-        title={t('API errors', 'Lỗi API')}
-        headers={[time, status, t('MESSAGE', 'NỘI DUNG')]}
+        title={t('insights.apiErrors')}
+        headers={[time, status, t('insights.message')]}
         rows={stats.apiErrors.map((error) => [
           timeText(error.at),
           error.status === null ? EMPTY_CELL : String(error.status),

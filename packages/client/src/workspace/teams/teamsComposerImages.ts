@@ -17,20 +17,15 @@ export function imageFiles(list: FileList | undefined): readonly File[] {
 // The reason a file may not join the message, or null.
 export function imageProblem(file: File, already: number): string | null {
   if (!isPickable(file)) {
-    return t(
-      `${file.name} is not a PNG, JPEG or GIF image.`,
-      `${file.name} không phải ảnh PNG, JPEG hoặc GIF.`,
-    )
+    return t('teams.isNotAPngJpegOr', { name: file.name })
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    return t(
-      `${file.name} is larger than ${String(MAX_IMAGE_BYTES / BYTES_PER_MB)} MB.`,
-      `${file.name} lớn hơn ${String(MAX_IMAGE_BYTES / BYTES_PER_MB)} MB.`,
-    )
+    return t('teams.isLargerThanMb', {
+      name: file.name,
+      megabytes: String(MAX_IMAGE_BYTES / BYTES_PER_MB),
+    })
   }
-  return already >= MAX_IMAGES
-    ? t(`At most ${String(MAX_IMAGES)} images.`, `Tối đa ${String(MAX_IMAGES)} ảnh.`)
-    : null
+  return already >= MAX_IMAGES ? t('teams.atMostImages', { MAX_IMAGES: String(MAX_IMAGES) }) : null
 }
 
 export function readDataUrl(file: File): Promise<string> {

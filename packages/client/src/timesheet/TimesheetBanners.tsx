@@ -29,7 +29,7 @@ function Banner({ status, text, withSettings }: BannerProps): React.JSX.Element 
             navigateTo('settings')
           }}
         >
-          {t('Open Settings', 'Mở Cài đặt')}
+          {t('timesheet.openSettings')}
         </Button>
       ) : null}
     </Alert>
@@ -43,37 +43,23 @@ export function TimesheetBanners({ view, reminder }: TimesheetBannersProps): Rea
   return (
     <>
       {reminder ? (
-        <Banner
-          status="warning"
-          text={t(
-            'Nothing is queued for today - log your work before you leave.',
-            'Hôm nay chưa có gì trong hàng đợi - hãy log công việc trước khi nghỉ.',
-          )}
-        />
+        <Banner status="warning" text={t('timesheet.nothingIsQueuedForTodayLog')} />
       ) : null}
       {kept !== null && kept.kept.length !== 0 ? (
         <Banner
           status="warning"
           withSettings
-          text={t(
-            `${String(kept.logged)} logged, ${String(kept.kept.length)} kept for retry`,
-            `Đã log ${String(kept.logged)}, giữ lại ${String(kept.kept.length)} để thử lại`,
-          )}
+          text={t('timesheet.loggedKeptForRetry', {
+            logged: String(kept.logged),
+            length: String(kept.kept.length),
+          })}
         />
       ) : null}
       {view.tscConnected ? null : (
-        <Banner
-          status="danger"
-          withSettings
-          text={t('TSC is not connected - open Settings', 'Chưa kết nối TSC - mở Cài đặt')}
-        />
+        <Banner status="danger" withSettings text={t('timesheet.tscIsNotConnectedOpenSettings')} />
       )}
       {view.hrmConnected ? null : (
-        <Banner
-          status="danger"
-          withSettings
-          text={t('HRM is not connected - open Settings', 'Chưa kết nối HRM - mở Cài đặt')}
-        />
+        <Banner status="danger" withSettings text={t('timesheet.hrmIsNotConnectedOpenSettings')} />
       )}
     </>
   )

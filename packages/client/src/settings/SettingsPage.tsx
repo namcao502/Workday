@@ -34,17 +34,17 @@ export function SettingsPage(): React.JSX.Element {
     : (groups.find((group) => group.id === groupId)?.entries ?? [])
 
   return (
-    <Page title={t('Settings', 'Cài đặt')} wide className="max-w-6xl">
+    <Page title={t('settings.settings')} wide className="max-w-6xl">
       <div className="flex flex-col gap-5 md:flex-row md:items-start">
         <nav
           className="flex shrink-0 flex-col gap-1 md:w-52"
-          aria-label={t('Settings groups', 'Nhóm cài đặt')}
+          aria-label={t('settings.settingsGroups')}
         >
           <Input
             type="search"
             variant="secondary"
-            aria-label={t('Search settings', 'Tìm trong cài đặt')}
-            placeholder={t('Search settings', 'Tìm trong cài đặt')}
+            aria-label={t('settings.searchSettings')}
+            placeholder={t('settings.searchSettings')}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
@@ -72,13 +72,13 @@ export function SettingsPage(): React.JSX.Element {
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           {settings.data === undefined ? (
-            <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
+            <p className="text-sm text-muted">{t('settings.loading')}</p>
           ) : (
             entries.map((entry) => <div key={entry.id}>{entry.render(settings.data)}</div>)
           )}
           {searching && entries.length === 0 ? (
             <p className="text-sm text-muted" role="status">
-              {t('No settings match', 'Không có cài đặt nào khớp')}
+              {t('settings.noSettingsMatch')}
             </p>
           ) : null}
         </div>

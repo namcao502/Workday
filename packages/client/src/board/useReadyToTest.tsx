@@ -7,15 +7,15 @@ import { ConfirmDialog } from '../ui/ConfirmDialog.js'
 export function outcomeText(key: string, outcome: ReadyToTestOutcome): string {
   switch (outcome.status) {
     case 'moved':
-      return t(`${key} moved to Ready to Test`, `${key} đã chuyển sang Ready to Test`)
+      return t('board.movedToReadyToTest', { key })
     case 'alreadyPast':
-      return t(`${key} is already past Ready to Test`, `${key} đã qua Ready to Test`)
+      return t('board.isAlreadyPastReadyToTest', { key })
     case 'notFound':
-      return t(`${key} was not found in Jira`, `Không tìm thấy ${key} trên Jira`)
+      return t('board.wasNotFoundInJira', { key })
     case 'busy':
-      return t('Another move is running, try again', 'Đang có thao tác chuyển khác, hãy thử lại')
+      return t('board.anotherMoveIsRunningTryAgain')
     case 'failed':
-      return t(`Stopped at ${outcome.step}`, `Dừng ở bước ${outcome.step}`)
+      return t('board.stoppedAt', { step: outcome.step })
   }
 }
 
@@ -48,11 +48,8 @@ export function useReadyToTest(): ReadyToTestFlow {
   const dialog =
     pending === null ? null : (
       <ConfirmDialog
-        message={t(
-          `Move ${pending.key}: ${pending.steps.join(' -> ')}?`,
-          `Chuyển ${pending.key}: ${pending.steps.join(' -> ')}?`,
-        )}
-        confirmLabel={t('Move', 'Chuyển')}
+        message={t('board.move', { key: pending.key, steps: pending.steps.join(' -> ') })}
+        confirmLabel={t('board.move2')}
         onConfirm={() => {
           setPending(null)
           void move(pending)

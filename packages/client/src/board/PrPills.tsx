@@ -18,27 +18,27 @@ const MARK_MERGED = '✓'
 // An open PR's worst blocker or vote first (TaskRow.PrStateText); else the plain status.
 function prState(pr: TicketPr['pr']): PrState {
   if (pr.status === 'completed') {
-    return { word: t('Merged', 'Đã merge'), tone: 'success', mark: MARK_MERGED }
+    return { word: t('board.merged'), tone: 'success', mark: MARK_MERGED }
   }
   if (pr.status === 'abandoned') {
-    return { word: t('Abandoned', 'Đã hủy'), tone: 'muted', mark: MARK_BLOCKER }
+    return { word: t('board.abandoned'), tone: 'muted', mark: MARK_BLOCKER }
   }
   if (pr.build === 'failed') {
-    return { word: t('Build failed', 'Build lỗi'), tone: 'danger', mark: MARK_BLOCKER }
+    return { word: t('board.buildFailed'), tone: 'danger', mark: MARK_BLOCKER }
   }
   if (pr.merge === 'conflicts') {
-    return { word: t('Conflict', 'Conflict'), tone: 'danger', mark: MARK_BLOCKER }
+    return { word: t('board.conflict'), tone: 'danger', mark: MARK_BLOCKER }
   }
   if (pr.vote === 'rejected') {
-    return { word: t('Rejected', 'Bị từ chối'), tone: 'danger', mark: MARK_BLOCKER }
+    return { word: t('board.rejected'), tone: 'danger', mark: MARK_BLOCKER }
   }
   if (pr.vote === 'waitingForAuthor') {
-    return { word: t('Needs work', 'Cần sửa'), tone: 'warning', mark: MARK_DOT }
+    return { word: t('board.needsWork'), tone: 'warning', mark: MARK_DOT }
   }
   if (pr.vote === 'approved') {
-    return { word: t('Approved', 'Đã duyệt'), tone: 'accent', mark: MARK_DOT }
+    return { word: t('board.approved'), tone: 'accent', mark: MARK_DOT }
   }
-  return { word: t('Waiting', 'Chờ merge'), tone: 'muted', mark: MARK_DOT }
+  return { word: t('board.waiting'), tone: 'muted', mark: MARK_DOT }
 }
 
 // Unresolved review threads; a merged or abandoned PR's leftovers wait on nobody.
@@ -47,10 +47,7 @@ function openComments(pr: TicketPr['pr']): number {
 }
 
 function openCommentsText(count: number): string {
-  return t(
-    `${String(count)} open comment${count === 1 ? '' : 's'}`,
-    `${String(count)} comment chưa xử lý`,
-  )
+  return t(count === 1 ? 'board.openComment' : 'board.openComments', { count })
 }
 
 interface PrPillsProps {
@@ -133,7 +130,7 @@ export function PrPills({
       <Popover.Content placement="bottom start">
         <Popover.Dialog className="w-80 max-w-[92vw]">
           <Popover.Heading className="pb-2 font-semibold">
-            {t('Pull requests', 'Pull request')}
+            {t('board.pullRequests')}
           </Popover.Heading>
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {prs.map((ticketPr) => {

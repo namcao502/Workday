@@ -18,14 +18,14 @@ interface RemoteDevicesProps {
 }
 
 function areaLabel(area: RemoteArea): string {
-  return area === 'board' ? t('Tickets', 'Ticket') : t('Timesheet', 'Bảng công')
+  return area === 'board' ? t('settings.tickets') : t('settings.timesheet')
 }
 
 function levels(): readonly { readonly value: AccessLevel; readonly label: string }[] {
   return [
-    { value: 'off', label: t('Off', 'Tắt') },
-    { value: 'view', label: t('View', 'Xem') },
-    { value: 'act', label: t('Act', 'Thao tác') },
+    { value: 'off', label: t('settings.off') },
+    { value: 'view', label: t('settings.view') },
+    { value: 'act', label: t('settings.act') },
   ]
 }
 
@@ -41,7 +41,7 @@ function DeviceName({
 
   if (!editing) {
     return (
-      <Tip content={t('Click to rename', 'Bấm để đổi tên')}>
+      <Tip content={t('settings.clickToRename')}>
         <Button
           variant="secondary"
           size="sm"
@@ -58,7 +58,7 @@ function DeviceName({
   return (
     <Input
       variant="secondary"
-      aria-label={t('Device name', 'Tên thiết bị')}
+      aria-label={t('settings.deviceName')}
       value={draft}
       autoFocus
       onChange={(event) => {
@@ -94,9 +94,7 @@ function DeviceRow({
 
   async function testPush(): Promise<void> {
     const ok = await actions.sendTestPush(device.id)
-    setPushMessage(
-      ok ? t('Test push sent', 'Đã gửi push thử') : t('Test push failed', 'Gửi push thử thất bại'),
-    )
+    setPushMessage(ok ? t('settings.testPushSent') : t('settings.testPushFailed'))
   }
 
   return (
@@ -111,7 +109,7 @@ function DeviceRow({
         <span className="text-sm text-muted">{device.email ?? ''}</span>
         <span className="text-sm text-muted">
           {device.lastSeenAt === null
-            ? t('Never seen', 'Chưa từng thấy')
+            ? t('settings.neverSeen')
             : formatShortDate(new Date(device.lastSeenAt), language, timeZone)}
         </span>
       </div>
@@ -119,7 +117,7 @@ function DeviceRow({
         <div key={area} className="flex flex-wrap items-center gap-3">
           <span className="w-24 text-sm">{areaLabel(area)}</span>
           <Segmented
-            label={t(`${areaLabel(area)} access`, `Quyền ${areaLabel(area)}`)}
+            label={t('settings.access', { area: areaLabel(area) })}
             value={device.rights[area]}
             options={levels()}
             onChange={(level) => {
@@ -142,7 +140,7 @@ function DeviceRow({
             <Switch.Control>
               <Switch.Thumb />
             </Switch.Control>
-            {t('Push', 'Push')}
+            {t('settings.push')}
           </Switch.Content>
         </Switch>
         <Button
@@ -153,7 +151,7 @@ function DeviceRow({
             run(testPush)
           }}
         >
-          {t('Send test push', 'Gửi push thử')}
+          {t('settings.sendTestPush')}
         </Button>
         <Button
           variant="danger"
@@ -162,7 +160,7 @@ function DeviceRow({
             setConfirming(true)
           }}
         >
-          {t('Revoke', 'Thu hồi')}
+          {t('settings.revoke')}
         </Button>
       </div>
       {pushMessage === null ? null : (
@@ -172,11 +170,8 @@ function DeviceRow({
       )}
       {confirming ? (
         <ConfirmDialog
-          message={t(
-            `Revoke ${device.name}? It must pair again.`,
-            `Thu hồi ${device.name}? Thiết bị phải ghép nối lại.`,
-          )}
-          confirmLabel={t('Revoke', 'Thu hồi')}
+          message={t('settings.revokeItMustPairAgain', { name: device.name })}
+          confirmLabel={t('settings.revoke')}
           onConfirm={() => {
             setConfirming(false)
             run(() => actions.revokeDevice(device.id))
@@ -192,11 +187,7 @@ function DeviceRow({
 
 export function RemoteDevices(props: RemoteDevicesProps): React.JSX.Element {
   if (props.devices.length === 0) {
-    return (
-      <p className="text-sm text-muted">
-        {t('No paired devices yet', 'Chưa có thiết bị nào được ghép nối')}
-      </p>
-    )
+    return <p className="text-sm text-muted">{t('settings.noPairedDevicesYet')}</p>
   }
   return (
     <ul className="flex flex-col gap-2">

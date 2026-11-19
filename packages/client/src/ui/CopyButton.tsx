@@ -28,11 +28,7 @@ export function CopyButton({ text, className = '' }: CopyButtonProps): React.JSX
   }, [state])
 
   const label =
-    state === 'copied'
-      ? t('Copied', 'Đã chép')
-      : state === 'failed'
-        ? t('Could not copy', 'Không chép được')
-        : t('Copy', 'Chép')
+    state === 'copied' ? t('ui.copied') : state === 'failed' ? t('ui.couldNotCopy') : t('ui.copy')
   return (
     <Button
       isIconOnly
