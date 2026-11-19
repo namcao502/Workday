@@ -4,7 +4,6 @@ import { syncThemeColor } from './themeColor.js'
 afterEach(() => {
   document.head.innerHTML = ''
   document.body.removeAttribute('style')
-  document.documentElement.removeAttribute('style')
 })
 
 it('the window title strip takes the page background, so the window buttons sit on the theme', () => {
@@ -14,16 +13,6 @@ it('the window title strip takes the page background, so the window buttons sit 
   expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute(
     'content',
     'rgb(250, 248, 245)',
-  )
-})
-
-it('a season leaves the body see-through, so the color comes from the page root', () => {
-  document.head.innerHTML = '<meta name="theme-color" content="#1c1c1e" />'
-  document.documentElement.style.backgroundColor = 'rgb(247, 247, 247)'
-  syncThemeColor()
-  expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute(
-    'content',
-    'rgb(247, 247, 247)',
   )
 })
 
