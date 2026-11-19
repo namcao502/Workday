@@ -118,7 +118,7 @@ export class TeamsService {
     }
   }
 
-  // A message the background check just found: eyes on it at once, then Claude's suggested replies, now if the
+  // A message the background check just found: the hourglass on it at once, then Claude's suggested replies, now if the
   // ticket's Claude is free, else after one of its turns ends (retryAnalyses).
   async onNewMessages(messages: readonly NewTeamsMessage[]): Promise<void> {
     for (const message of messages) {

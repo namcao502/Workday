@@ -271,7 +271,7 @@ describe('TeamsWrites', () => {
     ])
   })
 
-  it('acknowledges a new message with eyes, like when Teams refuses eyes, never twice', async () => {
+  it('acknowledges a new message with the hourglass only, never with like, and never twice', async () => {
     const { teams, service } = postedRig()
     teams.threads.set(
       'c1|r1',
@@ -285,13 +285,11 @@ describe('TeamsWrites', () => {
     )
 
     await service.write.acknowledge('MDP-1', 'c1', 'new')
-    teams.refusedReactionKeys.add('1f440_eyes')
-    await service.write.acknowledge('MDP-1', 'c1', 'other')
+    teams.refusedReactionKeys.add('231b_hourglassdone')
+    const refused = await service.write.acknowledge('MDP-1', 'c1', 'other')
     await service.write.acknowledge('MDP-1', 'c1', 'done')
 
-    expect(teams.reactions).toEqual([
-      ['c1;messageid=r1', 'new', '1f440_eyes', true],
-      ['c1;messageid=r1', 'other', 'like', true],
-    ])
+    expect(refused).toMatchObject({ ok: false })
+    expect(teams.reactions).toEqual([['c1;messageid=r1', 'new', '231b_hourglassdone', true]])
   })
 })

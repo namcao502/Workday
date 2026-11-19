@@ -181,7 +181,7 @@ describe('TeamsService new messages', () => {
     teams.threads.set('c1|r1', threadOf('c1', 'r1', teamsMessage('m1', { senderId: 'qc' })))
 
     await service.onNewMessages([{ ticketKey: 'MDP-1', conversationId: 'c1', messageId: 'm1' }])
-    expect(teams.reactions).toEqual([['c1;messageid=r1', 'm1', '1f440_eyes', true]])
+    expect(teams.reactions).toEqual([['c1;messageid=r1', 'm1', '231b_hourglassdone', true]])
     expect(claude.prompts).toEqual([])
 
     claude.idle = true
