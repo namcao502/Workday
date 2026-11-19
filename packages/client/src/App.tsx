@@ -67,14 +67,8 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
       document.documentElement.dataset['season'] = season
       localStorage.setItem(SEASON_STORAGE_KEY, season)
     }
-  }, [season, settings.data])
-
-  // Only when the look changes: settings.data is a new object after every refetch.
-  useLayoutEffect(() => {
-    if (theme !== undefined) {
-      syncThemeColor()
-    }
-  }, [theme, season])
+    syncThemeColor()
+  }, [season, settings.data, theme])
 
   if (settings.data === undefined) {
     return settings.isError ? (

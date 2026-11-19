@@ -29,12 +29,7 @@ function toRgb(color: string): string {
 export function syncThemeColor(): void {
   const meta = document.querySelector('meta[name="theme-color"]')
   const background = pageBackground()
-  if (meta === null || background === null) {
-    return
-  }
-  // Written only on a real change: rewriting it on every refetch went with Edge raising its other windows.
-  const color = toRgb(background)
-  if (meta.getAttribute('content') !== color) {
-    meta.setAttribute('content', color)
+  if (meta !== null && background !== null) {
+    meta.setAttribute('content', toRgb(background))
   }
 }
