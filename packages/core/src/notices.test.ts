@@ -205,6 +205,49 @@ describe('noticeText', () => {
     )
   })
 
+  it('words the Friday week review, with the HRM hint only when HRM holds a wrong ticket', () => {
+    const event: NoticeEvent = {
+      type: 'weekReview',
+      items: [
+        {
+          date: '2026-11-16',
+          ticketKey: 'MDP-12',
+          summary: null,
+          issue: 'notMine',
+          suggestedKey: 'MDP-21',
+        },
+        {
+          date: '2026-11-22',
+          ticketKey: 'MDP-3',
+          summary: null,
+          issue: 'tscOnly',
+          suggestedKey: null,
+        },
+      ],
+    }
+    expect(noticeText(event, 'en')).toBe(
+      'Week review: 2 to check - MDP-12 (Mon): not yours, did you mean MDP-21?; MDP-3 (Sun): in TSC but not HRM. Fix HRM on the HRM web.',
+    )
+    expect(noticeText(event, 'vi')).toBe(
+      'Rà soát tuần: 2 chỗ cần xem - MDP-12 (T2): không phải ticket của anh, có phải MDP-21?; MDP-3 (CN): có ở TSC nhưng không có ở HRM. HRM phải sửa trên web HRM.',
+    )
+    const tscOnly: NoticeEvent = {
+      type: 'weekReview',
+      items: [
+        {
+          date: '2026-11-20',
+          ticketKey: 'MDP-3',
+          summary: null,
+          issue: 'tscOnly',
+          suggestedKey: null,
+        },
+      ],
+    }
+    expect(noticeText(tscOnly, 'en')).toBe(
+      'Week review: 1 to check - MDP-3 (Fri): in TSC but not HRM.',
+    )
+  })
+
   it('words a fixed QC bug in English and Vietnamese', () => {
     const event: NoticeEvent = { type: 'qcBugFixed', key: 'MDP-9323', parentKey: 'MDP-9310' }
     expect(noticeText(event, 'en')).toBe(

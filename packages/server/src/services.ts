@@ -48,6 +48,7 @@ import { SuggestionService } from './suggestions/suggestionService.js'
 import { loadSuggestionState, saveSuggestionState } from './suggestions/suggestionStore.js'
 import { runNotice, runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
+import { weekReviewNotice } from './timesheet/runNotification.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
 import { qcBugsOf, readBugFixes } from './workspace/bugFixes.js'
 import { AutoLineRunner } from './workspace/autoLineRunner.js'
@@ -195,6 +196,9 @@ export function createServices(options: ServicesOptions): Services {
       if (notice !== null) {
         void notices.add(notice)
       }
+    },
+    onWeekReview: (items) => {
+      void notices.add(weekReviewNotice(items))
     },
     ...logError,
   })

@@ -1,4 +1,4 @@
-import { zonedClock, type RunSummary, type WorkdayConfig } from '@workday/core'
+import { zonedClock, type RunSummary, type WeekReviewItem, type WorkdayConfig } from '@workday/core'
 import type { NoticeInput } from '../notices/noticeService.js'
 import type { PushMessage } from '../remote/pushService.js'
 
@@ -57,6 +57,17 @@ export function testPushMessage(language: WorkdayConfig['language']): PushMessag
 
 // The bell, toast and desktop notice for a run, like the C# app's auto-log balloon: the 18:00 run and the
 // catch-up after it, and the reminder. A run the user started shows its result on the page instead.
+// The Friday look back: one notice listing what to check, opening the Timesheet page.
+export function weekReviewNotice(items: readonly WeekReviewItem[]): NoticeInput {
+  return {
+    topic: 'log',
+    tone: 'error',
+    event: { type: 'weekReview', items },
+    target: { kind: 'timesheet' },
+    place: 'timesheet',
+  }
+}
+
 export function runNotice(summary: RunSummary): NoticeInput | null {
   if (summary.trigger === 'user') {
     return null

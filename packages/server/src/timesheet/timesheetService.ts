@@ -7,6 +7,7 @@ import {
   removeTicket,
   setMinutes,
   WORK_MINUTES,
+  mondayOf,
   zonedClock,
   type AppError,
   type EntryOutcome,
@@ -22,6 +23,7 @@ import {
   type WeekStep,
   type WeekStepId,
   type ZonedClock,
+  type WeekReviewItem,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
 import type { RecordJob } from '../schedules/jobRuns.js'
@@ -51,6 +53,8 @@ export interface TimesheetServiceDeps {
   readonly settings: TimesheetSettings
   // Called after each new lastRun, e.g. to push it to phones.
   readonly onRun?: (summary: RunSummary) => void
+  // The Friday run's look back at the week, when something there needs checking.
+  readonly onWeekReview?: (items: readonly WeekReviewItem[]) => void
   readonly recordJob?: RecordJob
   readonly logError?: (message: string, error: unknown) => void
 }
@@ -72,6 +76,7 @@ export type LogOutcome = { readonly ok: true; readonly outcome: EntryOutcome } |
 export type RunTrigger = RunSummary['trigger']
 
 const DRAIN_DEADLINE_MILLISECONDS = 5 * 60_000
+const FRIDAY = 5
 const SATURDAY = 6
 const SUNDAY = 0
 const HRM_CLOSED: Refusal = { ok: false, error: { code: 'hrmClosedForToday' } }
@@ -262,21 +267,43 @@ export class TimesheetService {
     return { date, tsc, hrm: { status: 'skipped' } }
   }
 
-  // The daily fire. A failed leave lookup counts as a working day: nagging is the safe direction.
+  // The daily fire; on Friday it then looks back at the week it just logged (also with an empty queue).
   async runSchedule(): Promise<void> {
+    const configured = await this.logOnSchedule()
+    const clock = zonedClock(this.settings.timeZone, this.deps.now())
+    if (configured && clock.weekday === FRIDAY) {
+      await this.reviewWeek(mondayOf(clock.date))
+    }
+  }
+
+  // Port of TrayApp.ReviewWeekAsync: a failure only goes to the log, the run itself already reported.
+  private async reviewWeek(monday: string): Promise<void> {
+    try {
+      await this.readWeek(monday, true)
+      const review = this.week?.monday === monday ? this.week.review : null
+      if (review !== null && review.length !== 0) {
+        this.deps.onWeekReview?.(review)
+      }
+    } catch (error: unknown) {
+      this.logError('The Friday week review failed', error)
+    }
+  }
+
+  // False when there is nothing to log with. A failed leave lookup counts as a working day: nagging is the safe direction.
+  private async logOnSchedule(): Promise<boolean> {
     const { sheet, hours, timeZone } = this.settings
     if (sheet === null && hours === null) {
       this.record('schedule', 'notConfigured')
-      return
+      return false
     }
     if (this.queue.length !== 0) {
       await this.drain('schedule')
-      return
+      return true
     }
     const clock = zonedClock(timeZone, this.deps.now())
     if (clock.weekday === SATURDAY || clock.weekday === SUNDAY) {
       this.record('schedule', 'weekend')
-      return
+      return true
     }
     let offDates: readonly string[] = []
     try {
@@ -285,6 +312,7 @@ export class TimesheetService {
       this.logError('HRM leave lookup failed; showing the reminder', error)
     }
     this.record('schedule', offDates.includes(clock.date) ? 'dayOff' : 'reminder')
+    return true
   }
 
   // At startup and after a TSC sign-in: a past day, or today once HRM is open, is due now.

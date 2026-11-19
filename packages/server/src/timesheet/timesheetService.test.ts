@@ -1,4 +1,4 @@
-import type { QueueEntry, ServerEvent, SheetRead } from '@workday/core'
+import type { QueueEntry, ServerEvent, SheetRead, WeekReviewItem } from '@workday/core'
 import { describe, expect, it } from 'vitest'
 import { deferred, FakeHoursLog, FakeSheetLog, FakeTracker, makeTicket } from '../testing/fakes.js'
 import { TimesheetService, type TimesheetSettings } from './timesheetService.js'
@@ -7,6 +7,7 @@ import { TimesheetService, type TimesheetSettings } from './timesheetService.js'
 const WEDNESDAY_10AM = '2026-11-11T03:00:00Z'
 const WEDNESDAY_7PM = '2026-11-11T12:00:00Z'
 const SATURDAY_7PM = '2026-11-14T12:00:00Z'
+const FRIDAY_7PM = '2026-11-13T12:00:00Z'
 const MONDAY = '2026-11-09'
 
 function entry(date: string, ...tickets: string[]): QueueEntry {
@@ -22,6 +23,7 @@ interface Setup {
   readonly saves: (readonly QueueEntry[])[]
   readonly clock: { now: Date }
   readonly saveFailure: { error: Error | null }
+  readonly reviews: (readonly WeekReviewItem[])[]
 }
 
 function setup(
@@ -42,6 +44,7 @@ function setup(
   const saveFailure: { error: Error | null } = { error: null }
   const clock = { now: new Date(options.now ?? WEDNESDAY_7PM) }
   const boardKeys = new Set(options.boardKeys ?? [])
+  const reviews: (readonly WeekReviewItem[])[] = []
   const service = new TimesheetService({
     loadQueue: () => options.queue ?? [],
     saveQueue: (queue) => {
@@ -58,6 +61,7 @@ function setup(
     },
     qcBugParents: () => options.bugParents ?? new Map(),
     now: () => clock.now,
+    onWeekReview: (items) => reviews.push(items),
     logError: options.logError ?? (() => undefined),
     settings: {
       sheet,
@@ -70,7 +74,7 @@ function setup(
       ...options.settings,
     },
   })
-  return { service, sheet, hours, tracker, events, saves, clock, saveFailure }
+  return { service, sheet, hours, tracker, events, saves, clock, saveFailure, reviews }
 }
 
 describe('TimesheetService drain', () => {
@@ -255,6 +259,31 @@ describe('TimesheetService schedule', () => {
     expect(dayOff.service.view().lastRun).toMatchObject({ kind: 'dayOff' })
     expect(weekend.service.view().lastRun).toMatchObject({ kind: 'weekend' })
     expect(weekend.hours.offDateCalls).toEqual([])
+  })
+
+  it('the Friday run reviews the week it just logged and reports what to check', async () => {
+    const friday = setup({ now: FRIDAY_7PM })
+    friday.hours.hrmTasks = null
+    friday.sheet.read = () => Promise.resolve({ kind: 'read', cells: { '2026-11-09': 'MDP-8' } })
+    const wednesday = setup()
+
+    await friday.service.runSchedule()
+    await wednesday.service.runSchedule()
+
+    expect(friday.sheet.reads[0]).toMatchObject({ allowSniff: true })
+    expect(friday.reviews).toEqual([
+      [{ date: MONDAY, ticketKey: 'MDP-8', summary: null, issue: 'notFound', suggestedKey: null }],
+    ])
+    expect(wednesday.sheet.reads).toEqual([])
+    expect(wednesday.reviews).toEqual([])
+  })
+
+  it('a Friday week with nothing to check sends no review', async () => {
+    const { service, reviews } = setup({ now: FRIDAY_7PM })
+
+    await service.runSchedule()
+
+    expect(reviews).toEqual([])
   })
 
   it('catch-up drains a past day at start and does nothing for today before 18:00', async () => {

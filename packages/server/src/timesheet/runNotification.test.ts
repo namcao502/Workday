@@ -1,6 +1,6 @@
 import type { EntryOutcome, RunSummary } from '@workday/core'
 import { describe, expect, it } from 'vitest'
-import { runNotice } from './runNotification.js'
+import { runNotice, weekReviewNotice } from './runNotification.js'
 
 const AT = '2026-11-18T11:00:20.000Z'
 const KEPT: EntryOutcome = {
@@ -50,5 +50,26 @@ describe('runNotice', () => {
     for (const kind of ['weekend', 'dayOff', 'nothingDue', 'notConfigured', 'joined'] as const) {
       expect(runNotice({ at: AT, trigger: 'schedule', kind })).toBeNull()
     }
+  })
+})
+
+describe('weekReviewNotice', () => {
+  it('lists the items on the log topic and opens the Timesheet page', () => {
+    const items = [
+      {
+        date: '2026-11-09',
+        ticketKey: 'MDP-8',
+        summary: null,
+        issue: 'notFound',
+        suggestedKey: null,
+      },
+    ] as const
+    expect(weekReviewNotice(items)).toEqual({
+      topic: 'log',
+      tone: 'error',
+      event: { type: 'weekReview', items },
+      target: { kind: 'timesheet' },
+      place: 'timesheet',
+    })
   })
 })

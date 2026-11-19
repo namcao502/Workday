@@ -2,6 +2,7 @@ import type { WaitReason } from './claudeAttention.js'
 import type { ScanOutcome } from './api.js'
 import type { PrVote } from './prTracking.js'
 import type { TicketField } from './ticketChanges.js'
+import type { WeekReviewItem } from './weekReview.js'
 
 export type NoticeTopic =
   | 'claude'
@@ -77,6 +78,7 @@ export type NoticeEvent =
       readonly timedOut: boolean
     }
   | { readonly type: 'logReminder' }
+  | { readonly type: 'weekReview'; readonly items: readonly WeekReviewItem[] }
 
 export type NoticeTarget =
   | { readonly kind: 'schedules' }
@@ -280,6 +282,39 @@ function ticketUpdatedText(
   return vi ? `${text} (bởi ${changedBy})` : `${text} (by ${changedBy})`
 }
 
+const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+const WEEKDAYS_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'] as const
+
+// "MDP-12 (Mon): not yours, did you mean MDP-21?" (port of WeekReview.ItemText).
+function weekReviewItemText(item: WeekReviewItem, vi: boolean): string {
+  const weekday = new Date(`${item.date}T00:00:00Z`).getUTCDay()
+  const day = (vi ? WEEKDAYS_VI : WEEKDAYS_EN)[weekday] ?? item.date
+  const issue = {
+    notFound: vi ? 'không có ticket này trên Jira' : 'no such ticket in Jira',
+    notMine: vi ? 'không phải ticket của anh' : 'not yours',
+    tscOnly: vi ? 'có ở TSC nhưng không có ở HRM' : 'in TSC but not HRM',
+    hrmOnly: vi ? 'có ở HRM nhưng không có ở TSC' : 'in HRM but not TSC',
+  }[item.issue]
+  const suggestion =
+    item.suggestedKey === null
+      ? ''
+      : vi
+        ? `, có phải ${item.suggestedKey}?`
+        : `, did you mean ${item.suggestedKey}?`
+  return `${item.ticketKey} (${day}): ${issue}${suggestion}`
+}
+
+// One notice for the week; the HRM hint only when HRM holds a wrong ticket, since its MCP has no edit or delete.
+function weekReviewText(items: readonly WeekReviewItem[], vi: boolean): string {
+  const list = items.map((item) => weekReviewItemText(item, vi)).join('; ')
+  const count = String(items.length)
+  const isHrmWrong = items.some((item) => item.issue !== 'tscOnly')
+  if (vi) {
+    return `Rà soát tuần: ${count} chỗ cần xem - ${list}.${isHrmWrong ? ' HRM phải sửa trên web HRM.' : ''}`
+  }
+  return `Week review: ${count} to check - ${list}.${isHrmWrong ? ' Fix HRM on the HRM web.' : ''}`
+}
+
 function logRunText(logged: number, kept: number, timedOut: boolean, vi: boolean): string {
   if (timedOut) {
     return vi
@@ -379,6 +414,8 @@ export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
       return ticketUpdatedText(event.key, event.fields, event.changedBy, vi)
     case 'logRun':
       return logRunText(event.logged, event.kept, event.timedOut, vi)
+    case 'weekReview':
+      return weekReviewText(event.items, vi)
     case 'logReminder':
       return vi
         ? 'Nhắc nhở: hôm nay chưa có gì trong hàng đợi - hãy log công việc trước khi về.'
