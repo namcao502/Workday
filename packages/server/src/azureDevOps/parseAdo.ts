@@ -117,8 +117,16 @@ export function isRealComment(comment: unknown): boolean {
   return source['commentType'] !== 'system' && source['isDeleted'] !== true
 }
 
-// Every real comment (a deleted thread's too, as the notice always counted) and the live threads still open.
-export function countComments(root: unknown): {
+function authorId(comment: unknown): string | null {
+  return textOrNull(objectOrEmpty(objectOrEmpty(comment)['author'])['id'])
+}
+
+// Every real comment of someone else (a deleted thread's too, as the notice always counted) and the live threads
+// still open. The user's own replies are left out: answering a review must not read as a new comment to handle.
+export function countComments(
+  root: unknown,
+  myId: string | null,
+): {
   readonly realComments: number
   readonly openThreads: number
 } {
@@ -130,8 +138,9 @@ export function countComments(root: unknown): {
     if (!Array.isArray(comments)) {
       continue
     }
-    const threadReal = (comments as readonly unknown[]).filter(isRealComment).length
-    realComments += threadReal
+    const real = (comments as readonly unknown[]).filter(isRealComment)
+    const threadReal = real.length
+    realComments += real.filter((comment) => myId === null || authorId(comment) !== myId).length
     const status = textOrNull(source['status'])?.toLowerCase()
     const isOpenStatus = status === 'active' || status === 'pending'
     if (source['isDeleted'] !== true && threadReal !== 0 && isOpenStatus) {

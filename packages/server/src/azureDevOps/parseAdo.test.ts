@@ -105,7 +105,27 @@ describe('parseBuildState', () => {
 
 describe('countComments', () => {
   it('counts real comments and the live threads still open', () => {
-    expect(countComments(fixture('threads.json'))).toEqual({ realComments: 5, openThreads: 2 })
+    expect(countComments(fixture('threads.json'), null)).toEqual({
+      realComments: 5,
+      openThreads: 2,
+    })
+  })
+
+  it("leaves out the user's own replies, so answering a review is not a new comment", () => {
+    const threads = {
+      value: [
+        {
+          status: 'active',
+          comments: [
+            { commentType: 'text', author: { id: 'lead' } },
+            { commentType: 'text', author: { id: 'me' } },
+          ],
+        },
+        { status: 'active', comments: [{ commentType: 'text', author: { id: 'me' } }] },
+      ],
+    }
+    // A thread only the user wrote in still counts as open: it waits on someone to resolve it.
+    expect(countComments(threads, 'me')).toEqual({ realComments: 1, openThreads: 2 })
   })
 })
 

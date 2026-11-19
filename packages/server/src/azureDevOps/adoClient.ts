@@ -184,7 +184,7 @@ export class AzureDevOpsClient implements PullRequests {
         `${this.projectBase}/_apis/git/repositories/${encodeURIComponent(pr.repository)}` +
           `/pullrequests/${String(pr.pullRequestId)}/threads?api-version=${API_VERSION}`,
       )
-      const { realComments, openThreads } = countComments(threads)
+      const { realComments, openThreads } = countComments(threads, creatorId)
       const build =
         pr.status === 'active' ? await this.buildState(projectId, pr.pullRequestId) : 'unknown'
       reads.push({
