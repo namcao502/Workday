@@ -396,22 +396,8 @@ body {
     padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 1rem);
   }
 
-  /* A whole tab strip, gaps and scrolling included, belongs to the page: a click there must never
-     reach Windows, where a double-click restores the maximized window. */
   .app-titlebar
-    :is(
-      button,
-      a,
-      input,
-      select,
-      textarea,
-      label,
-      [role='button'],
-      [role='tab'],
-      [role='tablist'],
-      [draggable='true'],
-      [tabindex]
-    ) {
+    :is(button, a, input, select, textarea, label, [role='button'], [role='tab'], [tabindex]) {
     -webkit-app-region: no-drag;
     app-region: no-drag;
   }
