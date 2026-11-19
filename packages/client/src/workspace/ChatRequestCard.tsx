@@ -3,6 +3,7 @@ import {
   Card,
   Checkbox,
   CheckboxGroup,
+  Description,
   Input,
   Label,
   Radio,
@@ -28,6 +29,8 @@ interface Pick {
 
 const EMPTY_PICK: Pick = { labels: [], otherOn: false, otherText: '' }
 // Cannot collide with an option label.
+// The field's own border is all but invisible on the (frosted) card in the light theme.
+const CONTROL_OUTLINE = 'border-[1.5px] border-muted/60'
 const OTHER = '\u0000other'
 
 // The labels picked plus the Other text, joined the way the server expects; '' while incomplete.
@@ -56,11 +59,18 @@ function QuestionBlock({
   }
   const items = [...question.options.map((option) => option.label), OTHER]
   const renderLabel = (value: string): string => (value === OTHER ? t('Other', 'Khác') : value)
+  // Claude writes a line on what each option means; it sits under the option, indented to its label.
+  const descriptionOf = (value: string): React.ReactNode => {
+    const text = question.options.find((option) => option.label === value)?.description ?? ''
+    return text === '' ? null : <Description>{text}</Description>
+  }
   return (
     <div className="flex flex-col gap-2">
       <div className="text-sm font-medium">{question.question}</div>
       {question.multiSelect ? (
         <CheckboxGroup
+          // On the card's own surface the default white circle all but vanishes in the light theme.
+          variant="secondary"
           aria-label={question.question}
           isDisabled={disabled}
           value={selected}
@@ -68,17 +78,21 @@ function QuestionBlock({
         >
           {items.map((value) => (
             <Checkbox key={value} value={value}>
-              <Checkbox.Control>
-                <Checkbox.Indicator />
-              </Checkbox.Control>
+              {/* The box sits inside the row with its label: the row is the one thing to click. */}
               <Checkbox.Content>
+                <Checkbox.Control className={CONTROL_OUTLINE}>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
                 <Label>{renderLabel(value)}</Label>
               </Checkbox.Content>
+              {descriptionOf(value)}
             </Checkbox>
           ))}
         </CheckboxGroup>
       ) : (
         <RadioGroup
+          // On the card's own surface the default white circle all but vanishes in the light theme.
+          variant="secondary"
           aria-label={question.question}
           isDisabled={disabled}
           value={pick.otherOn ? OTHER : (pick.labels[0] ?? null)}
@@ -88,12 +102,13 @@ function QuestionBlock({
         >
           {items.map((value) => (
             <Radio key={value} value={value}>
-              <Radio.Control>
-                <Radio.Indicator />
-              </Radio.Control>
               <Radio.Content>
+                <Radio.Control className={CONTROL_OUTLINE}>
+                  <Radio.Indicator />
+                </Radio.Control>
                 <Label>{renderLabel(value)}</Label>
               </Radio.Content>
+              {descriptionOf(value)}
             </Radio>
           ))}
         </RadioGroup>

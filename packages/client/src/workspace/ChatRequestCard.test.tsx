@@ -105,3 +105,30 @@ it('busy disables every button', () => {
     expect(button).toBeDisabled()
   }
 })
+
+it('each option is one clickable row with its circle or box, and shows its description', () => {
+  const request: ChatRequest = {
+    ...BASE,
+    questions: [
+      {
+        question: 'Which db?',
+        header: 'DB',
+        multiSelect: false,
+        options: [{ label: 'Postgres', description: 'The team default' }],
+      },
+      {
+        question: 'Which tools?',
+        header: 'Tools',
+        multiSelect: true,
+        options: [{ label: 'Lint', description: '' }],
+      },
+    ],
+  }
+  render(<ChatRequestCard request={request} onAnswer={vi.fn()} busy={false} />)
+  // The control sits inside the row with the label, so the row reads as one button, not a label below a dot.
+  const radioRow = screen.getByText('Postgres').closest('.radio__content')
+  expect(radioRow?.querySelector('.radio__control')).not.toBeNull()
+  const boxRow = screen.getByText('Lint').closest('.checkbox__content')
+  expect(boxRow?.querySelector('.checkbox__control')).not.toBeNull()
+  expect(screen.getByText('The team default')).toBeInTheDocument()
+})
