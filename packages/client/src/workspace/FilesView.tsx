@@ -1,7 +1,7 @@
 import { LayoutSideContent } from '@gravity-ui/icons'
 import { Button } from '@heroui/react'
 import { useEffect, useRef, useState } from 'react'
-import { useFileContent, useFiles } from '../api/useWorkspace.js'
+import { useFileContent, useFiles, useRefreshTabFiles } from '../api/useWorkspace.js'
 import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { CopyPath } from '../ui/CopyPath.js'
@@ -75,6 +75,7 @@ function OpenFile({
 
 export function FilesView({ tabId, request = null }: FilesViewProps): React.JSX.Element {
   const { data } = useFiles(tabId)
+  const { refresh, refreshing } = useRefreshTabFiles(tabId)
   const [chosen, setChosen] = useState<FileRef | null>(
     request === null ? null : { group: request.group, path: request.path },
   )
@@ -108,6 +109,16 @@ export function FilesView({ tabId, request = null }: FilesViewProps): React.JSX.
           }}
         >
           <LayoutSideContent />
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={refreshing}
+          onPress={() => {
+            void refresh()
+          }}
+        >
+          {t('Refresh', 'Làm mới')}
         </Button>
         {selected === null ? null : <CopyPath text={selected.path} />}
       </div>

@@ -2,7 +2,7 @@ import type { ChangeStatus } from '@workday/core'
 import { LayoutSideContent } from '@gravity-ui/icons'
 import { Button } from '@heroui/react'
 import { useEffect, useMemo, useState } from 'react'
-import { useChanges } from '../api/useWorkspace.js'
+import { useChanges, useRefreshTabFiles } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
 import { CopyPath } from '../ui/CopyPath.js'
 import { FindablePane } from '../ui/FindablePane.js'
@@ -26,7 +26,8 @@ function sameRef(a: FileRef | null, b: FileRef): boolean {
 }
 
 export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
-  const { data, refetch, isFetching } = useChanges(tabId)
+  const { data } = useChanges(tabId)
+  const { refresh, refreshing } = useRefreshTabFiles(tabId)
   const [chosen, setChosen] = useState<FileRef | null>(null)
   const [overview, setOverview] = useState<readonly OverviewMark[]>([])
   const split = useStoredSplit('changes')
@@ -90,9 +91,9 @@ export function ChangesView({ tabId }: ChangesViewProps): React.JSX.Element {
         <Button
           variant="secondary"
           size="sm"
-          isDisabled={isFetching}
+          isDisabled={refreshing}
           onPress={() => {
-            void refetch()
+            void refresh()
           }}
         >
           {t('Refresh', 'Làm mới')}

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
+import { useIsFetching, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import type {
   ChangeGroupView,
   ChatView,
@@ -7,7 +7,7 @@ import type {
   FilesGroupView,
   WorkspaceView,
 } from '@workday/core'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { queryKeys } from './client.js'
 import { useAccess } from './useMe.js'
 import {
@@ -104,6 +104,32 @@ export function useDiff(tabId: string, group: string, path: string): UseQueryRes
     queryKey: ['workspace-files', tabId, 'diff', group, path],
     queryFn: () => getDiff(tabId, group, path),
   })
+}
+
+// Rereads everything shown for the tab's files (the lists and the open diff or file), not just one list:
+// a refreshed list beside a stale diff looked like the refresh had not worked.
+export function useRefreshTabFiles(tabId: string): {
+  readonly refresh: () => Promise<void>
+  readonly refreshing: boolean
+} {
+  const queryClient = useQueryClient()
+  const refreshing = useIsFetching({ queryKey: ['workspace-files', tabId] }) !== 0
+  return {
+    refresh: () => queryClient.invalidateQueries({ queryKey: ['workspace-files', tabId] }),
+    refreshing,
+  }
+}
+
+// When a Claude turn ends the files it edited are worth rereading: the changes, the open diff and file.
+export function useRefreshFilesAfterTurn(tabId: string, working: boolean): void {
+  const queryClient = useQueryClient()
+  const wasWorking = useRef(working)
+  useEffect(() => {
+    if (wasWorking.current && !working) {
+      void queryClient.invalidateQueries({ queryKey: ['workspace-files', tabId] })
+    }
+    wasWorking.current = working
+  }, [working, tabId, queryClient])
 }
 
 export function useFiles(tabId: string): UseQueryResult<readonly FilesGroupView[]> {

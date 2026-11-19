@@ -3,7 +3,7 @@ import { Button, Dropdown, Spinner } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AgentModel, AgentRewind, ChatAnswer, ChatMessage, UsageWindow } from '@workday/core'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { chatKey, useChat } from '../api/useWorkspace.js'
+import { chatKey, useChat, useRefreshFilesAfterTurn } from '../api/useWorkspace.js'
 import { answerRequest, rewindFiles, setSessionModel } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { ChatFileLinks } from './chatFileLinks.js'
@@ -193,6 +193,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   const echoed = queued.slice(consumed)
   const prompts = useMemo(() => userPrompts(messages ?? []), [messages])
   const working = chat.data?.working === true
+  useRefreshFilesAfterTurn(tabId, working)
   const background = chat.data?.background ?? []
   const model = chat.data?.model ?? null
   const running = chat.data?.running === true
