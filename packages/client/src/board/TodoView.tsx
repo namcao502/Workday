@@ -178,19 +178,23 @@ export function TodoView({
       }
       case 'prBlocked':
         return [{ id: 'view', label: t('View PR', 'Xem PR'), href: item.pr.pr.url }]
-      case 'prComments':
-        return [
-          {
-            id: 'view',
-            label: t('View PR', 'Xem PR'),
-            href: item.url,
-            onClick: () => {
-              if (canAct) {
-                void run(() => actions.commentsSeen(item.ticketKey))
-              }
-            },
+      case 'prComments': {
+        // Claude already got pr-comments for them (auto lines); Seen only clears the row, View PR also opens it.
+        const seen = (): void => {
+          void run(() => actions.commentsSeen(item.ticketKey))
+        }
+        const view: TodoButton = {
+          id: 'view',
+          label: t('View PR', 'Xem PR'),
+          href: item.url,
+          onClick: () => {
+            if (canAct) {
+              seen()
+            }
           },
-        ]
+        }
+        return canAct ? [view, { id: 'seen', label: t('Seen', 'Đã xem'), onClick: seen }] : [view]
+      }
       case 'jiraDone':
         return canAct
           ? [

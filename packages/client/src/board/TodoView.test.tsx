@@ -336,3 +336,34 @@ it('TodoView qcBugReply shows Reply and navigates to the parent thread', async (
   fireEvent.click(screen.getByRole('button', { name: 'Reply' }))
   expect(window.location.hash).toBe('#/workspace/MDP-1?teams=')
 })
+
+const COMMENTS_GROUP: TodoGroup = {
+  ticketKey: 'MDP-1',
+  neededNow: false,
+  items: [{ kind: 'prComments', ticketKey: 'MDP-1', count: 2, url: 'https://ado.example/pr/1' }],
+}
+
+it('TodoView prComments shows View PR and Seen, and Seen clears the alert', async () => {
+  const fetchMock = stubBackend([COMMENTS_GROUP], () => jsonResponse({ ok: true }))
+  renderWithQuery(<BoardPage />)
+  await openTodoView()
+  expect(await screen.findByRole('link', { name: 'View PR' })).toHaveAttribute(
+    'href',
+    'https://ado.example/pr/1',
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Seen' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/work/comments/MDP-1/seen',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+})
+
+it('TodoView prComments hides Seen without act access', async () => {
+  stubBackend([COMMENTS_GROUP])
+  renderRemote(<BoardPage />, { board: 'view', timesheet: 'off' })
+  await openTodoView()
+  expect(await screen.findByRole('link', { name: 'View PR' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Seen' })).not.toBeInTheDocument()
+})
