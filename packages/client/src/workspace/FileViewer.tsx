@@ -13,6 +13,7 @@ import { remarkBreaks } from '../ui/remarkBreaks.js'
 import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
 import { highlightLines, languageOf } from '../ui/highlight.js'
 import { Segmented } from '../ui/Segmented.js'
+import { Tip } from '../ui/Tip.js'
 
 interface FileViewerProps {
   readonly tabId: string
@@ -77,15 +78,11 @@ function MarkdownView(props: FileViewerProps & { readonly text: string }): React
     a: ({ href, children }) => {
       if (href !== undefined && REMOTE_LINK.test(href)) {
         return (
-          <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            title={ctrlLinkHint()}
-            onClick={openLinkOnCtrl}
-          >
-            {children}
-          </a>
+          <Tip className="inline" content={ctrlLinkHint()}>
+            <a href={href} target="_blank" rel="noreferrer" onClick={openLinkOnCtrl}>
+              {children}
+            </a>
+          </Tip>
         )
       }
       const target = href === undefined ? null : resolveRelative(path, href)

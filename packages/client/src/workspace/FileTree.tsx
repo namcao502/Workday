@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from '@gravity-ui/icons'
 import { useEffect, useMemo, useState } from 'react'
 import { t } from '../i18n.js'
 import { buildTree, type TreeFolder } from './buildTree.js'
+import { Tip } from '../ui/Tip.js'
 
 const FILTER_DELAY_MS = 150
 const FILTER_LIMIT = 500
@@ -52,21 +53,22 @@ function FileButton({
   onSelect,
 }: FileButtonProps): React.JSX.Element {
   return (
-    <button
-      type="button"
-      className={`${ROW_CLASS}${selected ? ' bg-accent-soft text-accent-soft-foreground' : ''}`}
-      title={path}
-      onClick={() => {
-        onSelect(path)
-      }}
-    >
-      {status === undefined ? null : (
-        <span className={`w-4 shrink-0 font-mono font-semibold ${STATUS_COLOR[status]}`}>
-          {status}
-        </span>
-      )}
-      <span className="min-w-0 truncate">{label}</span>
-    </button>
+    <Tip className="block" content={path}>
+      <button
+        type="button"
+        className={`${ROW_CLASS}${selected ? ' bg-accent-soft text-accent-soft-foreground' : ''}`}
+        onClick={() => {
+          onSelect(path)
+        }}
+      >
+        {status === undefined ? null : (
+          <span className={`w-4 shrink-0 font-mono font-semibold ${STATUS_COLOR[status]}`}>
+            {status}
+          </span>
+        )}
+        <span className="min-w-0 truncate">{label}</span>
+      </button>
+    </Tip>
   )
 }
 
@@ -91,9 +93,9 @@ function FolderNode(props: FolderNodeProps): React.JSX.Element {
         }}
       >
         {open ? <ChevronDown className="shrink-0" /> : <ChevronRight className="shrink-0" />}
-        <span className="min-w-0 truncate" title={folder.path}>
+        <Tip className="block min-w-0 truncate" content={folder.path}>
           {folder.name}
-        </span>
+        </Tip>
       </button>
       {open ? (
         <ul className="flex list-none flex-col gap-0.5 pl-3.5">

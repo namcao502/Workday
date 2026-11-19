@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { KeyPill } from '../board/KeyPill.js'
 import { t } from '../i18n.js'
 import { formatMinutes } from './timesheetText.js'
+import { Tip } from '../ui/Tip.js'
 
 const MINUTES_PER_HOUR = 60
 
@@ -38,12 +39,12 @@ function CheckDot({ check }: { readonly check: TicketCheck | undefined }): React
   }
   if (check.isMine === false) {
     return (
-      <span
+      <Tip
         className="w-2 flex-none text-center font-bold text-warning"
-        title={t('Not your ticket', 'Không phải ticket của anh')}
+        content={t('Not your ticket', 'Không phải ticket của anh')}
       >
         !
-      </span>
+      </Tip>
     )
   }
   const labels = {
@@ -53,9 +54,9 @@ function CheckDot({ check }: { readonly check: TicketCheck | undefined }): React
   } as const
   const dot = { valid: 'bg-success', notFound: 'bg-danger', unknown: 'bg-warning' } as const
   return (
-    <span
+    <Tip
       className={`size-2 flex-none rounded-full ${dot[check.status]}`}
-      title={labels[check.status]}
+      content={labels[check.status]}
     />
   )
 }
@@ -80,23 +81,24 @@ function HoursInput({ ticketKey, minutes, tooltip, onHours }: HoursInputProps): 
   }
 
   return (
-    <Input
-      variant="secondary"
-      className="w-16 text-right"
-      inputMode="decimal"
-      aria-label={t(`Hours for ${ticketKey}`, `Số giờ cho ${ticketKey}`)}
-      title={tooltip}
-      value={draft ?? hoursText(minutes)}
-      onChange={(event) => {
-        setDraft(event.target.value)
-      }}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') {
-          commit()
-        }
-      }}
-    />
+    <Tip content={tooltip}>
+      <Input
+        variant="secondary"
+        className="w-16 text-right"
+        inputMode="decimal"
+        aria-label={t(`Hours for ${ticketKey}`, `Số giờ cho ${ticketKey}`)}
+        value={draft ?? hoursText(minutes)}
+        onChange={(event) => {
+          setDraft(event.target.value)
+        }}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            commit()
+          }
+        }}
+      />
+    </Tip>
   )
 }
 

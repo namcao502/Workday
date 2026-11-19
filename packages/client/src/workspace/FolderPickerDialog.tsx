@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { getFolders } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
+import { Tip } from '../ui/Tip.js'
 
 interface FolderPickerDialogProps {
   readonly startPath: string | null // null = the home folder
@@ -50,13 +51,16 @@ export function FolderPickerDialog({
               >
                 {t('Up', 'Lên trên')}
               </Button>
-              <p className="min-w-0 flex-1 truncate text-sm text-muted" title={current?.path}>
+              <Tip
+                className="block min-w-0 flex-1 truncate text-sm text-muted"
+                content={current?.path}
+              >
                 {current === undefined
                   ? ''
                   : current.path === ''
                     ? t('This computer', 'Máy tính này')
                     : current.path}
-              </p>
+              </Tip>
             </div>
             <div className="flex max-h-80 min-h-40 flex-col gap-1 overflow-y-auto">
               {listing.isError ? (

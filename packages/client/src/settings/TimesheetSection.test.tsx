@@ -2,7 +2,14 @@ import { fireEvent, screen, waitFor } from '@testing-library/react'
 import type { SettingsView, TimesheetConfig } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
 import { TimesheetSection } from './TimesheetSection.js'
-import { jsonResponse, renderWithQuery, sentJson, settingsView, stubFetch } from '../testSupport.js'
+import {
+  hoverTip,
+  jsonResponse,
+  renderWithQuery,
+  sentJson,
+  settingsView,
+  stubFetch,
+} from '../testSupport.js'
 
 const SAVED_TSC = {
   shareUrl: 'https://share.example.com/x',
@@ -95,7 +102,7 @@ it('Sign in to TSC disables the button while it runs', async () => {
   expect(screen.getByRole('button', { name: 'Sign in to TSC' })).toBeDisabled()
   finish(jsonResponse({ ok: false, error: { code: 'browserMissing' }, detail: 'no browser' }))
   const message = await screen.findByText('Microsoft Edge is not installed')
-  expect(message).toHaveAttribute('title', 'no browser')
+  expect(await hoverTip(message)).toHaveTextContent('no browser')
   expect(screen.getByRole('button', { name: 'Sign in to TSC' })).toBeEnabled()
 })
 

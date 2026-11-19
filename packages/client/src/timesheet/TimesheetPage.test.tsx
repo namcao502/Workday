@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { renderRemote, renderWithQuery, stubMatchMedia } from '../testSupport.js'
+import { hoverTip, renderRemote, renderWithQuery, stubMatchMedia } from '../testSupport.js'
 import { TimesheetPage } from './TimesheetPage.js'
 import { backend, bodyOf, callsTo, queued, timesheetView } from './timesheetTestSupport.js'
 
@@ -127,8 +127,10 @@ it('week bars measure each ticket against the whole working week', async () => {
     week: base.week === null ? null : { ...base.week, hrmTasks: [task] },
   })
   renderWithQuery(<TimesheetPage />)
+  await screen.findByText('This week by ticket')
+  const track = document.querySelector('[data-slot="tooltip-trigger"].h-2')
   // 4h of a 40h week.
-  expect(await screen.findByTitle('10% of the week')).toBeInTheDocument()
+  expect(await hoverTip(track ?? document.body)).toHaveTextContent('10% of the week')
 })
 
 it('pressing anywhere on a day card picks that day', async () => {

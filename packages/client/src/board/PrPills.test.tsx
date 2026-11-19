@@ -1,12 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { PrPills } from './PrPills.js'
+import { hoverTip } from '../testSupport.js'
 import { ticketPr } from './workTestSupport.js'
 
-it('shows one button with the PR count and the worst state as its dot', () => {
+it('shows one button with the PR count and the worst state as its dot', async () => {
   render(<PrPills prs={[ticketPr('main', { build: 'failed' }), ticketPr('dev')]} repoLabels={{}} />)
   expect(screen.getByRole('button', { name: 'PR 2: Build failed' })).toBeInTheDocument()
-  expect(screen.getByTitle('Build failed')).toHaveTextContent('PR 2')
+  expect(await hoverTip(screen.getByText('PR 2'))).toHaveTextContent('Build failed')
   expect(screen.getByTestId('pr-dot')).toHaveClass('bg-danger')
   expect(screen.queryByRole('link')).not.toBeInTheDocument()
 })

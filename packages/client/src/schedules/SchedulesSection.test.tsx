@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { JobRun, KnowledgeScanConfig, ScanRun, SchedulesView } from '@workday/core'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { jsonResponse, renderWithQuery, settingsView, stubFetch } from '../testSupport.js'
+import { hoverTip, jsonResponse, renderWithQuery, settingsView, stubFetch } from '../testSupport.js'
 import { SchedulesSection } from './SchedulesSection.js'
 import { LOG_POLL_MS } from './useSchedules.js'
 
@@ -144,5 +144,5 @@ it('jobs card shows the last result and the next run', async () => {
   const row = (await screen.findByText('Jira check')).closest('li')
   expect(row?.textContent).toContain('4 tickets polled')
   expect(row?.textContent).toContain('Next')
-  expect(row?.getAttribute('title')).toContain('old failure')
+  expect(await hoverTip(await screen.findByText('Jira check'))).toHaveTextContent('old failure')
 })

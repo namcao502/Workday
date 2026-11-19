@@ -3,6 +3,7 @@ import { useFiles } from '../api/useWorkspace.js'
 import { t } from '../i18n.js'
 import { ctrlLinkHint, openLinkOnCtrl } from '../ui/ctrlLink.js'
 import { openWorkspaceFile, resolveFileLink, type FileLinkTarget } from './fileLinks.js'
+import { Tip } from '../ui/Tip.js'
 
 interface FileLinks {
   readonly resolve: (raw: string) => FileLinkTarget | null
@@ -44,28 +45,25 @@ export function ChatLink({
   const target = href === undefined || links === null ? null : links.resolve(href)
   if (target !== null && links !== null) {
     return (
-      <a
-        href={href}
-        title={t('Open in Files', 'Mở trong Files')}
-        onClick={(event) => {
-          event.preventDefault()
-          links.open(target)
-        }}
-      >
-        {children}
-      </a>
+      <Tip className="inline" content={t('Open in Files', 'Mở trong Files')}>
+        <a
+          href={href}
+          onClick={(event) => {
+            event.preventDefault()
+            links.open(target)
+          }}
+        >
+          {children}
+        </a>
+      </Tip>
     )
   }
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer noopener"
-      title={ctrlLinkHint()}
-      onClick={openLinkOnCtrl}
-    >
-      {children}
-    </a>
+    <Tip className="inline" content={ctrlLinkHint()}>
+      <a href={href} target="_blank" rel="noreferrer noopener" onClick={openLinkOnCtrl}>
+        {children}
+      </a>
+    </Tip>
   )
 }
 
@@ -85,15 +83,16 @@ export function ChatCode({
     return <code className={className}>{children}</code>
   }
   return (
-    <button
-      type="button"
-      className="cursor-pointer text-accent hover:underline"
-      title={t('Open in Files', 'Mở trong Files')}
-      onClick={() => {
-        links.open(target)
-      }}
-    >
-      <code className={className}>{children}</code>
-    </button>
+    <Tip className="inline" content={t('Open in Files', 'Mở trong Files')}>
+      <button
+        type="button"
+        className="cursor-pointer text-accent hover:underline"
+        onClick={() => {
+          links.open(target)
+        }}
+      >
+        <code className={className}>{children}</code>
+      </button>
+    </Tip>
   )
 }

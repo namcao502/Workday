@@ -1,10 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, type RenderResult } from '@testing-library/react'
+import { fireEvent, render, screen, type RenderResult } from '@testing-library/react'
 import type { DeviceRights, RemoteDevice, SettingsView } from '@workday/core'
 import type { ReactElement } from 'react'
 import { vi, type Mock } from 'vitest'
 import { AccessContext, accessFor } from './api/useMe.js'
 import { isRecord } from './json.js'
+
+// Hovers a Tip's content with a mouse and returns the tooltip it opens.
+export async function hoverTip(element: Element): Promise<HTMLElement> {
+  fireEvent.pointerMove(document.body, { pointerType: 'mouse' })
+  fireEvent.pointerEnter(element, { pointerType: 'mouse' })
+  return screen.findByRole('tooltip')
+}
 
 export function renderWithQuery(element: ReactElement): RenderResult {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

@@ -13,6 +13,7 @@ import { Button, Input } from '@heroui/react'
 import { useEffect, useState, type ComponentType, type SVGProps } from 'react'
 import { t } from '../../i18n.js'
 import { isWebUrl, type FormatCommand } from './teamsComposerDom.js'
+import { Tip } from '../../ui/Tip.js'
 
 interface TeamsComposerToolbarProps {
   readonly disabled: boolean
@@ -127,9 +128,9 @@ export function TeamsComposerToolbar({
                 onFormat(command)
               }}
             >
-              <span title={label} className="flex">
+              <Tip content={label} className="flex">
                 <Icon />
-              </span>
+              </Tip>
             </Button>
           ))}
         </div>
@@ -148,12 +149,12 @@ export function TeamsComposerToolbar({
           onFormat('codeBlock')
         }}
       >
-        <span
-          title={t('Insert code block - press again to undo', 'Chèn khối code - bấm lại để bỏ')}
+        <Tip
+          content={t('Insert code block - press again to undo', 'Chèn khối code - bấm lại để bỏ')}
           className="flex"
         >
           <Code />
-        </span>
+        </Tip>
       </Button>
       <Button
         isIconOnly
@@ -169,15 +170,15 @@ export function TeamsComposerToolbar({
           setLinking(true)
         }}
       >
-        <span
-          title={t(
+        <Tip
+          content={t(
             'Link (Ctrl+K) - select text to link it, or put the caret where the link goes',
             'Liên kết (Ctrl+K) - chọn chữ để gắn link, hoặc đặt con trỏ nơi cần chèn link',
           )}
           className="flex"
         >
           <Link />
-        </span>
+        </Tip>
       </Button>
       {linking ? (
         <span className="inline-flex items-center gap-1">

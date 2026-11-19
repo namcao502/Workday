@@ -14,6 +14,7 @@ import { useAccess } from '../api/useMe.js'
 import { t, type Language } from '../i18n.js'
 import { TicketRows } from './TicketRows.js'
 import { dayHeader, DONE_MARK, formatMinutes, issueText, queueStatusText } from './timesheetText.js'
+import { Tip } from '../ui/Tip.js'
 
 const SECONDS_PER_MINUTE = 60
 const MINUTES_PER_HOUR = 60
@@ -90,11 +91,13 @@ function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
       )}
       <p className="text-sm">{tscLine(day)}</p>
       {items.length === 0 ? null : (
-        <p className="text-sm text-warning" title={tooltip}>
-          {t(
-            `${String(items.length)} ticket(s) to check`,
-            `${String(items.length)} ticket cần xem`,
-          )}
+        <p className="text-sm text-warning">
+          <Tip content={tooltip}>
+            {t(
+              `${String(items.length)} ticket(s) to check`,
+              `${String(items.length)} ticket cần xem`,
+            )}
+          </Tip>
         </p>
       )}
     </>

@@ -4,6 +4,7 @@ import { Plus } from '@gravity-ui/icons'
 import { useState } from 'react'
 import { t } from '../i18n.js'
 import { FolderPickerDialog } from './FolderPickerDialog.js'
+import { Tip } from '../ui/Tip.js'
 
 export function folderName(folder: string | null): string {
   if (folder === null) {
@@ -154,25 +155,26 @@ export function WorkspaceTabs(props: WorkspaceTabsProps): React.JSX.Element {
                   : ' bg-surface-secondary text-muted hover:text-foreground'
               }`}
             >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                className="flex min-w-0 flex-1 items-center gap-1.5"
-                title={tab.folder ?? tabLabel(tab)}
-                onClick={() => {
-                  props.onSelect(tab.id)
-                }}
-              >
-                <span className="truncate">{tabLabel(tab)}</span>
-                {tab.sessions.some((name) => waiting.has(name)) ? (
-                  <span
-                    className="size-2 flex-none rounded-full bg-danger"
-                    data-testid="tab-dot"
-                    aria-hidden="true"
-                  />
-                ) : null}
-              </button>
+              <Tip className="flex min-w-0 flex-1" content={tab.folder ?? tabLabel(tab)}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  className="flex w-full min-w-0 items-center gap-1.5"
+                  onClick={() => {
+                    props.onSelect(tab.id)
+                  }}
+                >
+                  <span className="truncate">{tabLabel(tab)}</span>
+                  {tab.sessions.some((name) => waiting.has(name)) ? (
+                    <span
+                      className="size-2 flex-none rounded-full bg-danger"
+                      data-testid="tab-dot"
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                </button>
+              </Tip>
               <CloseButton
                 className="ml-1 size-6 hover:bg-danger hover:text-danger-foreground"
                 aria-label={t(`Close ${tabLabel(tab)}`, `Đóng ${tabLabel(tab)}`)}

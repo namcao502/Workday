@@ -2,6 +2,7 @@ import { Button, Popover } from '@heroui/react'
 import { repoLabel, type TicketPr } from '@workday/core'
 import { t } from '../i18n.js'
 import type { TodoTone } from './todoText.js'
+import { Tip } from '../ui/Tip.js'
 
 interface PrState {
   readonly word: string
@@ -93,17 +94,16 @@ export function PrPills({
         className={`${className} align-middle`.trim()}
         aria-label={worst === undefined ? label : `${label}: ${worst.word}`}
       >
-        {/* The Button drops a title prop, so the hover text sits on its content. */}
         {showState ? (
-          <span className="flex items-center gap-1.5" title={label}>
+          <Tip className="flex items-center gap-1.5" content={label}>
             {dot}
             {worst?.word}
-          </span>
+          </Tip>
         ) : (
-          <span className="flex items-center gap-1.5" title={worst?.word}>
+          <Tip className="flex items-center gap-1.5" content={worst?.word}>
             {label}
             {dot}
-          </span>
+          </Tip>
         )}
       </Button>
       <Popover.Content placement="bottom start">
@@ -117,20 +117,24 @@ export function PrPills({
               const repo = repoLabel(ticketPr.pr.repository, repoLabels)
               return (
                 <li key={ticketPr.key}>
-                  <a
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm no-underline hover:bg-surface-secondary"
-                    href={ticketPr.pr.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${repo} ${ticketPr.branch} #${String(ticketPr.pullRequestId)}`}
+                  <Tip
+                    className="block"
+                    content={`${repo} ${ticketPr.branch} #${String(ticketPr.pullRequestId)}`}
                   >
-                    <span
-                      aria-hidden="true"
-                      className={`size-2 shrink-0 rounded-full ${DOT_CLASS[state.tone]}`}
-                    />
-                    <span className="min-w-0 flex-1 truncate">{`${repo} ${ticketPr.branch}`}</span>
-                    <span className="shrink-0 text-muted">{`${state.mark} ${state.word}`}</span>
-                  </a>
+                    <a
+                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm no-underline hover:bg-surface-secondary"
+                      href={ticketPr.pr.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`size-2 shrink-0 rounded-full ${DOT_CLASS[state.tone]}`}
+                      />
+                      <span className="min-w-0 flex-1 truncate">{`${repo} ${ticketPr.branch}`}</span>
+                      <span className="shrink-0 text-muted">{`${state.mark} ${state.word}`}</span>
+                    </a>
+                  </Tip>
                 </li>
               )
             })}

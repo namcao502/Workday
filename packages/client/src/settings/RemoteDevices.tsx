@@ -5,6 +5,7 @@ import type { RemoteActions } from '../api/useRemote.js'
 import { formatShortDate, t, type Language } from '../i18n.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
 import { Segmented } from '../ui/Segmented.js'
+import { Tip } from '../ui/Tip.js'
 
 export type RunRemote = (action: () => Promise<void>) => void
 
@@ -40,7 +41,7 @@ function DeviceName({
 
   if (!editing) {
     return (
-      <span title={t('Click to rename', 'Bấm để đổi tên')}>
+      <Tip content={t('Click to rename', 'Bấm để đổi tên')}>
         <Button
           variant="secondary"
           size="sm"
@@ -51,7 +52,7 @@ function DeviceName({
         >
           {device.name}
         </Button>
-      </span>
+      </Tip>
     )
   }
   return (

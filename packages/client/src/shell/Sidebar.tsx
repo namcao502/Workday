@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n.js'
 import { PageIcon } from './pageIcons.js'
 import { PAGE_IDS, pageLabel, type PageId } from './pages.js'
+import { Tip } from '../ui/Tip.js'
 
 interface NavProps {
   readonly current: PageId
@@ -125,40 +126,41 @@ function SidebarItem({
     pulsing ? ' animate-pulse' : ''
   }`
   return (
-    <button
-      type="button"
-      className={`${buttonVariants({ variant: 'ghost' })} relative h-11 w-full gap-3 ${
-        collapsed ? 'justify-center' : 'justify-start'
-      }${selected ? ' bg-accent-soft text-accent' : ''}`}
-      aria-current={selected ? 'page' : undefined}
-      aria-label={collapsed ? label : undefined}
-      title={tooltipLines.length === 0 ? undefined : tooltipLines.join('\n')}
-      onClick={() => {
-        onSelect(page)
-      }}
-    >
-      <PageIcon page={page} />
-      {collapsed ? null : <span>{label}</span>}
-      {attention ? (
-        <Badge
-          className={badgeClass}
-          color="danger"
-          size="sm"
-          data-testid="nav-dot"
-          aria-hidden="true"
-        />
-      ) : null}
-      {count === 0 ? null : (
-        <Badge
-          className={badgeClass}
-          color="danger"
-          size="sm"
-          data-testid="nav-badge"
-          aria-hidden="true"
-        >
-          {collapsed ? null : badgeText(count)}
-        </Badge>
-      )}
-    </button>
+    <Tip className="block w-full" placement="right" content={tooltipLines.join('\n')}>
+      <button
+        type="button"
+        className={`${buttonVariants({ variant: 'ghost' })} relative h-11 w-full gap-3 ${
+          collapsed ? 'justify-center' : 'justify-start'
+        }${selected ? ' bg-accent-soft text-accent' : ''}`}
+        aria-current={selected ? 'page' : undefined}
+        aria-label={collapsed ? label : undefined}
+        onClick={() => {
+          onSelect(page)
+        }}
+      >
+        <PageIcon page={page} />
+        {collapsed ? null : <span>{label}</span>}
+        {attention ? (
+          <Badge
+            className={badgeClass}
+            color="danger"
+            size="sm"
+            data-testid="nav-dot"
+            aria-hidden="true"
+          />
+        ) : null}
+        {count === 0 ? null : (
+          <Badge
+            className={badgeClass}
+            color="danger"
+            size="sm"
+            data-testid="nav-badge"
+            aria-hidden="true"
+          >
+            {collapsed ? null : badgeText(count)}
+          </Badge>
+        )}
+      </button>
+    </Tip>
   )
 }

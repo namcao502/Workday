@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from '@gravity-ui/icons'
 import { useMemo, useState } from 'react'
 import { errorText } from '../errors.js'
 import { FileTree } from './FileTree.js'
+import { Tip } from '../ui/Tip.js'
 
 export interface TreeGroup {
   readonly id: string
@@ -51,9 +52,9 @@ function GroupSection({
           }}
         >
           <Chevron width={14} height={14} className="shrink-0" aria-hidden="true" />
-          <span className="min-w-0 truncate" title={group.label}>
+          <Tip className="block min-w-0 truncate" content={group.label}>
             {group.label}
-          </span>
+          </Tip>
         </button>
       </h3>
       {collapsed ? null : (

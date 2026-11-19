@@ -8,6 +8,7 @@ import { PriorityText } from './PriorityText.js'
 import { PrPills } from './PrPills.js'
 import { RowMenu, type RowWorkspace } from './RowMenu.js'
 import { StatusText } from './StatusText.js'
+import { Tip } from '../ui/Tip.js'
 
 // What /api/work adds to a row: its PR pills and the Ready to Test menu item.
 export interface RowWork {
@@ -68,8 +69,8 @@ export function BoardTable({
             <th className={th}>{t('Status', 'Trạng thái')}</th>
             <th className={th}>{t('Due', 'Hạn')}</th>
             <th className={th}>{t('ETA', 'ETA')}</th>
-            <th className={th} title={t('Dev priority', 'Độ ưu tiên dev')}>
-              {t('Priority', 'Ưu tiên')}
+            <th className={th}>
+              <Tip content={t('Dev priority', 'Độ ưu tiên dev')}>{t('Priority', 'Ưu tiên')}</Tip>
             </th>
             <th className={th} />
           </tr>
@@ -82,9 +83,9 @@ export function BoardTable({
               </td>
               {/* max-w-0 lets the cell shrink, so a long summary cuts to one line instead of growing the row. */}
               <td className={`${td} w-full max-w-0`}>
-                <div className="truncate" title={row.ticket.summary}>
+                <Tip className="block truncate" content={row.ticket.summary}>
                   {row.ticket.summary}
-                </div>
+                </Tip>
               </td>
               {hasPrs ? (
                 <td className={`${td} whitespace-nowrap text-center`}>

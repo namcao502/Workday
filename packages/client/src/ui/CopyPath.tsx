@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { t } from '../i18n.js'
+import { Tip } from './Tip.js'
 
 const RESET_MS = 1500
 
@@ -18,22 +19,23 @@ export function CopyPath({ text }: { readonly text: string }): React.JSX.Element
     }
   }, [copied])
   return (
-    <button
-      type="button"
-      className="min-w-0 flex-1 cursor-pointer truncate rounded-lg px-2 py-1 text-left text-sm text-muted hover:bg-surface-secondary hover:text-foreground"
-      title={`${text}\n${t('Click to copy', 'Bấm để chép')}`}
-      onClick={() => {
-        navigator.clipboard.writeText(text).then(
-          () => {
-            setCopied(true)
-          },
-          () => {
-            setCopied(false)
-          },
-        )
-      }}
-    >
-      {copied ? t('Copied', 'Đã chép') : text}
-    </button>
+    <Tip className="block min-w-0 flex-1" content={`${text}\n${t('Click to copy', 'Bấm để chép')}`}>
+      <button
+        type="button"
+        className="w-full cursor-pointer truncate rounded-lg px-2 py-1 text-left text-sm text-muted hover:bg-surface-secondary hover:text-foreground"
+        onClick={() => {
+          navigator.clipboard.writeText(text).then(
+            () => {
+              setCopied(true)
+            },
+            () => {
+              setCopied(false)
+            },
+          )
+        }}
+      >
+        {copied ? t('Copied', 'Đã chép') : text}
+      </button>
+    </Tip>
   )
 }

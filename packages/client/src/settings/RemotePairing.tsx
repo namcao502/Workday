@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import type { RemoteActions } from '../api/useRemote.js'
 import { t } from '../i18n.js'
 import type { RunRemote } from './RemoteDevices.js'
+import { Tip } from '../ui/Tip.js'
 
 const TICK_MS = 1000
 const SECONDS_PER_MINUTE = 60
@@ -130,7 +131,7 @@ export function RemotePairing({
           <p className="text-sm text-muted">
             {t('Expires in', 'Hết hạn sau')} {countdown(pairing.expiresAt, now)}
           </p>
-          <span title={t('Click to copy', 'Bấm để sao chép')}>
+          <Tip content={t('Click to copy', 'Bấm để sao chép')}>
             <Button
               variant="secondary"
               size="sm"
@@ -140,7 +141,7 @@ export function RemotePairing({
             >
               {link}
             </Button>
-          </span>
+          </Tip>
         </div>
       ) : null}
       {pairing.pending === null ? null : (

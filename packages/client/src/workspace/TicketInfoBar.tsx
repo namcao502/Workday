@@ -11,6 +11,7 @@ import { PrPills } from '../board/PrPills.js'
 import { statusColor, useStatusFlow } from '../board/StatusText.js'
 import { useReadyToTest } from '../board/useReadyToTest.js'
 import { formatDateOnly, getLanguage, t } from '../i18n.js'
+import { Tip } from '../ui/Tip.js'
 
 const SECONDS_PER_HOUR = 3600
 
@@ -79,9 +80,9 @@ export function TicketInfoBar({ ticketKey }: { readonly ticketKey: string }): Re
       )}
       {row === undefined ? null : (
         // Two lines before the cut: the facts and buttons beside it would otherwise leave a stub.
-        <span className="min-w-48 flex-1 line-clamp-2 text-base" title={row.ticket.summary}>
+        <Tip className="min-w-48 flex-1 line-clamp-2 text-base" content={row.ticket.summary}>
           {row.ticket.summary}
-        </span>
+        </Tip>
       )}
       {facts.length === 0 ? null : (
         <span className="text-sm text-muted">

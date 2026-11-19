@@ -3,6 +3,7 @@ import { Card } from '@heroui/react'
 import { KeyPill } from '../board/KeyPill.js'
 import { t } from '../i18n.js'
 import { formatMinutes } from './timesheetText.js'
+import { Tip } from '../ui/Tip.js'
 
 interface WeekTotalsProps {
   readonly hrmTasks: readonly HrmTask[] | null
@@ -35,9 +36,9 @@ export function WeekTotals({
         {totals.map((total) => (
           <div key={total.key} className="flex items-center gap-2">
             <KeyPill ticketKey={total.key} url={urlFor(total.key)} />
-            <div
-              className="h-2 flex-1 rounded-full bg-surface-secondary"
-              title={t(
+            <Tip
+              className="block h-2 flex-1 rounded-full bg-surface-secondary"
+              content={t(
                 `${String(Math.round((total.minutes / scale) * 100))}% of the week`,
                 `${String(Math.round((total.minutes / scale) * 100))}% của tuần`,
               )}
@@ -46,7 +47,7 @@ export function WeekTotals({
                 className="h-full rounded-full bg-accent"
                 style={{ width: `${String((total.minutes / scale) * 100)}%` }}
               />
-            </div>
+            </Tip>
             <span className="text-sm text-muted">{formatMinutes(total.minutes)}</span>
           </div>
         ))}

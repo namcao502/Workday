@@ -11,6 +11,7 @@ import { AdvancedDisclosure } from './AdvancedDisclosure.js'
 import { TokenField } from './TokenField.js'
 import { TscAdvancedFields } from './TscAdvancedFields.js'
 import { formFromTimesheet, timesheetFromForm, type TimesheetForm } from './timesheetForm.js'
+import { Tip } from '../ui/Tip.js'
 
 interface StatusLine {
   readonly kind: 'ok' | 'error'
@@ -26,9 +27,8 @@ function StatusText({ status }: { readonly status: StatusLine | null }): React.J
     <p
       className={status.kind === 'error' ? 'text-sm text-danger' : 'text-sm text-success'}
       role="status"
-      title={status.detail ?? undefined}
     >
-      {status.text}
+      <Tip content={status.detail}>{status.text}</Tip>
     </p>
   )
 }

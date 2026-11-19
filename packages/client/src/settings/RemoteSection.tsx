@@ -14,6 +14,7 @@ import { TextField } from '../ui/TextField.js'
 import { TokenField } from './TokenField.js'
 import { vpnFormOf, vpnFromForm, type VpnForm } from './vpnForm.js'
 import { VpnSettings } from './VpnSettings.js'
+import { Tip } from '../ui/Tip.js'
 
 function tunnelText(status: RemoteStatusView): string {
   switch (status.tunnel) {
@@ -200,11 +201,8 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
       )}
       {remote.data === undefined ? null : (
         <>
-          <p
-            className={remote.data.tunnel === 'failed' ? 'text-sm text-danger' : 'status'}
-            title={remote.data.tunnelDetail ?? undefined}
-          >
-            {tunnelText(remote.data)}
+          <p className={remote.data.tunnel === 'failed' ? 'text-sm text-danger' : 'status'}>
+            <Tip content={remote.data.tunnelDetail}>{tunnelText(remote.data)}</Tip>
           </p>
           <RemotePairing
             pairing={remote.data.pairing}

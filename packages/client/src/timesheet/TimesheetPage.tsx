@@ -38,6 +38,7 @@ import { useColumns } from './useColumns.js'
 import { useTimesheetActions } from './useTimesheetActions.js'
 import { WeekHeader, WeekNav } from './WeekHeader.js'
 import { WeekTotals } from './WeekTotals.js'
+import { Tip } from '../ui/Tip.js'
 
 const WORKDAYS = 5
 type Confirming = 'off' | 'clear' | null
@@ -224,11 +225,8 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         />
       ) : null}
       {actions.status === null ? null : (
-        <p
-          className={actions.status.tone === 'ok' ? 'text-sm text-muted' : 'text-sm text-danger'}
-          title={actions.status.detail ?? undefined}
-        >
-          {actions.status.text}
+        <p className={actions.status.tone === 'ok' ? 'text-sm text-muted' : 'text-sm text-danger'}>
+          <Tip content={actions.status.detail}>{actions.status.text}</Tip>
         </p>
       )}
       {outside.length === 0 ? null : (

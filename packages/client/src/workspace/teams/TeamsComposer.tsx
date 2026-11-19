@@ -31,6 +31,7 @@ import {
   type PickedImage,
   type MentionTrigger,
 } from './teamsComposerDom.js'
+import { Tip } from '../../ui/Tip.js'
 
 export type ComposeMode = 'reply' | 'post' | 'edit'
 
@@ -469,9 +470,9 @@ export function TeamsComposer({
                 attachInput.current?.click()
               }}
             >
-              <span title={t('Attach a file', 'Đính kèm file')} className="flex">
+              <Tip content={t('Attach a file', 'Đính kèm file')} className="flex">
                 <Paperclip />
-              </span>
+              </Tip>
             </Button>
             <Button
               isIconOnly
@@ -483,9 +484,9 @@ export function TeamsComposer({
                 fileInput.current?.click()
               }}
             >
-              <span title={t('Add an image', 'Thêm ảnh')} className="flex">
+              <Tip content={t('Add an image', 'Thêm ảnh')} className="flex">
                 <Picture />
-              </span>
+              </Tip>
             </Button>
           </>
         )}
@@ -500,9 +501,9 @@ export function TeamsComposer({
           }}
           onPress={startMention}
         >
-          <span title={t('Tag someone', 'Tag người')} className="flex">
+          <Tip content={t('Tag someone', 'Tag người')} className="flex">
             <At />
-          </span>
+          </Tip>
         </Button>
         <Button
           variant="primary"

@@ -10,6 +10,7 @@ import {
 } from '@workday/core'
 import { formatClock, formatDateOnly, t, type Language } from '../i18n.js'
 import { DONE_MARK } from './timesheetText.js'
+import { Tip } from '../ui/Tip.js'
 
 const WORKDAYS = 5
 
@@ -97,8 +98,8 @@ export function WeekNav({
         onPress={onReread}
         aria-label={t('Read again', 'Đọc lại')}
       >
-        <span
-          title={t(
+        <Tip
+          content={t(
             'Reads TSC again; a browser runs in the background with the saved sign-in',
             'Đọc lại TSC; trình duyệt chạy ngầm bằng phiên đăng nhập đã lưu',
           )}
@@ -106,7 +107,7 @@ export function WeekNav({
         >
           <ArrowRotateRight />
           {t('Read again', 'Đọc lại')}
-        </span>
+        </Tip>
       </Button>
     </div>
   )

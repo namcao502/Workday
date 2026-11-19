@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { t } from '../i18n.js'
 import { MAX_SHARE, MIN_SHARE, type SplitHidden } from './useStoredSplit.js'
+import { Tip } from './Tip.js'
 
 const HANDLE_PX = 12
 const KEY_STEP = 0.02
@@ -61,43 +62,47 @@ export function SplitView({
         {left}
       </div>
       {split ? (
-        <button
-          type="button"
-          aria-label={t('Resize the panes', 'Đổi độ rộng hai bên')}
-          title={t(
+        <Tip
+          className="flex shrink-0"
+          content={t(
             'Drag to resize (double-click: back to the default width)',
             'Kéo để đổi độ rộng (nhấp đúp: về độ rộng mặc định)',
           )}
-          className="group flex shrink-0 cursor-col-resize touch-none items-center justify-center"
-          style={{ width: HANDLE_PX }}
-          onPointerDown={(event) => {
-            dragging.current = true
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) => {
-            if (dragging.current) {
-              dragTo(event.clientX)
-            }
-          }}
-          onPointerUp={(event) => {
-            dragging.current = false
-            event.currentTarget.releasePointerCapture(event.pointerId)
-          }}
-          onDoubleClick={() => {
-            onShareChange(null)
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'ArrowLeft') {
-              event.preventDefault()
-              nudge(-KEY_STEP)
-            } else if (event.key === 'ArrowRight') {
-              event.preventDefault()
-              nudge(KEY_STEP)
-            }
-          }}
         >
-          <span className="h-10 w-1 rounded-full bg-default opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
-        </button>
+          <button
+            type="button"
+            aria-label={t('Resize the panes', 'Đổi độ rộng hai bên')}
+            className="group flex shrink-0 cursor-col-resize touch-none items-center justify-center"
+            style={{ width: HANDLE_PX }}
+            onPointerDown={(event) => {
+              dragging.current = true
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) => {
+              if (dragging.current) {
+                dragTo(event.clientX)
+              }
+            }}
+            onPointerUp={(event) => {
+              dragging.current = false
+              event.currentTarget.releasePointerCapture(event.pointerId)
+            }}
+            onDoubleClick={() => {
+              onShareChange(null)
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowLeft') {
+                event.preventDefault()
+                nudge(-KEY_STEP)
+              } else if (event.key === 'ArrowRight') {
+                event.preventDefault()
+                nudge(KEY_STEP)
+              }
+            }}
+          >
+            <span className="h-10 w-1 rounded-full bg-default opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
+          </button>
+        </Tip>
       ) : null}
       <div className={`min-h-0 min-w-0 flex-1 ${hidden === 'right' ? 'hidden' : 'flex flex-col'}`}>
         {right}

@@ -3,6 +3,7 @@ import type { AppJobName, SchedulesView } from '@workday/core'
 import { t } from '../i18n.js'
 import { Section } from '../ui/Section.js'
 import { formatDuration, formatWhen, jobName, outcomeText } from './scheduleFormat.js'
+import { Tip } from '../ui/Tip.js'
 
 const JOBS: readonly AppJobName[] = ['jiraPoll', 'prCheck', 'teamsCheck', 'timesheetRun', 'catchUp']
 const SHOWN_RUNS = 10
@@ -55,37 +56,35 @@ export function JobsCard({
                   )
                   .join('\n')
           return (
-            <li
-              key={job}
-              className="px-2.5 py-1.5 text-sm even:bg-surface-secondary"
-              title={tooltip}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <strong>{jobName(job)}</strong>
-                <span className="text-muted">
-                  {nextRunAt === null
-                    ? ''
-                    : t(
-                        `Next ${formatWhen(nextRunAt, timeZone)}`,
-                        `Lần tới ${formatWhen(nextRunAt, timeZone)}`,
-                      )}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-2 text-muted">
-                <span>{scheduleText(job, pollMinutes, logTime)}</span>
-                <span className="flex items-center gap-1.5">
-                  {last === undefined ? null : (
-                    <Chip size="sm" color={last.ok ? 'success' : 'danger'}>
-                      {outcomeText(last.ok ? 'ok' : 'failed')}
-                    </Chip>
-                  )}
-                  {last === undefined
-                    ? t('No runs yet', 'Chưa chạy lần nào')
-                    : [formatWhen(last.startedAt, timeZone), last.summary ?? '']
-                        .filter((part) => part !== '')
-                        .join(': ')}
-                </span>
-              </div>
+            <li key={job} className="text-sm even:bg-surface-secondary">
+              <Tip className="block px-2.5 py-1.5" content={tooltip}>
+                <div className="flex items-center justify-between gap-2">
+                  <strong>{jobName(job)}</strong>
+                  <span className="text-muted">
+                    {nextRunAt === null
+                      ? ''
+                      : t(
+                          `Next ${formatWhen(nextRunAt, timeZone)}`,
+                          `Lần tới ${formatWhen(nextRunAt, timeZone)}`,
+                        )}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-muted">
+                  <span>{scheduleText(job, pollMinutes, logTime)}</span>
+                  <span className="flex items-center gap-1.5">
+                    {last === undefined ? null : (
+                      <Chip size="sm" color={last.ok ? 'success' : 'danger'}>
+                        {outcomeText(last.ok ? 'ok' : 'failed')}
+                      </Chip>
+                    )}
+                    {last === undefined
+                      ? t('No runs yet', 'Chưa chạy lần nào')
+                      : [formatWhen(last.startedAt, timeZone), last.summary ?? '']
+                          .filter((part) => part !== '')
+                          .join(': ')}
+                  </span>
+                </div>
+              </Tip>
             </li>
           )
         })}
