@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAccess } from '../api/useMe.js'
+import { ticketUpdateFromHash } from '../shell/pages.js'
 import { TicketUpdateDialog } from './TicketUpdateDialog.js'
 
 const OPEN_EVENT = 'workday:ticket-update'
@@ -20,9 +21,20 @@ export function TicketUpdateHost(): React.JSX.Element | null {
         setTicketKey(event.detail)
       }
     }
+    // A system notification opens "#/tickets?update=KEY"; the query goes so a reload does not reopen it.
+    function openFromHash(): void {
+      const key = ticketUpdateFromHash(window.location.hash)
+      if (key !== null) {
+        window.history.replaceState(null, '', window.location.hash.split('?')[0])
+        setTicketKey(key)
+      }
+    }
+    openFromHash()
     window.addEventListener(OPEN_EVENT, open)
+    window.addEventListener('hashchange', openFromHash)
     return () => {
       window.removeEventListener(OPEN_EVENT, open)
+      window.removeEventListener('hashchange', openFromHash)
     }
   }, [])
 

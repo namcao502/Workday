@@ -31,7 +31,7 @@ export function pageLabel(page: PageId): string {
 
 // "#/settings" -> "settings"; anything unknown falls back to the default page.
 export function pageFromHash(hash: string): PageId {
-  const name = hash.replace(/^#\/?/, '').split('/')[0]
+  const name = hash.replace(/^#\/?/, '').split('?')[0]?.split('/')[0]
   return PAGE_IDS.find((page) => page === name) ?? DEFAULT_PAGE
 }
 
@@ -72,6 +72,12 @@ export function workspaceSelectionFromHash(hash: string): WorkspaceSelection {
 export function teamsConversationFromHash(hash: string): string | null {
   const query = hash.split('?')[1]
   return query === undefined ? null : new URLSearchParams(query).get('teams')
+}
+
+// "#/tickets?update=MDP-1" -> the ticket whose Jira comparison a desktop or phone notice opens.
+export function ticketUpdateFromHash(hash: string): string | null {
+  const query = hash.split('?')[1]
+  return query === undefined ? null : new URLSearchParams(query).get('update')
 }
 
 export function navigateToWorkspace(

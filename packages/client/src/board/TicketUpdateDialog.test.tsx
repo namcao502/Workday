@@ -127,3 +127,12 @@ it('a ticket-update notice opens the comparison over whatever page is showing', 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
+
+it('a desktop notice link with ?update= opens the comparison and leaves the plain page in the URL', async () => {
+  stubUpdate(UPDATE)
+  window.location.hash = '#/tickets?update=MDP-1'
+  renderWithQuery(<TicketUpdateHost />)
+  expect(await screen.findByRole('dialog', { name: 'MDP-1 changes' })).toBeInTheDocument()
+  expect(window.location.hash).toBe('#/tickets')
+  window.location.hash = ''
+})

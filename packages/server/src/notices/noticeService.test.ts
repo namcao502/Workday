@@ -173,6 +173,17 @@ describe('NoticeService', () => {
     expect(pushes[1]?.message.url).toBe('https://example.com/pr/1')
   })
 
+  it('a ticket-update notice links to its comparison on the PC and the phone', async () => {
+    const { service, pushes, localPushes } = harness({
+      prefs: { jira: { desktop: true, phone: true } },
+    })
+
+    await service.add(input({ topic: 'jira', target: { kind: 'ticketUpdate', key: 'MDP-1' } }))
+
+    expect(localPushes[0]?.url).toBe('/#/tickets?update=MDP-1')
+    expect(pushes[0]?.message.url).toBe('/#/tickets?update=MDP-1')
+  })
+
   it('a failed save still returns the notice and broadcasts', async () => {
     const { service, events, errors } = harness({ failSave: true })
 

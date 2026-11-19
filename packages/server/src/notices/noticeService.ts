@@ -42,7 +42,15 @@ const BOARD_URL = '/#/board'
 
 // The phone cannot open the Workspace, so a workspace notice opens the board there.
 function pushUrl(target: NoticeTarget | null): string {
+  if (target?.kind === 'ticketUpdate') {
+    return ticketUpdateUrl(target.key)
+  }
   return target !== null && target.kind === 'url' ? target.url : BOARD_URL
+}
+
+// The tickets page opens the old / new comparison of the key in the query.
+function ticketUpdateUrl(key: string): string {
+  return `/#/tickets?update=${encodeURIComponent(key)}`
 }
 
 // Local push opens the PC's own page, so a workspace or Teams notice keeps its full target.
@@ -58,8 +66,9 @@ function localUrl(target: NoticeTarget | null): string {
     case 'timesheet':
       return '/#/timesheet'
     case 'board':
-    case 'ticketUpdate':
       return '/#/tickets'
+    case 'ticketUpdate':
+      return ticketUpdateUrl(target.key)
     case 'workspace':
       return `/#/workspace/${encodeURIComponent(target.tab)}/${encodeURIComponent(target.session)}`
     case 'teams':
