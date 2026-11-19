@@ -45,6 +45,16 @@ function takeTitle(element: Element): string | null {
   return element.getAttribute('data-tip')
 }
 
+// Every title in a subtree, the root included.
+function takeTitles(root: Element): void {
+  if (root.hasAttribute('title')) {
+    takeTitle(root)
+  }
+  for (const element of root.querySelectorAll('[title]')) {
+    takeTitle(element)
+  }
+}
+
 interface Shown {
   readonly text: string
   readonly anchor: Box
@@ -100,6 +110,28 @@ export function ThemedTooltips(): React.JSX.Element | null {
       }
     }
 
+    // Titles move as soon as they appear, never under the pointer: Edge has started its own tip for a title the
+    // pointer is on, and taking it away then made an installed app's window raise Edge's other windows.
+    takeTitles(document.body)
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === 'attributes' && record.target instanceof Element) {
+          takeTitles(record.target)
+        }
+        for (const node of record.addedNodes) {
+          if (node instanceof Element) {
+            takeTitles(node)
+          }
+        }
+      }
+    })
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['title'],
+    })
+
     document.addEventListener('pointerover', onOver)
     document.addEventListener('focusin', onOver)
     document.addEventListener('pointerout', onOut)
@@ -109,6 +141,7 @@ export function ThemedTooltips(): React.JSX.Element | null {
     document.addEventListener('scroll', hide, true)
     window.addEventListener('blur', hide)
     return () => {
+      observer.disconnect()
       window.clearTimeout(timer)
       document.removeEventListener('pointerover', onOver)
       document.removeEventListener('focusin', onOver)

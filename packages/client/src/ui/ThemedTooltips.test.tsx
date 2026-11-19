@@ -50,6 +50,33 @@ describe('ThemedTooltips', () => {
     expect(button).toHaveAccessibleDescription('Copy the key')
   })
 
+  it('moves every title as soon as it appears, before the pointer gets there', async () => {
+    const { rerender } = render(
+      <>
+        <ThemedTooltips />
+        <span title="First">one</span>
+      </>,
+    )
+    // Edge starts its own tip for a title under the pointer; taking that title away then upset its windows.
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(screen.getByText('one')).not.toHaveAttribute('title')
+    expect(screen.getByText('one')).toHaveAttribute('data-tip', 'First')
+    rerender(
+      <>
+        <ThemedTooltips />
+        <span title="First">one</span>
+        <span title="Added later">two</span>
+      </>,
+    )
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(screen.getByText('two')).toHaveAttribute('data-tip', 'Added later')
+    expect(screen.getByText('two')).toHaveAccessibleDescription('Added later')
+  })
+
   it('an icon-only element keeps its name when the title moves', () => {
     render(
       <>
