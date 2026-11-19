@@ -3,6 +3,7 @@ import type { ScanOutcome } from './api.js'
 import type { PrVote } from './prTracking.js'
 import type { TicketField } from './ticketChanges.js'
 import type { WeekReviewItem } from './weekReview.js'
+import { coreText, type CoreTextKey, type TextParams } from './i18n/text.js'
 
 export type NoticeTopic =
   | 'claude'
@@ -170,256 +171,189 @@ export function noticeChannels(topic: NoticeTopic, prefs: NoticePrefs): NoticeCh
   return { ...DEFAULT_CHANNELS[topic], ...prefs[topic] }
 }
 
-function waitSentence(wait: WaitReason, vi: boolean): string {
-  switch (wait) {
-    case 'finished':
-      return vi ? 'Claude đã xong - đến lượt bạn.' : 'Claude is done - your turn.'
-    case 'permission':
-      return vi ? 'Claude cần bạn cho phép.' : 'Claude needs your permission.'
-    case 'question':
-      return vi ? 'Claude đang hỏi bạn.' : 'Claude is asking you something.'
-  }
+type Say = (key: CoreTextKey, params?: TextParams) => string
+
+const WAIT_KEYS: Readonly<Record<WaitReason, CoreTextKey>> = {
+  finished: 'notices.claudeFinished',
+  permission: 'notices.claudePermission',
+  question: 'notices.claudeQuestion',
 }
 
-function voteSentence(key: string, branch: string, vote: PrVote, vi: boolean): string {
-  switch (vote) {
-    case 'approved':
-      return vi ? `${key}: PR (${branch}) đã được duyệt.` : `${key}: PR (${branch}) approved.`
-    case 'waitingForAuthor':
-      return vi
-        ? `${key}: PR (${branch}) đang chờ anh sửa.`
-        : `${key}: PR (${branch}) waits for your changes.`
-    case 'rejected':
-      return vi ? `${key}: PR (${branch}) bị từ chối.` : `${key}: PR (${branch}) was rejected.`
-    default:
-      return vi ? `${key}: PR (${branch}) có phiếu mới.` : `${key}: PR (${branch}) has a new vote.`
-  }
+const VOTE_KEYS: Readonly<Partial<Record<PrVote, CoreTextKey>>> = {
+  approved: 'notices.prApproved',
+  waitingForAuthor: 'notices.prWaitingForAuthor',
+  rejected: 'notices.prRejected',
 }
 
-function prText(event: NoticeEvent, vi: boolean): string | null {
+const FIELD_KEYS: Readonly<Record<TicketField, CoreTextKey>> = {
+  summary: 'notices.fieldSummary',
+  description: 'notices.fieldDescription',
+  attachments: 'notices.fieldAttachments',
+  dueDate: 'notices.fieldDueDate',
+  eta: 'notices.fieldEta',
+  devPriority: 'notices.fieldDevPriority',
+}
+
+const ISSUE_KEYS: Readonly<Record<WeekReviewItem['issue'], CoreTextKey>> = {
+  notFound: 'notices.weekReviewNotFound',
+  notMine: 'notices.weekReviewNotMine',
+  tscOnly: 'notices.weekReviewTscOnly',
+  hrmOnly: 'notices.weekReviewHrmOnly',
+}
+
+const SCAN_KEYS: Readonly<Partial<Record<ScanOutcome, CoreTextKey>>> = {
+  stopped: 'notices.scanStopped',
+  failed: 'notices.scanFailed',
+}
+
+function prText(event: NoticeEvent, say: Say): string | null {
   switch (event.type) {
     case 'prMerged':
-      return vi
-        ? `${event.key}: PR (${event.branch}) đã merge.`
-        : `${event.key}: PR (${event.branch}) merged.`
+      return say('notices.prMerged', { key: event.key, branch: event.branch })
     case 'prBuildFailed':
-      return vi
-        ? `${event.key}: build lỗi trên PR (${event.branch}).`
-        : `${event.key}: build failed on PR (${event.branch}).`
+      return say('notices.prBuildFailed', { key: event.key, branch: event.branch })
     case 'prConflicted':
-      return vi
-        ? `${event.key}: PR (${event.branch}) bị conflict.`
-        : `${event.key}: PR (${event.branch}) has merge conflicts.`
+      return say('notices.prConflicted', { key: event.key, branch: event.branch })
     case 'prComments':
-      return vi
-        ? `${event.key}: ${String(event.count)} comment PR mới (${event.branch}).`
-        : `${event.key}: ${String(event.count)} new PR comment(s) (${event.branch}).`
+      return say('notices.prComments', { key: event.key, branch: event.branch, count: event.count })
     case 'prVote':
-      return voteSentence(event.key, event.branch, event.vote, vi)
+      return say(VOTE_KEYS[event.vote] ?? 'notices.prNewVote', {
+        key: event.key,
+        branch: event.branch,
+      })
     case 'prReviewRequested':
-      return vi
-        ? `${event.author} nhờ anh review PR: ${event.title}`
-        : `${event.author} asked you to review PR: ${event.title}`
+      return say('notices.prReviewRequested', { author: event.author, title: event.title })
     default:
       return null
   }
 }
 
-function deployText(event: NoticeEvent, vi: boolean): string | null {
+function deployText(event: NoticeEvent, say: Say): string | null {
   switch (event.type) {
     case 'devMerged':
-      return vi
-        ? `${event.key} đã merge vào development - Jira chuyển sang Deployed to Dev, rồi Ready to Test khi CI deploy xong.`
-        : `${event.key} merged into development - Jira goes to Deployed to Dev, then Ready to Test once CI deployed.`
+      return say('notices.devMerged', { key: event.key })
     case 'deployed':
-      if (event.moved) {
-        return vi
-          ? `${event.key} đã lên dev - đã chuyển Ready to Test.`
-          : `${event.key} is on dev now - moved to Ready to Test.`
-      }
-      return vi
-        ? `${event.key} đã lên dev - chuyển Ready to Test?`
-        : `${event.key} is on dev now - Ready to Test?`
+      return say(event.moved ? 'notices.deployedMoved' : 'notices.deployedAsk', { key: event.key })
     case 'deployFailed':
-      return vi
-        ? `${event.key}: deploy dev lỗi (${event.pipeline}).`
-        : `${event.key}: dev deploy failed (${event.pipeline}).`
+      return say('notices.deployFailed', { key: event.key, pipeline: event.pipeline })
     default:
       return null
   }
 }
 
-function fieldName(field: TicketField, vi: boolean): string {
-  switch (field) {
-    case 'summary':
-      return vi ? 'tiêu đề' : 'title'
-    case 'description':
-      return vi ? 'mô tả' : 'description'
-    case 'attachments':
-      return vi ? 'file đính kèm' : 'attachments'
-    case 'dueDate':
-      return 'Due'
-    case 'eta':
-      return 'ETA'
-    case 'devPriority':
-      return 'P'
-  }
-}
-
-function ticketUpdatedText(
-  key: string,
-  fields: readonly TicketField[],
-  changedBy: string | null,
-  vi: boolean,
-): string {
-  const names = fields.map((field) => fieldName(field, vi)).join(', ')
-  const text = vi
-    ? `${key} được cập nhật trên Jira: ${names}`
-    : `${key} was updated in Jira: ${names}`
-  if (changedBy === null) {
-    return text
-  }
-  return vi ? `${text} (bởi ${changedBy})` : `${text} (by ${changedBy})`
-}
-
-const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
-const WEEKDAYS_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'] as const
-
 // "MDP-12 (Mon): not yours, did you mean MDP-21?" (port of WeekReview.ItemText).
-function weekReviewItemText(item: WeekReviewItem, vi: boolean): string {
+function weekReviewItemText(item: WeekReviewItem, say: Say): string {
   const weekday = new Date(`${item.date}T00:00:00Z`).getUTCDay()
-  const day = (vi ? WEEKDAYS_VI : WEEKDAYS_EN)[weekday] ?? item.date
-  const issue = {
-    notFound: vi ? 'không có ticket này trên Jira' : 'no such ticket in Jira',
-    notMine: vi ? 'không phải ticket của anh' : 'not yours',
-    tscOnly: vi ? 'có ở TSC nhưng không có ở HRM' : 'in TSC but not HRM',
-    hrmOnly: vi ? 'có ở HRM nhưng không có ở TSC' : 'in HRM but not TSC',
-  }[item.issue]
+  const day = say('notices.weekdays').split(',')[weekday] ?? item.date
   const suggestion =
     item.suggestedKey === null
       ? ''
-      : vi
-        ? `, có phải ${item.suggestedKey}?`
-        : `, did you mean ${item.suggestedKey}?`
-  return `${item.ticketKey} (${day}): ${issue}${suggestion}`
+      : say('notices.weekReviewSuggestion', { key: item.suggestedKey })
+  return say('notices.weekReviewItem', {
+    key: item.ticketKey,
+    day,
+    issue: say(ISSUE_KEYS[item.issue]),
+    suggestion,
+  })
 }
 
 // One notice for the week; the HRM hint only when HRM holds a wrong ticket, since its MCP has no edit or delete.
-function weekReviewText(items: readonly WeekReviewItem[], vi: boolean): string {
-  const list = items.map((item) => weekReviewItemText(item, vi)).join('; ')
-  const count = String(items.length)
+function weekReviewText(items: readonly WeekReviewItem[], say: Say): string {
+  const list = items.map((item) => weekReviewItemText(item, say)).join('; ')
   const isHrmWrong = items.some((item) => item.issue !== 'tscOnly')
-  if (vi) {
-    return `Rà soát tuần: ${count} chỗ cần xem - ${list}.${isHrmWrong ? ' HRM phải sửa trên web HRM.' : ''}`
-  }
-  return `Week review: ${count} to check - ${list}.${isHrmWrong ? ' Fix HRM on the HRM web.' : ''}`
+  return say(isHrmWrong ? 'notices.weekReviewFixHrm' : 'notices.weekReview', {
+    count: items.length,
+    list,
+  })
 }
 
-function logRunText(logged: number, kept: number, timedOut: boolean, vi: boolean): string {
+function logRunText(logged: number, kept: number, timedOut: boolean, say: Say): string {
   if (timedOut) {
-    return vi
-      ? `Tự log quá thời gian; đã giữ lại ${String(kept)} để thử lại. Nếu lặp lại, hãy kiểm tra đăng nhập TSC.`
-      : `Auto-log timed out; ${String(kept)} kept for retry. Check the TSC sign-in if this repeats.`
+    return say('notices.logTimedOut', { kept })
   }
-  if (kept !== 0) {
-    return vi
-      ? `Tự log: đã log ${String(logged)}, giữ lại ${String(kept)}. Hãy kiểm tra đăng nhập TSC - app sẽ tự thử lại.`
-      : `Auto-log: ${String(logged)} logged, ${String(kept)} kept. Check the TSC sign-in - it retries automatically.`
-  }
-  return vi ? `Tự log: đã log ${String(logged)}.` : `Auto-log: ${String(logged)} logged.`
+  return kept === 0 ? say('notices.logDone', { logged }) : say('notices.logKept', { logged, kept })
 }
 
-function scanBadText(outcome: ScanOutcome, vi: boolean): string {
-  switch (outcome) {
-    case 'stopped':
-      return vi
-        ? 'Quét knowledge bị dừng trước khi xong.'
-        : 'The knowledge scan was stopped before it finished.'
-    case 'failed':
-      return vi ? 'Quét knowledge lỗi.' : 'The knowledge scan failed.'
-    default:
-      return vi ? 'Quét knowledge xong nhưng có lỗi.' : 'The knowledge scan finished with problems.'
-  }
-}
-
-function jiraPollText(event: NoticeEvent, vi: boolean): string | null {
+function jiraPollText(event: NoticeEvent, say: Say): string | null {
   switch (event.type) {
     case 'newTickets':
-      return `${vi ? 'Ticket mới' : 'New ticket(s)'}: ${event.keys.join(', ')}`
+      return say('notices.newTickets', { keys: event.keys.join(', ') })
     case 'qcBugLogged':
-      return vi
-        ? `QC log bug ${event.key} cho ${event.parentKey}: ${event.summary}`
-        : `QC logged bug ${event.key} on ${event.parentKey}: ${event.summary}`
+      return say('notices.qcBugLogged', {
+        key: event.key,
+        parentKey: event.parentKey,
+        summary: event.summary,
+      })
     case 'ticketsDone':
-      return `${vi ? 'Đã Done trên Jira, đã chuyển sang Done' : 'Done in Jira, moved to Done'}: ${event.keys.join(', ')}`
+      return say('notices.ticketsDone', { keys: event.keys.join(', ') })
     case 'ticketsReopened':
-      return `${vi ? 'Bị trả về để làm tiếp, đã chuyển sang Đang làm' : 'Sent back for more work, moved to In progress'}: ${event.keys.join(', ')}`
+      return say('notices.ticketsReopened', { keys: event.keys.join(', ') })
     case 'autoStartFailed':
-      return vi
-        ? `${event.key}: không tự bắt đầu được (${event.code}). Hãy bấm Start trên board.`
-        : `${event.key}: could not start it automatically (${event.code}). Start it from the board.`
+      return say('notices.autoStartFailed', { key: event.key, code: event.code })
+    default:
+      return null
+  }
+}
+
+function ticketText(event: NoticeEvent, say: Say): string | null {
+  switch (event.type) {
+    case 'movedToReadyToTest':
+      return say('notices.movedToReadyToTest', { key: event.key })
+    case 'alreadyPastReadyToTest':
+      return say('notices.alreadyPastReadyToTest', { key: event.key })
+    case 'ticketMissing':
+      return say('notices.ticketMissing', { key: event.key })
+    case 'transitionFailed':
+      return say('notices.transitionFailed', { key: event.key, status: event.status })
+    case 'ticketUpdated': {
+      const fields = event.fields.map((field) => say(FIELD_KEYS[field])).join(', ')
+      return event.changedBy === null
+        ? say('notices.ticketUpdated', { key: event.key, fields })
+        : say('notices.ticketUpdatedBy', { key: event.key, fields, changedBy: event.changedBy })
+    }
     default:
       return null
   }
 }
 
 // One sentence per event, the same meaning as the C# app's notices; branch is a label like "FE Portal dev".
+// The text of each language lives in i18n/en.ts and vi.ts.
 export function noticeText(event: NoticeEvent, language: 'en' | 'vi'): string {
-  const vi = language === 'vi'
-  const known = prText(event, vi) ?? deployText(event, vi) ?? jiraPollText(event, vi)
+  const say: Say = (key, params) => coreText(language, key, params)
+  const known =
+    prText(event, say) ??
+    deployText(event, say) ??
+    jiraPollText(event, say) ??
+    ticketText(event, say)
   if (known !== null) {
     return known
   }
   switch (event.type) {
     case 'claudeWait':
-      return `${event.subject}: ${waitSentence(event.wait, vi)}`
-    case 'movedToReadyToTest':
-      return vi
-        ? `${event.key} đã chuyển sang Ready to Test.`
-        : `${event.key} moved to Ready to Test.`
-    case 'alreadyPastReadyToTest':
-      return vi
-        ? `${event.key} đã ở hoặc qua Ready to Test.`
-        : `${event.key} is already at or past Ready to Test.`
-    case 'ticketMissing':
-      return vi ? `Không tìm thấy ${event.key} trên Jira.` : `${event.key} was not found in Jira.`
-    case 'transitionFailed':
-      return vi
-        ? `${event.key}: không chuyển được sang ${event.status} (xem log).`
-        : `${event.key}: could not move to ${event.status} (see log).`
+      return say('notices.claudeWait', {
+        subject: event.subject,
+        sentence: say(WAIT_KEYS[event.wait]),
+      })
     case 'scanBad':
-      return scanBadText(event.outcome, vi)
+      return say(SCAN_KEYS[event.outcome] ?? 'notices.scanProblems')
     case 'suggestionsUrgent':
-      return vi
-        ? `Có ticket gấp để nhận: ${event.keys.join(', ')}`
-        : `Urgent tickets to take: ${event.keys.join(', ')}`
+      return say('notices.suggestionsUrgent', { keys: event.keys.join(', ') })
     case 'teamsMessage':
-      if (event.mention) {
-        return vi
-          ? `${event.sender} nhắc đến anh trong ${event.key} (${event.title}).`
-          : `${event.sender} mentioned you in ${event.key} (${event.title}).`
-      }
-      return vi
-        ? `${event.sender} nhắn trong ${event.key} (${event.title}).`
-        : `${event.sender} wrote in ${event.key} (${event.title}).`
+      return say(event.mention ? 'notices.teamsMention' : 'notices.teamsMessage', {
+        sender: event.sender,
+        key: event.key,
+        title: event.title,
+      })
     case 'qcBugFixed':
-      return vi
-        ? `${event.key} đã sửa xong - trả lời QC trên thread Teams của ${event.parentKey}.`
-        : `${event.key} is fixed - answer QC on ${event.parentKey}'s Teams thread.`
+      return say('notices.qcBugFixed', { key: event.key, parentKey: event.parentKey })
     case 'dbReviewApproved':
-      return vi
-        ? `${event.key}: DB đã được ${event.approver} duyệt. Chạy SQL trên dev rồi scaffold.`
-        : `${event.key}: DB change approved by ${event.approver}. Run the SQL on dev, then scaffold.`
-    case 'ticketUpdated':
-      return ticketUpdatedText(event.key, event.fields, event.changedBy, vi)
+      return say('notices.dbReviewApproved', { key: event.key, approver: event.approver })
     case 'logRun':
-      return logRunText(event.logged, event.kept, event.timedOut, vi)
+      return logRunText(event.logged, event.kept, event.timedOut, say)
     case 'weekReview':
-      return weekReviewText(event.items, vi)
+      return weekReviewText(event.items, say)
     case 'logReminder':
-      return vi
-        ? 'Nhắc nhở: hôm nay chưa có gì trong hàng đợi - hãy log công việc trước khi về.'
-        : 'Reminder: nothing is queued for today - log your work before you leave.'
+      return say('notices.logReminder')
     default:
       return ''
   }
