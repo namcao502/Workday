@@ -386,12 +386,15 @@ describe('WorkspaceService start and open', () => {
     const { service, git, agent } = build()
     expect(await service.open('MDP-1', false)).toEqual({ ok: false, confirmRecreate: true })
     expect(git.created).toEqual([])
+    expect(git.boardStarts).toEqual([])
     expect(service.view().tabs).toEqual([])
     expect(await service.open('MDP-1', true)).toEqual({ ok: true, warning: null })
     expect(git.created).toHaveLength(1)
-    expect(git.boardStarts).toEqual([])
     expect(agent.handles).toEqual([])
     expect(await service.open('MDP-1', false)).toEqual({ ok: true, warning: null })
+    // An opened ticket is being worked on, so it leaves Available (its PRs get tracked); no time is queued.
+    expect(git.boardStarts).toEqual(['MDP-1', 'MDP-1'])
+    expect(git.queued).toEqual([])
   })
 
   it('open while the key is starting does nothing', async () => {

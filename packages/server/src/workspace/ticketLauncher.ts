@@ -100,7 +100,7 @@ export class TicketLauncher {
       return OK
     }
     if (isDirectory(worktreePathOf(devRepo, key))) {
-      await this.deps.openTab(key)
+      await this.openStarted(key)
       return OK
     }
     if (!recreate) {
@@ -110,12 +110,18 @@ export class TicketLauncher {
     try {
       const outcome = outcomeOf(await this.create(devRepo, key))
       if (outcome.ok) {
-        await this.deps.openTab(key)
+        await this.openStarted(key)
       }
       return outcome
     } finally {
       this.end(key)
     }
+  }
+
+  // An opened ticket is being worked on: one still in Available moves to In Progress, so its PRs get tracked.
+  private async openStarted(key: string): Promise<void> {
+    await this.deps.board.start(key)
+    await this.deps.openTab(key)
   }
 
   // The dev repo, or the refusal to return.
