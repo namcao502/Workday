@@ -3,6 +3,7 @@
   "name": "Workday",
   "short_name": "Workday",
   "display": "standalone",
+  "display_override": ["window-controls-overlay"],
   "start_url": "/",
   "scope": "/",
   "theme_color": "#1c1c1e",
