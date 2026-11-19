@@ -35,3 +35,19 @@ it('no meta tag or no background leaves things as they are', () => {
   syncThemeColor()
   expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#1c1c1e')
 })
+
+it('an unchanged color is not written again, so the browser never repaints the window frames for nothing', () => {
+  document.head.innerHTML = '<meta name="theme-color" content="rgb(250, 248, 245)" />'
+  document.body.style.backgroundColor = 'rgb(250, 248, 245)'
+  const meta = document.querySelector('meta[name="theme-color"]')
+  const writes: MutationRecord[] = []
+  const observer = new MutationObserver((records) => writes.push(...records))
+  if (meta !== null) {
+    observer.observe(meta, { attributes: true })
+  }
+  syncThemeColor()
+  syncThemeColor()
+  writes.push(...observer.takeRecords())
+  observer.disconnect()
+  expect(writes).toEqual([])
+})
