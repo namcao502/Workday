@@ -357,17 +357,17 @@ html[data-season='rain'] {
   --nav-b: #6c8db0;
 }
 
-/* Dark theme: the same colors, lifted toward white so they read on a dark sidebar. */
-html[data-season] .app-sidebar {
+/* Dark theme: the same colors, lifted toward white so they read on a dark page. */
+html[data-season] {
   --nav-from: var(--nav-a);
   --nav-to: var(--nav-b);
 }
-html[data-season][data-theme='dark'] .app-sidebar {
+html[data-season][data-theme='dark'] {
   --nav-from: color-mix(in oklab, var(--nav-a) 55%, white);
   --nav-to: color-mix(in oklab, var(--nav-b) 55%, white);
 }
 
-html[data-season] .app-sidebar .nav-label {
+html[data-season] .season-title {
   position: relative;
   background: linear-gradient(90deg, var(--nav-from), var(--nav-to), var(--nav-from)) 0 0 / 200%
     100%;
@@ -376,8 +376,7 @@ html[data-season] .app-sidebar .nav-label {
   color: transparent;
 }
 
-html[data-season] .app-sidebar [aria-current='page'] .nav-label {
-  font-weight: 600;
+html[data-season] .season-title {
   animation: nav-shimmer 6s linear infinite;
 }
 
@@ -387,8 +386,8 @@ html[data-season] .app-sidebar [aria-current='page'] .nav-label {
   }
 }
 
-/* The ornament: drawn after the text, raised a little, in the season's own shape. */
-html[data-season] .app-sidebar .nav-label::after {
+/* The ornament: drawn after the page title, raised a little, in the season's own shape. */
+html[data-season] .season-title::after {
   content: '';
   display: inline-block;
   width: 9px;
@@ -399,7 +398,8 @@ html[data-season] .app-sidebar .nav-label::after {
   transform-origin: 50% 0;
 }
 
-html[data-season] .app-sidebar [aria-current='page'] .nav-label::after {
+html[data-season] .season-title::after {
+  scale: 1.35; /* sized for sidebar text; the page title is larger */
   animation: nav-sway 2.4s ease-in-out infinite alternate;
 }
 
@@ -413,7 +413,7 @@ html[data-season] .app-sidebar [aria-current='page'] .nav-label::after {
 }
 
 /* Winter: a six-point snowflake. */
-html[data-season='winter'] .app-sidebar .nav-label::after {
+html[data-season='winter'] .season-title::after {
   width: 11px;
   height: 11px;
   clip-path: polygon(
@@ -433,7 +433,7 @@ html[data-season='winter'] .app-sidebar .nav-label::after {
 }
 
 /* Christmas: a glowing gold bulb (a red one would read as the unread badge). */
-html[data-season='christmas'] .app-sidebar .nav-label::after {
+html[data-season='christmas'] .season-title::after {
   width: 7px;
   height: 10px;
   border-radius: 50% 50% 45% 45% / 40% 40% 60% 60%;
@@ -442,7 +442,7 @@ html[data-season='christmas'] .app-sidebar .nav-label::after {
 }
 
 /* Tet: a yellow mai blossom (a red lantern this small would read as the unread badge). */
-html[data-season='tet'] .app-sidebar .nav-label::after {
+html[data-season='tet'] .season-title::after {
   width: 11px;
   height: 11px;
   background:
@@ -456,7 +456,7 @@ html[data-season='tet'] .app-sidebar .nav-label::after {
 
 /* Mid-Autumn: a gold star. */
 
-html[data-season='midautumn'] .app-sidebar .nav-label::after {
+html[data-season='midautumn'] .season-title::after {
   width: 11px;
   height: 11px;
   background: #f5b82e;
@@ -475,7 +475,7 @@ html[data-season='midautumn'] .app-sidebar .nav-label::after {
 }
 
 /* Spring: five pink petals round a yellow heart. */
-html[data-season='spring'] .app-sidebar .nav-label::after {
+html[data-season='spring'] .season-title::after {
   width: 11px;
   height: 11px;
   background:
@@ -488,7 +488,7 @@ html[data-season='spring'] .app-sidebar .nav-label::after {
 }
 
 /* Summer: a small sun with a soft glow. */
-html[data-season='summer'] .app-sidebar .nav-label::after {
+html[data-season='summer'] .season-title::after {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -499,7 +499,7 @@ html[data-season='summer'] .app-sidebar .nav-label::after {
 }
 
 /* Autumn: a leaf, pointed at both ends. */
-html[data-season='autumn'] .app-sidebar .nav-label::after {
+html[data-season='autumn'] .season-title::after {
   width: 9px;
   height: 11px;
   border-radius: 2px 90% 2px 90%;
@@ -507,7 +507,7 @@ html[data-season='autumn'] .app-sidebar .nav-label::after {
 }
 
 /* Rain: a drop, point up. */
-html[data-season='rain'] .app-sidebar .nav-label::after {
+html[data-season='rain'] .season-title::after {
   width: 8px;
   height: 8px;
   border-radius: 0 50% 50% 50%;
@@ -517,8 +517,8 @@ html[data-season='rain'] .app-sidebar .nav-label::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-season] .app-sidebar [aria-current='page'] .nav-label,
-  html[data-season] .app-sidebar [aria-current='page'] .nav-label::after {
+  html[data-season] .season-title,
+  html[data-season] .season-title::after {
     animation: none;
   }
 }

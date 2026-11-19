@@ -138,8 +138,7 @@ function SidebarItem({
       }}
     >
       <PageIcon page={page} />
-      {/* nav-label: a season tints this text and hangs its ornament after it (season.css). */}
-      {collapsed ? null : <span className="nav-label">{label}</span>}
+      {collapsed ? null : <span>{label}</span>}
       {attention ? (
         <Badge
           className={badgeClass}

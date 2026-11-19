@@ -157,13 +157,13 @@ it('the selected sidebar item has aria-current and an accent background', () => 
   expect(item).toHaveClass('bg-accent-soft')
 })
 
-it('each sidebar label sits in its own span, which the season styles decorate', () => {
+it('the page title carries the season decoration, the sidebar labels do not', () => {
   stubMatchMedia(false)
   stubFetch(() => jsonResponse({}, 500))
   renderWithQuery(<Shell page="timesheet" />)
   const sidebar = screen.getByRole('navigation', { name: 'Pages' })
-  const labels = [...sidebar.querySelectorAll('.nav-label')].map((label) => label.textContent)
-  expect(labels).toEqual(['Tickets', 'Workspace', 'Timesheet', 'Insights', 'Settings'])
+  expect(sidebar.querySelector('.nav-label, .season-title')).toBeNull()
+  expect(screen.getByRole('heading', { level: 1 }).querySelector('.season-title')).not.toBeNull()
 })
 
 it('the badge text caps at 99+', () => {
