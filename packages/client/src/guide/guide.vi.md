@@ -109,7 +109,8 @@ Tab ticket nằm đầu hàng tab của Không gian làm việc, mỗi ticket b�
   đã log, mỗi ô có tên ("ETA Nov 13", "Đã log 1h"; ô trống thì ẩn), và các nhãn:
   - Nhãn PR ("PR main ● · dev ✓ · 1 comment chưa xử lý", hoặc "Chưa có PR") mở bảng PR: mỗi repo một dòng, cột MAIN và DEV. Bấm vào PR
     để mở nó; nhãn comment ("3 comment chưa xử lý") mở view Thay đổi với danh sách Comment. Khi lần kiểm tra thấy comment mới hoặc
-    conflict mới, app tự giao việc cho Claude của ticket ngay khi Claude đó rảnh (sửa, push, trả lời trên PR và resolve thread).
+    conflict mới, app tự giao việc cho Claude của ticket ngay khi Claude đó rảnh (sửa, push, trả lời trên PR và resolve thread;
+    PR của bug QC thì giao cho Claude của ticket cha).
   - "2 bug · 1 ticket con" (chỉ hiện khi có; màu đỏ khi có bug mới) mở danh sách bug QC log cho ticket (**Sửa** để bắt đầu sửa, kèm PR
     của từng bug) và các ticket con (bấm vào để mở trên Jira).
   - **Jira đã cập nhật** hiện khi có người sửa ticket trên Jira (bấm vào để xem thay đổi).

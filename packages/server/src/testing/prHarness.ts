@@ -9,7 +9,7 @@ import type {
 } from '@workday/core'
 import type { NoticeInput } from '../notices/noticeService.js'
 import { boardWith, FakePullRequests, FakeTracker, makeTicket } from './fakes.js'
-import { PrService, type PrState } from '../prs/prService.js'
+import { PrService, type AutoLineRequest, type PrState } from '../prs/prService.js'
 import { EMPTY_PR_STATE } from '../prs/prStore.js'
 
 export const NOW = new Date('2026-11-13T10:00:00Z')
@@ -81,6 +81,7 @@ export class PrHarness {
   readonly notices: NoticeInput[] = []
   readonly readPlaces: string[] = []
   readonly events: ServerEvent[] = []
+  readonly autoLines: AutoLineRequest[] = []
   board: BoardState = boardWith()
 
   constructor() {
@@ -117,6 +118,9 @@ export class PrHarness {
         repoLabels: { Backend: 'BE' },
       },
       now: () => NOW,
+      onAutoLines: (lines) => {
+        this.autoLines.push(...lines)
+      },
       logError: () => undefined,
     })
   }

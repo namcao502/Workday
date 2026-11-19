@@ -154,6 +154,25 @@ describe('PrService notices', () => {
     expect(h.events).toContainEqual({ type: 'work.changed' })
   })
 
+  it('check hands new comments and a new conflict to Claude, the baseline nothing', async () => {
+    h.board = inProgress('MDP-1', 'MDP-2')
+    h.lookups.set('MDP-1', { prs: [pr('main', 'active', { commentCount: 1 })], complete: true })
+    h.lookups.set('MDP-2', { prs: [pr('main', 'active', { merge: 'conflicts' })], complete: true })
+    const baseline = h.createService({ baselineDone: false })
+    await baseline.check()
+    expect(h.autoLines).toEqual([])
+
+    const service = h.createService({
+      tracking: { 'MDP-1|main|1': tracked('active'), 'MDP-2|main|1': tracked('active') },
+    })
+    await service.check()
+
+    expect(h.autoLines).toEqual([
+      { ticketKey: 'MDP-1', line: 'pr-comments MDP-1' },
+      { ticketKey: 'MDP-2', line: 'pr-refresh MDP-2' },
+    ])
+  })
+
   it('check adds comment alerts and markCommentsSeen clears them and reads the notices', async () => {
     h.board = inProgress('MDP-1')
     h.lookups.set('MDP-1', { prs: [pr('main', 'active', { commentCount: 3 })], complete: true })

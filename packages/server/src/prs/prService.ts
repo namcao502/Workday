@@ -48,7 +48,14 @@ export interface PrServiceDeps {
   readonly settings: PrSettings
   readonly now?: () => Date
   readonly recordJob?: RecordJob
+  // New comments or a new conflict, for the ticket's Claude to handle (AutoLineRunner).
+  readonly onAutoLines?: (lines: readonly AutoLineRequest[]) => void
   readonly logError?: (message: string, error: unknown) => void
+}
+
+export interface AutoLineRequest {
+  readonly ticketKey: string
+  readonly line: string
 }
 
 export interface PrCheckRun {
@@ -157,11 +164,14 @@ export class PrService {
         this.logError,
       )
       const requests = await this.readReviews(client)
-      const notices = await this.enqueue(() => this.applyPrs(client, pass, requests))
-      if (notices === null) {
+      const applied = await this.enqueue(() => this.applyPrs(client, pass, requests))
+      if (applied === null) {
         return
       }
-      this.notifyAll(notices)
+      this.notifyAll(applied.notices)
+      if (applied.lines.length !== 0) {
+        this.deps.onAutoLines?.(applied.lines)
+      }
       await this.checkDeploys(client)
       ok = pass.reachable
     } catch (error: unknown) {
@@ -197,7 +207,7 @@ export class PrService {
     client: PullRequests,
     pass: PrPass,
     requests: readonly PrReviewRequest[] | null,
-  ): Promise<readonly NoticeInput[] | null> {
+  ): Promise<ReturnType<typeof applyPass> | null> {
     if (this.settings.pullRequests !== client) {
       return null
     }
@@ -208,7 +218,7 @@ export class PrService {
       at: this.now().toISOString(),
     })
     await this.commit(applied.state)
-    return applied.notices
+    return applied
   }
 
   // One read of the dev pipelines' runs tells which merges reached dev. A failed read keeps the saved states.

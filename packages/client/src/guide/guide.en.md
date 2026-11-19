@@ -114,7 +114,7 @@ The ticket tabs sit first in Workspace, one per ticket you opened (Start or Open
   - The PR pill ("PR main ● · dev ✓ · 1 open comment", or "No PR yet") opens the PR table: one row per repo, MAIN and DEV. Click a PR
     to open it; a comment pill ("3 open comments") opens Changes with its Comments list. When the check finds new comments or a new
     conflict, the app hands the job to the ticket's Claude by itself, as soon as that Claude is idle (fixes, pushes, replies on the PR
-    and resolves the threads).
+    and resolves the threads; a QC bug's PR goes to its parent's Claude).
   - "2 bugs · 1 sub-task" (only when there are some; red while a bug is new) opens the QC bugs logged on the ticket (**Fix** starts
     one, with each bug's PRs) and its sub-tasks (click one to open it in Jira).
   - **Updated in Jira** appears when someone changed the ticket in Jira (click it to see what changed).

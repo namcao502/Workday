@@ -50,7 +50,10 @@ import { runNotice, runPushMessage } from './timesheet/runNotification.js'
 import { LogScheduler, type LogTimer } from './timesheet/logScheduler.js'
 import { loadQueue, saveQueue } from './timesheet/queueStore.js'
 import { qcBugsOf, readBugFixes } from './workspace/bugFixes.js'
+import { AutoLineRunner } from './workspace/autoLineRunner.js'
+import { isDirectory } from './workspace/agentSession.js'
 import { BugFixer } from './workspace/fixBug.js'
+import { worktreePathOf } from './workspace/ticketWorktrees.js'
 import { readDayActivity } from './timesheet/dayActivity.js'
 import { createDaySuggestions, type DaySuggestionsSource } from './timesheet/daySuggestions.js'
 import { TimesheetService } from './timesheet/timesheetService.js'
@@ -239,6 +242,9 @@ export function createServices(options: ServicesOptions): Services {
     save: (state) => saveWorkspace(dataDir, state),
     events,
     onWait: (session, tab, wait) => {
+      if (wait === 'finished') {
+        autoLines.runSoon()
+      }
       notices.add(claudeWaitNotice(session, tab, wait)).catch((error: unknown) => {
         reportError('Adding a Claude notice failed', error)
       })
@@ -274,7 +280,20 @@ export function createServices(options: ServicesOptions): Services {
       repoLabels: config.azureDevOps?.repoLabels ?? {},
     },
     recordJob,
+    onAutoLines: (lines) => {
+      void autoLines.queue(lines)
+    },
     ...logError,
+  })
+  // Declared after workspace and prs, which only call it once the app runs.
+  const autoLines: AutoLineRunner = new AutoLineRunner({
+    board,
+    workspace,
+    hasWorktree: (key) => {
+      const devRepo = settings.view().config.workspace.devRepoPath
+      return devRepo !== null && isDirectory(worktreePathOf(devRepo, key))
+    },
+    logError: reportError,
   })
   const suggestions: SuggestionService = new SuggestionService({
     initialState: loadSuggestionState(dataDir),

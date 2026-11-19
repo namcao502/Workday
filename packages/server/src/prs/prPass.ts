@@ -4,6 +4,7 @@ import {
   detectChanges,
   isDevPrMerged,
   mergeReviewRequests,
+  prChangeLines,
   stepsToReadyToTest,
   NetworkFailure,
   type BoardState,
@@ -16,7 +17,7 @@ import {
 } from '@workday/core'
 import type { NoticeInput } from '../notices/noticeService.js'
 import { changeNotices, devMergedNotice, reviewNotice } from './prNotices.js'
-import type { PrState } from './prService.js'
+import type { AutoLineRequest, PrState } from './prService.js'
 
 export interface TicketRead {
   readonly key: string
@@ -155,9 +156,14 @@ export function applyPass(
   pass: PrPass,
   requests: readonly PrReviewRequest[] | null,
   context: PassContext,
-): { readonly state: PrState; readonly notices: readonly NoticeInput[] } {
+): {
+  readonly state: PrState
+  readonly notices: readonly NoticeInput[]
+  readonly lines: readonly AutoLineRequest[]
+} {
   const isBaseline = !state.baselineDone
   const notices: NoticeInput[] = []
+  const lines: AutoLineRequest[] = []
   const devMergedKeys = new Set<string>()
   let { tracking, commentAlerts, reviews } = state
   for (const { key, prs } of pass.reads) {
@@ -165,6 +171,7 @@ export function applyPass(
     tracking = detected.tracking
     for (const change of isBaseline ? [] : detected.changes) {
       notices.push(...changeNotices(key, change, context.repoLabels))
+      lines.push(...prChangeLines(key, change).map((line) => ({ ticketKey: key, line })))
       commentAlerts = addCommentAlert(
         commentAlerts,
         key,
@@ -197,5 +204,5 @@ export function applyPass(
     reviews,
     reviewBaselineDone: state.reviewBaselineDone || requests !== null,
   }
-  return { state: next, notices }
+  return { state: next, notices, lines }
 }
