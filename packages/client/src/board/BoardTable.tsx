@@ -92,6 +92,7 @@ export function BoardTable({
                     prs={prsOf(work, view, row.ticket.key)}
                     repoLabels={work?.repoLabels ?? {}}
                     className=""
+                    showState
                   />
                 </td>
               ) : null}

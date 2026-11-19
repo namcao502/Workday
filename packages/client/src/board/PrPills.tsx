@@ -43,6 +43,7 @@ interface PrPillsProps {
   readonly prs: readonly TicketPr[]
   readonly repoLabels: Readonly<Record<string, string>>
   readonly className?: string // the gap after the text it follows; none in a column of its own
+  readonly showState?: boolean // under a PR column header: the worst state in words, the count on hover
 }
 
 // The worst state first: a blocker, then work to do, then waiting, then approved, and merged last.
@@ -70,12 +71,20 @@ export function PrPills({
   prs,
   repoLabels,
   className = 'ml-2',
+  showState = false,
 }: PrPillsProps): React.JSX.Element | null {
   if (prs.length === 0) {
     return null
   }
   const worst = worstState(prs)
   const label = `PR ${String(prs.length)}`
+  const dot = (
+    <span
+      aria-hidden="true"
+      className={`size-2 rounded-full ${DOT_CLASS[worst?.tone ?? 'muted']}`}
+      data-testid="pr-dot"
+    />
+  )
   return (
     <Popover>
       <Button
@@ -85,14 +94,17 @@ export function PrPills({
         aria-label={worst === undefined ? label : `${label}: ${worst.word}`}
       >
         {/* The Button drops a title prop, so the hover text sits on its content. */}
-        <span className="flex items-center gap-1.5" title={worst?.word}>
-          {label}
-          <span
-            aria-hidden="true"
-            className={`size-2 rounded-full ${DOT_CLASS[worst?.tone ?? 'muted']}`}
-            data-testid="pr-dot"
-          />
-        </span>
+        {showState ? (
+          <span className="flex items-center gap-1.5" title={label}>
+            {dot}
+            {worst?.word}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5" title={worst?.word}>
+            {label}
+            {dot}
+          </span>
+        )}
       </Button>
       <Popover.Content placement="bottom start">
         <Popover.Dialog className="w-72 max-w-[92vw]">
