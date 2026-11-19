@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import type { ChatMessage, ChatView as ChatData } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
@@ -450,4 +450,35 @@ it('a file path in a reply opens the file in the Files view; a web link stays a 
     'https://example.com/doc.md',
   )
   window.removeEventListener(OPEN_FILE_EVENT, listener)
+})
+
+it('selecting text in a reply offers Quote, which puts it in the prompt box to answer under', async () => {
+  stubChat({
+    messages: [
+      {
+        ...tool(1),
+        role: 'assistant',
+        text: 'Option one is faster. Option two is safer.',
+        toolName: null,
+        toolDetail: null,
+      },
+    ],
+  })
+  renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  const reply = await screen.findByText('Option one is faster. Option two is safer.')
+  const text = reply.firstChild
+  if (text === null) {
+    throw new Error('no text node')
+  }
+  const range = document.createRange()
+  range.setStart(text, 22)
+  range.setEnd(text, 42)
+  window.getSelection()?.removeAllRanges()
+  window.getSelection()?.addRange(range)
+  act(() => {
+    document.dispatchEvent(new Event('selectionchange'))
+  })
+  fireEvent.click(await screen.findByRole('button', { name: 'Quote' }))
+  expect(screen.getByRole('textbox')).toHaveValue('> Option two is safer.\n\n')
+  expect(screen.queryByRole('button', { name: 'Quote' })).not.toBeInTheDocument()
 })

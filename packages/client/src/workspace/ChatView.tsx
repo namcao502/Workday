@@ -7,7 +7,8 @@ import { chatKey, useChat, useRefreshFilesAfterTurn } from '../api/useWorkspace.
 import { answerRequest, rewindFiles, setSessionModel } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { ChatFileLinks } from './chatFileLinks.js'
-import { ChatComposer } from './ChatComposer.js'
+import { ChatComposer, type ChatQuoteRequest } from './ChatComposer.js'
+import { SelectionQuote } from './SelectionQuote.js'
 import { ChatRequestCard } from './ChatRequestCard.js'
 import { ChatRows } from './ChatRows.js'
 import { addEcho, dropEchoes, useEchoes } from './promptEchoes.js'
@@ -194,6 +195,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   const prompts = useMemo(() => userPrompts(messages ?? []), [messages])
   const working = chat.data?.working === true
   useRefreshFilesAfterTurn(tabId, working)
+  const [quote, setQuote] = useState<ChatQuoteRequest | null>(null)
   const background = chat.data?.background ?? []
   const model = chat.data?.model ?? null
   const running = chat.data?.running === true
@@ -381,7 +383,14 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
             </span>
           </div>
         )}
+        <SelectionQuote
+          list={listRef}
+          onQuote={(text) => {
+            setQuote((last) => ({ text, id: (last?.id ?? 0) + 1 }))
+          }}
+        />
         <ChatComposer
+          quote={quote}
           session={session}
           tabId={tabId}
           commands={chat.data?.catalog?.commands ?? []}

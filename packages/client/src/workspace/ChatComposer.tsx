@@ -1,12 +1,13 @@
 import { Button, CloseButton, Spinner, TextArea } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AgentCommand, AgentImage, AgentImageType } from '@workday/core'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ApiError } from '../api/client.js'
 import { chatKey, useFilePaths } from '../api/useWorkspace.js'
 import { interruptSession, sendPrompt } from '../api/workspaceApi.js'
 import { errorText } from '../errors.js'
 import { t } from '../i18n.js'
+import { withQuote } from './chatQuote.js'
 import { useNarrow } from '../shell/useNarrow.js'
 import {
   activeToken,
@@ -57,6 +58,12 @@ interface ChatComposerProps {
   readonly onSending?: (text: string) => void // the prompt is on its way: the chat shows it at once
   readonly onSendFailed?: () => void
   readonly history?: readonly string[] // the user's earlier prompts, oldest first; Up recalls them
+  readonly quote?: ChatQuoteRequest | null // text picked with Quote in the chat: added to the draft
+}
+
+export interface ChatQuoteRequest {
+  readonly text: string
+  readonly id: number // a new one per Quote press, so the same text quoted twice is added twice
 }
 
 function failureText(error: unknown): string {
@@ -75,6 +82,7 @@ export function ChatComposer({
   history = [],
   onSending,
   onSendFailed,
+  quote = null,
 }: ChatComposerProps): React.JSX.Element {
   const queryClient = useQueryClient()
   const narrow = useNarrow()
@@ -113,6 +121,21 @@ export function ChatComposer({
       boxRef.current?.setSelectionRange(next.caret, next.caret)
     })
   }
+
+  // A quote lands at the end of the draft with the caret under it, ready for the reply.
+  useEffect(() => {
+    if (quote === null) {
+      return
+    }
+    setText((draft) => {
+      const next = withQuote(draft, quote.text)
+      requestAnimationFrame(() => {
+        boxRef.current?.focus()
+        boxRef.current?.setSelectionRange(next.length, next.length)
+      })
+      return next
+    })
+  }, [quote])
 
   // Grow with the text up to eight lines, then scroll.
   useLayoutEffect(() => {
