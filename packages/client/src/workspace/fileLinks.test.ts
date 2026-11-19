@@ -33,7 +33,10 @@ describe('parseFileLink', () => {
     expect(parseFileLink('src/Web/app.ts:42:7')).toEqual({ path: 'src/Web/app.ts', line: 42 })
     expect(parseFileLink('src/Web/app.ts#L42')).toEqual({ path: 'src/Web/app.ts', line: 42 })
     expect(parseFileLink('C:\\Project\\x.cs:3')).toEqual({ path: 'C:/Project/x.cs', line: 3 })
-    expect(parseFileLink('file:///C:/Project/x.cs')).toEqual({ path: 'C:/Project/x.cs', line: null })
+    expect(parseFileLink('file:///C:/Project/x.cs')).toEqual({
+      path: 'C:/Project/x.cs',
+      line: null,
+    })
   })
 
   it('leaves web links, plain words and sentences alone', () => {
@@ -77,5 +80,17 @@ describe('resolveFileLink', () => {
   it('is null for a file no group has', () => {
     expect(resolveFileLink('src/missing.ts', GROUPS)).toBeNull()
     expect(resolveFileLink('D:/elsewhere/x.ts', GROUPS)).toBeNull()
+  })
+})
+
+it('a group with no folder (an older server) maps no full path and does not throw', () => {
+  const groups: readonly FilesGroupView[] = [
+    { id: 'wt0', label: 'BE', root: '', paths: ['src/x.ts'], error: null },
+  ]
+  expect(resolveFileLink('C:/anything/src/x.ts', groups)).toBeNull()
+  expect(resolveFileLink('src/x.ts', groups)).toEqual({
+    group: 'wt0',
+    path: 'src/x.ts',
+    line: null,
   })
 })

@@ -139,7 +139,11 @@ export async function getFolders(path: string | null): Promise<FolderListing> {
 
 export async function getFiles(tabId: string): Promise<readonly FilesGroupView[]> {
   const body = await getJson(tabPath(tabId, 'files'), Array.isArray)
-  return body as readonly FilesGroupView[]
+  // A server from before groups carried their folder sends none: '' maps no full path, and breaks nothing.
+  return (body as readonly FilesGroupView[]).map((group) => ({
+    ...group,
+    root: typeof (group as { root?: unknown }).root === 'string' ? group.root : '',
+  }))
 }
 
 export async function getFileContent(
