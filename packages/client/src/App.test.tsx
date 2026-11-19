@@ -82,3 +82,15 @@ it('accessRequired shows one line instead of the app', async () => {
   render(<App socketFactory={noSocket} />)
   expect(await screen.findByText('Sign in through Cloudflare Access first')).toBeInTheDocument()
 })
+
+it('tells the CSS how much the season may decorate, and drops it with the season', async () => {
+  stubMatchMedia(false)
+  const config = { ...settingsView().config, season: 'christmas', seasonEffects: 'light' } as const
+  stubFetch((url) =>
+    url === '/api/me' ? jsonResponse({ mode: 'local' }) : jsonResponse(settingsView({ config })),
+  )
+  render(<App socketFactory={noSocket} />)
+  expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
+  expect(document.documentElement.dataset['season']).toBe('christmas')
+  expect(document.documentElement.dataset['seasonEffects']).toBe('light')
+})

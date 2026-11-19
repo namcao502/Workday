@@ -100,7 +100,8 @@ export function NoticeBell(): React.JSX.Element {
 
   return (
     <Popover isOpen={open} onOpenChange={setOpen}>
-      <Badge.Anchor>
+      {/* notice-bell: a season can dress the bell (a Santa hat at Christmas, season.css). */}
+      <Badge.Anchor className="notice-bell">
         {/* While work runs the bell glyph is the spinner, as in the WPF app (BusyIndicator). */}
         <Button
           isIconOnly

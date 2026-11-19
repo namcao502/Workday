@@ -35,7 +35,7 @@ export function PageHeading({ title, actions }: PageHeadingProps): React.JSX.Ele
 // A page body: a column of blocks under its heading.
 export function Page({ title, actions, wide, className, children }: PageProps): React.JSX.Element {
   const classes = [
-    'mx-auto flex w-full flex-col gap-5 px-6 pb-8',
+    'app-page mx-auto flex w-full flex-col gap-5 px-6 pb-8',
     wide === true ? '' : 'max-w-4xl',
     className ?? '',
   ]

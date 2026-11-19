@@ -58,14 +58,18 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
     if (settings.data === undefined) {
       return
     }
+    const root = document.documentElement.dataset
     if (season === null) {
-      delete document.documentElement.dataset['season']
+      delete root['season']
+      delete root['seasonEffects']
       localStorage.removeItem(SEASON_STORAGE_KEY)
     } else {
-      document.documentElement.dataset['season'] = season
+      root['season'] = season
+      // season.css hangs the block decorations only above 'off'; 'light' keeps them still.
+      root['seasonEffects'] = level
       localStorage.setItem(SEASON_STORAGE_KEY, season)
     }
-  }, [season, settings.data])
+  }, [season, level, settings.data])
 
   if (settings.data === undefined) {
     return settings.isError ? (
