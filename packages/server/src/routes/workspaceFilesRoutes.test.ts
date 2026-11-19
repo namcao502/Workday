@@ -48,13 +48,15 @@ function get(app: FastifyInstance, url: string): Promise<LightMyRequestResponse>
 
 describe('workspace files routes', () => {
   it('lists docs and worktree files', async () => {
-    const { testApp } = await setup()
+    const { testApp, worktree } = await setup()
     const reply = await get(testApp.app, '/api/workspace/tabs/MDP-1/files')
     const groups = reply.json<FilesGroupView[]>()
     expect(groups.map((group) => [group.id, group.label, group.paths])).toEqual([
       ['docs', 'Docs - MDP-1', ['plan.md']],
       ['wt0', expect.stringMatching(/^BE - /) as string, ['a.txt', 'pic.png']],
     ])
+    // The worktree's own folder, so a full path in the chat maps to one of its files.
+    expect(groups[1]?.root).toBe(worktree)
   })
 
   it('reads text, and an image as kind image', async () => {

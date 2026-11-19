@@ -1,6 +1,6 @@
 import { LayoutSideContent } from '@gravity-ui/icons'
 import { Button } from '@heroui/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFileContent, useFiles } from '../api/useWorkspace.js'
 import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
@@ -11,9 +11,11 @@ import { useStoredSplit } from '../ui/useStoredSplit.js'
 import { useListPane } from './useListPane.js'
 import { FileViewer } from './FileViewer.js'
 import { GroupTrees, type FileRef } from './GroupTrees.js'
+import type { OpenFileRequest } from './fileLinks.js'
 
 interface FilesViewProps {
   readonly tabId: string
+  readonly request?: OpenFileRequest | null // a file link from the chat: open it, at its line
 }
 
 const LIST_SHARE = 0.3
@@ -26,13 +28,24 @@ function OpenFile({
   file,
   knownPaths,
   onSelect,
+  line = null,
 }: {
   readonly tabId: string
   readonly file: FileRef
   readonly knownPaths: readonly string[]
   readonly onSelect: (ref: FileRef) => void
+  readonly line?: number | null // brought into view once the text is shown
 }): React.JSX.Element {
   const { data, isError } = useFileContent(tabId, file.group, file.path)
+  const shown = useRef<HTMLDivElement>(null)
+  const loaded = data !== undefined
+  useEffect(() => {
+    const target =
+      line === null ? undefined : shown.current?.querySelectorAll('.code-number')[line - 1]
+    if (loaded && target !== undefined && typeof target.scrollIntoView === 'function') {
+      target.scrollIntoView({ block: 'center' })
+    }
+  }, [loaded, line])
   if (isError) {
     return (
       <p className="text-sm text-danger">{t('Could not read the file.', 'Không đọc được tệp.')}</p>
@@ -42,25 +55,34 @@ function OpenFile({
     return <p className="text-sm text-muted">{t('Loading...', 'Đang tải...')}</p>
   }
   return (
-    <FileViewer
-      tabId={tabId}
-      group={file.group}
-      path={file.path}
-      content={data}
-      knownPaths={knownPaths}
-      onSelectPath={(path) => {
-        onSelect({ group: file.group, path })
-      }}
-      onOpenInEditor={() => {
-        void openInVsCode(tabId, file.group, file.path)
-      }}
-    />
+    <div ref={shown}>
+      <FileViewer
+        tabId={tabId}
+        group={file.group}
+        path={file.path}
+        content={data}
+        knownPaths={knownPaths}
+        onSelectPath={(path) => {
+          onSelect({ group: file.group, path })
+        }}
+        onOpenInEditor={() => {
+          void openInVsCode(tabId, file.group, file.path)
+        }}
+      />
+    </div>
   )
 }
 
-export function FilesView({ tabId }: FilesViewProps): React.JSX.Element {
+export function FilesView({ tabId, request = null }: FilesViewProps): React.JSX.Element {
   const { data } = useFiles(tabId)
-  const [chosen, setChosen] = useState<FileRef | null>(null)
+  const [chosen, setChosen] = useState<FileRef | null>(
+    request === null ? null : { group: request.group, path: request.path },
+  )
+  useEffect(() => {
+    if (request !== null) {
+      setChosen({ group: request.group, path: request.path })
+    }
+  }, [request])
   const split = useStoredSplit('files')
   const groups = data ?? []
   const docs = groups.find((group) => group.id === DOCS_GROUP)
@@ -112,7 +134,19 @@ export function FilesView({ tabId }: FilesViewProps): React.JSX.Element {
           <FindablePane>
             {selected === null ? null : (
               <div key={`${selected.group}:${selected.path}`} className="animate-fade-in">
-                <OpenFile tabId={tabId} file={selected} knownPaths={known} onSelect={setChosen} />
+                <OpenFile
+                  tabId={tabId}
+                  file={selected}
+                  knownPaths={known}
+                  onSelect={setChosen}
+                  line={
+                    request !== null &&
+                    request.group === selected.group &&
+                    request.path === selected.path
+                      ? request.line
+                      : null
+                  }
+                />
               </div>
             )}
           </FindablePane>

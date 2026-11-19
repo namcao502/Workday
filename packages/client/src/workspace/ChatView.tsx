@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { chatKey, useChat } from '../api/useWorkspace.js'
 import { answerRequest, rewindFiles, setSessionModel } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
+import { ChatFileLinks } from './chatFileLinks.js'
 import { ChatComposer } from './ChatComposer.js'
 import { ChatRequestCard } from './ChatRequestCard.js'
 import { ChatRows } from './ChatRows.js'
@@ -265,162 +266,164 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <div
-          ref={listRef}
-          data-testid="chat-list"
-          className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2"
-          onScroll={(event) => {
-            const list = event.currentTarget
-            // A hidden list reports 0 for everything: that says nothing about where the reader was.
-            if (list.clientHeight === 0) {
-              return
-            }
-            atBottom.current =
-              list.scrollHeight - list.scrollTop - list.clientHeight < BOTTOM_SLACK_PX
-            setAwayFromBottom(!atBottom.current)
-          }}
-        >
-          {chat.data?.hasMore === true ? (
-            <p className="text-center text-xs text-muted">
-              {t('Earlier messages are not shown.', 'Tin nhắn cũ hơn không hiển thị.')}
-            </p>
-          ) : null}
-          {chat.data === undefined ? (
-            <p className="text-center text-sm text-muted" role="status">
-              {t('Loading the conversation...', 'Đang tải cuộc trò chuyện...')}
-            </p>
-          ) : null}
-          {empty ? (
-            <p className="m-auto max-w-sm text-center text-sm text-muted" role="status">
-              {running
-                ? t('Claude is starting...', 'Claude đang khởi động...')
-                : t(
-                    'No conversation yet. Send a message to start one.',
-                    'Chưa có cuộc trò chuyện. Gửi một tin nhắn để bắt đầu.',
-                  )}
-            </p>
-          ) : null}
-          <ChatRows
-            messages={messages ?? []}
-            {...(running && !working ? { onRewind: startRewind } : {})}
-          />
-          {echoed.map((text, index) => (
-            <div
-              key={`echo-${String(index)}-${text}`}
-              className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap"
-            >
-              {text}
-            </div>
-          ))}
-          {resumable ? (
-            <p
-              className="rounded-2xl bg-surface-secondary px-3 py-2 text-center text-xs text-muted"
-              role="status"
-            >
-              {t(
-                'This is the history of an earlier session. Send a message to continue it.',
-                'Đây là lịch sử của phiên trước. Gửi một tin nhắn để nối tiếp.',
-              )}
-            </p>
-          ) : null}
-          {(requests ?? []).map((request) => (
-            <ChatRequestCard
-              key={request.id}
-              request={request}
-              busy={answering}
-              onAnswer={(response) => {
-                answer(request.id, response)
-              }}
-            />
-          ))}
-        </div>
-        {awayFromBottom ? (
-          <Button
-            isIconOnly
-            size="sm"
-            variant="secondary"
-            className="absolute bottom-3 right-4 rounded-full shadow-overlay"
-            aria-label={t('Go to the latest message', 'Tới tin nhắn mới nhất')}
-            onPress={() => {
-              const list = listRef.current
-              if (list !== null) {
-                list.scrollTop = list.scrollHeight
-                atBottom.current = true
-                setAwayFromBottom(false)
+    <ChatFileLinks tabId={tabId}>
+      <div className="flex h-full min-h-0 w-full flex-col">
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            ref={listRef}
+            data-testid="chat-list"
+            className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2"
+            onScroll={(event) => {
+              const list = event.currentTarget
+              // A hidden list reports 0 for everything: that says nothing about where the reader was.
+              if (list.clientHeight === 0) {
+                return
               }
+              atBottom.current =
+                list.scrollHeight - list.scrollTop - list.clientHeight < BOTTOM_SLACK_PX
+              setAwayFromBottom(!atBottom.current)
             }}
           >
-            <ArrowDown />
-          </Button>
-        ) : null}
-      </div>
-      {rewind === null ? null : (
-        <RewindCard
-          rewind={rewind}
-          onConfirm={confirmRewind}
-          onCancel={() => {
-            setRewind(null)
-          }}
-        />
-      )}
-      {/* The turn can end while a subagent or shell it started keeps going; say so, or the chat looks idle. */}
-      {working || background.length === 0 ? null : (
-        <div
-          role="status"
-          aria-label={t('Running in the background', 'Đang chạy nền')}
-          className="flex min-w-0 items-center gap-2 px-3 pb-1 text-xs text-muted"
-        >
-          <Spinner size="sm" />
-          <span className="truncate">
-            {t('Running in the background', 'Đang chạy nền')}: {background.join(', ')}
-          </span>
+            {chat.data?.hasMore === true ? (
+              <p className="text-center text-xs text-muted">
+                {t('Earlier messages are not shown.', 'Tin nhắn cũ hơn không hiển thị.')}
+              </p>
+            ) : null}
+            {chat.data === undefined ? (
+              <p className="text-center text-sm text-muted" role="status">
+                {t('Loading the conversation...', 'Đang tải cuộc trò chuyện...')}
+              </p>
+            ) : null}
+            {empty ? (
+              <p className="m-auto max-w-sm text-center text-sm text-muted" role="status">
+                {running
+                  ? t('Claude is starting...', 'Claude đang khởi động...')
+                  : t(
+                      'No conversation yet. Send a message to start one.',
+                      'Chưa có cuộc trò chuyện. Gửi một tin nhắn để bắt đầu.',
+                    )}
+              </p>
+            ) : null}
+            <ChatRows
+              messages={messages ?? []}
+              {...(running && !working ? { onRewind: startRewind } : {})}
+            />
+            {echoed.map((text, index) => (
+              <div
+                key={`echo-${String(index)}-${text}`}
+                className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap"
+              >
+                {text}
+              </div>
+            ))}
+            {resumable ? (
+              <p
+                className="rounded-2xl bg-surface-secondary px-3 py-2 text-center text-xs text-muted"
+                role="status"
+              >
+                {t(
+                  'This is the history of an earlier session. Send a message to continue it.',
+                  'Đây là lịch sử của phiên trước. Gửi một tin nhắn để nối tiếp.',
+                )}
+              </p>
+            ) : null}
+            {(requests ?? []).map((request) => (
+              <ChatRequestCard
+                key={request.id}
+                request={request}
+                busy={answering}
+                onAnswer={(response) => {
+                  answer(request.id, response)
+                }}
+              />
+            ))}
+          </div>
+          {awayFromBottom ? (
+            <Button
+              isIconOnly
+              size="sm"
+              variant="secondary"
+              className="absolute bottom-3 right-4 rounded-full shadow-overlay"
+              aria-label={t('Go to the latest message', 'Tới tin nhắn mới nhất')}
+              onPress={() => {
+                const list = listRef.current
+                if (list !== null) {
+                  list.scrollTop = list.scrollHeight
+                  atBottom.current = true
+                  setAwayFromBottom(false)
+                }
+              }}
+            >
+              <ArrowDown />
+            </Button>
+          ) : null}
         </div>
-      )}
-      <ChatComposer
-        session={session}
-        tabId={tabId}
-        commands={chat.data?.catalog?.commands ?? []}
-        working={working}
-        history={prompts}
-        onSending={(text) => {
-          addEcho(session, text)
-        }}
-        onSendFailed={() => {
-          dropEchoes(session)
-        }}
-      />
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 pb-1 text-xs text-muted">
-        {model === null ? null : (
-          <ModelPicker
-            session={session}
-            model={model}
-            models={chat.data?.catalog?.models ?? []}
-            disabled={working}
+        {rewind === null ? null : (
+          <RewindCard
+            rewind={rewind}
+            onConfirm={confirmRewind}
+            onCancel={() => {
+              setRewind(null)
+            }}
           />
         )}
-        {branch === null ? null : <span className="text-purple-500">{branch}</span>}
-        {added === 0 && removed === 0 ? null : (
-          <span>
-            <span className="text-success">+{added}</span>{' '}
-            <span className="text-danger">-{removed}</span>
-          </span>
+        {/* The turn can end while a subagent or shell it started keeps going; say so, or the chat looks idle. */}
+        {working || background.length === 0 ? null : (
+          <div
+            role="status"
+            aria-label={t('Running in the background', 'Đang chạy nền')}
+            className="flex min-w-0 items-center gap-2 px-3 pb-1 text-xs text-muted"
+          >
+            <Spinner size="sm" />
+            <span className="truncate">
+              {t('Running in the background', 'Đang chạy nền')}: {background.join(', ')}
+            </span>
+          </div>
         )}
-        {tokens === null ? null : (
-          <span>
-            {t('Tokens', 'Token')}:{' '}
-            <span className="font-semibold text-foreground">{formatTokens(tokens)}</span>
-            {usage === null || usage.contextPercent === null
-              ? ''
-              : ` (${String(Math.round(usage.contextPercent))}%)`}
-          </span>
-        )}
-        {usage === null || usage.usage === null ? null : <UsageStat window={usage.usage} />}
-        {mode === 'bypassPermissions' ? (
-          <span>{t('Bypass permissions on', 'Đang bỏ qua quyền')}</span>
-        ) : null}
+        <ChatComposer
+          session={session}
+          tabId={tabId}
+          commands={chat.data?.catalog?.commands ?? []}
+          working={working}
+          history={prompts}
+          onSending={(text) => {
+            addEcho(session, text)
+          }}
+          onSendFailed={() => {
+            dropEchoes(session)
+          }}
+        />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 pb-1 text-xs text-muted">
+          {model === null ? null : (
+            <ModelPicker
+              session={session}
+              model={model}
+              models={chat.data?.catalog?.models ?? []}
+              disabled={working}
+            />
+          )}
+          {branch === null ? null : <span className="text-purple-500">{branch}</span>}
+          {added === 0 && removed === 0 ? null : (
+            <span>
+              <span className="text-success">+{added}</span>{' '}
+              <span className="text-danger">-{removed}</span>
+            </span>
+          )}
+          {tokens === null ? null : (
+            <span>
+              {t('Tokens', 'Token')}:{' '}
+              <span className="font-semibold text-foreground">{formatTokens(tokens)}</span>
+              {usage === null || usage.contextPercent === null
+                ? ''
+                : ` (${String(Math.round(usage.contextPercent))}%)`}
+            </span>
+          )}
+          {usage === null || usage.usage === null ? null : <UsageStat window={usage.usage} />}
+          {mode === 'bypassPermissions' ? (
+            <span>{t('Bypass permissions on', 'Đang bỏ qua quyền')}</span>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </ChatFileLinks>
   )
 }

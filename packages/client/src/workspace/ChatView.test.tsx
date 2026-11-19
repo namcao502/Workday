@@ -3,6 +3,7 @@ import type { ChatMessage, ChatView as ChatData } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
 import { ChatView } from './ChatView.js'
+import { OPEN_FILE_EVENT } from './fileLinks.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -411,4 +412,42 @@ it('a jump-to-latest button shows once the reader scrolls up and takes them to t
   fireEvent.scroll(list)
   fireEvent.click(await screen.findByRole('button', { name: 'Go to the latest message' }))
   expect(list.scrollTop).toBe(1000)
+})
+
+it('a file path in a reply opens the file in the Files view; a web link stays a web link', async () => {
+  const groups = [
+    { id: 'wt0', label: 'BE - Backend', root: 'C:/wt/claude', paths: ['src/app.ts'], error: null },
+  ]
+  stubFetch((url) =>
+    url === '/api/workspace/tabs/claude/files'
+      ? jsonResponse(groups)
+      : jsonResponse(
+          chatData({
+            messages: [
+              {
+                ...tool(1),
+                role: 'assistant',
+                text: 'Fixed in `src/app.ts:12`, see [the docs](https://example.com/doc.md).',
+                toolName: null,
+                toolDetail: null,
+              },
+            ],
+          }),
+        ),
+  )
+  const opened: unknown[] = []
+  const listener = (event: Event): void => {
+    opened.push((event as CustomEvent).detail)
+  }
+  window.addEventListener(OPEN_FILE_EVENT, listener)
+  renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  fireEvent.click(await screen.findByRole('button', { name: 'src/app.ts:12' }))
+  expect(opened).toEqual([
+    expect.objectContaining({ tabId: 'claude', group: 'wt0', path: 'src/app.ts', line: 12 }),
+  ])
+  expect(screen.getByRole('link', { name: 'the docs' })).toHaveAttribute(
+    'href',
+    'https://example.com/doc.md',
+  )
+  window.removeEventListener(OPEN_FILE_EVENT, listener)
 })

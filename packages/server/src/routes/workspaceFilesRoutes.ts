@@ -111,8 +111,8 @@ export function registerWorkspaceFilesRoutes(
           const paths =
             group.kind === 'docs' ? await listDocs(group.root) : await listWorktree(group.root)
           return paths === null
-            ? { id: group.id, label: group.label, paths: [], error: GIT_FAILED }
-            : { id: group.id, label: group.label, paths, error: null }
+            ? { id: group.id, label: group.label, root: group.root, paths: [], error: GIT_FAILED }
+            : { id: group.id, label: group.label, root: group.root, paths, error: null }
         }),
       )
     },

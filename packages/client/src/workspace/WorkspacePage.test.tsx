@@ -1,7 +1,8 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { SessionView, WorkspaceTab, WorkspaceView } from '@workday/core'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
+import { openWorkspaceFile } from './fileLinks.js'
 import { WorkspacePage } from './WorkspacePage.js'
 
 function ticketTab(id: string, extra: readonly string[] = []): WorkspaceTab {
@@ -175,4 +176,42 @@ it('asks before closing a tab even when no session is running, and a running Cla
     await screen.findByText('Claude 2 is still running. Close it and stop it?'),
   ).toBeInTheDocument()
   expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+})
+
+it('a file link from the chat opens the file in the Files view of that tab', async () => {
+  const groups = [
+    {
+      id: 'docs',
+      label: 'Docs - MDP-1',
+      root: 'C:/wt/MDP-1/docs/MDP-1',
+      paths: ['plan.md'],
+      error: null,
+    },
+    { id: 'wt0', label: 'BE - Backend', root: 'C:/wt/MDP-1', paths: ['src/app.ts'], error: null },
+  ]
+  stubFetch((url) => {
+    if (url === '/api/workspace') {
+      return jsonResponse(view())
+    }
+    if (url === '/api/workspace/tabs/MDP-1/files') {
+      return jsonResponse(groups)
+    }
+    if (url.startsWith('/api/workspace/tabs/MDP-1/files/content') && url.includes('src%2Fapp.ts')) {
+      return jsonResponse({ kind: 'text', text: 'export const answer = 42' })
+    }
+    return jsonResponse({})
+  })
+  window.location.hash = '#/workspace/MDP-1'
+  renderWithQuery(<WorkspacePage />)
+  await screen.findByTestId('workspace-left')
+  // Start on Changes, so the link has to switch the pane to Files.
+  fireEvent.click(screen.getByRole('tab', { name: 'Changes' }))
+  act(() => {
+    openWorkspaceFile('MDP-1', { group: 'wt0', path: 'src/app.ts', line: 1 })
+  })
+  // The viewer splits a line into highlighted pieces, so the pane's text is what to check.
+  await waitFor(() => {
+    expect(screen.getByTestId('workspace-left')).toHaveTextContent('export const answer = 42')
+  })
+  expect(screen.getByRole('tab', { name: 'Files' })).toHaveAttribute('aria-selected', 'true')
 })

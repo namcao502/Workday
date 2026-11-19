@@ -478,6 +478,7 @@ export interface FolderListing {
 export interface FilesGroupView {
   readonly id: string
   readonly label: string
+  readonly root: string // the folder on this PC: a full path Claude writes maps to a file of the group
   readonly paths: readonly string[]
   readonly error: AppError | null
 }

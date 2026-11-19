@@ -5,8 +5,8 @@ import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { t } from '../i18n.js'
 import { copyWithListMarkers } from '../ui/copyListMarkers.js'
-import { ctrlLinkHint, openLinkOnCtrl } from '../ui/ctrlLink.js'
 import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
+import { ChatCode, ChatLink } from './chatFileLinks.js'
 
 const COLLAPSE_FROM = 4
 
@@ -41,17 +41,8 @@ export function groupRows(messages: readonly ChatMessage[]): readonly Row[] {
 // react-markdown drops raw HTML unless a plugin allows it, and none does.
 const COMPONENTS: Components = {
   ...COPY_BLOCKS,
-  a: ({ href, children }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer noopener"
-      title={ctrlLinkHint()}
-      onClick={openLinkOnCtrl}
-    >
-      {children}
-    </a>
-  ),
+  a: ({ href, children }) => <ChatLink href={href}>{children}</ChatLink>,
+  code: ({ className, children }) => <ChatCode className={className}>{children}</ChatCode>,
 }
 
 // Memoized by text: a refetch hands over the same strings, and parsing markdown is the costly part of a render.

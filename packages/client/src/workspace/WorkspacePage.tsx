@@ -17,6 +17,7 @@ import { SplitView } from '../ui/SplitView.js'
 import { useStoredSplit } from '../ui/useStoredSplit.js'
 import { TicketInfoBar } from './TicketInfoBar.js'
 import { ClaudePane, sessionLabel } from './ClaudePane.js'
+import { isOpenFileRequest, OPEN_FILE_EVENT, type OpenFileRequest } from './fileLinks.js'
 import { LeftPane } from './LeftPane.js'
 import {
   rememberedSelection,
@@ -110,6 +111,25 @@ export function WorkspacePage(): React.JSX.Element {
       }
     }
   })
+
+  // A file link in the chat opens the file in this tab's Files view, showing the pane if it was hidden.
+  const [fileRequest, setFileRequest] = useState<OpenFileRequest | null>(null)
+  useEffect(() => {
+    function open(event: Event): void {
+      if (
+        event instanceof CustomEvent &&
+        isOpenFileRequest(event.detail) &&
+        event.detail.tabId === tabId
+      ) {
+        showBoth.current()
+        setFileRequest(event.detail)
+      }
+    }
+    window.addEventListener(OPEN_FILE_EVENT, open)
+    return () => {
+      window.removeEventListener(OPEN_FILE_EVENT, open)
+    }
+  }, [tabId])
 
   // A Teams notice must be visible even if the left pane was hidden.
   const teamsConversation = teamsConversationFromHash(window.location.hash)
@@ -241,6 +261,7 @@ export function WorkspacePage(): React.JSX.Element {
                 key={`left-${tab.id}`}
                 tab={tab}
                 teamsConversation={teamsConversation}
+                fileRequest={fileRequest?.tabId === tab.id ? fileRequest : null}
                 toggle={
                   hidden === 'right'
                     ? {

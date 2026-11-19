@@ -5,6 +5,7 @@ import { openInVsCode } from '../api/workspaceApi.js'
 import { t } from '../i18n.js'
 import { ChangesView } from './ChangesView.js'
 import { FilesView } from './FilesView.js'
+import type { OpenFileRequest } from './fileLinks.js'
 import { SEGMENT_GROUP, segmentClass } from '../ui/segmentedStyle.js'
 import type { PaneToggle } from './paneToggle.js'
 import { TeamsView } from './teams/TeamsView.js'
@@ -16,6 +17,7 @@ interface LeftPaneProps {
   readonly tab: WorkspaceTab
   readonly teamsConversation: string | null // from the hash; opens the Teams view on it
   readonly toggle: PaneToggle // hides this pane, or brings Claude back
+  readonly fileRequest?: OpenFileRequest | null // a file link from the chat: show it in Files
 }
 
 function TeamsTabButton({
@@ -54,6 +56,7 @@ export function LeftPane({
   tab: workspaceTab,
   teamsConversation,
   toggle,
+  fileRequest = null,
 }: LeftPaneProps): React.JSX.Element {
   const tabId = workspaceTab.id
   const isTicket = workspaceTab.kind === 'ticket'
@@ -66,6 +69,12 @@ export function LeftPane({
       setTab('teams')
     }
   }, [teamsConversation, isTicket])
+  const fileRequestId = fileRequest?.id
+  useEffect(() => {
+    if (fileRequestId !== undefined) {
+      setTab('files')
+    }
+  }, [fileRequestId])
   return (
     <div
       className="flex min-h-0 min-w-0 flex-1 flex-col rounded-2xl bg-surface p-3 shadow-surface"
@@ -125,7 +134,7 @@ export function LeftPane({
         className={`min-h-0 flex-1 ${tab === 'teams' ? 'overflow-auto pr-2 [scrollbar-gutter:stable]' : 'overflow-hidden'}`}
       >
         {tab === 'changes' ? <ChangesView tabId={tabId} /> : null}
-        {tab === 'files' ? <FilesView tabId={tabId} /> : null}
+        {tab === 'files' ? <FilesView tabId={tabId} request={fileRequest} /> : null}
         {tab === 'teams' ? (
           <TeamsView
             ticket={tabId}
