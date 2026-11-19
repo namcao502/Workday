@@ -64,7 +64,7 @@ export function BoardTable({
           <tr>
             <th className={th}>{t('Key', 'Mã')}</th>
             <th className={th}>{t('Summary', 'Tóm tắt')}</th>
-            {hasPrs ? <th className={th}>PR</th> : null}
+            {hasPrs ? <th className={th.replace('text-left', 'text-center')}>PR</th> : null}
             <th className={th}>{t('Status', 'Trạng thái')}</th>
             <th className={th}>{t('Due', 'Hạn')}</th>
             <th className={th}>{t('ETA', 'ETA')}</th>
@@ -87,7 +87,7 @@ export function BoardTable({
                 </div>
               </td>
               {hasPrs ? (
-                <td className={`${td} whitespace-nowrap`}>
+                <td className={`${td} whitespace-nowrap text-center`}>
                   <PrPills
                     prs={prsOf(work, view, row.ticket.key)}
                     repoLabels={work?.repoLabels ?? {}}
