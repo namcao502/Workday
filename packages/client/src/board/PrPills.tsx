@@ -1,3 +1,4 @@
+import { Comment } from '@gravity-ui/icons'
 import { Button, Popover } from '@heroui/react'
 import { repoLabel, type TicketPr } from '@workday/core'
 import { t } from '../i18n.js'
@@ -40,6 +41,18 @@ function prState(pr: TicketPr['pr']): PrState {
   return { word: t('Waiting', 'Chờ merge'), tone: 'muted', mark: MARK_DOT }
 }
 
+// Unresolved review threads; a merged or abandoned PR's leftovers wait on nobody.
+function openComments(pr: TicketPr['pr']): number {
+  return pr.status === 'active' ? (pr.openThreadCount ?? 0) : 0
+}
+
+function openCommentsText(count: number): string {
+  return t(
+    `${String(count)} open comment${count === 1 ? '' : 's'}`,
+    `${String(count)} comment chưa xử lý`,
+  )
+}
+
 interface PrPillsProps {
   readonly prs: readonly TicketPr[]
   readonly repoLabels: Readonly<Record<string, string>>
@@ -79,6 +92,8 @@ export function PrPills({
   }
   const worst = worstState(prs)
   const label = `PR ${String(prs.length)}`
+  const comments = prs.reduce((total, ticketPr) => total + openComments(ticketPr.pr), 0)
+  const stateLabel = worst === undefined ? label : `${label}: ${worst.word}`
   const dot = (
     <span
       aria-hidden="true"
@@ -92,7 +107,7 @@ export function PrPills({
         size="sm"
         variant="secondary"
         className={`${className} align-middle`.trim()}
-        aria-label={worst === undefined ? label : `${label}: ${worst.word}`}
+        aria-label={comments === 0 ? stateLabel : `${stateLabel}, ${openCommentsText(comments)}`}
       >
         {showState ? (
           <Tip className="flex items-center gap-1.5" content={label}>
@@ -105,9 +120,18 @@ export function PrPills({
             {dot}
           </Tip>
         )}
+        {comments === 0 ? null : (
+          <Tip
+            className="flex items-center gap-1 text-warning"
+            content={openCommentsText(comments)}
+          >
+            <Comment aria-hidden="true" />
+            {comments}
+          </Tip>
+        )}
       </Button>
       <Popover.Content placement="bottom start">
-        <Popover.Dialog className="w-72 max-w-[92vw]">
+        <Popover.Dialog className="w-80 max-w-[92vw]">
           <Popover.Heading className="pb-2 font-semibold">
             {t('Pull requests', 'Pull request')}
           </Popover.Heading>
@@ -133,6 +157,11 @@ export function PrPills({
                       />
                       <span className="min-w-0 flex-1 truncate">{`${repo} ${ticketPr.branch}`}</span>
                       <span className="shrink-0 text-muted">{`${state.mark} ${state.word}`}</span>
+                      {openComments(ticketPr.pr) === 0 ? null : (
+                        <span className="shrink-0 text-warning">
+                          {openCommentsText(openComments(ticketPr.pr))}
+                        </span>
+                      )}
                     </a>
                   </Tip>
                 </li>
