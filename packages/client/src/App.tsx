@@ -15,6 +15,7 @@ import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
 import { useNarrow } from './shell/useNarrow.js'
 import { pageFromHash, type PageId } from './shell/pages.js'
+import { syncThemeColor } from './shell/themeColor.js'
 import { Shell } from './shell/Shell.js'
 
 // Same keys as the inline script in index.html.
@@ -67,6 +68,13 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
       localStorage.setItem(SEASON_STORAGE_KEY, season)
     }
   }, [season, settings.data])
+
+  // Only when the look changes: settings.data is a new object after every refetch.
+  useLayoutEffect(() => {
+    if (theme !== undefined) {
+      syncThemeColor()
+    }
+  }, [theme, season])
 
   if (settings.data === undefined) {
     return settings.isError ? (

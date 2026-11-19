@@ -386,3 +386,33 @@ body {
     animation: none;
   }
 }
+
+/* Installed app with its title bar hidden: the top bar drags the window, its controls still click,
+   and the right edge leaves room for the minimize / maximize / close buttons. */
+@media (display-mode: window-controls-overlay) {
+  .app-titlebar {
+    -webkit-app-region: drag;
+    app-region: drag;
+    padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 1rem);
+  }
+
+  /* A whole tab strip, gaps and scrolling included, belongs to the page: a click there must never
+     reach Windows, where a double-click restores the maximized window. */
+  .app-titlebar
+    :is(
+      button,
+      a,
+      input,
+      select,
+      textarea,
+      label,
+      [role='button'],
+      [role='tab'],
+      [role='tablist'],
+      [draggable='true'],
+      [tabindex]
+    ) {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}
