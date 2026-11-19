@@ -146,7 +146,12 @@ export class FakeTeams implements TeamsGateway {
     return this.writeError === null ? Promise.resolve() : Promise.reject(this.writeError)
   }
 
+  readonly refusedReactionKeys = new Set<string>()
+
   setReaction(conversationId: string, messageId: string, key: string, add: boolean): Promise<void> {
+    if (this.refusedReactionKeys.has(key)) {
+      return Promise.reject(new Error(`Teams refused the reaction ${key}`))
+    }
     this.reactions.push([conversationId, messageId, key, add])
     return Promise.resolve()
   }

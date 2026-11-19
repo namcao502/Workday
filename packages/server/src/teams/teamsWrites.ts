@@ -17,6 +17,9 @@ import type { TeamsGateway } from './teamsChatClient.js'
 import { bodyWithImages } from './teamsImages.js'
 import type { TeamsLookup } from './teamsLookup.js'
 
+// Teams' key for the eyes emoji (U+1F440); not one of the six quick reactions.
+const ACKNOWLEDGE_REACTION = '1f440_eyes'
+
 // 'invalid': the request itself is wrong (empty after the whitelist, a key Teams does not take); the route answers 400.
 export type WriteOutcome = TeamsWriteResult | 'invalid'
 
@@ -194,6 +197,32 @@ export class TeamsWrites {
           reaction.key === request.key && reaction.userMris.some((mri) => sameId(mri, myId)),
       )
       await chat.setReaction(conversationOf(thread, message.id), message.id, request.key, !mine)
+      return { ok: true, id: null }
+    })
+  }
+
+  // "Got it, on it": eyes on a new message, like if Teams will not take eyes. A message I already reacted to
+  // keeps my reaction: react() toggles, this only ever adds.
+  acknowledge(ticketKey: string, conversationId: string, messageId: string): Promise<WriteOutcome> {
+    return this.run(ticketKey, 'acknowledgement', async (chat) => {
+      const thread = await this.lookup.resolveThread(chat, ticketKey, conversationId)
+      const message = thread?.messages.find((tm) => tm.id === messageId)
+      if (thread === null || message === undefined) {
+        return FAILED
+      }
+      const myId = await chat.myId()
+      if (
+        message.reactions.some((reaction) => reaction.userMris.some((mri) => sameId(mri, myId)))
+      ) {
+        return { ok: true, id: null }
+      }
+      const conversation = conversationOf(thread, message.id)
+      try {
+        await chat.setReaction(conversation, message.id, ACKNOWLEDGE_REACTION, true)
+      } catch {
+        this.lookup.log(`[teams] ${ticketKey}: eyes refused, acknowledging with like`)
+        await chat.setReaction(conversation, message.id, 'like', true)
+      }
       return { ok: true, id: null }
     })
   }

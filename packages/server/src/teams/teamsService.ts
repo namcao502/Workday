@@ -19,6 +19,7 @@ import {
 } from '@workday/core'
 import type { TeamsGateway } from './teamsChatClient.js'
 import { TeamsAnalysisRunner } from './teamsAnalysisRunner.js'
+import type { NewTeamsMessage } from './teamsWatcher.js'
 import { loadPostDraft, ticketSummary } from './teamsDraft.js'
 import { buildClaudeTask, handOff, type PromptOutcome } from './teamsHandOff.js'
 import { isLoadableImageUrl, TeamsLookup, type TeamsLookupDeps } from './teamsLookup.js'
@@ -75,6 +76,7 @@ export class TeamsService {
   readonly lookup: TeamsLookup
   readonly write: TeamsWrites
   private readonly analysis: TeamsAnalysisRunner
+  private readonly awaitingAnalysis = new Map<string, NewTeamsMessage>() // ticket|conversation -> newest message
   private settings: TeamsSettings = NOT_CONFIGURED
   private signedIn: boolean | null = null
   private readonly signInListeners: (() => void)[] = []
@@ -113,6 +115,35 @@ export class TeamsService {
       })
     } catch (error: unknown) {
       return { ok: false, error: teamsError(error) }
+    }
+  }
+
+  // A message the background check just found: eyes on it at once, then Claude's suggested replies, now if the
+  // ticket's Claude is free, else after one of its turns ends (retryAnalyses).
+  async onNewMessages(messages: readonly NewTeamsMessage[]): Promise<void> {
+    for (const message of messages) {
+      await this.write.acknowledge(message.ticketKey, message.conversationId, message.messageId)
+      this.awaitingAnalysis.set(`${message.ticketKey}|${message.conversationId}`, message)
+    }
+    await this.retryAnalyses()
+  }
+
+  // A conversation leaves the list once its analysis runs or is current; a failed start waits for the next turn.
+  async retryAnalyses(): Promise<void> {
+    for (const [key, message] of [...this.awaitingAnalysis]) {
+      const session = message.ticketKey
+      if (!this.deps.workspace.isIdleAndWarm(session)) {
+        continue
+      }
+      const view = await this.analysisStatus(
+        message.ticketKey,
+        message.conversationId,
+        message.messageId,
+        session,
+      )
+      if (view.kind === 'running' || (view.kind === 'done' && !view.stale)) {
+        this.awaitingAnalysis.delete(key)
+      }
     }
   }
 

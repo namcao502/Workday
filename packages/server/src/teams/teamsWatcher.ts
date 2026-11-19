@@ -50,8 +50,16 @@ export interface TeamsWatcherDeps {
   // The current fix drafts, read at the start of each check; without it no bug fix is watched.
   readonly readBugFixes?: () => Promise<readonly BugFix[]>
   readonly recordJob?: RecordJob
+  // The messages that just raised a notice: acknowledged and analyzed by TeamsService.
+  readonly onNewMessages?: (messages: readonly NewTeamsMessage[]) => void
   readonly now?: () => number
   readonly logError: (message: string, error: unknown) => void
+}
+
+export interface NewTeamsMessage {
+  readonly ticketKey: string
+  readonly conversationId: string // as the Teams view and the analysis name it
+  readonly messageId: string // the newest message waiting for an answer
 }
 
 interface Conversation {
@@ -377,6 +385,7 @@ export class TeamsWatcher {
     for (const { ticketKey, thread } of conversations) {
       this.bugReplies.update(ticketKey, thread, myId, threadKey(ticketKey, thread))
     }
+    this.handOnNew(found.raised, conversations)
     const fixNotices = this.bugReplies.announce().map(fixNoticeOf)
     for (const input of [
       ...found.raised.map(noticeOf),
@@ -386,6 +395,33 @@ export class TeamsWatcher {
       await this.deps.notices.add(input).catch((error: unknown) => {
         this.deps.logError('Adding a Teams notice failed', error)
       })
+    }
+  }
+
+  // The raised item names the newest waiting message by its time; its id comes from the thread read with it.
+  private handOnNew(
+    raised: readonly TeamsAttentionItem[],
+    conversations: readonly Conversation[],
+  ): void {
+    const messages = raised.flatMap((item): NewTeamsMessage[] => {
+      const conversation = conversations.find(
+        (candidate) => threadKey(candidate.ticketKey, candidate.thread) === item.conversationKey,
+      )
+      const message = conversation?.thread.messages.find(
+        (candidate) => candidate.sentAt === item.sentAt,
+      )
+      return message === undefined
+        ? []
+        : [
+            {
+              ticketKey: item.ticketKey,
+              conversationId: item.conversationId,
+              messageId: message.id,
+            },
+          ]
+    })
+    if (messages.length !== 0) {
+      this.deps.onNewMessages?.(messages)
     }
   }
 

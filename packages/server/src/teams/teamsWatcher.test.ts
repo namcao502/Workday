@@ -11,7 +11,7 @@ import { ME, NOON, teamsMessage, threadOf } from '../testing/fakeTeams.js'
 import { boardWith, makeTicket } from '../testing/fakes.js'
 import { indexedOwnPost, serviceRig } from '../testing/teamsServiceRig.js'
 import { EMPTY_TEAMS_STATE, type TeamsState } from './teamsStore.js'
-import { TeamsWatcher } from './teamsWatcher.js'
+import { TeamsWatcher, type NewTeamsMessage } from './teamsWatcher.js'
 
 const KEY = 'MDP-1|c1;messageid=r1'
 const OTHER = 'someone'
@@ -31,6 +31,7 @@ function rig(
     inProgress: started ? { 'MDP-1': makeTicket('MDP-1') } : {},
   })
   const fixes: BugFix[] = []
+  const arrived: NewTeamsMessage[] = []
   const watcher = new TeamsWatcher({
     lookup: base.service.lookup,
     board: { snapshot: () => board },
@@ -55,6 +56,7 @@ function rig(
     dbReviewChannel: () => (dbReview ? DB_CHANNEL : null),
     readBugFixes: () => Promise.resolve([...fixes]),
     ...(now === undefined ? {} : { now }),
+    onNewMessages: (messages) => arrived.push(...messages),
     logError: () => undefined,
   })
   base.service.onSignedIn(() => {
@@ -63,7 +65,7 @@ function rig(
   const setReplies = (...replies: ReturnType<typeof teamsMessage>[]): void => {
     base.teams.threads.set('c1|r1', threadOf('c1', 'r1', ...replies))
   }
-  return { ...base, watcher, added, read, events, scheduler, board, setReplies, fixes }
+  return { ...base, watcher, added, read, events, scheduler, board, setReplies, fixes, arrived }
 }
 
 function reply(id: string, minutes: number, mention = false): ReturnType<typeof teamsMessage> {
@@ -107,6 +109,19 @@ describe('TeamsWatcher.check', () => {
     expect(h.watcher.items().map((item) => item.sentAt)).toEqual([reply('m2', 10).sentAt])
     expect(h.watcher.pendingIds('MDP-1')).toEqual(['c1'])
     expect(h.events).toContainEqual({ type: 'work.changed' })
+  })
+
+  it('hands each newly raised message on once, with its newest message id', async () => {
+    const h = rig()
+    h.setReplies(reply('m1', 5))
+    await h.watcher.check()
+    expect(h.arrived).toEqual([])
+    h.setReplies(reply('m1', 5), reply('m2', 10), reply('m3', 12))
+
+    await h.watcher.check()
+    await h.watcher.check()
+
+    expect(h.arrived).toEqual([{ ticketKey: 'MDP-1', conversationId: 'c1', messageId: 'm3' }])
   })
 
   it('a mention makes the to-do needed now and uses the teamsMention topic', async () => {

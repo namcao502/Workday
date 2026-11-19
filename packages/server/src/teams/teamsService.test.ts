@@ -174,3 +174,20 @@ describe('TeamsService.read', () => {
     expect((await service.read('MDP-1', '')).state).toBe('notConfigured')
   })
 })
+
+describe('TeamsService new messages', () => {
+  it('acknowledges a new message and has a free Claude suggest replies, a busy one once its turn ends', async () => {
+    const { teams, service, claude } = serviceRig(['c1'], indexedOwnPost('c1', 'r1'))
+    teams.threads.set('c1|r1', threadOf('c1', 'r1', teamsMessage('m1', { senderId: 'qc' })))
+
+    await service.onNewMessages([{ ticketKey: 'MDP-1', conversationId: 'c1', messageId: 'm1' }])
+    expect(teams.reactions).toEqual([['c1;messageid=r1', 'm1', '1f440_eyes', true]])
+    expect(claude.prompts).toEqual([])
+
+    claude.idle = true
+    await service.retryAnalyses()
+    await service.retryAnalyses()
+    expect(claude.prompts).toHaveLength(1)
+    expect(claude.prompts[0]).toMatch(/MDP-1-analysis-.*\.md/)
+  })
+})

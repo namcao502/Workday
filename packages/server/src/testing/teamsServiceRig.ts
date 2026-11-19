@@ -1,3 +1,6 @@
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { TeamsPostIndex } from '@workday/core'
 import { TeamsService } from '../teams/teamsService.js'
 import { EMPTY_TEAMS_STATE, type TeamsState } from '../teams/teamsStore.js'
@@ -9,6 +12,8 @@ export interface ServiceRig {
   readonly service: TeamsService
   readonly clock: { now: Date }
   readonly saved: { index: TeamsPostIndex; state: TeamsState; fail: boolean }
+  // The ticket's Claude: whether it is idle and warm, and the lines sent to it.
+  readonly claude: { idle: boolean; prompts: string[] }
 }
 
 // Every channel id given is watched as "team > <id>", in that order.
@@ -23,6 +28,7 @@ export function serviceRig(
   })
   const clock = { now: NOON }
   const saved = { index: initialIndex, state: initialState, fail: false }
+  const claude = { idle: false, prompts: [] as string[] }
   const service = new TeamsService({
     initialIndex,
     saveIndex: (index) => {
@@ -45,12 +51,15 @@ export function serviceRig(
     prs: { state: () => ({ tracking: {} }) },
     workspace: {
       promptState: () => 'sent',
-      prompt: () => 'sent',
+      prompt: (_name, text) => {
+        claude.prompts.push(text)
+        return 'sent'
+      },
       assistantTexts: () => [],
-      isWorking: () => false,
-      isIdleAndWarm: () => false,
+      isWorking: () => !claude.idle,
+      isIdleAndWarm: () => claude.idle,
     },
-    tmpDir: '',
+    tmpDir: mkdtempSync(join(tmpdir(), 'teams-rig-')),
     log: () => undefined,
   })
   service.configure({
@@ -65,7 +74,7 @@ export function serviceRig(
     repoLabels: {},
     timeZone: 'Asia/Ho_Chi_Minh',
   })
-  return { teams, service, clock, saved }
+  return { teams, service, clock, saved, claude }
 }
 
 // An own post in a fully scanned, just synced channel: a read needs no page.

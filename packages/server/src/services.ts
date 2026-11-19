@@ -247,6 +247,8 @@ export function createServices(options: ServicesOptions): Services {
     events,
     onWait: (session, tab, wait) => {
       if (wait === 'finished') {
+        // Teams first: the PR lines wait a few seconds, so a suggested reply is not stuck behind a long fix.
+        void teams.retryAnalyses()
         autoLines.runSoon()
       }
       notices.add(claudeWaitNotice(session, tab, wait)).catch((error: unknown) => {
@@ -339,6 +341,9 @@ export function createServices(options: ServicesOptions): Services {
           })
     },
     recordJob,
+    onNewMessages: (messages) => {
+      void teams.onNewMessages(messages)
+    },
     logError: reportError,
   })
   teams.onSignedIn(() => {
