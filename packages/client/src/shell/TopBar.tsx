@@ -10,7 +10,7 @@ interface TopBarProps {
 
 export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Element {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 pl-4 pr-5">
+    <header className="app-topbar relative flex h-14 shrink-0 items-center gap-3 pl-4 pr-5">
       {onToggleMenu === undefined ? null : (
         <Button
           isIconOnly

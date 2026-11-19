@@ -307,18 +307,15 @@ html[data-season='christmas'] :is(.app-sidebar, .app-tabbar)::before {
   filter: drop-shadow(0 1px 1px rgba(70, 100, 140, 0.3));
 }
 
-/* Christmas, kept light: one string of bulbs over the first card of the page (no card before it, at any
-   depth), and a Santa hat on the notice bell. Effects "off" drops both; only "full" twinkles the bulbs. */
-html[data-season='christmas']:not([data-season-effects='off'])
-  .app-page
-  .card:not(.card .card, .card ~ .card, :has(.card) ~ .card, :has(.card) ~ * .card)::before,
-html[data-season='christmas']:not([data-season-effects='off'])
-  .app-page
-  .card:not(.card .card, .card ~ .card, :has(.card) ~ .card, :has(.card) ~ * .card)::after {
+/* Christmas, kept light: one string of bulbs along the top bar (the same on every page, stopping short
+   of the bell), and a Santa hat on the notice bell. Effects "off" drops both; only "full" twinkles the bulbs. */
+html[data-season='christmas']:not([data-season-effects='off']) .app-topbar::before,
+html[data-season='christmas']:not([data-season-effects='off']) .app-topbar::after {
   content: '';
   position: absolute;
-  inset-inline: 18px;
-  top: -3px;
+  left: 16px;
+  right: 64px;
+  top: -4px;
   height: 22px;
   pointer-events: none;
   background-repeat: repeat-x;
@@ -326,30 +323,23 @@ html[data-season='christmas']:not([data-season-effects='off'])
 }
 
 /* The wire and the bulbs: red, gold and green under a small grey cap. */
-html[data-season='christmas']:not([data-season-effects='off'])
-  .app-page
-  .card:not(.card .card, .card ~ .card, :has(.card) ~ .card, :has(.card) ~ * .card)::before {
+html[data-season='christmas']:not([data-season-effects='off']) .app-topbar::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='22'%3E%3Cpath d='M0 3 Q15 10 30 3 T60 3 T90 3' fill='none' stroke='%232f4a36' stroke-width='1.2'/%3E%3Cg fill='%235b6b5f'%3E%3Crect x='13.6' y='5.6' width='2.8' height='2.6' rx='0.6'/%3E%3Crect x='43.6' y='5.6' width='2.8' height='2.6' rx='0.6'/%3E%3Crect x='73.6' y='5.6' width='2.8' height='2.6' rx='0.6'/%3E%3C/g%3E%3Cellipse cx='15' cy='12.4' rx='3.2' ry='4.4' fill='%23e5484d'/%3E%3Cellipse cx='45' cy='12.4' rx='3.2' ry='4.4' fill='%23f5b83d'/%3E%3Cellipse cx='75' cy='12.4' rx='3.2' ry='4.4' fill='%2330a46c'/%3E%3C/svg%3E");
 }
 html[data-season='christmas'][data-theme='dark']:not([data-season-effects='off'])
-  .app-page
-  .card:not(.card .card, .card ~ .card, :has(.card) ~ .card, :has(.card) ~ * .card)::before {
+  .app-topbar::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='22'%3E%3Cpath d='M0 3 Q15 10 30 3 T60 3 T90 3' fill='none' stroke='%239fb6a4' stroke-width='1.2'/%3E%3Cg fill='%23aab4ad'%3E%3Crect x='13.6' y='5.6' width='2.8' height='2.6' rx='0.6'/%3E%3Crect x='43.6' y='5.6' width='2.8' height='2.6' rx='0.6'/%3E%3Crect x='73.6' y='5.6' width='2.8' height='2.6' rx='0.6'/%3E%3C/g%3E%3Cellipse cx='15' cy='12.4' rx='3.2' ry='4.4' fill='%23ff6369'/%3E%3Cellipse cx='45' cy='12.4' rx='3.2' ry='4.4' fill='%23ffc53d'/%3E%3Cellipse cx='75' cy='12.4' rx='3.2' ry='4.4' fill='%233dd68c'/%3E%3C/svg%3E");
 }
 
 /* The glow around each bulb; on "full" it rises and fades, a slow twinkle rather than a blink. */
-html[data-season='christmas']:not([data-season-effects='off'])
-  .app-page
-  .card:not(.card .card, .card ~ .card, :has(.card) ~ .card, :has(.card) ~ * .card)::after {
+html[data-season='christmas']:not([data-season-effects='off']) .app-topbar::after {
   background-image:
     radial-gradient(circle at 15px 12px, rgba(229, 72, 77, 0.55), transparent 9px),
     radial-gradient(circle at 45px 12px, rgba(245, 184, 61, 0.55), transparent 9px),
     radial-gradient(circle at 75px 12px, rgba(48, 164, 108, 0.5), transparent 9px);
   opacity: 0.7;
 }
-html[data-season='christmas'][data-season-effects='full']
-  .app-page
-  .card:not(.card .card, .card ~ .card, :has(.card) ~ .card, :has(.card) ~ * .card)::after {
+html[data-season='christmas'][data-season-effects='full'] .app-topbar::after {
   animation: xmas-twinkle 1.6s ease-in-out infinite alternate;
 }
 
@@ -385,7 +375,7 @@ html[data-season='christmas']:not([data-season-effects='off']) .notice-bell::aft
 @media (prefers-reduced-motion: reduce) {
   .season-fade-in,
   .season-backdrop::before,
-  .card::after {
+  .app-topbar::after {
     animation: none;
   }
   html:root {
