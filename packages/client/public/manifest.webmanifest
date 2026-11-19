@@ -4,7 +4,6 @@
   "short_name": "Workday",
   "display": "standalone",
   "display_override": ["window-controls-overlay"],
-  "launch_handler": { "client_mode": "focus-existing" },
   "start_url": "/",
   "scope": "/",
   "theme_color": "#1c1c1e",
