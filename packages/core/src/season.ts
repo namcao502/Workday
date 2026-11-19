@@ -4,7 +4,7 @@ import { addDays } from './zonedDate.js'
 
 export type Season =
   'spring' | 'summer' | 'autumn' | 'winter' | 'christmas' | 'tet' | 'midautumn' | 'rain' // picked by hand only: the rainy months overlap summer and autumn
-export type SeasonSetting = 'off' | 'auto' | Season
+export type SeasonSetting = 'off' | 'auto' | 'shuffle' | Season // shuffle: a new season every hour
 // How much moves: 'auto' is full on a wide screen and light on a phone; off keeps colors and backdrop.
 export type SeasonEffects = 'auto' | 'off' | 'light' | 'full'
 
@@ -19,7 +19,7 @@ export const SEASONS: readonly Season[] = [
   'rain',
 ]
 
-const SEASON_SETTINGS: ReadonlySet<string> = new Set<string>(['off', 'auto', ...SEASONS])
+const SEASON_SETTINGS: ReadonlySet<string> = new Set<string>(['off', 'auto', 'shuffle', ...SEASONS])
 const SEASON_EFFECTS: ReadonlySet<string> = new Set<string>(['auto', 'off', 'light', 'full'])
 
 const LAST_CHRISTMAS_DAY = 26
@@ -126,10 +126,54 @@ export function seasonForDate(date: string): Season {
   return month <= 8 ? 'summer' : 'autumn'
 }
 
-// The season to draw today; null keeps the plain theme.
-export function activeSeason(setting: SeasonSetting, today: string): Season | null {
+// mulberry32: a small seeded generator, so a cycle's order is the same on every device and reload.
+function seededRandom(seed: number): () => number {
+  let state = seed >>> 0
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0
+    let mixed = Math.imul(state ^ (state >>> 15), state | 1)
+    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61)
+    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+// Fisher-Yates over the seasons, seeded by the cycle number.
+function cycleOrder(cycle: number): Season[] {
+  const random = seededRandom(cycle)
+  const order = [...SEASONS]
+  for (let index = order.length - 1; index > 0; index--) {
+    const pick = Math.floor(random() * (index + 1))
+    const swapped = order[pick]
+    const current = order[index]
+    if (swapped !== undefined && current !== undefined) {
+      order[index] = swapped
+      order[pick] = current
+    }
+  }
+  return order
+}
+
+// hour: whole hours since 1970. Each run of SEASONS.length hours shows every season once, in an order of its
+// own; a cycle that would open on the season the last one closed on swaps its first two.
+export function shuffledSeason(hour: number): Season {
+  const cycle = Math.floor(hour / SEASONS.length)
+  const order = cycleOrder(cycle)
+  const [first, second] = order
+  // Swapping the first two never moves the last, so the previous cycle's raw order says how it ended.
+  if (first !== undefined && second !== undefined && first === cycleOrder(cycle - 1).at(-1)) {
+    order[0] = second
+    order[1] = first
+  }
+  return order[hour - cycle * SEASONS.length] ?? 'spring'
+}
+
+// The season to draw now; null keeps the plain theme. hour: whole hours since 1970, for shuffle.
+export function activeSeason(setting: SeasonSetting, today: string, hour: number): Season | null {
   if (setting === 'off') {
     return null
+  }
+  if (setting === 'shuffle') {
+    return shuffledSeason(hour)
   }
   return setting === 'auto' ? seasonForDate(today) : setting
 }

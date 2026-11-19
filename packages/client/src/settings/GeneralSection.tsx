@@ -66,13 +66,14 @@ export function GeneralSection({
           options={[
             { value: 'off', label: t('Off', 'Tắt') },
             { value: 'auto', label: t('By date', 'Theo ngày') },
+            { value: 'shuffle', label: t('Shuffle', 'Ngẫu nhiên') },
             ...SEASONS.map((value) => ({ value, label: seasonName(value) })),
           ]}
           onChange={(next) => {
             void save({ season: next })
           }}
         />
-        {season === 'auto' && shown !== null ? (
+        {(season === 'auto' || season === 'shuffle') && shown !== null ? (
           <span className="text-sm text-muted" data-testid="season-now">
             {t(`Now: ${seasonName(shown)}`, `Hiện tại: ${seasonName(shown)}`)}
           </span>

@@ -6,6 +6,7 @@ import {
   midAutumnDate,
   SEASONS,
   seasonForDate,
+  shuffledSeason,
   tetDate,
 } from './season.js'
 
@@ -80,9 +81,53 @@ describe('rain', () => {
 
 describe('activeSeason', () => {
   it('follows the date on auto, keeps a picked season, and is null when off', () => {
-    expect(activeSeason('auto', '2026-12-24')).toBe('christmas')
-    expect(activeSeason('spring', '2026-12-24')).toBe('spring')
-    expect(activeSeason('off', '2026-12-24')).toBeNull()
+    expect(activeSeason('auto', '2026-12-24', 0)).toBe('christmas')
+    expect(activeSeason('spring', '2026-12-24', 0)).toBe('spring')
+    expect(activeSeason('off', '2026-12-24', 0)).toBeNull()
+  })
+
+  it('on shuffle follows the hour, not the date', () => {
+    expect(activeSeason('shuffle', '2026-12-24', 500_000)).toBe(shuffledSeason(500_000))
+    expect(activeSeason('shuffle', '2026-07-01', 500_000)).toBe(shuffledSeason(500_000))
+  })
+})
+
+describe('shuffledSeason', () => {
+  const HOUR = 494_000 // an hour count since 1970, any one will do
+  const cycleStart = HOUR - (HOUR % SEASONS.length)
+
+  function cycle(start: number): string[] {
+    return Array.from({ length: SEASONS.length }, (_, offset) => shuffledSeason(start + offset))
+  }
+
+  it('shows every season once per cycle of eight hours', () => {
+    for (
+      let start = cycleStart;
+      start < cycleStart + 20 * SEASONS.length;
+      start += SEASONS.length
+    ) {
+      expect([...cycle(start)].sort()).toEqual([...SEASONS].sort())
+    }
+  })
+
+  it('never repeats a season across the seam between two cycles', () => {
+    for (
+      let start = cycleStart;
+      start < cycleStart + 200 * SEASONS.length;
+      start += SEASONS.length
+    ) {
+      expect(shuffledSeason(start + SEASONS.length)).not.toBe(
+        shuffledSeason(start + SEASONS.length - 1),
+      )
+    }
+  })
+
+  it('reshuffles each cycle, and the same hour always gives the same season', () => {
+    const orders = new Set(
+      Array.from({ length: 10 }, (_, index) => cycle(cycleStart + index * SEASONS.length).join()),
+    )
+    expect(orders.size).toBeGreaterThan(1)
+    expect(shuffledSeason(HOUR)).toBe(shuffledSeason(HOUR))
   })
 })
 
@@ -93,6 +138,7 @@ describe('parseSeasonSetting', () => {
     expect(parseSeasonSetting('monsoon')).toBeNull()
     expect(parseSeasonSetting(3)).toBeNull()
     expect(parseSeasonSetting('tet')).toBe('tet')
+    expect(parseSeasonSetting('shuffle')).toBe('shuffle')
   })
 
   it('parses the effect level', () => {
