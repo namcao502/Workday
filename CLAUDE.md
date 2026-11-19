@@ -48,7 +48,10 @@ Each package has two tsconfigs: `tsconfig.json` (noEmit, includes tests; used by
 - `SettingsService.apply` rebuilds the adapters (e.g. `JiraTracker`) and restarts the scheduler when config
   or a secret changes. A saved secret is only ever sent to the URL it was saved with.
 - The server never sends display text: errors are `AppError` codes, translated in `packages/client/src/errors.ts`
-  with `t(en, vi)` (`i18n.ts`).
+  with `t('area.key', params)` (`i18n.ts`).
+- All UI text lives in one file per language: `packages/client/src/i18n/en.ts` and `vi.ts`, and core's notices in
+  `packages/core/src/i18n/en.ts` and `vi.ts` (`coreText`). Never write a sentence of either language inline; add a key
+  to both files (vi is typed against en, so a missing one fails the typecheck).
 - Per-user JSON files (`config.json`, `secrets.json`, `board.json`) go through `jsonFile.ts`: runtime-validated
   parse, atomic write, a corrupt file renamed to `<file>.bad`. Data dir: `dataDir.ts` (`WORKDAY_DATA_DIR` overrides).
   Everything the server writes lives in the data dir (browser profiles, scan logs, `tmp/` for Teams
