@@ -114,7 +114,7 @@ function createPromptQueue(): PromptQueue {
   }
 }
 
-function toEvent(message: SDKMessage, startMode: AgentMode): AgentEvent | null {
+export function toEvent(message: SDKMessage, startMode: AgentMode): AgentEvent | null {
   if (message.type === 'system' && message.subtype === 'init') {
     const mode = toAgentMode(message.permissionMode) ?? startMode
     return { type: 'init', sessionId: message.session_id, model: message.model, mode }
@@ -126,6 +126,11 @@ function toEvent(message: SDKMessage, startMode: AgentMode): AgentEvent | null {
   ) {
     const mode = toAgentMode(message.permissionMode)
     return mode === null ? null : { type: 'mode', mode }
+  }
+  if (message.type === 'system' && message.subtype === 'background_tasks_changed') {
+    // A level signal: the full list each time. Ambient tasks (watchers) are not activity.
+    const tasks = message.tasks.filter((task) => task.ambient !== true)
+    return { type: 'backgroundTasks', tasks: tasks.map((task) => task.description) }
   }
   if (message.type === 'result') {
     return {

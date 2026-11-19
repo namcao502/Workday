@@ -30,6 +30,7 @@ function chatData(overrides: Partial<ChatData> = {}): ChatData {
     messages: [],
     hasMore: false,
     working: false,
+    background: [],
     requests: [],
     running: false,
     mode: 'default',
@@ -66,6 +67,17 @@ it('folds four or more tool lines into an N steps row', async () => {
   stubChat({ messages: [tool(1), tool(2), tool(3), tool(4)] })
   renderWithQuery(<ChatView session="claude" tabId="claude" />)
   expect(await screen.findByText('4 steps')).toBeInTheDocument()
+})
+
+it('a background task left running after the turn shows a spinner with its name', async () => {
+  stubChat({
+    messages: [tool(1)],
+    running: true,
+    background: ['Independent plan review: plan.md'],
+  })
+  renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  const status = await screen.findByRole('status', { name: 'Running in the background' })
+  expect(status).toHaveTextContent('Independent plan review: plan.md')
 })
 
 it('the chat shows transcript rows and a permission card that allows', async () => {

@@ -277,10 +277,11 @@ export class WorkspaceService {
     if (session === undefined) {
       return { ...view, mode: START_MODE, catalog: this.lastCatalog }
     }
-    const { requests, running, mode, model, usage, catalog } = session.state
+    const { requests, running, mode, model, usage, catalog, background } = session.state
     // A live session reports the model at init; before that the transcript's last reply names it.
     return {
       ...view,
+      background,
       requests,
       running,
       mode,

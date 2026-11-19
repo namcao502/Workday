@@ -14,6 +14,7 @@ const EMPTY: ChatView = {
   messages: [],
   hasMore: false,
   working: false,
+  background: [],
   requests: [],
   running: false,
   mode: 'default',

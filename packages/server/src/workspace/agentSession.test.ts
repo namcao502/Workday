@@ -115,6 +115,24 @@ describe('AgentSession', () => {
     expect(session.state).toMatchObject({ working: false, finished: false })
   })
 
+  it('keeps the live background tasks after the turn ends, and drops them when the process exits', () => {
+    const { session, agent } = build()
+    session.send('review the plan')
+    expect(session.state.background).toEqual([])
+    // The main turn hands the review to a background subagent and ends; the subagent keeps running.
+    agent.last().emit({ type: 'backgroundTasks', tasks: ['Independent plan review: plan.md'] })
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(session.state).toMatchObject({
+      working: false,
+      background: ['Independent plan review: plan.md'],
+    })
+    agent.last().emit({ type: 'backgroundTasks', tasks: [] })
+    expect(session.state.background).toEqual([])
+    agent.last().emit({ type: 'backgroundTasks', tasks: ['npm install'] })
+    agent.last().emit({ type: 'exited', error: null })
+    expect(session.state.background).toEqual([])
+  })
+
   it('a prompt sent mid-turn keeps working until its own turn ends', () => {
     const { session, agent } = build()
     session.send('one')

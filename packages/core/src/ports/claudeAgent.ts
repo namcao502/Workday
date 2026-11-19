@@ -27,6 +27,8 @@ export type AgentEvent =
   // queued: prompts the SDK still holds; sends merged into the ended turn are not counted. Absent on older CLIs.
   | { readonly type: 'turnEnded'; readonly ok: boolean; readonly queued?: number | undefined }
   | { readonly type: 'exited'; readonly error: string | null }
+  // Every live background task (a subagent, a shell) by description, replacing the last list; ambient ones left out.
+  | { readonly type: 'backgroundTasks'; readonly tasks: readonly string[] }
 
 // The part of AbortSignal the port uses; core builds without DOM or Node types.
 export interface AbortSignalLike {

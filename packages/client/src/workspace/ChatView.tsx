@@ -1,5 +1,5 @@
 import { ArrowDown } from '@gravity-ui/icons'
-import { Button, Dropdown } from '@heroui/react'
+import { Button, Dropdown, Spinner } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AgentModel, AgentRewind, ChatAnswer, ChatMessage, UsageWindow } from '@workday/core'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -192,6 +192,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   const echoed = queued.slice(consumed)
   const prompts = useMemo(() => userPrompts(messages ?? []), [messages])
   const working = chat.data?.working === true
+  const background = chat.data?.background ?? []
   const model = chat.data?.model ?? null
   const running = chat.data?.running === true
   const mode = chat.data?.mode
@@ -363,6 +364,19 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
             setRewind(null)
           }}
         />
+      )}
+      {/* The turn can end while a subagent or shell it started keeps going; say so, or the chat looks idle. */}
+      {working || background.length === 0 ? null : (
+        <div
+          role="status"
+          aria-label={t('Running in the background', 'Đang chạy nền')}
+          className="flex min-w-0 items-center gap-2 px-3 pb-1 text-xs text-muted"
+        >
+          <Spinner size="sm" />
+          <span className="truncate">
+            {t('Running in the background', 'Đang chạy nền')}: {background.join(', ')}
+          </span>
+        </div>
       )}
       <ChatComposer
         session={session}

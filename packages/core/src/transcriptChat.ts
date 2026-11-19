@@ -32,6 +32,7 @@ export interface ChatView {
   readonly messages: readonly ChatMessage[]
   readonly hasMore: boolean
   readonly working: boolean
+  readonly background: readonly string[] // background tasks still running, often after the turn ended
   readonly requests: readonly ChatRequest[]
   readonly running: boolean
   readonly mode: AgentMode

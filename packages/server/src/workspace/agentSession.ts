@@ -49,6 +49,7 @@ export interface AgentSessionState {
   readonly running: boolean
   readonly working: boolean
   readonly finished: boolean // a turn ended since the user last looked
+  readonly background: readonly string[] // live background tasks, which can outlast the turn that started them
   readonly mode: AgentMode
   readonly model: string | null
   readonly usage: AgentUsage | null
@@ -84,6 +85,7 @@ export class AgentSession {
   private sessionId: string | null = null
   private cwd: string | null = null
   private pending: readonly PendingRequest[] = []
+  private background: readonly string[] = []
   private disposed = false
 
   constructor(private readonly deps: AgentSessionDeps) {
@@ -93,6 +95,7 @@ export class AgentSession {
   get state(): AgentSessionState {
     return {
       ...this.progress,
+      background: this.background,
       mode: this.handle === null ? (this.nextMode ?? this.deps.mode()) : this.runningMode,
       model: this.model,
       usage: this.usage,
@@ -256,6 +259,10 @@ export class AgentSession {
         void this.refreshUsage()
         return
       }
+      case 'backgroundTasks':
+        this.background = event.tasks
+        this.deps.onChange()
+        return
       case 'exited':
         this.handle = null
         // A restart keeps the mode the user last chose, not the config default.
@@ -335,6 +342,8 @@ export class AgentSession {
   private end(): void {
     const pending = this.pending
     this.turns = 0
+    // The SDK's task list is per process: a new process starts with none until it reports.
+    this.background = []
     this.update({ running: false, working: false }, [])
     for (const item of pending) {
       item.resolve(SESSION_ENDED)
