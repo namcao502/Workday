@@ -262,14 +262,14 @@ export function registerTeamsRoutes(
   // Claude's analysis of a conversation: the status for the page, and the start of a run.
   app.get<{
     Params: { key: string }
-    Querystring: { conversation?: string; last?: string }
+    Querystring: { conversation?: string; last?: string; session?: string }
   }>('/api/teams/:key/analysis', async (request, reply) => {
     const { key } = request.params
-    const { conversation, last } = request.query
+    const { conversation, last, session } = request.query
     if (!isTicketKey(key) || conversation === undefined || last === undefined) {
       return bad(reply, 'The request is not valid')
     }
-    return teams.analysisStatus(key, conversation, last)
+    return teams.analysisStatus(key, conversation, last, session ?? null)
   })
 
   app.post<KeyRequest>('/api/teams/:key/analyze', async (request, reply) => {

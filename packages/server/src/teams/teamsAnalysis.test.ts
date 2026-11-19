@@ -90,6 +90,7 @@ describe('TeamsAnalysisRunner', () => {
     const sent: string[] = []
     let replies: string[] = []
     let working = true
+    let idleAndWarm = true
     let now = 1_000_000
     const repo = mkdtempSync(join(tmpdir(), 'repo-'))
     const runner = new TeamsAnalysisRunner({
@@ -101,6 +102,7 @@ describe('TeamsAnalysisRunner', () => {
         },
         assistantTexts: () => replies,
         isWorking: () => working,
+        isIdleAndWarm: () => idleAndWarm,
       },
       tmpDir: mkdtempSync(join(tmpdir(), 'analysis-')),
       now: () => new Date(now),
@@ -119,6 +121,9 @@ describe('TeamsAnalysisRunner', () => {
       },
       stop: () => {
         working = false
+      },
+      busy: () => {
+        idleAndWarm = false
       },
     }
   }
@@ -163,6 +168,48 @@ describe('TeamsAnalysisRunner', () => {
     expect(await runner.status('MDP-1', 'conv1', 'm2')).toEqual({ kind: 'running' })
     stop()
     expect(await runner.status('MDP-1', 'conv1', 'm2')).toEqual({ kind: 'failed' })
+  })
+
+  it('starts by itself for a new message only while Claude is idle and warm, and never again after a failure', async () => {
+    const { runner, stop, busy } = rig()
+    const none = await runner.status('MDP-1', 'conv1', 'm2')
+    expect(runner.shouldAutoStart(none, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(true)
+
+    await runner.start(input)
+    stop()
+    const failed = await runner.status('MDP-1', 'conv1', 'm2')
+    expect(failed).toEqual({ kind: 'failed' })
+    const after = await runner.status('MDP-1', 'conv1', 'm2')
+    // The failed message is not tried again by itself; a newer one is.
+    expect(runner.shouldAutoStart(after, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(false)
+    expect(runner.shouldAutoStart(after, 'MDP-1', 'conv1', 'm3', 'MDP-1')).toBe(true)
+
+    busy()
+    expect(runner.shouldAutoStart(after, 'MDP-1', 'conv1', 'm3', 'MDP-1')).toBe(false)
+  })
+
+  it('does not start by itself while an analysis runs or is current', () => {
+    const { runner } = rig()
+    expect(runner.shouldAutoStart({ kind: 'running' }, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(false)
+    const analysis = { issues: [], diagnosis: '', nextStep: '', replies: ['ok'] }
+    expect(
+      runner.shouldAutoStart(
+        { kind: 'done', analysis, stale: false },
+        'MDP-1',
+        'conv1',
+        'm2',
+        'MDP-1',
+      ),
+    ).toBe(false)
+    expect(
+      runner.shouldAutoStart(
+        { kind: 'done', analysis, stale: true },
+        'MDP-1',
+        'conv1',
+        'm3',
+        'MDP-1',
+      ),
+    ).toBe(true)
   })
 
   it('refuses when Claude is not running or is waiting for an answer', async () => {

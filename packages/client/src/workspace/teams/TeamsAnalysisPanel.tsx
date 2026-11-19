@@ -117,7 +117,7 @@ export function TeamsAnalysisPanel({
   const key = analysisKey(ticket, conversationId)
   const { data } = useQuery<TeamsAnalysisView>({
     queryKey: [...key, lastMessageId],
-    queryFn: () => getAnalysis(ticket, conversationId, lastMessageId),
+    queryFn: () => getAnalysis(ticket, conversationId, lastMessageId, session),
     refetchInterval: (query) => (query.state.data?.kind === 'running' ? POLL_MS : false),
   })
   const view: TeamsAnalysisView = data ?? { kind: 'none' }

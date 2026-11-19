@@ -71,3 +71,13 @@ it('Analyze sends the main point and the session, and says why a start was refus
   })
   expect(await screen.findByRole('alert')).toBeInTheDocument()
 })
+
+it('asks for the status with the session, so the server can hand a new message to a free Claude', async () => {
+  const fetchMock = stubFetch(() => jsonResponse({ kind: 'running' } satisfies TeamsAnalysisView))
+  renderPanel()
+  await waitFor(() => {
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      '/api/teams/MDP-1/analysis?conversation=c1&last=m9&session=MDP-1',
+    )
+  })
+})

@@ -137,12 +137,14 @@ export const analysisKey = (ticket: string, conversation: string): readonly stri
   conversation,
 ]
 
+// With the session, the server starts an analysis by itself when that Claude is free and the message is new.
 export async function getAnalysis(
   ticket: string,
   conversation: string,
   lastMessageId: string,
+  session: string,
 ): Promise<TeamsAnalysisView> {
-  const query = `conversation=${encodeURIComponent(conversation)}&last=${encodeURIComponent(lastMessageId)}`
+  const query = `conversation=${encodeURIComponent(conversation)}&last=${encodeURIComponent(lastMessageId)}&session=${encodeURIComponent(session)}`
   const path = `/api/teams/${encodeURIComponent(ticket)}/analysis?${query}`
   const raw = await send('GET', path)
   if (!raw.ok || !isRecord(raw.body) || typeof raw.body['kind'] !== 'string') {

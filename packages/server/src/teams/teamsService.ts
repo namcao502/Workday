@@ -43,6 +43,7 @@ export interface TeamsServiceDeps extends TeamsLookupDeps {
     prompt(name: string, text: string): PromptOutcome
     assistantTexts(name: string): readonly string[]
     isWorking(name: string): boolean
+    isIdleAndWarm(name: string): boolean
   }
   readonly tmpDir: string
   readonly logError?: (message: string, error: unknown) => void
@@ -115,12 +116,22 @@ export class TeamsService {
     }
   }
 
-  analysisStatus(
+  // With the session, a message with no current analysis goes to that Claude by itself when it is free.
+  async analysisStatus(
     ticketKey: string,
     conversationId: string,
     lastMessageId: string,
+    session: string | null = null,
   ): Promise<TeamsAnalysisView> {
-    return this.analysis.status(ticketKey, conversationId, lastMessageId)
+    const view = await this.analysis.status(ticketKey, conversationId, lastMessageId)
+    if (
+      session === null ||
+      !this.analysis.shouldAutoStart(view, ticketKey, conversationId, lastMessageId, session)
+    ) {
+      return view
+    }
+    const started = await this.analyze(ticketKey, { conversationId, session, mainPoint: null })
+    return started.ok ? { kind: 'running' } : view
   }
 
   // True when the client or the watch list changed.

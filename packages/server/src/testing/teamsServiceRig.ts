@@ -48,6 +48,7 @@ export function serviceRig(
       prompt: () => 'sent',
       assistantTexts: () => [],
       isWorking: () => false,
+      isIdleAndWarm: () => false,
     },
     tmpDir: '',
     log: () => undefined,

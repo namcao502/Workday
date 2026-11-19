@@ -20,6 +20,8 @@ export interface AnalysisRunnerDeps {
     prompt(name: string, text: string): PromptOutcome
     assistantTexts(name: string): readonly string[] // newest last
     isWorking(name: string): boolean // a turn is running or queued
+    // Running, no turn and no open question, and active within the hour, so its prompt cache is still warm.
+    isIdleAndWarm(name: string): boolean
   }
   readonly tmpDir: string
   readonly now: () => Date
@@ -56,6 +58,7 @@ function refusal(outcome: PromptOutcome): AppError {
 export class TeamsAnalysisRunner {
   private readonly requests = new Map<string, Request>()
   private readonly kept = new Map<string, StoredAnalysis>() // when there is no dev repo to save into
+  private readonly failed = new Map<string, string>() // conversation -> the last message a run failed on
 
   constructor(private readonly deps: AnalysisRunnerDeps) {}
 
@@ -117,6 +120,7 @@ export class TeamsAnalysisRunner {
       } else {
         // The turn ended without the answer (an API error such as a 401, or Claude stopped): Analyze may run again.
         this.requests.delete(key)
+        this.failed.set(key, request.lastMessageId)
         return { kind: 'failed' }
       }
     }
@@ -126,10 +130,29 @@ export class TeamsAnalysisRunner {
       : { kind: 'done', analysis: stored.analysis, stale: stored.lastMessageId !== lastMessageId }
   }
 
+  // Port of the WPF unasked analysis: a message with no current analysis goes to Claude by itself while it is idle
+  // and warm (a cold session reloads its whole conversation). A message a run failed on waits for Analyze.
+  shouldAutoStart(
+    view: TeamsAnalysisView,
+    ticketKey: string,
+    conversationId: string,
+    lastMessageId: string,
+    session: string,
+  ): boolean {
+    const isDue = view.kind === 'none' || (view.kind === 'done' && view.stale)
+    return (
+      isDue &&
+      this.failed.get(this.requestKey(ticketKey, conversationId)) !== lastMessageId &&
+      this.deps.workspace.isIdleAndWarm(session)
+    )
+  }
+
   forgetTicket(ticketKey: string): void {
-    for (const key of [...this.requests.keys()]) {
-      if (key.startsWith(`${ticketKey}|`)) {
-        this.requests.delete(key)
+    for (const map of [this.requests, this.failed]) {
+      for (const key of [...map.keys()]) {
+        if (key.startsWith(`${ticketKey}|`)) {
+          map.delete(key)
+        }
       }
     }
   }

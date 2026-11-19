@@ -22,6 +22,7 @@ interface Built {
   readonly devRepo: string
   readonly homeDir: string
   readonly git: FakeGit
+  readonly clock: { now: Date }
 }
 
 interface FakeGit {
@@ -49,6 +50,7 @@ function build(state: WorkspaceState | StateFactory = EMPTY_WORKSPACE): Built {
   const saved: WorkspaceState[] = []
   const waits: { session: string; wait: WaitReason }[] = []
   const seen: string[] = []
+  const clock = { now: new Date('2026-11-19T03:00:00Z') }
   const git: FakeGit = {
     created: [],
     boardStarts: [],
@@ -94,9 +96,10 @@ function build(state: WorkspaceState | StateFactory = EMPTY_WORKSPACE): Built {
     onSeen: (session) => {
       seen.push(session)
     },
+    now: () => clock.now,
     logError: () => undefined,
   })
-  return { service, agent, events, saved, waits, seen, devRepo, homeDir, git }
+  return { service, agent, events, saved, waits, seen, devRepo, homeDir, git, clock }
 }
 
 function terminalState(...sessions: string[]): WorkspaceState {
@@ -211,6 +214,30 @@ describe('WorkspaceService chat and prompt', () => {
     })
     agent.last().emit({ type: 'message' })
     expect(events.at(-1)).toEqual({ type: 'chat.changed' })
+  })
+
+  it('is idle and warm only between turns, with no open question, within the hour after its last activity', () => {
+    const { service, agent, clock } = build(terminalState('claude'))
+    expect(service.isIdleAndWarm('claude')).toBe(false)
+    service.prompt('claude', 'one')
+    expect(service.isIdleAndWarm('claude')).toBe(false)
+    agent.last().emit({ type: 'message' })
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(service.isIdleAndWarm('claude')).toBe(true)
+
+    clock.now = new Date(clock.now.getTime() + 59 * 60_000)
+    expect(service.isIdleAndWarm('claude')).toBe(true)
+    clock.now = new Date(clock.now.getTime() + 2 * 60_000)
+    expect(service.isIdleAndWarm('claude')).toBe(false)
+    expect(service.isIdleAndWarm('ghost')).toBe(false)
+  })
+
+  it('is not idle while a question waits', () => {
+    const { service, agent } = build(terminalState('claude'))
+    service.prompt('claude', 'one')
+    void agent.last().toolCall('AskUserQuestion', { questions: [] })
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(service.isIdleAndWarm('claude')).toBe(false)
   })
 
   it('prompt while a request is open returns waiting and sends nothing', () => {

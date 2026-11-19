@@ -76,6 +76,8 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
       } else if (type === 'workspace.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.workspace })
         void queryClient.invalidateQueries({ queryKey: queryKeys.work })
+        // A Claude turn ended: an open Teams view may now hand its new message to Claude.
+        void queryClient.invalidateQueries({ queryKey: ['teams-analysis'] })
       }
     }
 

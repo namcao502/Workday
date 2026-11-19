@@ -42,6 +42,8 @@ import { WorkspaceStartError, type WorkspaceStartCode } from './workspaceStartEr
 import { MAX_RECENT_FOLDERS, type WorkspaceState } from './workspaceStore.js'
 // Every chat session starts with permissions bypassed; the user chose that over a per-session mode picker.
 const START_MODE: AgentMode = 'bypassPermissions'
+// Claude's prompt cache lives an hour; past that a new prompt reloads the whole conversation.
+const WARM_CACHE_MS = 60 * 60_000
 
 export interface WorkspaceServiceDeps {
   readonly config: WorkspaceConfig
@@ -57,6 +59,7 @@ export interface WorkspaceServiceDeps {
   // A session just got a new wait (different from its last one); onSeen: the user looked at a session.
   readonly onWait?: (session: string, tab: WorkspaceTab, wait: WaitReason) => void
   readonly onSeen?: (session: string) => void
+  readonly now?: () => Date
   readonly board: TicketLauncherDeps['board']
   readonly timesheet: TicketLauncherDeps['timesheet']
   readonly createWorktree: TicketLauncherDeps['createWorktree']
@@ -96,6 +99,7 @@ export class WorkspaceService {
   private readonly sessions = new Map<string, AgentSession>()
   private lastCatalog: AgentCatalog | null = null // models and commands of the last live session
   private readonly waits = new Map<string, WaitReason>() // last wait per session, for onWait
+  private readonly lastActivity = new Map<string, number>() // session -> its last chat change, ms
   private readonly platform: 'win32' | 'other'
   private readonly environment: Readonly<Record<string, string | undefined>>
   private readonly logError: (message: string, error: unknown) => void
@@ -331,6 +335,21 @@ export class WorkspaceService {
     }
   }
 
+  // For work the app sends by itself: a running Claude between turns, asking nothing, with its cache still warm.
+  isIdleAndWarm(name: string): boolean {
+    const session = this.sessions.get(name)
+    const last = this.lastActivity.get(name)
+    if (session === undefined || last === undefined) {
+      return false
+    }
+    const { running, working, requests } = session.state
+    return running && !working && requests.length === 0 && this.now() - last < WARM_CACHE_MS
+  }
+
+  private now(): number {
+    return (this.deps.now?.() ?? new Date()).getTime()
+  }
+
   // 'sent' when a prompt may be sent now; a stopped session starts with it.
   promptState(name: string): PromptOutcome {
     if (this.tabOf(name) === undefined) {
@@ -410,6 +429,7 @@ export class WorkspaceService {
         this.lastCatalog = catalog
       },
       onChange: () => {
+        this.lastActivity.set(name, this.now())
         this.deps.events.broadcast({ type: 'chat.changed' })
       },
       onAttention: () => {
