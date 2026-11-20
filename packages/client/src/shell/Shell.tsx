@@ -89,7 +89,7 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
   const schedulesDot = useSchedulesView(true).data?.scan.unseenBad === true
   useIdlePreload(LAZY_PAGE_LOADERS)
   return (
-    <div className="app-shell fill-screen fixed inset-0 flex overflow-hidden bg-background pt-[env(safe-area-inset-top)] text-foreground">
+    <div className="app-shell flex h-dvh overflow-hidden bg-background pt-[env(safe-area-inset-top)] text-foreground">
       {narrow ? null : (
         <Sidebar
           current={page}

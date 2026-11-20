@@ -372,18 +372,17 @@ body {
   app-region: no-drag;
 }
 
-/* The installed iPhone app draws under the status bar, but iOS still gives the page a viewport short by the
-   status bar's height (100dvh 873 vs 100vh 932 on a 15 Pro Max). The gap lets the app reach the screen's foot. */
-:root {
-  --viewport-gap: 0px;
-}
-
+/* The installed iPhone app draws under the status bar, whose text is always white: a light theme gets a soft
+   shade behind it so the clock stays readable. */
 @media (display-mode: standalone) {
-  :root {
-    --viewport-gap: calc(100vh - 100dvh);
+  html:not([data-theme='dark']) .app-shell::after {
+    content: '';
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 50;
+    height: env(safe-area-inset-top);
+    pointer-events: none;
+    background: linear-gradient(rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0));
   }
-}
-
-.fill-screen {
-  bottom: calc(-1 * var(--viewport-gap));
 }
