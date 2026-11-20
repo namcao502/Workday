@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { NoticesSection } from './NoticesSection.js'
 import { jsonResponse, renderWithQuery, sentJson, settingsView, stubFetch } from '../testSupport.js'
@@ -55,10 +55,13 @@ it('the closed-window button subscribes, and reports a denied permission', async
   expect(await screen.findByText(/blocked notifications/)).toBeInTheDocument()
 })
 
-it('a column header switch turns that channel on for every topic', async () => {
+it('the All topics row switch turns that channel on for every topic', async () => {
   const fetchMock = stubFetch(() => jsonResponse(settingsView()))
   renderWithQuery(<NoticesSection settings={settingsView()} />)
-  expect(screen.getByLabelText('All topics: Desktop')).not.toBeChecked()
+  // The master switches sit in their own first row, apart from the topics, at the same size.
+  const allRow = screen.getByRole('rowheader', { name: 'All topics' }).closest('tr')
+  expect(allRow).not.toBeNull()
+  expect(within(allRow as HTMLElement).getByLabelText('All topics: Desktop')).not.toBeChecked()
   fireEvent.click(screen.getByLabelText('All topics: Desktop'))
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalled()

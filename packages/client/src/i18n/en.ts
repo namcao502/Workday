@@ -370,6 +370,8 @@ export const en = {
     advanced: 'Advanced',
     advancedTsc: 'Advanced TSC',
     allTopics: 'All topics: {channel}',
+    allTopicsRow: 'All topics',
+    allTopicsTip: 'Turns {channel} on or off for every topic below',
     allowAccessOverTheVpn: 'Allow access over the VPN',
     allowDesktopNotifications: 'Allow desktop notifications',
     allowRemoteAccess: 'Allow remote access',

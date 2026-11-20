@@ -371,6 +371,8 @@ export const vi: Messages = {
     advanced: 'Nâng cao',
     advancedTsc: 'TSC nâng cao',
     allTopics: 'Mọi chủ đề: {channel}',
+    allTopicsRow: 'Tất cả chủ đề',
+    allTopicsTip: 'Bật hoặc tắt {channel} cho mọi chủ đề bên dưới',
     allowAccessOverTheVpn: 'Cho phép truy cập qua VPN',
     allowDesktopNotifications: 'Cho phép thông báo desktop',
     allowRemoteAccess: 'Cho phép truy cập từ xa',

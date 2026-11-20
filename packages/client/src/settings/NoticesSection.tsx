@@ -17,6 +17,7 @@ import {
   unsubscribeLocalPush,
 } from '../remote/pushSubscription.js'
 import { Section } from '../ui/Section.js'
+import { Tip } from '../ui/Tip.js'
 import { requestNoticePermission } from '../workspace/useClaudeNotices.js'
 
 const CHANNELS: readonly (keyof NoticeChannels)[] = ['toast', 'desktop', 'phone']
@@ -196,7 +197,10 @@ export function NoticesSection({
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th scope="col" className="py-1 text-left text-xs font-medium uppercase text-muted">
+            <th
+              scope="col"
+              className="py-1 pl-3 text-left text-xs font-medium uppercase text-muted"
+            >
               {t('settings.topic')}
             </th>
             {CHANNELS.map((channel) => (
@@ -205,33 +209,48 @@ export function NoticesSection({
                 scope="col"
                 className="w-28 py-1 text-center text-xs font-medium uppercase text-muted"
               >
-                <div className="flex flex-col items-center gap-1">
-                  {channelName(channel)}
-                  <Switch
-                    size="sm"
-                    isSelected={TOPICS.every((topic) => channels[topic][channel])}
-                    onChange={(selected) => {
-                      toggleColumn(channel, selected)
-                    }}
-                  >
-                    <Switch.Content>
-                      <Switch.Control>
-                        <Switch.Thumb />
-                      </Switch.Control>
-                      <span className="sr-only">
-                        {t('settings.allTopics', { channel: channelName(channel) })}
-                      </span>
-                    </Switch.Content>
-                  </Switch>
-                </div>
+                {channelName(channel)}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
+          {/* The master row: tinted and bold so it reads as the switch for the whole column. */}
+          <tr className="bg-accent-soft">
+            <th scope="row" className="rounded-l-xl py-2 pl-3 text-left font-semibold text-accent">
+              {t('settings.allTopicsRow')}
+            </th>
+            {CHANNELS.map((channel, index) => (
+              <td
+                key={channel}
+                className={`w-28 py-2${index === CHANNELS.length - 1 ? ' rounded-r-xl' : ''}`}
+              >
+                <div className="flex justify-center">
+                  <Tip content={t('settings.allTopicsTip', { channel: channelName(channel) })}>
+                    <Switch
+                      size="lg"
+                      isSelected={TOPICS.every((topic) => channels[topic][channel])}
+                      onChange={(selected) => {
+                        toggleColumn(channel, selected)
+                      }}
+                    >
+                      <Switch.Content>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                        <span className="sr-only">
+                          {t('settings.allTopics', { channel: channelName(channel) })}
+                        </span>
+                      </Switch.Content>
+                    </Switch>
+                  </Tip>
+                </div>
+              </td>
+            ))}
+          </tr>
           {TOPICS.map((topic) => (
             <tr key={topic}>
-              <th scope="row" className="py-2 text-left font-normal">
+              <th scope="row" className="py-2 pl-3 text-left font-normal">
                 {topicName(topic)}
               </th>
               {CHANNELS.map((channel) => (
