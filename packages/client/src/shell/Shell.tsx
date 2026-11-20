@@ -19,29 +19,30 @@ import { navigateTo, PAGE_IDS, type PageId } from './pages.js'
 import { useNarrow } from './useNarrow.js'
 import { useSidebarCollapsed } from './useSidebarCollapsed.js'
 import { zonedClock } from '@workday/core'
+import { useIdlePreload } from './useIdlePreload.js'
 
-// Tickets is the start page and ships in the main bundle; the others load the first time they open.
-const SettingsPage = lazy(async () => ({
-  default: (await import('../settings/SettingsPage.js')).SettingsPage,
-}))
-const TimesheetPage = lazy(async () => ({
-  default: (await import('../timesheet/TimesheetPage.js')).TimesheetPage,
-}))
-const WorkspacePage = lazy(async () => ({
-  default: (await import('../workspace/WorkspacePage.js')).WorkspacePage,
-}))
-const InsightsPage = lazy(async () => ({
-  default: (await import('../insights/InsightsPage.js')).InsightsPage,
-}))
+// Tickets is the start page and ships in the main bundle; the others load on first open or once the browser idles.
+const loadSettings = async () => import('../settings/SettingsPage.js')
+const loadTimesheet = async () => import('../timesheet/TimesheetPage.js')
+const loadWorkspace = async () => import('../workspace/WorkspacePage.js')
+const loadInsights = async () => import('../insights/InsightsPage.js')
+const SettingsPage = lazy(async () => ({ default: (await loadSettings()).SettingsPage }))
+const TimesheetPage = lazy(async () => ({ default: (await loadTimesheet()).TimesheetPage }))
+const WorkspacePage = lazy(async () => ({ default: (await loadWorkspace()).WorkspacePage }))
+const InsightsPage = lazy(async () => ({ default: (await loadInsights()).InsightsPage }))
+const LAZY_PAGE_LOADERS = [loadSettings, loadTimesheet, loadWorkspace, loadInsights]
 
 interface ShellProps {
   readonly page: PageId
 }
 
+// The fade sits inside Suspense, so it plays when the page shows rather than while its chunk still loads.
 function PageContent({ page }: ShellProps): React.JSX.Element {
   return (
     <Suspense fallback={null}>
-      <PageBody page={page} />
+      <div key={page} className="h-full animate-fade-in">
+        <PageBody page={page} />
+      </div>
     </Suspense>
   )
 }
@@ -87,6 +88,7 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
   const todoAttention = useWork().data?.attention ?? 0
   const alerts = useNotices(page)
   const schedulesDot = useSchedulesView(true).data?.scan.unseenBad === true
+  useIdlePreload(LAZY_PAGE_LOADERS)
   return (
     <div className="app-shell flex h-dvh overflow-hidden bg-background text-foreground">
       {narrow ? null : (
@@ -107,9 +109,7 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
         <TopBar onToggleMenu={narrow ? undefined : toggleCollapsed} slotRef={setHeaderSlot} />
         <main className="min-h-0 flex-1 overflow-auto">
           <HeaderSlotContext.Provider value={headerSlot}>
-            <div key={page} className="h-full animate-fade-in">
-              <PageContent page={page} />
-            </div>
+            <PageContent page={page} />
           </HeaderSlotContext.Provider>
         </main>
       </div>

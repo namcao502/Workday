@@ -35,18 +35,21 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
       )}
       <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-between gap-3" />
       <ConnectionStatus />
-      {/* The button itself is the trigger: wrapped in Tip's span, the inner button takes the trigger context. */}
+      {/* The Button takes the tooltip's trigger context itself; Tip's trigger span would leave it no hover. */}
       <Tooltip delay={500} closeDelay={0}>
-        <Button
-          isIconOnly
-          variant="secondary"
-          aria-label={t('palette.open')}
-          onPress={() => {
-            setPaletteOpen(true)
-          }}
-        >
-          <Magnifier width={20} height={20} aria-hidden="true" />
-        </Button>
+        {/* palette-button: a season dresses it like the bell (season.css). */}
+        <span className="palette-button relative inline-flex">
+          <Button
+            isIconOnly
+            variant="secondary"
+            aria-label={t('palette.open')}
+            onPress={() => {
+              setPaletteOpen(true)
+            }}
+          >
+            <Magnifier width={20} height={20} aria-hidden="true" />
+          </Button>
+        </span>
         <Tooltip.Content placement="bottom">
           {t('palette.open')} ({shortcutHint()})
         </Tooltip.Content>
