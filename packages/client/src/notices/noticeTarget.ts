@@ -1,7 +1,7 @@
 import type { NoticeTarget } from '@workday/core'
 import { openTicketUpdate } from '../board/TicketUpdateHost.js'
 import { navigateTo, navigateToWorkspace } from '../shell/pages.js'
-import { navigateToSettings } from '../settings/settingsGroups.js'
+import { navigateToSettings } from '../settings/settingsNav.js'
 
 const SCROLL_DELAY_MS = 100
 

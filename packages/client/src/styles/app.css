@@ -1,7 +1,7 @@
 @layer theme, base, components, utilities;
 
 @import 'tailwindcss';
-@import '@heroui/styles';
+@import './heroui.css';
 @import './season.css';
 @import './glass.css';
 

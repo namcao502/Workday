@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { BoardPage } from '../board/BoardPage.js'
 import { HeaderSlotContext } from '../ui/HeaderSlot.js'
 import { useAccess } from '../api/useMe.js'
@@ -6,15 +6,11 @@ import { useSettings } from '../api/useSettings.js'
 import { useNow, useTimesheetView } from '../api/useTimesheet.js'
 import { useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
-import { InsightsPage } from '../insights/InsightsPage.js'
 import { useSchedulesView } from '../schedules/useSchedules.js'
-import { SettingsPage } from '../settings/SettingsPage.js'
-import { TimesheetPage } from '../timesheet/TimesheetPage.js'
 import { needsAttention } from '../timesheet/timesheetState.js'
 import { NoticeToasts } from '../notices/NoticeToasts.js'
 import { TicketUpdateHost } from '../board/TicketUpdateHost.js'
 import { useNotices } from '../notices/useNotices.js'
-import { WorkspacePage } from '../workspace/WorkspacePage.js'
 import { Sidebar } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
 import { TopBar } from './TopBar.js'
@@ -23,11 +19,33 @@ import { useNarrow } from './useNarrow.js'
 import { useSidebarCollapsed } from './useSidebarCollapsed.js'
 import { zonedClock } from '@workday/core'
 
+// Tickets is the start page and ships in the main bundle; the others load the first time they open.
+const SettingsPage = lazy(async () => ({
+  default: (await import('../settings/SettingsPage.js')).SettingsPage,
+}))
+const TimesheetPage = lazy(async () => ({
+  default: (await import('../timesheet/TimesheetPage.js')).TimesheetPage,
+}))
+const WorkspacePage = lazy(async () => ({
+  default: (await import('../workspace/WorkspacePage.js')).WorkspacePage,
+}))
+const InsightsPage = lazy(async () => ({
+  default: (await import('../insights/InsightsPage.js')).InsightsPage,
+}))
+
 interface ShellProps {
   readonly page: PageId
 }
 
 function PageContent({ page }: ShellProps): React.JSX.Element {
+  return (
+    <Suspense fallback={null}>
+      <PageBody page={page} />
+    </Suspense>
+  )
+}
+
+function PageBody({ page }: ShellProps): React.JSX.Element {
   if (page === 'settings') {
     return <SettingsPage />
   }

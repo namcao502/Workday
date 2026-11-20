@@ -128,7 +128,8 @@ it('the settings page is not wrapped in .legacy-page', async () => {
   stubMatchMedia(false)
   stubFetch(() => jsonResponse({}, 500))
   renderWithQuery(<Shell page="settings" />)
-  const heading = await screen.findByRole('heading', { level: 1 })
+  // Settings is lazy-loaded; its first import in a test can take over the default 1s.
+  const heading = await screen.findByRole('heading', { level: 1 }, { timeout: 5000 })
   expect(heading.closest('.legacy-page')).toBeNull()
 })
 

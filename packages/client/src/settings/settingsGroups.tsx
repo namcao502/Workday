@@ -1,7 +1,6 @@
 import type { SettingsView } from '@workday/core'
 import { t } from '../i18n.js'
 import { SchedulesSection } from '../schedules/SchedulesSection.js'
-import { setHash } from '../shell/appHash.js'
 import { AzureDevOpsSection } from './AzureDevOpsSection.js'
 import { BackupSection } from './BackupSection.js'
 import { CloudflareSection } from './CloudflareSection.js'
@@ -15,8 +14,9 @@ import { TimesheetSection } from './TimesheetSection.js'
 import { ThisDeviceSection } from './ThisDeviceSection.js'
 import { VpnSection } from './VpnSection.js'
 import { WorkspaceSection } from './WorkspaceSection.js'
+import { navigateToSettings, type SettingsGroupId } from './settingsNav.js'
 
-export type SettingsGroupId = 'general' | 'integrations' | 'work' | 'remote' | 'guide'
+export { navigateToSettings, type SettingsGroupId }
 
 export interface SettingsEntry {
   readonly id: string
@@ -161,10 +161,6 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
 export function settingsGroupFromHash(hash: string): SettingsGroupId {
   const name = hash.replace(/^#\/?/, '').split('?')[0]?.split('/')[1]
   return settingsGroups().find((group) => group.id === name)?.id ?? DEFAULT_GROUP
-}
-
-export function navigateToSettings(group: SettingsGroupId): void {
-  setHash(`#/settings/${group}`)
 }
 
 // Every entry whose title or keywords contain all the words of the query; none for a blank query.
