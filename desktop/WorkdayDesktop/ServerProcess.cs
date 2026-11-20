@@ -58,14 +58,14 @@ internal sealed class ServerProcess(IServerHost host, TimeSpan timeout, TimeSpan
         return ServerStartResult.TimedOut;
     }
 
-    public async Task<ServerStartResult> RestartAsync(string? serverDir, string logPath, CancellationToken cancellationToken)
+    public async Task<ServerStartResult> RestartAsync(string? serverDir, string logPath, CancellationToken cancellationToken, bool isBuildNeeded)
     {
         if (serverDir == null)
         {
             return ServerStartResult.NoServerDir;
         }
 
-        if (!await host.BuildAsync(serverDir, logPath, cancellationToken))
+        if (isBuildNeeded && !await host.BuildAsync(serverDir, logPath, cancellationToken))
         {
             return ServerStartResult.BuildFailed;
         }

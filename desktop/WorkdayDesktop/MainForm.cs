@@ -120,16 +120,36 @@ internal sealed class MainForm : Form
     private void HandleWebMessage(string json)
     {
         string? action;
+        string? messageType = null;
         try
         {
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
-            var isWindowMessage = root.ValueKind == JsonValueKind.Object && root.TryGetProperty("type", out var type) &&
-                type.ValueKind == JsonValueKind.String && type.GetString() == "window";
-            action = isWindowMessage && root.TryGetProperty("action", out var actionElement) &&
+            if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("type", out var type) &&
+                type.ValueKind == JsonValueKind.String)
+            {
+                messageType = type.GetString();
+            }
+
+            action = messageType != null && root.TryGetProperty("action", out var actionElement) &&
                 actionElement.ValueKind == JsonValueKind.String ? actionElement.GetString() : null;
         }
         catch (JsonException)
+        {
+            return;
+        }
+
+        if (messageType == "server")
+        {
+            if (action == "restart")
+            {
+                BeginInvoke(async () => await RestartServerAsync(false));
+            }
+
+            return;
+        }
+
+        if (messageType != "window")
         {
             return;
         }
@@ -265,11 +285,20 @@ internal sealed class MainForm : Form
             return;
         }
 
+        await RestartServerAsync(true);
+    }
+
+    private async Task RestartServerAsync(bool isBuildNeeded)
+    {
         _tray.IsBuildRestartEnabled = false;
         try
         {
-            _tray.ShowMessage(_text.Building);
-            var result = await _server.RestartAsync(ResolveServerDir(), _logPath, CancellationToken.None);
+            if (isBuildNeeded)
+            {
+                _tray.ShowMessage(_text.Building);
+            }
+
+            var result = await _server.RestartAsync(ResolveServerDir(), _logPath, CancellationToken.None, isBuildNeeded);
             if (result == ServerStartResult.Started)
             {
                 _webView.CoreWebView2.Navigate($"http://localhost:{_port}/");

@@ -9,7 +9,7 @@ interface TextFieldProps {
   readonly value: string
   readonly onChange: (value: string) => void
   readonly placeholder?: string
-  readonly type?: 'text' | 'email'
+  readonly type?: 'text' | 'email' | 'password'
   readonly multiline?: boolean
 }
 

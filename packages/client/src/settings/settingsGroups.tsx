@@ -3,6 +3,7 @@ import { t } from '../i18n.js'
 import { SchedulesSection } from '../schedules/SchedulesSection.js'
 import { setHash } from '../shell/appHash.js'
 import { AzureDevOpsSection } from './AzureDevOpsSection.js'
+import { BackupSection } from './BackupSection.js'
 import { CloudflareSection } from './CloudflareSection.js'
 import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
@@ -50,6 +51,12 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
           title: t('settings.notices'),
           keywords: 'notification toast sound topic bell alert',
           render: (settings) => <NoticesSection settings={settings} />,
+        },
+        {
+          id: 'backup',
+          title: t('settings.backupMoveToAnotherPc'),
+          keywords: 'backup export import restore move transfer password file machine',
+          render: () => <BackupSection />,
         },
       ],
     },

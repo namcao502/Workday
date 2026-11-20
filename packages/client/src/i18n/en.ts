@@ -357,6 +357,22 @@ export const en = {
     withProblems: 'With problems',
   },
   settings: {
+    backupMoveToAnotherPc: 'Backup & move to another PC',
+    backupDescription:
+      'Export all settings, secrets and data into one password-protected file, or import one made on another PC.',
+    backupPassword: 'Backup password',
+    backupPasswordHint: 'At least 8 characters. You need it to import the file.',
+    backupConfirmPassword: 'Confirm password',
+    backupConfirmHint: 'Type the same password again.',
+    backupPasswordsDiffer: 'The passwords do not match',
+    backupExport: 'Export',
+    backupFile: 'Backup file',
+    backupImportPassword: 'File password',
+    backupImportPasswordHint: 'The password set when the file was exported.',
+    backupImport: 'Import',
+    backupImportedFiles: 'Imported files: {files}',
+    backupRestartHint: 'Restart Workday to apply.',
+    backupRestartNow: 'Restart now',
     aPersonalAccessTokenWithCode:
       'A personal access token with Code (read) and Build (read) scopes.',
     accessAudTag: 'Access AUD tag',

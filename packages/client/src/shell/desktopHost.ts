@@ -48,3 +48,8 @@ export function onWindowState(listener: (isMaximized: boolean) => void): () => v
     host.removeEventListener('message', handle)
   }
 }
+
+// Asks the shell to restart the Node server without a build, then reload the page.
+export function requestServerRestart(): void {
+  window.chrome?.webview?.postMessage({ type: 'server', action: 'restart' })
+}

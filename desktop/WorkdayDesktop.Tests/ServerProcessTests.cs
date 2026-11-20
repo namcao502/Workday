@@ -186,7 +186,7 @@ public class ServerProcessTests
     {
         var host = new FakeRestartHost(true);
 
-        var result = await Create(host).RestartAsync(null, "log", CancellationToken.None);
+        var result = await Create(host).RestartAsync(null, "log", CancellationToken.None, true);
 
         Assert.Equal(ServerStartResult.NoServerDir, result);
         Assert.Empty(host.Calls);
@@ -197,7 +197,7 @@ public class ServerProcessTests
     {
         var host = new FakeRestartHost(true) { IsBuildSuccessful = false };
 
-        var result = await Create(host).RestartAsync(@"C:\repo", "log", CancellationToken.None);
+        var result = await Create(host).RestartAsync(@"C:\repo", "log", CancellationToken.None, true);
 
         Assert.Equal(ServerStartResult.BuildFailed, result);
         Assert.Equal(["Build"], host.Calls);
@@ -209,12 +209,23 @@ public class ServerProcessTests
         var host = new FakeRestartHost(true);
         var serverProcess = Create(host);
 
-        var result = await serverProcess.RestartAsync(@"C:\repo", "log", CancellationToken.None);
+        var result = await serverProcess.RestartAsync(@"C:\repo", "log", CancellationToken.None, true);
 
         Assert.Equal(ServerStartResult.Started, result);
         Assert.Equal(["Build", "StopListener", "Start"], host.Calls);
         serverProcess.StopIfOwned();
         Assert.Equal(1, host.Server.KillCount);
+    }
+
+    [Fact]
+    public async Task RestartAsync_SkipsBuild_WhenNotNeeded()
+    {
+        var host = new FakeRestartHost(true);
+
+        var result = await Create(host).RestartAsync(@"C:epo", "log", CancellationToken.None, false);
+
+        Assert.Equal(ServerStartResult.Started, result);
+        Assert.Equal(["StopListener", "Start"], host.Calls);
     }
 
     [Fact]
@@ -225,7 +236,7 @@ public class ServerProcessTests
         await serverProcess.EnsureRunningAsync(@"C:\repo", "log", CancellationToken.None);
         host.Calls.Clear();
 
-        var result = await serverProcess.RestartAsync(@"C:\repo", "log", CancellationToken.None);
+        var result = await serverProcess.RestartAsync(@"C:\repo", "log", CancellationToken.None, true);
 
         Assert.Equal(ServerStartResult.Started, result);
         Assert.Equal(["Build", "KillTree", "StopListener", "Start"], host.Calls);
@@ -236,7 +247,7 @@ public class ServerProcessTests
     {
         var host = new FakeRestartHost(true) { IsStopEffective = false };
 
-        var result = await Create(host).RestartAsync(@"C:\repo", "log", CancellationToken.None);
+        var result = await Create(host).RestartAsync(@"C:\repo", "log", CancellationToken.None, true);
 
         Assert.Equal(ServerStartResult.TimedOut, result);
         Assert.Equal(["Build", "StopListener"], host.Calls);
@@ -247,7 +258,7 @@ public class ServerProcessTests
     {
         var host = new FakeRestartHost(true) { IsStartEffective = false };
 
-        var result = await Create(host).RestartAsync(@"C:\repo", "log", CancellationToken.None);
+        var result = await Create(host).RestartAsync(@"C:\repo", "log", CancellationToken.None, true);
 
         Assert.Equal(ServerStartResult.TimedOut, result);
         Assert.Equal(["Build", "StopListener", "Start"], host.Calls);
