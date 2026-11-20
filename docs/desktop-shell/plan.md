@@ -131,3 +131,47 @@ internal static class AutoStart
 - Từng mục acceptance criteria ở trên, chạy bản `install-desktop.ps1` đã publish.
 - Dừng server (`Stop-Process` node) rồi mở shell: server tự lên, log có trong `server.log`; Thoát: process node đó không còn.
 - Chạy `WorkdayDesktop.exe --minimized` hai lần: chỉ một icon khay, lần hai làm cửa sổ hiện lên.
+
+### Task 3: Title bar riêng với 3 nút tròn như app WPF
+
+**Files:**
+- Modify: `desktop/WorkdayDesktop/MainForm.cs` -- bỏ caption của Windows, giữ viền kéo giãn; bật vùng kéo từ web; nhận/gửi message cửa sổ.
+- Create: `desktop/WorkdayDesktop/BorderlessFrame.cs` -- xử lý `WM_NCCALCSIZE` / `WM_NCHITTEST` (một chỗ cho Win32).
+- Create: `packages/client/src/shell/desktopHost.ts` -- nhận biết đang chạy trong shell, gửi lệnh cửa sổ, nghe trạng thái maximize.
+- Create: `packages/client/src/shell/WindowControls.tsx` -- 3 nút tròn (minimize, maximize/restore, close) đặt sau chuông trong `TopBar`.
+- Modify: `packages/client/src/shell/TopBar.tsx`, `packages/client/src/styles/app.css` (vùng kéo), `packages/client/src/i18n/en.ts` + `vi.ts` (aria-label/tooltip 3 nút).
+- Test: `packages/client/src/shell/WindowControls.test.tsx`.
+
+**Shape** (hợp đồng giữa shell và web):
+```ts
+// shell -> page, injected before any page script
+window.__workdayDesktop === true
+// page -> shell: window.chrome.webview.postMessage(...)
+{ type: 'window'; action: 'minimize' | 'toggleMaximize' | 'close' }
+// shell -> page: CoreWebView2.PostWebMessageAsJson, on load and on every resize that changes it
+{ type: 'windowState'; maximized: boolean }
+```
+
+**Logic:**
+- Shell: `AddScriptToExecuteOnDocumentCreatedAsync("window.__workdayDesktop = true")`; `Settings.IsNonClientRegionSupportEnabled = true`. `close` = cùng đường với nút X cũ (ẩn xuống khay), không thoát.
+- Khung: giữ `FormBorderStyle.Sizable` (còn Aero Snap, viền kéo, bóng); `WM_NCCALCSIZE` (wParam = 1) trả 0 để client phủ cả vùng caption; khi maximize thì thu rect vào bằng độ dày khung (`SM_CXFRAME` + `SM_CXPADDEDBORDER`, `SM_CYFRAME` + padded) để không tràn màn hình. Form có `Padding` 6px (đổi theo DPI) quanh WebView và `WM_NCHITTEST` trả HTLEFT/HTRIGHT/HTTOP/HTBOTTOM/các góc ở dải đó, để kéo giãn được dù WebView phủ client. Khi maximize thì Padding = 0. Màu nền form theo `theme` trong `config.json` (light `#f4f4f5`, dark `#18181b`).
+- Web: chỉ khi `window.__workdayDesktop === true` thì `TopBar` có class `app-titlebar` (`app-region: drag`) và render `WindowControls`; mọi button/input/link trong header là `app-region: no-drag`. Ngoài shell (trình duyệt, điện thoại) không có gì thay đổi.
+- Nút: cùng kiểu với nút menu tròn bên trái (`Button isIconOnly variant="secondary"`), icon từ `@gravity-ui/icons`; nút close hover nền đỏ (`bg-danger`, chữ trắng). Maximize đổi sang icon restore khi `maximized`.
+
+**Tests:**
+- `renders nothing outside the desktop shell`
+- `posts minimize, toggleMaximize and close to the shell`
+- `shows the restore glyph once the shell reports maximized`
+
+### Task 4: Menu khay giống app
+
+**Files:**
+- Create: `desktop/WorkdayDesktop/TrayMenuRenderer.cs` -- `ToolStripProfessionalRenderer` dạng card: bo góc 10px, viền, hàng cao, hover bo 5px thụt 4px, separator thụt 10px, font Segoe UI 9.5 (theo `ThemedMenuRenderer` của app WPF, đổi theo DPI).
+- Modify: `desktop/WorkdayDesktop/TrayIcon.cs` -- menu dùng renderer, `ShowImageMargin = false`; dấu tick của "Khởi động cùng Windows" vẽ gọn bên trái chữ.
+- Modify: `desktop/WorkdayDesktop/DesktopPaths.cs` -- `Theme(dataDir)`: `"light"` | `"dark"` từ `config.json`, mặc định `"light"`.
+
+**Logic:**
+- Bảng màu đọc lúc vẽ (mỗi lần mở menu đọc lại `Theme`): light: nền `#ffffff`, viền `#e4e4e7`, hover `#f4f4f5`, chữ `#18181b`, chữ disabled `#a1a1aa`, divider `#e4e4e7`; dark: nền `#27272a`, viền `#3f3f46`, hover `#3f3f46`, chữ `#fafafa`, chữ disabled `#71717a`, divider `#3f3f46`.
+
+**Tests:**
+- `Theme_ReadsConfigTheme`, `Theme_DefaultsLight`.

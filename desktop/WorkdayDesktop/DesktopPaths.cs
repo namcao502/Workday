@@ -47,6 +47,18 @@ internal static class DesktopPaths
         return "en";
     }
 
+    public static string Theme(string dataDir)
+    {
+        var config = ReadConfig(dataDir);
+        if (config != null && config.Value.TryGetProperty("theme", out var themeElement) &&
+            themeElement.ValueKind == JsonValueKind.String && themeElement.GetString() == "dark")
+        {
+            return "dark";
+        }
+
+        return "light";
+    }
+
     public static string? FindServerDir(string startDir)
     {
         var directory = new DirectoryInfo(startDir);

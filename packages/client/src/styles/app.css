@@ -360,3 +360,12 @@ body {
     animation: none;
   }
 }
+
+/* Desktop shell: the top bar is the window's drag area; everything clickable in it opts out. */
+.app-titlebar {
+  app-region: drag;
+}
+
+.app-titlebar :is(button, input, select, textarea, a[href], [role='button'], [role='tab']) {
+  app-region: no-drag;
+}

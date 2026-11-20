@@ -2,6 +2,8 @@ import { Bars } from '@gravity-ui/icons'
 import { Button } from '@heroui/react'
 import { t } from '../i18n.js'
 import { NoticeBell } from '../notices/NoticeBell.js'
+import { isDesktopShell } from './desktopHost.js'
+import { WindowControls } from './WindowControls.js'
 
 interface TopBarProps {
   readonly onToggleMenu?: (() => void) | undefined // absent while the tab bar replaces the sidebar
@@ -9,8 +11,11 @@ interface TopBarProps {
 }
 
 export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Element {
+  const titlebarClass = isDesktopShell() ? ' app-titlebar' : ''
   return (
-    <header className="app-topbar relative flex h-14 shrink-0 items-center gap-3 pl-4 pr-5">
+    <header
+      className={`app-topbar${titlebarClass} relative flex h-14 shrink-0 items-center gap-3 pl-4 pr-5`}
+    >
       {onToggleMenu === undefined ? null : (
         <Button
           isIconOnly
@@ -23,6 +28,7 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
       )}
       <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-between gap-3" />
       <NoticeBell />
+      <WindowControls />
     </header>
   )
 }

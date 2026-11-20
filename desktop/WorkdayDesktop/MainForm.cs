@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -8,6 +9,7 @@ internal sealed class MainForm : Form
 {
     private const int DefaultWidth = 1280;
     private const int DefaultHeight = 800;
+    private const int ResizeGripLogical = 6;
 
     private readonly bool _isStartMinimized;
     private readonly string _dataDir;
@@ -20,6 +22,7 @@ internal sealed class MainForm : Form
     private DesktopSettings _settings;
     private bool _isQuitting;
     private bool _isVisibleAllowed;
+    private bool? _isLastPostedMaximized;
 
     public MainForm(bool isStartMinimized)
     {
@@ -35,10 +38,11 @@ internal sealed class MainForm : Form
         _server = new ServerProcess(new NodeServerHost(_port), TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(500));
 
         Text = "Workday";
+        BackColor = ColorTranslator.FromHtml(DesktopPaths.Theme(_dataDir) == "dark" ? "#18181b" : "#f4f4f5");
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         ApplyBounds();
         Controls.Add(_webView);
-        _tray = new TrayIcon(_text, ShowWindow, async () => await BuildAndRestartAsync(), Quit);
+        _tray = new TrayIcon(_dataDir, _text, ShowWindow, async () => await BuildAndRestartAsync(), Quit);
 
         // A --minimized start never raises Load, so create the handles now and start from the message loop.
         _ = Handle;
@@ -60,6 +64,24 @@ internal sealed class MainForm : Form
         BringToFront();
     }
 
+    protected override void WndProc(ref Message message)
+    {
+        if (BorderlessFrame.TryHandle(ref message, this, ResizeGrip()))
+        {
+            return;
+        }
+
+        base.WndProc(ref message);
+    }
+
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+        // The padding is the resize strip around the web view; a maximized window has no border to grab.
+        Padding = WindowState == FormWindowState.Maximized ? Padding.Empty : new Padding(ResizeGrip());
+        PostWindowState();
+    }
+
     protected override void SetVisibleCore(bool value)
     {
         base.SetVisibleCore(value && _isVisibleAllowed);
@@ -76,6 +98,54 @@ internal sealed class MainForm : Form
         }
 
         base.OnFormClosing(e);
+    }
+
+    private int ResizeGrip()
+    {
+        return (int)Math.Round(ResizeGripLogical * DeviceDpi / 96.0, MidpointRounding.AwayFromZero);
+    }
+
+    private void PostWindowState()
+    {
+        var isMaximized = WindowState == FormWindowState.Maximized;
+        if (_webView.CoreWebView2 == null || _isLastPostedMaximized == isMaximized)
+        {
+            return;
+        }
+
+        _isLastPostedMaximized = isMaximized;
+        _webView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { type = "windowState", maximized = isMaximized }));
+    }
+
+    private void HandleWebMessage(string json)
+    {
+        string? action;
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            var isWindowMessage = root.ValueKind == JsonValueKind.Object && root.TryGetProperty("type", out var type) &&
+                type.ValueKind == JsonValueKind.String && type.GetString() == "window";
+            action = isWindowMessage && root.TryGetProperty("action", out var actionElement) &&
+                actionElement.ValueKind == JsonValueKind.String ? actionElement.GetString() : null;
+        }
+        catch (JsonException)
+        {
+            return;
+        }
+
+        if (action == "minimize")
+        {
+            WindowState = FormWindowState.Minimized;
+        }
+        else if (action == "toggleMaximize")
+        {
+            WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
+        }
+        else if (action == "close")
+        {
+            Close();
+        }
     }
 
     private void Quit()
@@ -129,6 +199,7 @@ internal sealed class MainForm : Form
         var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(desktopDir, "webview"));
         await _webView.EnsureCoreWebView2Async(environment);
         ConfigureWebView(_webView.CoreWebView2);
+        await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.__workdayDesktop = true");
 
         var result = await _server.EnsureRunningAsync(ResolveServerDir(), _logPath, CancellationToken.None);
         if (result == ServerStartResult.AlreadyRunning || result == ServerStartResult.Started)
@@ -186,6 +257,14 @@ internal sealed class MainForm : Form
 
     private void ConfigureWebView(CoreWebView2 core)
     {
+        core.Settings.IsNonClientRegionSupportEnabled = true;
+        core.WebMessageReceived += (_, e) => HandleWebMessage(e.WebMessageAsJson);
+        core.NavigationCompleted += (_, _) =>
+        {
+            // A fresh page has not heard the state yet, so repeat it even when it did not change.
+            _isLastPostedMaximized = null;
+            PostWindowState();
+        };
         core.DocumentTitleChanged += (_, _) => Text = string.IsNullOrEmpty(core.DocumentTitle) ? "Workday" : core.DocumentTitle;
         core.NewWindowRequested += (_, e) =>
         {

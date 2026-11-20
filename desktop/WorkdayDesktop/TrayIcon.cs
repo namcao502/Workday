@@ -11,23 +11,38 @@ internal sealed class TrayIcon : IDisposable
     private readonly NotifyIcon _notifyIcon;
     private readonly ToolStripMenuItem _autoStartItem;
     private readonly ToolStripMenuItem _buildRestartItem;
+    private readonly Font _menuFont;
+    private readonly TrayMenuRenderer _renderer;
     private CoreWebView2Notification? _currentNotification;
     private bool _isCurrentClicked;
 
-    public TrayIcon(ShellStrings text, Action showWindow, Action buildAndRestart, Action quit)
+    public TrayIcon(string dataDir, ShellStrings text, Action showWindow, Action buildAndRestart, Action quit)
     {
         _autoStartItem = new ToolStripMenuItem(text.StartWithWindows) { CheckOnClick = false };
         _autoStartItem.Click += (_, _) => ToggleAutoStart();
         _buildRestartItem = new ToolStripMenuItem(text.BuildAndRestart);
         _buildRestartItem.Click += (_, _) => buildAndRestart();
 
-        var menu = new ContextMenuStrip();
+        _menuFont = TrayMenuRenderer.CreateFont();
+        _renderer = new TrayMenuRenderer(dataDir);
+        var menu = new ContextMenuStrip
+        {
+            Renderer = _renderer,
+            ShowImageMargin = false,
+            Font = _menuFont
+        };
         menu.Items.Add(text.OpenWorkday, null, (_, _) => showWindow());
         menu.Items.Add(_autoStartItem);
         menu.Items.Add(_buildRestartItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(text.Quit, null, (_, _) => quit());
-        menu.Opening += (_, _) => _autoStartItem.Checked = IsAutoStartEnabled();
+        menu.SizeChanged += (_, _) => TrayMenuRenderer.ClipToRoundedCard(menu);
+        menu.Opening += (_, _) =>
+        {
+            _renderer.Refresh();
+            TrayMenuRenderer.ApplyLayout(menu);
+            _autoStartItem.Checked = IsAutoStartEnabled();
+        };
 
         _notifyIcon = new NotifyIcon
         {
@@ -91,6 +106,7 @@ internal sealed class TrayIcon : IDisposable
     {
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
+        _menuFont.Dispose();
     }
 
     private static bool IsAutoStartEnabled()

@@ -87,6 +87,26 @@ public class DesktopPathsTests
     }
 
     [Fact]
+    public void Theme_ReadsConfigTheme()
+    {
+        using var temp = new TempDirectory();
+        File.WriteAllText(Path.Combine(temp.Path, "config.json"), "{\"theme\": \"dark\"}");
+
+        Assert.Equal("dark", DesktopPaths.Theme(temp.Path));
+    }
+
+    [Fact]
+    public void Theme_DefaultsLight()
+    {
+        using var temp = new TempDirectory();
+
+        Assert.Equal("light", DesktopPaths.Theme(temp.Path));
+
+        File.WriteAllText(Path.Combine(temp.Path, "config.json"), "{\"theme\": \"sepia\"}");
+        Assert.Equal("light", DesktopPaths.Theme(temp.Path));
+    }
+
+    [Fact]
     public void FindServerDir_WalksUpToRepoRoot()
     {
         using var temp = new TempDirectory();
