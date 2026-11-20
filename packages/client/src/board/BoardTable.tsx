@@ -56,6 +56,9 @@ export function BoardTable({
 }: BoardListProps): React.JSX.Element {
   const th = 'px-3 py-2 text-left text-xs font-normal text-muted'
   const td = 'px-3 py-2'
+  // Columns holding a pill or a short label are centered; the summary stays left.
+  const thCenter = th.replace('text-left', 'text-center')
+  const tdCenter = `${td} whitespace-nowrap text-center`
   // A column of its own so the PR buttons line up; left out when no row has one.
   const hasPrs = rows.some((row) => prsOf(work, view, row.ticket.key).length !== 0)
   return (
@@ -63,13 +66,13 @@ export function BoardTable({
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th className={th}>{t('board.key')}</th>
+            <th className={thCenter}>{t('board.key')}</th>
             <th className={th}>{t('board.summary')}</th>
-            {hasPrs ? <th className={th.replace('text-left', 'text-center')}>PR</th> : null}
-            <th className={th}>{t('board.status')}</th>
-            <th className={th}>{t('board.due')}</th>
-            <th className={th}>{t('board.eta')}</th>
-            <th className={th}>
+            {hasPrs ? <th className={thCenter}>PR</th> : null}
+            <th className={thCenter}>{t('board.status')}</th>
+            <th className={thCenter}>{t('board.due')}</th>
+            <th className={thCenter}>{t('board.eta')}</th>
+            <th className={thCenter}>
               <Tip content={t('board.devPriority')}>{t('board.priority')}</Tip>
             </th>
             <th className={th} />
@@ -78,7 +81,7 @@ export function BoardTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.ticket.key} data-ticket-key={row.ticket.key}>
-              <td className={`${td} whitespace-nowrap`}>
+              <td className={tdCenter}>
                 <KeyPill ticketKey={row.ticket.key} url={row.url} />
               </td>
               {/* max-w-0 lets the cell shrink, so a long summary cuts to one line instead of growing the row. */}
@@ -88,7 +91,7 @@ export function BoardTable({
                 </Tip>
               </td>
               {hasPrs ? (
-                <td className={`${td} whitespace-nowrap text-center`}>
+                <td className={tdCenter}>
                   <PrPills
                     prs={prsOf(work, view, row.ticket.key)}
                     repoLabels={work?.repoLabels ?? {}}
@@ -97,7 +100,7 @@ export function BoardTable({
                   />
                 </td>
               ) : null}
-              <td className={`${td} whitespace-nowrap`}>
+              <td className={tdCenter}>
                 {row.ticket.status === null ? null : (
                   <StatusText
                     status={row.ticket.status}
@@ -105,7 +108,7 @@ export function BoardTable({
                   />
                 )}
               </td>
-              <td className={`${td} whitespace-nowrap`}>
+              <td className={tdCenter}>
                 {row.ticket.dueDate === null ? null : (
                   <DueDate
                     urgency={dueUrgencyOf(row)}
@@ -113,7 +116,7 @@ export function BoardTable({
                   />
                 )}
               </td>
-              <td className={`${td} whitespace-nowrap`}>
+              <td className={tdCenter}>
                 {row.ticket.eta === null ? null : (
                   <DueDate
                     urgency={etaUrgencyOf(row)}
@@ -121,7 +124,7 @@ export function BoardTable({
                   />
                 )}
               </td>
-              <td className={`${td} whitespace-nowrap`}>
+              <td className={tdCenter}>
                 {row.ticket.devPriority === null ? null : (
                   <PriorityText
                     devPriority={row.ticket.devPriority}

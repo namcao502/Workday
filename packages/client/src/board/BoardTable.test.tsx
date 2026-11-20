@@ -44,3 +44,22 @@ it('a table with no PR at all leaves the PR column out', () => {
   const headers = screen.getAllByRole('columnheader').map((header) => header.textContent)
   expect(headers).not.toContain('PR')
 })
+
+it('label columns are centered while the summary stays left', () => {
+  renderWithQuery(
+    <BoardTable
+      rows={[boardRow('MDP-1', 'A summary')]}
+      view="working"
+      language="en"
+      onAction={vi.fn()}
+    />,
+  )
+  const headers = screen.getAllByRole('columnheader')
+  const cells = within(screen.getAllByRole('row')[1] as HTMLElement).getAllByRole('cell')
+  for (const index of [0, 2, 3, 4, 5]) {
+    expect(headers[index]).toHaveClass('text-center')
+    expect(cells[index]).toHaveClass('text-center')
+  }
+  expect(headers[1]).not.toHaveClass('text-center')
+  expect(cells[1]).not.toHaveClass('text-center')
+})

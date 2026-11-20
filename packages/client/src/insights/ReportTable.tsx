@@ -43,6 +43,9 @@ function headers(): readonly string[] {
   ]
 }
 
+// The key and status columns hold pills or short labels, so they are centered.
+const CENTERED_COLUMNS: ReadonlySet<number> = new Set([0, 2])
+
 export function ReportTable({
   report,
   selectedKey,
@@ -52,13 +55,20 @@ export function ReportTable({
   const th = 'whitespace-nowrap px-3 py-2 text-left text-xs font-medium text-muted'
   const td = 'px-3 py-2 align-top'
   const num = `${td} whitespace-nowrap text-right`
+  const centered = `${td} text-center`
   return (
     <Card className="overflow-x-auto p-0">
       <table className="w-full min-w-[960px] text-sm">
         <thead>
           <tr>
-            {headers().map((header) => (
-              <th key={header} scope="col" className={th}>
+            {headers().map((header, index) => (
+              <th
+                key={header}
+                scope="col"
+                className={
+                  CENTERED_COLUMNS.has(index) ? th.replace('text-left', 'text-center') : th
+                }
+              >
                 {header}
               </th>
             ))}
@@ -69,7 +79,7 @@ export function ReportTable({
             const url = urlFor(row.ticketKey)
             return (
               <tr key={row.ticketKey} data-selected={row.ticketKey === selectedKey}>
-                <td className={td}>
+                <td className={centered}>
                   {url === null ? row.ticketKey : <KeyPill ticketKey={row.ticketKey} url={url} />}
                 </td>
                 <td className={`${td} max-w-xs`}>
@@ -84,7 +94,7 @@ export function ReportTable({
                     {row.facts.summary ?? EMPTY_CELL}
                   </button>
                 </td>
-                <td className={td}>
+                <td className={centered}>
                   {row.facts.status === null ? (
                     EMPTY_CELL
                   ) : (

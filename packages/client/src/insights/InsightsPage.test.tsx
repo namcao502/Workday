@@ -113,6 +113,22 @@ it('the status cell is colored by the Jira status category', async () => {
   expect(await screen.findByText('In Progress')).toHaveClass('text-accent')
 })
 
+it('the key and status columns are centered', async () => {
+  stubFetch((url) =>
+    jsonResponse(url.startsWith('/api/insights') ? view([row('MDP-1')]) : settingsView()),
+  )
+  renderWithQuery(<InsightsPage />)
+  await screen.findByText('Summary of MDP-1')
+  const table = screen.getAllByRole('table')[0] as HTMLElement
+  const headers = within(table).getAllByRole('columnheader')
+  const cells = within(within(table).getAllByRole('row')[1] as HTMLElement).getAllByRole('cell')
+  for (const index of [0, 2]) {
+    expect(headers[index]).toHaveClass('text-center')
+    expect(cells[index]).toHaveClass('text-center')
+  }
+  expect(cells[1]).not.toHaveClass('text-center')
+})
+
 it('a failed read keeps the last report and shows the error', async () => {
   stubFetch((url) => {
     if (url === '/api/insights?kind=lastWeek') {
