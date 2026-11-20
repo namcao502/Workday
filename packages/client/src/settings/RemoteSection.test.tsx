@@ -245,7 +245,7 @@ it('the firewall button reports a cancelled prompt', async () => {
   )
 })
 
-it('the pairing card shows the setup QR and link while vpn runs', async () => {
+it('the pairing card shows the setup QR and link while pairing is open and vpn runs', async () => {
   const running: VpnStatusView = {
     ...VPN_OFF,
     server: 'running',
@@ -253,10 +253,47 @@ it('the pairing card shows the setup QR and link while vpn runs', async () => {
     setupUrl: 'http://10.20.30.40:8444/setup',
     caFingerprint: 'AB:CD',
   }
-  stubFetch(() => jsonResponse(status([], CLOSED, running)))
+  const open: PairingView = {
+    code: 'ABC234',
+    expiresAt: new Date(Date.now() + 300_000).toISOString(),
+    pending: null,
+  }
+  stubFetch(() => jsonResponse(status([], open, running)))
   renderWithQuery(<RemoteSection settings={withVpn()} />)
   const image = await screen.findByAltText('http://10.20.30.40:8444/setup')
   expect(image).toHaveAttribute('src', 'data:image/png;base64,QR')
   expect(screen.getAllByText('http://10.20.30.40:8444/setup').length).not.toBe(0)
   expect(screen.getAllByText(/https:\/\/10\.20\.30\.40:8443/).length).not.toBe(0)
+})
+
+it('with only vpn running, Pair a device opens pairing and the closed setup page shows no QR', async () => {
+  const running: VpnStatusView = {
+    ...VPN_OFF,
+    server: 'running',
+    httpsUrl: 'https://10.20.30.40:8443',
+    setupUrl: 'http://10.20.30.40:8444/setup',
+    caFingerprint: 'AB:CD',
+  }
+  const open: PairingView = {
+    code: 'ABC234',
+    expiresAt: new Date(Date.now() + 300_000).toISOString(),
+    pending: null,
+  }
+  let current = status([], CLOSED, running)
+  const fetchMock = stubFetch((url, init) => {
+    if (url === '/api/remote/pairing' && init?.method === 'POST') {
+      current = status([], open, running)
+      return jsonResponse(open)
+    }
+    return jsonResponse(current)
+  })
+  renderWithQuery(<RemoteSection settings={withVpn()} />)
+  const button = await screen.findByRole('button', { name: 'Pair a device' })
+  expect(screen.queryByAltText('http://10.20.30.40:8444/setup')).not.toBeInTheDocument()
+
+  fireEvent.click(button)
+
+  expect(await screen.findByText('ABC234')).toBeInTheDocument()
+  expect(await screen.findByAltText('http://10.20.30.40:8444/setup')).toBeInTheDocument()
+  expect(fetchMock).toHaveBeenCalledWith('/api/remote/pairing', expect.objectContaining({ method: 'POST' }))
 })

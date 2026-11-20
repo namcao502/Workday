@@ -72,14 +72,17 @@ export function RemotePairing({
 }: RemotePairingProps): React.JSX.Element {
   const open = pairing.code !== null && pairing.expiresAt !== null
   const now = useNowMs(open)
-  const ready = remote !== null && remote.enabled
-  const link = remote === null ? '' : `https://${remote.publicHost}`
+  const cloudflareReady = remote !== null && remote.enabled
   const vpnRunning = vpn.server === 'running'
-  const setupUrl = vpnRunning ? vpn.setupUrl : null
+  // Either way in is enough to pair; the setup page (and so its QR) only exists while pairing needs it.
+  const ready = cloudflareReady || vpnRunning
+  const vpnUrl = vpnRunning ? vpn.httpsUrl : null
+  const link = cloudflareReady ? `https://${remote.publicHost}` : (vpnUrl ?? '')
+  const setupUrl = vpnRunning && (open || pairing.pending !== null) ? vpn.setupUrl : null
   const qr = useQrDataUrl(setupUrl)
   const links = [
-    ...(vpnRunning && vpn.httpsUrl !== null ? [vpn.httpsUrl] : []),
-    ...(ready ? [link] : []),
+    ...(vpnUrl !== null ? [vpnUrl] : []),
+    ...(cloudflareReady ? [`https://${remote.publicHost}`] : []),
   ]
 
   return (
