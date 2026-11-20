@@ -118,6 +118,7 @@ export const vi: Messages = {
     attachments: 'File đính kèm',
     available: 'Có thể nhận ({count})',
     availableToTake: 'Có thể nhận',
+    epic: 'Epic',
     before: 'Trước',
     boardView: 'Chế độ xem',
     buildFailed: 'Build lỗi',

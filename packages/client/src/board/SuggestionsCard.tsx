@@ -7,6 +7,7 @@ import { actionErrorText, useWorkActions } from '../api/useWork.js'
 import { formatDateOnly, t, type Language } from '../i18n.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
 import { Section } from '../ui/Section.js'
+import { KeyPill } from './KeyPill.js'
 import { TodoIcon } from './TodoRow.js'
 
 const SHOW_MORE_STEP = 10
@@ -79,6 +80,10 @@ export function SuggestionsCard({
     return null
   }
   const left = items.length - shown
+  const urlFor = (key: string): string | null =>
+    jira === undefined || jira === null ? null : `${jira.baseUrl}/browse/${key}`
+  const epicKey = suggestions.epicKey
+  const epicUrl = epicKey === null ? null : urlFor(epicKey)
 
   async function take(key: string): Promise<void> {
     setMessage(null)
@@ -105,7 +110,18 @@ export function SuggestionsCard({
     <Section
       title={t('board.availableToTake')}
       actions={
-        suggestions.epicKey === null ? null : <Chip size="sm">{`Epic ${suggestions.epicKey}`}</Chip>
+        epicKey === null ? null : (
+          <span className="flex items-center gap-2">
+            <span className="text-sm text-muted">{t('board.epic')}</span>
+            {epicUrl === null ? (
+              <Chip size="lg" className="px-3 text-sm font-medium">
+                {epicKey}
+              </Chip>
+            ) : (
+              <KeyPill ticketKey={epicKey} url={epicUrl} />
+            )}
+          </span>
+        )
       }
     >
       {message === null ? null : (
@@ -130,13 +146,7 @@ export function SuggestionsCard({
       <ul className="m-0 flex list-none flex-col gap-1 p-0">
         {items.slice(0, shown).map((suggestion) => {
           const { ticket } = suggestion
-          const href =
-            jira === undefined || jira === null ? null : `${jira.baseUrl}/browse/${ticket.key}`
-          const keyChip = (
-            <Chip size="sm" color="accent">
-              {ticket.key}
-            </Chip>
-          )
+          const href = urlFor(ticket.key)
           return (
             <li key={ticket.key} className="flex items-center gap-3 rounded-lg px-2 py-2">
               <TodoIcon
@@ -144,20 +154,15 @@ export function SuggestionsCard({
                 icon={suggestion.urgent ? '!' : '+'}
               />
               <div className="min-w-0 flex-1">
-                <div className="font-semibold [overflow-wrap:anywhere]">
+                <div className="flex items-center gap-2 font-semibold">
                   {href === null ? (
-                    keyChip
+                    <Chip size="lg" color="accent" className="flex-none px-3 text-sm font-medium">
+                      {ticket.key}
+                    </Chip>
                   ) : (
-                    <a
-                      className="no-underline"
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {keyChip}
-                    </a>
-                  )}{' '}
-                  {ticket.summary}
+                    <KeyPill ticketKey={ticket.key} url={href} />
+                  )}
+                  <span className="min-w-0 [overflow-wrap:anywhere]">{ticket.summary}</span>
                 </div>
                 <div className="text-sm text-muted [overflow-wrap:anywhere]">
                   {suggestionDetail(suggestion, today, language, selectedStatus)}

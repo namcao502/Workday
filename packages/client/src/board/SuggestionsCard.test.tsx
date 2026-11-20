@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import type { WorkView } from '@workday/core'
+import type { JiraConfig, WorkView } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
-import { jsonResponse, renderWithQuery, stubFetch } from '../testSupport.js'
+import { jsonResponse, renderWithQuery, settingsView, stubFetch } from '../testSupport.js'
 import { SuggestionsCard } from './SuggestionsCard.js'
 import { suggestion } from './workTestSupport.js'
 
@@ -40,4 +40,21 @@ it('take shows the holder when someone else has the ticket', async () => {
   await waitFor(() => {
     expect(screen.queryByText('Take MDP-1?')).not.toBeInTheDocument()
   })
+})
+
+it('the ticket key and the epic are pills that open Jira', async () => {
+  const base = settingsView()
+  const jira = { baseUrl: 'https://jira.example.com' } as JiraConfig
+  stubFetch(() => jsonResponse({ ...base, config: { ...base.config, jira } }))
+  const open = vi.fn()
+  vi.stubGlobal('open', open)
+  renderWithQuery(<SuggestionsCard suggestions={suggestions(1)} today="2026-11-12" language="en" />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'MDP-100' }))
+  fireEvent.click(screen.getByRole('button', { name: 'MDP-1' }))
+
+  expect(open.mock.calls).toEqual([
+    ['https://jira.example.com/browse/MDP-100', '_blank', 'noopener'],
+    ['https://jira.example.com/browse/MDP-1', '_blank', 'noopener'],
+  ])
 })

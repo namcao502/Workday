@@ -116,6 +116,7 @@ export const en = {
     attachments: 'Attachments',
     available: 'Available ({count})',
     availableToTake: 'Available to take',
+    epic: 'Epic',
     before: 'Before',
     boardView: 'Board view',
     buildFailed: 'Build failed',
