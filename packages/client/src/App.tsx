@@ -16,6 +16,8 @@ import { currentHash } from './shell/appHash.js'
 import { useNarrow } from './shell/useNarrow.js'
 import { pageFromHash, type PageId } from './shell/pages.js'
 import { Shell } from './shell/Shell.js'
+import { useSoftRefresh } from './shell/softRefresh.js'
+import { UpdateBanner } from './shell/UpdateBanner.js'
 
 // Same keys as the inline script in index.html.
 const THEME_STORAGE_KEY = 'workday.theme'
@@ -37,6 +39,7 @@ function useHashPage(): PageId {
 
 function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
   useEvents(socketFactory)
+  useSoftRefresh()
   const page = useHashPage()
   const settings = useSettings()
   const theme = settings.data?.config.theme
@@ -82,6 +85,7 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
     <>
       <SeasonLayer season={season} level={level} dark={theme === 'dark'} />
       <Shell page={page} />
+      <UpdateBanner />
     </>
   )
 }

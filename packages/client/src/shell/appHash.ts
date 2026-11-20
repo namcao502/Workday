@@ -5,7 +5,8 @@ const STORAGE_KEY = 'workday.hash'
 let memoryHash: string | null = null
 let listening = false
 
-function inAppWindow(): boolean {
+// The installed app's own window, not a browser tab.
+export function inAppWindow(): boolean {
   return (
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(display-mode: standalone)').matches

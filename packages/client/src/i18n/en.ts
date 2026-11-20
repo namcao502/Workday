@@ -625,6 +625,8 @@ export const en = {
     workspace: 'Workspace',
   },
   shell: {
+    newVersionReady: 'A new version of Workday is ready.',
+    reload: 'Reload',
     aKnowledgeScanFailed: 'A knowledge scan failed',
     collapseOrExpandTheMenu: 'Collapse or expand the menu',
     insights: 'Insights',

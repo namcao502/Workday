@@ -628,6 +628,8 @@ export const vi: Messages = {
     workspace: 'Không gian làm việc',
   },
   shell: {
+    newVersionReady: 'Đã có bản Workday mới.',
+    reload: 'Tải lại',
     aKnowledgeScanFailed: 'Một lần quét knowledge bị lỗi',
     collapseOrExpandTheMenu: 'Thu gọn / mở rộng menu',
     insights: 'Thống kê',
