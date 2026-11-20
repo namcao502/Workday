@@ -20,7 +20,9 @@ export function WindowControls(): React.JSX.Element | null {
           isIconOnly
           variant="secondary"
           aria-label={t('shell.minimizeWindow')}
-          onPress={() => { sendWindowAction('minimize'); }}
+          onPress={() => {
+            sendWindowAction('minimize')
+          }}
         >
           <Minus width={18} height={18} aria-hidden="true" />
         </Button>
@@ -30,7 +32,9 @@ export function WindowControls(): React.JSX.Element | null {
           isIconOnly
           variant="secondary"
           aria-label={maximizeLabel}
-          onPress={() => { sendWindowAction('toggleMaximize'); }}
+          onPress={() => {
+            sendWindowAction('toggleMaximize')
+          }}
         >
           {isMaximized ? (
             <Copy width={16} height={16} aria-hidden="true" />
@@ -45,7 +49,9 @@ export function WindowControls(): React.JSX.Element | null {
           variant="secondary"
           className="hover:bg-danger hover:text-white"
           aria-label={t('shell.closeWindow')}
-          onPress={() => { sendWindowAction('close'); }}
+          onPress={() => {
+            sendWindowAction('close')
+          }}
         >
           <Xmark width={18} height={18} aria-hidden="true" />
         </Button>
