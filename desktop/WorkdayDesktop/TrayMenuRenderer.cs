@@ -53,8 +53,7 @@ internal sealed class TrayMenuRenderer : ToolStripProfessionalRenderer
         {
             if (item is ToolStripMenuItem)
             {
-                // The left padding leaves room for the check glyph so checked and plain rows align.
-                item.Padding = new Padding(Scale(menu, 26), Scale(menu, 5), Scale(menu, 10), Scale(menu, 5));
+                item.Padding = new Padding(Scale(menu, 2), Scale(menu, 5), Scale(menu, 10), Scale(menu, 5));
             }
         }
     }
@@ -91,16 +90,19 @@ internal sealed class TrayMenuRenderer : ToolStripProfessionalRenderer
             using var brush = new SolidBrush(Palette.Hover);
             e.Graphics.FillPath(brush, path);
         }
-
-        if (item is ToolStripMenuItem menuItem && menuItem.Checked && item.Owner != null)
-        {
-            DrawCheck(e.Graphics, menuItem, item.Owner);
-        }
     }
 
-    // Drawn here, not in OnRenderItemCheck: with ShowImageMargin off the menu reserves no rectangle for it.
+    // The check column (ShowCheckMargin) keeps the menu's own background, not the professional gradient.
+    protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
+    {
+    }
+
     protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
     {
+        if (e.Item is ToolStripMenuItem menuItem && e.Item.Owner != null)
+        {
+            DrawCheck(e.Graphics, menuItem, e.Item.Owner);
+        }
     }
 
     protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
@@ -123,7 +125,7 @@ internal sealed class TrayMenuRenderer : ToolStripProfessionalRenderer
     private void DrawCheck(Graphics graphics, ToolStripMenuItem item, ToolStrip owner)
     {
         var size = Scale(owner, 10);
-        var left = Scale(owner, 10);
+        var left = Scale(owner, 8);
         var top = (item.Height - size) / 2;
         using var pen = new Pen(item.Enabled ? Palette.Text : Palette.TextDisabled, Math.Max(1.5F, Scale(owner, 2)))
         {

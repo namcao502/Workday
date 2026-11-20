@@ -29,6 +29,7 @@ internal sealed class TrayIcon : IDisposable
         {
             Renderer = _renderer,
             ShowImageMargin = false,
+            ShowCheckMargin = true,
             Font = _menuFont
         };
         menu.Items.Add(text.OpenWorkday, null, (_, _) => showWindow());
