@@ -124,7 +124,7 @@ function PaletteBody({ source }: { readonly source: PaletteSource }): React.JSX.
           onKeyDown={onKeyDown}
         />
       </div>
-      <div id={LISTBOX_ID} role="listbox" className="max-h-[60vh] overflow-y-auto p-2">
+      <div id={LISTBOX_ID} role="listbox" className="h-[min(50vh,420px)] overflow-y-auto p-2">
         {items.length === 0 ? (
           <p className="p-3 text-sm text-muted">{t('palette.noMatches')}</p>
         ) : null}
@@ -188,9 +188,16 @@ export function CommandPalette(): React.JSX.Element | null {
     return null
   }
   return (
-    <Modal.Backdrop isOpen={open} onOpenChange={setPaletteOpen}>
-      <Modal.Container placement="top">
-        <Modal.Dialog aria-label={t('palette.open')} className="w-full max-w-[640px] p-0">
+    <Modal.Backdrop
+      className="command-palette-backdrop"
+      isOpen={open}
+      onOpenChange={setPaletteOpen}
+    >
+      <Modal.Container placement="center">
+        <Modal.Dialog
+          aria-label={t('palette.open')}
+          className="command-palette w-full max-w-[640px] p-0"
+        >
           <PaletteBody source={source} />
         </Modal.Dialog>
       </Modal.Container>

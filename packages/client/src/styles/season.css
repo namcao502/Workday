@@ -521,3 +521,17 @@ html[data-season='rain']:not([data-season-effects='off']) .notice-bell::after {
     transition: none;
   }
 }
+
+/* A folded sidebar is 56px wide: shrink the scene so the objects at its right end still fit whole. */
+html[data-season]:not([data-season-effects='off']) .app-sidebar--collapsed::before {
+  inset-inline: 4px;
+  top: -16px;
+  height: 16px;
+  background-size:
+    120px 16px,
+    8px 16px;
+}
+
+html[data-season]:not([data-season-effects='off']) .app-sidebar.app-sidebar--collapsed {
+  margin-top: 16px;
+}

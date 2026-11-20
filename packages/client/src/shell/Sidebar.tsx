@@ -137,7 +137,7 @@ export function Sidebar({
     <nav
       ref={nav}
       className={`app-sidebar relative m-3 mr-0 flex shrink-0 flex-col rounded-2xl bg-surface p-2 shadow-surface ${
-        collapsed ? 'w-14' : 'w-[200px]'
+        collapsed ? 'app-sidebar--collapsed w-14' : 'w-[200px]'
       }`}
       aria-label={t('shell.pages')}
     >
