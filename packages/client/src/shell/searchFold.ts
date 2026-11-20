@@ -23,8 +23,7 @@ export interface FoldInput {
   readonly strips: readonly ScrollStrip[] // scrolling strips the page put in the bar (Workspace tabs)
 }
 
-// True when a strip in the title column would not fit beside the centered box.
-// Folded or not, the test measures the centered layout, so it never flips back and forth.
+// True when a title-column strip would not fit beside the centered box; measured the same way when folded.
 export function foldsSearch(input: FoldInput): boolean {
   if (input.viewportWidth < SEARCH_BOX_MIN_WIDTH_PX) {
     return false
