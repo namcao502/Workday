@@ -8,6 +8,7 @@ import { useGlobalBusy, useRunningWork } from '../shell/useGlobalBusy.js'
 import { formatShortDate, getLanguage, t } from '../i18n.js'
 import { openNoticeTarget } from './noticeTarget.js'
 import { useNoticeActions, useNoticesView } from './useNotices.js'
+import { SkeletonRows } from '../ui/Skeleton.js'
 
 const MAX_BADGE = 99
 
@@ -139,7 +140,7 @@ export function NoticeBell(): React.JSX.Element {
             </Button>
           </div>
           {view === undefined ? (
-            <p className="text-sm text-muted">{t('notices.loading')}</p>
+            <SkeletonRows label={t('notices.loading')} rows={3} className="p-3" />
           ) : newestFirst.length === 0 ? (
             <p className="text-sm text-muted">{t('notices.noNotificationsYet')}</p>
           ) : (

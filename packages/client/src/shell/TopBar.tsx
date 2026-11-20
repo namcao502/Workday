@@ -2,6 +2,7 @@ import { Bars, Magnifier } from '@gravity-ui/icons'
 import { Button } from '@heroui/react'
 import { t } from '../i18n.js'
 import { NoticeBell } from '../notices/NoticeBell.js'
+import { ConnectionStatus } from './ConnectionStatus.js'
 import { isDesktopShell } from './desktopHost.js'
 import { setPaletteOpen } from './palette.js'
 import { WindowControls } from './WindowControls.js'
@@ -33,6 +34,7 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
         </Button>
       )}
       <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-between gap-3" />
+      <ConnectionStatus />
       <Button
         variant="secondary"
         aria-label={t('palette.open')}

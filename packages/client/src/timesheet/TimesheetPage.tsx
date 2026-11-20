@@ -39,6 +39,7 @@ import { useTimesheetActions } from './useTimesheetActions.js'
 import { WeekHeader, WeekNav } from './WeekHeader.js'
 import { WeekTotals } from './WeekTotals.js'
 import { Tip } from '../ui/Tip.js'
+import { SkeletonRows } from '../ui/Skeleton.js'
 
 const WORKDAYS = 5
 type Confirming = 'off' | 'clear' | null
@@ -301,7 +302,7 @@ export function TimesheetPage(): React.JSX.Element {
   if (settings.data === undefined || view.data === undefined) {
     return (
       <Page title={t('timesheet.timesheet')} wide className="max-w-[1300px]">
-        <p className="text-sm text-muted">{t('timesheet.loading')}</p>
+        <SkeletonRows label={t('timesheet.loading')} rows={4} />
       </Page>
     )
   }

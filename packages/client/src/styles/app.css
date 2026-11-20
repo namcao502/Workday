@@ -367,6 +367,6 @@ body {
   app-region: drag;
 }
 
-.app-titlebar :is(button, input, select, textarea, a[href], [role='button'], [role='tab']) {
+.app-titlebar :is(button, input, select, textarea, a[href], [role='button'], [role='tab'], [role='status']) {
   app-region: no-drag;
 }

@@ -33,6 +33,7 @@ import {
   VIEW_IDS,
   type BoardViewId,
 } from './boardView.js'
+import { SkeletonRows } from '../ui/Skeleton.js'
 
 const SEARCH_DEBOUNCE_MS = 200
 
@@ -302,7 +303,7 @@ export function BoardPage(): React.JSX.Element {
         </p>
       )}
       {board.data === undefined ? (
-        <p className="text-sm text-muted">{t('board.loading')}</p>
+        <SkeletonRows label={t('board.loading')} rows={4} className="[&>div:not(.sr-only)]:h-16" />
       ) : !board.data.connected ? (
         <div className="flex flex-col items-start gap-3">
           <p className="text-sm text-muted">{t('board.jiraIsNotConnectedOpenSettings')}</p>

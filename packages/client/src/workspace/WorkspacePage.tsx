@@ -29,6 +29,7 @@ import {
 import { requestNoticePermission } from './useClaudeNotices.js'
 import { tabLabel, WorkspaceTabs } from './WorkspaceTabs.js'
 import './workspace.css'
+import { SkeletonRows } from '../ui/Skeleton.js'
 
 const DEFAULT_SHARE = 0.5
 const MIN_PANE_PX = 240
@@ -147,7 +148,7 @@ export function WorkspacePage(): React.JSX.Element {
   if (view === undefined) {
     return (
       <Page title={t('workspace.workspace')}>
-        <p className="text-sm text-muted">{t('workspace.loading')}</p>
+        <SkeletonRows label={t('workspace.loading')} rows={3} />
       </Page>
     )
   }

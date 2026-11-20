@@ -638,6 +638,8 @@ export const en = {
     workspace: 'Workspace',
   },
   shell: {
+    reconnecting: 'Reconnecting...',
+    lostConnection: 'Lost connection to Workday',
     newVersionReady: 'A new version of Workday is ready.',
     reload: 'Reload',
     aKnowledgeScanFailed: 'A knowledge scan failed',

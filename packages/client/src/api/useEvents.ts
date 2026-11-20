@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { isRecord } from '../json.js'
+import { setConnectionStatus } from '../shell/connection.js'
 import { clientKind } from '../shell/desktopHost.js'
 import { setSession } from '../shell/session.js'
 import { queryKeys } from './client.js'
@@ -92,6 +93,7 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
       socket = openSocket(`/api/events?client=${clientKind()}`)
       // Events sent while the socket was down (sleep, lock screen, server restart) are lost: refetch everything.
       socket.onopen = () => {
+        setConnectionStatus('connected')
         if (wasOpen) {
           void queryClient.invalidateQueries()
         }
@@ -100,6 +102,7 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
       socket.onmessage = handleMessage
       socket.onclose = () => {
         if (!stopped) {
+          setConnectionStatus('reconnecting')
           reconnectTimer = setTimeout(connect, RECONNECT_MS)
         }
       }

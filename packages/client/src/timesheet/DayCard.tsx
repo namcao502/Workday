@@ -15,6 +15,7 @@ import { t, type Language } from '../i18n.js'
 import { TicketRows } from './TicketRows.js'
 import { dayHeader, DONE_MARK, formatMinutes, issueText, queueStatusText } from './timesheetText.js'
 import { Tip } from '../ui/Tip.js'
+import { SkeletonRows } from '../ui/Skeleton.js'
 
 const SECONDS_PER_MINUTE = 60
 const MINUTES_PER_HOUR = 60
@@ -167,7 +168,7 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
 
 function EmptyBody({ props }: { readonly props: DayCardProps }): React.JSX.Element {
   if (props.reading) {
-    return <p className="text-sm text-muted">{t('timesheet.reading')}</p>
+    return <SkeletonRows label={t('timesheet.reading')} rows={2} />
   }
   const past = props.day.date < props.clock.date
   return (

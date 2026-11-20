@@ -641,6 +641,8 @@ export const vi: Messages = {
     workspace: 'Không gian làm việc',
   },
   shell: {
+    reconnecting: 'Đang kết nối lại...',
+    lostConnection: 'Mất kết nối tới Workday',
     newVersionReady: 'Đã có bản Workday mới.',
     reload: 'Tải lại',
     aKnowledgeScanFailed: 'Một lần quét knowledge bị lỗi',

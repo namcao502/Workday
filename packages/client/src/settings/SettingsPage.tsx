@@ -12,6 +12,7 @@ import {
   settingsGroups,
   type SettingsEntry,
 } from './settingsGroups.js'
+import { SkeletonRows } from '../ui/Skeleton.js'
 
 function subscribeToHash(onChange: () => void): () => void {
   window.addEventListener('hashchange', onChange)
@@ -73,7 +74,11 @@ export function SettingsPage(): React.JSX.Element {
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           {settings.data === undefined ? (
-            <p className="text-sm text-muted">{t('settings.loading')}</p>
+            <SkeletonRows
+              label={t('settings.loading')}
+              rows={2}
+              className="[&>div:not(.sr-only)]:h-40"
+            />
           ) : (
             // An entry may render several cards (Schedules: scan and jobs); they need the same gap as entries.
             entries.map((entry) => (
