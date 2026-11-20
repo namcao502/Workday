@@ -38,7 +38,7 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
       {/* The Button takes the tooltip's trigger context itself; Tip's trigger span would leave it no hover. */}
       <Tooltip delay={500} closeDelay={0}>
         {/* palette-button: a season dresses it like the bell (season.css). */}
-        <span className="palette-button relative inline-flex">
+        <span className="palette-button relative mr-1.5 inline-flex">
           <Button
             isIconOnly
             variant="secondary"
