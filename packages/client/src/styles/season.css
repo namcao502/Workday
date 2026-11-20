@@ -287,24 +287,66 @@ html[data-season='rain'] :is(.card, .surface, .bg-surface) {
     176px 190px;
 }
 
-/* Winter and Christmas: snow settled on the top edge of the sidebar and the phone tab bar. */
-html[data-season='winter'] .app-sidebar,
-html[data-season='christmas'] .app-sidebar {
+/* Every season dresses the top edge of the sidebar and the phone tab bar; effects "off" drops it. */
+html[data-season]:not([data-season-effects='off']) .app-sidebar {
   position: relative;
 }
 
-html[data-season='winter'] :is(.app-sidebar, .app-tabbar)::before,
-html[data-season='christmas'] :is(.app-sidebar, .app-tabbar)::before {
+html[data-season]:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
   content: '';
   position: absolute;
   inset-inline: 10px;
   top: -6px;
   height: 12px;
   pointer-events: none;
+  background-repeat: repeat-x;
+}
+
+/* Winter and Christmas: settled snow. */
+html[data-season='winter']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before,
+html[data-season='christmas']:not([data-season-effects='off'])
+  :is(.app-sidebar, .app-tabbar)::before {
   background:
     radial-gradient(circle at 50% 100%, #fff 0 8px, transparent 8.5px) 0 0 / 18px 12px repeat-x,
     linear-gradient(#fff, #fff) 0 9px / 100% 3px no-repeat;
   filter: drop-shadow(0 1px 1px rgba(70, 100, 140, 0.3));
+}
+
+/* Spring: cherry petals settled on the top edge. */
+html[data-season='spring']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
+  background-size: 40px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12'%3E%3Cellipse cx='6' cy='8' rx='2.6' ry='1.5' transform='rotate(20 6 8)' fill='%23f6a6c1'/%3E%3Cellipse cx='17' cy='7' rx='2.6' ry='1.5' transform='rotate(-30 17 7)' fill='%23f9c2d4'/%3E%3Cellipse cx='28' cy='9' rx='2.6' ry='1.5' transform='rotate(10 28 9)' fill='%23f58fb1'/%3E%3Cellipse cx='36' cy='6.5' rx='2' ry='1.2' transform='rotate(-55 36 6.5)' fill='%23f9c2d4'/%3E%3C/svg%3E");
+}
+
+/* Summer: a wave crest with white foam. */
+html[data-season='summer']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
+  background-size: 24px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpath d='M0 8 Q6 2 12 8 T24 8 V12 H0Z' fill='%238fd8e6'/%3E%3Cpath d='M0 8 Q6 2 12 8 T24 8' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3C/svg%3E");
+}
+
+/* Autumn: fallen maple leaves. */
+html[data-season='autumn']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
+  background-size: 48px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12'%3E%3Cg transform='translate(7 7) rotate(20) scale(0.75) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23d9622b'/%3E%3C/g%3E%3Cg transform='translate(22 8) rotate(-35) scale(0.75) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23e8a33a'/%3E%3C/g%3E%3Cg transform='translate(36 7) rotate(60) scale(0.75) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23b8432f'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Tet: fallen apricot blossoms and petals. */
+html[data-season='tet']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
+  background-size: 44px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='12'%3E%3Ccircle cx='8.0' cy='5.1' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='9.8' cy='6.4' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='9.1' cy='8.5' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='6.9' cy='8.5' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='6.2' cy='6.4' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='8' cy='7' r='0.9' fill='%23e07b00'/%3E%3Cellipse cx='18' cy='9' rx='1.8' ry='1.1' transform='rotate(25 18 9)' fill='%23f7c531'/%3E%3Ccircle cx='28.0' cy='6.4' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='29.5' cy='7.5' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='28.9' cy='9.3' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='27.1' cy='9.3' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='26.5' cy='7.5' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='28' cy='8' r='0.8' fill='%23e07b00'/%3E%3Cellipse cx='38' cy='7' rx='1.8' ry='1.1' transform='rotate(-40 38 7)' fill='%23f9d34f'/%3E%3C/svg%3E");
+}
+
+/* Mid-Autumn: a red lantern-silk fringe with a gold trim. */
+html[data-season='midautumn']:not([data-season-effects='off'])
+  :is(.app-sidebar, .app-tabbar)::before {
+  background-size: 16px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='12'%3E%3Cpath d='M0 2 H16 V5 Q8 12 0 5Z' fill='%23d94a3a'/%3E%3Cpath d='M0 2 H16' stroke='%23f0b83a' stroke-width='1.6'/%3E%3Ccircle cx='8' cy='7.6' r='1.2' fill='%23f0b83a'/%3E%3C/svg%3E");
+}
+
+/* Rain: water beaded along the top edge. */
+html[data-season='rain']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
+  background-size: 30px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='12'%3E%3Cpath d='M0 5.4 H30' stroke='%23a9c6e4' stroke-width='1.6' stroke-linecap='round'/%3E%3Cg transform='translate(8 5.6) scale(0.55)'%3E%3Cpath d='M0 0 C1.6 2.6 2.8 4 2.8 5.4 A2.8 2.8 0 1 1 -2.8 5.4 C-2.8 4 -1.6 2.6 0 0Z' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3C/g%3E%3Cg transform='translate(22 5.6) scale(0.42)'%3E%3Cpath d='M0 0 C1.6 2.6 2.8 4 2.8 5.4 A2.8 2.8 0 1 1 -2.8 5.4 C-2.8 4 -1.6 2.6 0 0Z' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* Every season, kept light: one strip along the top bar (the same on every page, stopping short of the
@@ -379,10 +421,10 @@ html[data-season='winter']:not([data-season-effects='off']) .app-topbar::before 
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='16'%3E%3Cpath d='M0 0 H60 V2.4 H0Z' fill='%23eef6ff'/%3E%3Cpath d='M4 1 L7 12 L10 1Z M17 1 L19.5 7 L22 1Z M29 1 L33 15 L37 1Z M45 1 L47.5 8 L50 1Z' fill='%23e3f0fc' stroke='%239cc3e6' stroke-width='0.8' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 html[data-season='winter']:not([data-season-effects='off']) .notice-bell::after {
-  left: 4px;
-  top: -4px;
-  width: 28px;
-  height: 13px;
+  left: -7px;
+  top: -5px;
+  width: 24px;
+  height: 11px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 12'%3E%3Cpath d='M1 11 C1 6 6 3 9.5 5.5 C11.5 1 18 1 19.5 5 C23 3.5 26 7 25 11 Z' fill='%23fff' stroke='%23c9dcef' stroke-width='0.8'/%3E%3C/svg%3E");
 }
 
@@ -408,11 +450,11 @@ html[data-season='summer']:not([data-season-effects='off']) .app-topbar::before 
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='18'%3E%3Cpath d='M0 2 Q45 8 90 2' fill='none' stroke='%238a97a5' stroke-width='1'/%3E%3Cpath d='M9 3.6 L23 4.8 L16 16Z' fill='%23ff7a59'/%3E%3Cpath d='M38 4.8 L52 4.8 L45 16.5Z' fill='%23ffc94a'/%3E%3Cpath d='M67 4.8 L81 3.6 L74 16Z' fill='%233bb3c3'/%3E%3C/svg%3E");
 }
 html[data-season='summer']:not([data-season-effects='off']) .notice-bell::after {
-  left: 5px;
-  top: -2px;
-  width: 26px;
-  height: 11px;
-  rotate: -10deg;
+  left: -5px;
+  top: -1px;
+  width: 22px;
+  height: 9.5px;
+  rotate: -14deg;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 11'%3E%3Cpath d='M2 2.5 H11.5 Q12 6.5 9.5 8.5 Q6.5 10 3.8 8.5 Q2 6.5 2 2.5Z M14.5 2.5 H24 Q24 6.5 22.2 8.5 Q19.5 10 16.5 8.5 Q14 6.5 14.5 2.5Z' fill='%231f2933' stroke='%23fff' stroke-opacity='0.55' stroke-width='0.7'/%3E%3Cpath d='M11.5 3.4 Q13 2.4 14.5 3.4' fill='none' stroke='%231f2933' stroke-width='1.2'/%3E%3Cpath d='M3.5 4 L6 4 M16 4 L18.5 4' stroke='%23fff' stroke-opacity='0.6' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
@@ -454,10 +496,11 @@ html[data-season='midautumn']:not([data-season-effects='off']) .app-topbar::befo
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='24'%3E%3Cpath d='M0 2 Q45 7 90 2' fill='none' stroke='%237a5a3a' stroke-width='0.9'/%3E%3Cline x1='22' y1='3' x2='22' y2='7' stroke='%237a5a3a' stroke-width='0.8'/%3E%3Crect x='19.5' y='7' width='5' height='1.6' rx='0.5' fill='%23d9a531'/%3E%3Cellipse cx='22' cy='13.2' rx='5.6' ry='4.8' fill='%23e0453a'/%3E%3Cpath d='M22 8.6 V17.8' stroke='%23000' stroke-opacity='0.15' stroke-width='0.7'/%3E%3Crect x='19.5' y='17.6' width='5' height='1.6' rx='0.5' fill='%23d9a531'/%3E%3Cline x1='22' y1='19.2' x2='22' y2='23' stroke='%23d9a531' stroke-width='1'/%3E%3Cline x1='68' y1='3' x2='68' y2='7' stroke='%237a5a3a' stroke-width='0.8'/%3E%3Crect x='65.5' y='7' width='5' height='1.6' rx='0.5' fill='%23d9a531'/%3E%3Cellipse cx='68' cy='13.2' rx='5.6' ry='4.8' fill='%23f0a830'/%3E%3Cpath d='M68 8.6 V17.8' stroke='%23000' stroke-opacity='0.15' stroke-width='0.7'/%3E%3Crect x='65.5' y='17.6' width='5' height='1.6' rx='0.5' fill='%23d9a531'/%3E%3Cline x1='68' y1='19.2' x2='68' y2='23' stroke='%23d9a531' stroke-width='1'/%3E%3C/svg%3E");
 }
 html[data-season='midautumn']:not([data-season-effects='off']) .notice-bell::after {
-  left: 8px;
+  left: -2px;
   top: -11px;
-  width: 21px;
-  height: 16px;
+  width: 19px;
+  height: 15px;
+  rotate: -10deg;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 21 16'%3E%3Cellipse cx='6' cy='8' rx='3.4' ry='7.4' transform='rotate(-14 6 8)' fill='%23fff' stroke='%23d9d4dc' stroke-width='0.7'/%3E%3Cellipse cx='6' cy='8.6' rx='1.5' ry='5' transform='rotate(-14 6 8)' fill='%23f5b8c8'/%3E%3Cellipse cx='15' cy='8' rx='3.4' ry='7.4' transform='rotate(14 15 8)' fill='%23fff' stroke='%23d9d4dc' stroke-width='0.7'/%3E%3Cellipse cx='15' cy='8.6' rx='1.5' ry='5' transform='rotate(14 15 8)' fill='%23f5b8c8'/%3E%3C/svg%3E");
 }
 
@@ -468,10 +511,10 @@ html[data-season='rain']:not([data-season-effects='off']) .app-topbar::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='16'%3E%3Cpath d='M0 3 Q22 8 45 3 T90 3' fill='none' stroke='%238a97a5' stroke-width='1'/%3E%3Cg transform='translate(15 6) scale(0.9)'%3E%3Cpath d='M0 0 C1.6 2.6 2.8 4 2.8 5.4 A2.8 2.8 0 1 1 -2.8 5.4 C-2.8 4 -1.6 2.6 0 0Z' fill='%23a9c6e4' fill-opacity='0.9' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='-1' cy='5' r='0.8' fill='%23fff'/%3E%3C/g%3E%3Cg transform='translate(45 4) scale(1.1)'%3E%3Cpath d='M0 0 C1.6 2.6 2.8 4 2.8 5.4 A2.8 2.8 0 1 1 -2.8 5.4 C-2.8 4 -1.6 2.6 0 0Z' fill='%23a9c6e4' fill-opacity='0.9' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='-1' cy='5' r='0.8' fill='%23fff'/%3E%3C/g%3E%3Cg transform='translate(75 6) scale(0.8)'%3E%3Cpath d='M0 0 C1.6 2.6 2.8 4 2.8 5.4 A2.8 2.8 0 1 1 -2.8 5.4 C-2.8 4 -1.6 2.6 0 0Z' fill='%23a9c6e4' fill-opacity='0.9' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='-1' cy='5' r='0.8' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E");
 }
 html[data-season='rain']:not([data-season-effects='off']) .notice-bell::after {
-  left: -1px;
+  left: -9px;
   top: -9px;
-  width: 30px;
-  height: 13px;
+  width: 26px;
+  height: 11.5px;
   rotate: -12deg;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 11'%3E%3Cpath d='M1 10 Q13 -3 25 10 Q22 7.6 19 10 Q16 7.6 13 10 Q10 7.6 7 10 Q4 7.6 1 10Z' fill='%234a7fb5'/%3E%3Cpath d='M13 3.5 V1' stroke='%234a7fb5' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
 }
