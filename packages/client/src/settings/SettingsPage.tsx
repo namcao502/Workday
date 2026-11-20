@@ -37,7 +37,7 @@ export function SettingsPage(): React.JSX.Element {
     <Page title={t('settings.settings')} wide className="max-w-6xl">
       <div className="flex flex-col gap-5 md:flex-row md:items-start">
         <nav
-          className="flex shrink-0 flex-col gap-1 md:w-52"
+          className="flex shrink-0 flex-col gap-1 md:sticky md:top-4 md:w-52"
           aria-label={t('settings.settingsGroups')}
         >
           <Input
@@ -74,7 +74,12 @@ export function SettingsPage(): React.JSX.Element {
           {settings.data === undefined ? (
             <p className="text-sm text-muted">{t('settings.loading')}</p>
           ) : (
-            entries.map((entry) => <div key={entry.id}>{entry.render(settings.data)}</div>)
+            // An entry may render several cards (Schedules: scan and jobs); they need the same gap as entries.
+            entries.map((entry) => (
+              <div key={entry.id} className="flex flex-col gap-5">
+                {entry.render(settings.data)}
+              </div>
+            ))
           )}
           {searching && entries.length === 0 ? (
             <p className="text-sm text-muted" role="status">
