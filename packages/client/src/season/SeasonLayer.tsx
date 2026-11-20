@@ -139,7 +139,7 @@ export function SeasonLayer({ season, level, dark }: SeasonLayerProps): React.JS
       <div
         key={season}
         aria-hidden="true"
-        className="season-backdrop season-fade-in pointer-events-none fixed inset-0 -z-10"
+        className="season-backdrop season-fade-in fill-screen pointer-events-none fixed inset-0 -z-10"
         data-still={still ? 'true' : undefined}
         data-testid="season-layer"
       />
@@ -147,7 +147,7 @@ export function SeasonLayer({ season, level, dark }: SeasonLayerProps): React.JS
         <div
           key={`particles-${season}`}
           aria-hidden="true"
-          className="season-fade-in pointer-events-none fixed inset-0 z-20"
+          className="season-fade-in fill-screen pointer-events-none fixed inset-0 z-20"
         >
           <Particles season={season} dark={dark} density={level === 'full' ? 1 : LIGHT_DENSITY} />
         </div>
