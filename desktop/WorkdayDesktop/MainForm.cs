@@ -306,7 +306,15 @@ internal sealed class MainForm : Form
             e.Handled = true;
             if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
             {
-                Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+                OpenInBrowser(uri.AbsoluteUri);
+            }
+        };
+        core.NavigationStarting += (_, e) =>
+        {
+            if (ExternalLinks.IsExternal(e.Uri, _port))
+            {
+                e.Cancel = true;
+                OpenInBrowser(e.Uri);
             }
         };
         core.PermissionRequested += (_, e) =>
@@ -321,6 +329,18 @@ internal sealed class MainForm : Form
             e.Handled = true;
             _tray.ShowNotification(e.Notification);
         };
+    }
+
+    private static void OpenInBrowser(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // No default browser is registered; staying on the app page is the safe fallback.
+        }
     }
 
     protected override void Dispose(bool disposing)
