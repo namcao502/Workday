@@ -287,66 +287,89 @@ html[data-season='rain'] :is(.card, .surface, .bg-surface) {
     176px 190px;
 }
 
-/* Every season dresses the top edge of the sidebar and the phone tab bar; effects "off" drops it. */
+/* Every season sets small things on the sidebar's (and the phone tab bar's) top edge: a ground strip
+   plus objects at the right end. The sidebar steps down to make room; effects "off" drops it all. */
 html[data-season]:not([data-season-effects='off']) .app-sidebar {
   position: relative;
+  margin-top: 24px;
 }
 
 html[data-season]:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
   content: '';
   position: absolute;
-  inset-inline: 10px;
-  top: -6px;
-  height: 12px;
+  inset-inline: 14px;
+  top: -24px;
+  height: 24px;
   pointer-events: none;
-  background-repeat: repeat-x;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
 }
 
-/* Winter and Christmas: settled snow. */
-html[data-season='winter']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before,
+/* Winter: snow with two pines and a snowman. */
+html[data-season='winter']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Ccircle cx='178' cy='16' r='5.6' fill='%23fff' stroke='%23c9dcef' stroke-width='0.7'/%3E%3Ccircle cx='178' cy='8' r='3.8' fill='%23fff' stroke='%23c9dcef' stroke-width='0.7'/%3E%3Cpath d='M174.4 11 H181.6 L182.4 15' stroke='%23e5484d' stroke-width='1.6' fill='none'/%3E%3Cpath d='M179 8 l3.6 0.8 l-3.6 0.6Z' fill='%23f08a24'/%3E%3Ccircle cx='176.7' cy='7' r='0.55' fill='%23333'/%3E%3Ccircle cx='179.1' cy='6.800000000000001' r='0.55' fill='%23333'/%3E%3Cpath d='M174 4.800000000000001 H182 M175.4 4.800000000000001 V1 H180.6 V4.800000000000001' fill='%23333' stroke='%23333' stroke-width='1.2'/%3E%3Crect x='35' y='19.5' width='2' height='2.5' fill='%236b4a36'/%3E%3Cpath d='M31.9 20.0 L36 12.8 L40.1 20.0Z' fill='%232f7a4c'/%3E%3Cpath d='M33.9 16.4 L36 12.8 L38.1 16.4Z' fill='%23fff'/%3E%3Cpath d='M32.9 16.7 L36 9.0 L39.1 16.7Z' fill='%232f7a4c'/%3E%3Cpath d='M34.4 12.8 L36 9.0 L37.6 12.8Z' fill='%23fff'/%3E%3Cpath d='M33.8 13.4 L36 6.0 L38.2 13.4Z' fill='%232f7a4c'/%3E%3Cpath d='M34.9 9.7 L36 6.0 L37.1 9.7Z' fill='%23fff'/%3E%3Crect x='49' y='19.5' width='2' height='2.5' fill='%236b4a36'/%3E%3Cpath d='M47.0 20.0 L50 14.9 L53.0 20.0Z' fill='%232f7a4c'/%3E%3Cpath d='M48.5 17.5 L50 14.9 L51.5 17.5Z' fill='%23fff'/%3E%3Cpath d='M47.7 17.6 L50 12.2 L52.3 17.6Z' fill='%232f7a4c'/%3E%3Cpath d='M48.8 14.9 L50 12.2 L51.2 14.9Z' fill='%23fff'/%3E%3Cpath d='M48.4 15.2 L50 10.0 L51.6 15.2Z' fill='%232f7a4c'/%3E%3Cpath d='M49.2 12.6 L50 10.0 L50.8 12.6Z' fill='%23fff'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+      right bottom / 180px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Ccircle cx='5.5' cy='19.4' r='3.2' fill='%23fff'/%3E%3Crect y='19' width='11' height='3' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E")
+      left bottom / 11px 24px repeat-x;
+}
+
+/* Christmas: snow, a snowman, a decorated tree and gifts. */
 html[data-season='christmas']:not([data-season-effects='off'])
   :is(.app-sidebar, .app-tabbar)::before {
   background:
-    radial-gradient(circle at 50% 100%, #fff 0 8px, transparent 8.5px) 0 0 / 18px 12px repeat-x,
-    linear-gradient(#fff, #fff) 0 9px / 100% 3px no-repeat;
-  filter: drop-shadow(0 1px 1px rgba(70, 100, 140, 0.3));
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Ccircle cx='146' cy='16' r='5.6' fill='%23fff' stroke='%23c9dcef' stroke-width='0.7'/%3E%3Ccircle cx='146' cy='8' r='3.8' fill='%23fff' stroke='%23c9dcef' stroke-width='0.7'/%3E%3Cpath d='M142.4 11 H149.6 L150.4 15' stroke='%23e5484d' stroke-width='1.6' fill='none'/%3E%3Cpath d='M147 8 l3.6 0.8 l-3.6 0.6Z' fill='%23f08a24'/%3E%3Ccircle cx='144.7' cy='7' r='0.55' fill='%23333'/%3E%3Ccircle cx='147.1' cy='6.800000000000001' r='0.55' fill='%23333'/%3E%3Cpath d='M142 4.800000000000001 H150 M143.4 4.800000000000001 V1 H148.6 V4.800000000000001' fill='%23333' stroke='%23333' stroke-width='1.2'/%3E%3Crect x='163' y='19.5' width='2' height='2.5' fill='%236b4a36'/%3E%3Cpath d='M159.6 20.0 L164 12.2 L168.4 20.0Z' fill='%232f7a4c'/%3E%3Cpath d='M160.6 16.5 L164 8.2 L167.4 16.5Z' fill='%232f7a4c'/%3E%3Cpath d='M161.6 13.0 L164 5.0 L166.4 13.0Z' fill='%232f7a4c'/%3E%3Ccircle cx='161' cy='17' r='1' fill='%23e5484d'/%3E%3Ccircle cx='166.5' cy='14' r='1' fill='%23f5b83d'/%3E%3Ccircle cx='163' cy='11' r='1' fill='%233e8ed0'/%3E%3Ccircle cx='167.5' cy='18' r='1' fill='%23e5484d'/%3E%3Cpath d='M164 2 l1 2 2.2 0.3 -1.6 1.5 0.4 2.2 -2 -1.1 -2 1.1 0.4 -2.2 -1.6 -1.5 2.2 -0.3Z' fill='%23f5c542'/%3E%3Crect x='173' y='14' width='9' height='8' rx='0.8' fill='%23e5484d'/%3E%3Crect x='176.6' y='14' width='1.8' height='8' fill='%23f5c542'/%3E%3Cpath d='M177.5 14 q-3 -3.4 -4 -0.6 q1 1 4 0.6 q3 -3.4 4 -0.6 q-1 1 -4 0.6' fill='none' stroke='%23f5c542' stroke-width='1'/%3E%3Crect x='183' y='16' width='7' height='6' rx='0.8' fill='%2330a46c'/%3E%3Crect x='185.6' y='16' width='1.8' height='6' fill='%23fff'/%3E%3Cpath d='M186.5 16 q-3 -3.4 -4 -0.6 q1 1 4 0.6 q3 -3.4 4 -0.6 q-1 1 -4 0.6' fill='none' stroke='%23fff' stroke-width='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+      right bottom / 180px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Ccircle cx='5.5' cy='19.4' r='3.2' fill='%23fff'/%3E%3Crect y='19' width='11' height='3' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E")
+      left bottom / 11px 24px repeat-x;
 }
 
-/* Spring: cherry petals settled on the top edge. */
+/* Spring: grass, a small bird and tulips. */
 html[data-season='spring']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
-  background-size: 40px 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12'%3E%3Cellipse cx='6' cy='8' rx='2.6' ry='1.5' transform='rotate(20 6 8)' fill='%23f6a6c1'/%3E%3Cellipse cx='17' cy='7' rx='2.6' ry='1.5' transform='rotate(-30 17 7)' fill='%23f9c2d4'/%3E%3Cellipse cx='28' cy='9' rx='2.6' ry='1.5' transform='rotate(10 28 9)' fill='%23f58fb1'/%3E%3Cellipse cx='36' cy='6.5' rx='2' ry='1.2' transform='rotate(-55 36 6.5)' fill='%23f9c2d4'/%3E%3C/svg%3E");
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Cpath d='M152 18 l-3.5 -1.5 l3 3Z' fill='%23f08a5d'/%3E%3Cellipse cx='157' cy='17.4' rx='5.2' ry='4' fill='%23f08a5d'/%3E%3Ccircle cx='161' cy='13.4' r='2.8' fill='%23f08a5d'/%3E%3Cpath d='M163.6 13 l2.6 0.8 -2.6 0.8Z' fill='%23f5b83d'/%3E%3Ccircle cx='161.8' cy='12.6' r='0.6' fill='%23222'/%3E%3Cpath d='M155 17 q2 -2.6 4.6 -0.4' stroke='%23fff' stroke-opacity='0.6' fill='none' stroke-width='0.9'/%3E%3Cpath d='M156 21.4 v0.6 M158 21.4 v0.6' stroke='%23a0703c' stroke-width='0.8'/%3E%3Cpath d='M176 22 V10' stroke='%234c9a45' stroke-width='1.2'/%3E%3Cpath d='M176 18 q-3.5 -1 -4 -5 q3 1 4 4' fill='%235aa84f'/%3E%3Cpath d='M173 6 q0 4 3 4.6 q3 -0.6 3 -4.6 l-1.5 1.6 -1.5 -2 -1.5 2Z' fill='%23f06292'/%3E%3Cpath d='M185 22 V12' stroke='%234c9a45' stroke-width='1.2'/%3E%3Cpath d='M185 18 q-3.5 -1 -4 -5 q3 1 4 4' fill='%235aa84f'/%3E%3Cpath d='M182 8 q0 4 3 4.6 q3 -0.6 3 -4.6 l-1.5 1.6 -1.5 -2 -1.5 2Z' fill='%23f5b83d'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+      right bottom / 180px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Crect y='20' width='12' height='2' fill='%236dbb5c'/%3E%3Cpath d='M1.5 21 l-0.6 -4' stroke='%235aa84f' stroke-width='1.1' fill='none' stroke-linecap='round'/%3E%3Cpath d='M4.5 21 l0.5 -5.5' stroke='%235aa84f' stroke-width='1.1' fill='none' stroke-linecap='round'/%3E%3Cpath d='M7.5 21 l-0.4 -3.5' stroke='%235aa84f' stroke-width='1.1' fill='none' stroke-linecap='round'/%3E%3Cpath d='M10.5 21 l0.7 -5' stroke='%235aa84f' stroke-width='1.1' fill='none' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E")
+      left bottom / 12px 24px repeat-x;
 }
 
-/* Summer: a wave crest with white foam. */
+/* Summer: sand with a beach umbrella and a bucket. */
 html[data-season='summer']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
-  background-size: 24px 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpath d='M0 8 Q6 2 12 8 T24 8 V12 H0Z' fill='%238fd8e6'/%3E%3Cpath d='M0 8 Q6 2 12 8 T24 8' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3C/svg%3E");
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Cpath d='M168 20 L166 5' stroke='%238a6a4a' stroke-width='1'/%3E%3Cpath d='M157 9 Q165 -1 175 4 Z' fill='%23ff7a59'/%3E%3Cpath d='M161 6.5 Q164 2 167 1.3999999999999986 L166 5Z' fill='%23fff' fill-opacity='0.8'/%3E%3Cpath d='M180.5 15 H187.5 L186.6 20.5 H181.4Z' fill='%233bb3c3'/%3E%3Cpath d='M180.5 15 q3.5 -4 7 0' fill='none' stroke='%232a8a96' stroke-width='0.8'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+      right bottom / 180px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cpath d='M0 19.5 Q15 18 30 19 T60 19.5 V22 H0Z' fill='%23f2d49b'/%3E%3C/g%3E%3C/svg%3E")
+      left bottom / 60px 24px repeat-x;
 }
 
-/* Autumn: fallen maple leaves. */
+/* Autumn: fallen leaves and a pumpkin. */
 html[data-season='autumn']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
-  background-size: 48px 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12'%3E%3Cg transform='translate(7 7) rotate(20) scale(0.75) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23d9622b'/%3E%3C/g%3E%3Cg transform='translate(22 8) rotate(-35) scale(0.75) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23e8a33a'/%3E%3C/g%3E%3Cg transform='translate(36 7) rotate(60) scale(0.75) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23b8432f'/%3E%3C/g%3E%3C/svg%3E");
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Cellipse cx='175' cy='17' rx='4' ry='5' fill='%23e8781f'/%3E%3Cellipse cx='181' cy='17' rx='4' ry='5' fill='%23e8781f'/%3E%3Cellipse cx='178' cy='17' rx='3.6' ry='5.2' fill='%23f08a2c'/%3E%3Cpath d='M178 12 q0.6 -2.4 2.4 -3' stroke='%234c7a32' stroke-width='1.4' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+      right bottom / 180px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(4 19) rotate(0) scale(0.62) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23d9622b'/%3E%3C/g%3E%3Cg transform='translate(12 19) rotate(53) scale(0.62) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23e8a33a'/%3E%3C/g%3E%3Cg transform='translate(20 19) rotate(106) scale(0.62) translate(-5 -5)'%3E%3Cpolygon points='5,0 6,2.8 8.6,1.6 7.8,4.6 10,5.4 7.2,6.6 7.6,8.6 5.4,7.6 5,10 4.6,7.6 2.4,8.6 2.8,6.6 0,5.4 2.2,4.6 1.4,1.6 4,2.8' fill='%23b8432f'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+      left bottom / 24px 24px repeat-x;
 }
 
-/* Tet: fallen apricot blossoms and petals. */
+/* Tet: an apricot pot and a banh chung. */
 html[data-season='tet']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
-  background-size: 44px 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='12'%3E%3Ccircle cx='8.0' cy='5.1' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='9.8' cy='6.4' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='9.1' cy='8.5' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='6.9' cy='8.5' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='6.2' cy='6.4' r='1.9' fill='%23f7c531'/%3E%3Ccircle cx='8' cy='7' r='0.9' fill='%23e07b00'/%3E%3Cellipse cx='18' cy='9' rx='1.8' ry='1.1' transform='rotate(25 18 9)' fill='%23f7c531'/%3E%3Ccircle cx='28.0' cy='6.4' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='29.5' cy='7.5' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='28.9' cy='9.3' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='27.1' cy='9.3' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='26.5' cy='7.5' r='1.6' fill='%23f7c531'/%3E%3Ccircle cx='28' cy='8' r='0.8' fill='%23e07b00'/%3E%3Cellipse cx='38' cy='7' rx='1.8' ry='1.1' transform='rotate(-40 38 7)' fill='%23f9d34f'/%3E%3C/svg%3E");
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Cpath d='M163 16 H173 L172 22 H164Z' fill='%23b5542f'/%3E%3Crect x='162.4' y='15' width='11.2' height='1.8' rx='0.6' fill='%23c96a3f'/%3E%3Cpath d='M168 15 q-1 -6 -6 -10 M168 15 q1 -7 5 -12 M168 13 q3 -2 7 -3' stroke='%236b4a36' stroke-width='1' fill='none'/%3E%3Ccircle cx='162.0' cy='3.0' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='163.4' cy='4.0' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='162.9' cy='5.7' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='161.1' cy='5.7' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='160.6' cy='4.0' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='162' cy='4.5' r='0.8' fill='%23e07b00'/%3E%3Ccircle cx='173.0' cy='1.0' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='174.4' cy='2.0' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='173.9' cy='3.7' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='172.1' cy='3.7' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='171.6' cy='2.0' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='173' cy='2.5' r='0.8' fill='%23e07b00'/%3E%3Ccircle cx='175.0' cy='8.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='176.4' cy='9.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='175.9' cy='11.2' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='174.1' cy='11.2' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='173.6' cy='9.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='175' cy='10' r='0.8' fill='%23e07b00'/%3E%3Ccircle cx='165.0' cy='7.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='166.4' cy='8.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='165.9' cy='10.2' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='164.1' cy='10.2' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='163.6' cy='8.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='165' cy='9' r='0.8' fill='%23e07b00'/%3E%3Ccircle cx='170.0' cy='5.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='171.4' cy='6.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='170.9' cy='8.2' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='169.1' cy='8.2' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='168.6' cy='6.5' r='1.5' fill='%23f7c531'/%3E%3Ccircle cx='170' cy='7' r='0.8' fill='%23e07b00'/%3E%3Crect x='180' y='12' width='10' height='10' rx='0.8' fill='%233f8a4a'/%3E%3Cpath d='M180 17 H190 M185 12 V22' stroke='%23e9d7a8' stroke-width='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+    right bottom / 180px 24px no-repeat;
 }
 
-/* Mid-Autumn: a red lantern-silk fringe with a gold trim. */
+/* Mid-Autumn: a star lantern and the moon rabbit. */
 html[data-season='midautumn']:not([data-season-effects='off'])
   :is(.app-sidebar, .app-tabbar)::before {
-  background-size: 16px 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='12'%3E%3Cpath d='M0 2 H16 V5 Q8 12 0 5Z' fill='%23d94a3a'/%3E%3Cpath d='M0 2 H16' stroke='%23f0b83a' stroke-width='1.6'/%3E%3Ccircle cx='8' cy='7.6' r='1.2' fill='%23f0b83a'/%3E%3C/svg%3E");
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Cpath d='M165 22 L170 1' stroke='%238a6a4a' stroke-width='0.9'/%3E%3Cpolygon points='162.0,5.5 163.6,9.7 168.2,10.0 164.7,12.9 165.8,17.3 162.0,14.8 158.2,17.3 159.3,12.9 155.8,10.0 160.4,9.7' fill='%23e0453a' stroke='%23f2c14e' stroke-width='0.6'/%3E%3Ccircle cx='162' cy='12' r='1.6' fill='%23ffe08a'/%3E%3Cellipse cx='182' cy='18' rx='6' ry='4.4' fill='%23fff' stroke='%23d9d4dc' stroke-width='0.7'/%3E%3Ccircle cx='187' cy='14' r='3.4' fill='%23fff' stroke='%23d9d4dc' stroke-width='0.7'/%3E%3Cellipse cx='186' cy='7.5' rx='1.2' ry='4' transform='rotate(-12 186 7.5)' fill='%23fff' stroke='%23d9d4dc' stroke-width='0.6'/%3E%3Cellipse cx='188.6' cy='8' rx='1.2' ry='4' transform='rotate(14 188.6 8)' fill='%23fff' stroke='%23d9d4dc' stroke-width='0.6'/%3E%3Ccircle cx='188.2' cy='13.6' r='0.6' fill='%23333'/%3E%3Ccircle cx='176' cy='17.4' r='1.6' fill='%23fff' stroke='%23d9d4dc' stroke-width='0.6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+    right bottom / 180px 24px no-repeat;
 }
 
-/* Rain: water beaded along the top edge. */
+/* Rain: a frog under a lotus leaf by a puddle. */
 html[data-season='rain']:not([data-season-effects='off']) :is(.app-sidebar, .app-tabbar)::before {
-  background-size: 30px 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='12'%3E%3Cpath d='M0 5.4 H30' stroke='%23a9c6e4' stroke-width='1.6' stroke-linecap='round'/%3E%3Cg transform='translate(8 5.6) scale(0.55)'%3E%3Cpath d='M0 0 C1.6 2.6 2.8 4 2.8 5.4 A2.8 2.8 0 1 1 -2.8 5.4 C-2.8 4 -1.6 2.6 0 0Z' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3C/g%3E%3Cg transform='translate(22 5.6) scale(0.42)'%3E%3Cpath d='M0 0 C1.6 2.6 2.8 4 2.8 5.4 A2.8 2.8 0 1 1 -2.8 5.4 C-2.8 4 -1.6 2.6 0 0Z' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3C/g%3E%3C/svg%3E");
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Cg transform='translate(-12 0)'%3E%3Cpath d='M173 13 L177 2' stroke='%233f7a3a' stroke-width='0.9'/%3E%3Cpath d='M166 5 Q176 -5 186 2 Q176 4 166 5Z' fill='%235aa84f'/%3E%3Cellipse cx='178' cy='18.4' rx='6' ry='3.8' fill='%236dbb5c'/%3E%3Ccircle cx='175.4' cy='14.6' r='1.8' fill='%236dbb5c'/%3E%3Ccircle cx='180.6' cy='14.6' r='1.8' fill='%236dbb5c'/%3E%3Ccircle cx='175.4' cy='14.4' r='0.8' fill='%23222'/%3E%3Ccircle cx='180.6' cy='14.4' r='0.8' fill='%23222'/%3E%3Cpath d='M176 18.6 q2 1.2 4 0' stroke='%232f6b2c' stroke-width='0.6' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+      right bottom / 180px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='24'%3E%3Cg transform='translate(0 2)'%3E%3Crect y='19.6' width='60' height='2.4' fill='%23a9c6e4'/%3E%3Cellipse cx='30' cy='20.6' rx='5' ry='1' fill='none' stroke='%236f8fb0' stroke-width='0.6'/%3E%3C/g%3E%3C/svg%3E")
+      left bottom / 60px 24px repeat-x;
 }
 
 /* Every season, kept light: one strip along the top bar (the same on every page, stopping short of the
