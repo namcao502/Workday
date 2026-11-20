@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-Workday: a local web app (Node 22, TypeScript) that replaces a Windows tray app for daily work-log entries.
-Plan notes live in `docs/web-foundation/`.
+Workday: a local web app (Node 22, TypeScript) for daily work-log entries, with a Windows desktop shell.
+Plan notes for new work go in `docs/<slug>/`; finished ones are removed (git history keeps them).
 
 ## Commands
 
@@ -64,8 +64,6 @@ Each package has two tsconfigs: `tsconfig.json` (noEmit, includes tests; used by
   (`server/src/workspace/agentSession.ts`, port `ClaudeAgent` in core), started by the first prompt. Permission,
   question and plan prompts arrive through `canUseTool` and wait as `ChatRequest`s; chat history is read from the
   transcript. No PTY, no hooks.
-- The C# app in `C:\Project\NoisWorkday` is the spec being ported phase by phase; its tests become Vitest tests.
-  Plans and impl notes per phase live in `docs/<slug>/` (`plan.md` has the phase roadmap in `docs/web-foundation/`).
 
 ## Rules
 

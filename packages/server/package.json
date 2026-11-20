@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch --import tsx --conditions=development --env-file=dev.env --env-file-if-exists=../../.env src/main.ts",
-    "import-wpf": "tsx --conditions=development --env-file-if-exists=../../.env src/cli/importWpfMain.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },

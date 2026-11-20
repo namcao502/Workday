@@ -1,7 +1,7 @@
 # Workday
 
 A local web app for daily work-log entries. It runs on your machine and listens on 127.0.0.1 only. Optional remote access goes through a Cloudflare tunnel
-(paired devices only; see `docs/remote-access/`). VPN mode is the alternative: an HTTPS listener on the PC's VPN
+(paired devices only). VPN mode is the alternative: an HTTPS listener on the PC's VPN
 address (default port 8443) that accepts only the allowed IP ranges and paired devices, with a self-made CA the phone
 installs once from a plain-HTTP setup page (port 8444, open only while pairing). Settings can open the Windows
 firewall for both ports. Cloudflare stays fully supported; both can run together.
@@ -48,22 +48,16 @@ WORKDAY_HRM_API_KEY=<your HRM API key>
 ```
 
 Other overrides, all optional: `WORKDAY_ADO_PAT` (Azure DevOps), `WORKDAY_TUNNEL_TOKEN` (Cloudflare tunnel),
-`WORKDAY_MASTER_KEY` (base64 key for `secrets.json`, wins over `master.key` in the data dir),
-`WORKDAY_IMPORT_PASSWORD` (for `import-wpf` without a terminal).
-
-On Windows, `scripts/env-from-tokens.ps1` writes `.env` from NOIS Workday's `tokens.env`, both values included.
+`WORKDAY_MASTER_KEY` (base64 key for `secrets.json`, wins over `master.key` in the data dir).
 `WORKDAY_MS_GRAPH_TOKEN` (env only) replaces the TSC token sniff, for a machine without a display.
 
-## Move from NOIS Workday
+## Windows desktop app
 
-With the Workday server stopped, `npm run import-wpf -- --from "%APPDATA%\NoisWorkday" [--cred <file.nwcred>] [--dry-run]`
-fills in the board, queue, Teams marks, workspace tabs and secrets. Steps and details: `docs/cutover/retire-wpf.md`.
+`powershell -File deploy/windows/install-desktop.ps1` publishes the WinForms + WebView2 shell to
+`%LOCALAPPDATA%\Programs\Workday` with a Start Menu shortcut (`-Remove` uninstalls). It starts the server, lives in
+the tray (start with Windows, build and restart the server, update the desktop app) and shows the UI in its own window.
 
-## Run as a service
-
-- Linux (systemd user unit) and moving data from Windows: `docs/cutover/deploy.md`, installer `deploy/linux/install.sh`.
-- Windows (Scheduled Task at logon): `deploy/windows/install-task.ps1` (`-Remove` to uninstall).
-- Retiring the NOIS Workday WPF app and importing its data: `docs/cutover/retire-wpf.md`.
+Linux (systemd user unit): `deploy/linux/install.sh` and `deploy/linux/workday.service`.
 
 ## Data directory
 
