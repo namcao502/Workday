@@ -111,6 +111,12 @@ html:root[data-season] :is(.button--primary, .key-pill) {
     0 3px 10px -4px var(--accent);
 }
 
+/* The ticket key keeps the chip's soft-tint text color; on the solid accent fill it needs the light one. */
+html:root[data-season] .key-pill {
+  color: var(--accent-foreground);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
 html:root[data-season] .button--primary:not(:disabled, [aria-disabled='true']):active,
 html:root[data-season] .key-pill-button:active .key-pill {
   transform: scale(0.95);
