@@ -30,7 +30,9 @@ function Toast({
     }
   }, [notice.id, expire])
   return (
-    <Card className={`w-80 max-w-[92vw] flex-row items-start gap-0 bg-overlay p-0 shadow-overlay`}>
+    <Card
+      className={`app-toast w-80 max-w-[92vw] flex-row items-start gap-0 bg-overlay p-0 shadow-overlay`}
+    >
       <button
         type="button"
         className="flex flex-1 cursor-pointer items-start gap-2 p-3 text-left text-sm"

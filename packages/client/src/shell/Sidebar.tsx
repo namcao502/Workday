@@ -1,5 +1,5 @@
 import { Badge, buttonVariants } from '@heroui/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { t } from '../i18n.js'
 import { PageIcon } from './pageIcons.js'
 import { PAGE_IDS, pageLabel, type PageId } from './pages.js'
@@ -59,6 +59,54 @@ function badgeTip(page: PageId, workspaceBadge: number, boardBadge: number, sett
   return []
 }
 
+interface Slot {
+  readonly top: number
+  readonly height: number
+}
+
+// Offset of an element inside the nav, summing offsetTop up the offsetParent chain.
+// Measured on screen, so it matches what is drawn whatever the offset parents in between are.
+function offsetWithin(nav: HTMLElement, element: HTMLElement): number {
+  return element.getBoundingClientRect().top - nav.getBoundingClientRect().top - nav.clientTop
+}
+
+// Where the sliding highlight sits: on the active item, re-measured on page change and resize.
+function useActiveSlot(
+  nav: React.RefObject<HTMLElement | null>,
+  current: PageId,
+  collapsed: boolean,
+): Slot | null {
+  const [slot, setSlot] = useState<Slot | null>(null)
+  useLayoutEffect(() => {
+    const element = nav.current
+    if (element === null) {
+      return undefined
+    }
+    function measure(): void {
+      const active = element?.querySelector<HTMLElement>('[aria-current="page"]') ?? null
+      if (element === null || active === null) {
+        setSlot(null)
+        return
+      }
+      const top = offsetWithin(element, active)
+      const height = active.offsetHeight
+      setSlot((old) => (old?.top === top && old.height === height ? old : { top, height }))
+    }
+    measure()
+    // The first layout can still move while the shell settles, so measure once more after it.
+    const frame = requestAnimationFrame(measure)
+    window.addEventListener('resize', measure)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    observer?.observe(element)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('resize', measure)
+      observer?.disconnect()
+    }
+  }, [nav, current, collapsed])
+  return slot
+}
+
 export function Sidebar({
   current,
   onSelect,
@@ -83,13 +131,26 @@ export function Sidebar({
       collapsed={collapsed}
     />
   )
+  const nav = useRef<HTMLElement>(null)
+  const slot = useActiveSlot(nav, current, collapsed)
   return (
     <nav
-      className={`app-sidebar m-3 mr-0 flex shrink-0 flex-col rounded-2xl bg-surface p-2 shadow-surface ${
+      ref={nav}
+      className={`app-sidebar relative m-3 mr-0 flex shrink-0 flex-col rounded-2xl bg-surface p-2 shadow-surface ${
         collapsed ? 'w-14' : 'w-[200px]'
       }`}
       aria-label={t('shell.pages')}
     >
+      <div
+        aria-hidden="true"
+        data-testid="nav-indicator"
+        className="nav-indicator pointer-events-none absolute inset-x-2 rounded-xl bg-accent-soft"
+        style={{
+          top: slot?.top ?? 0,
+          height: slot?.height ?? 0,
+          opacity: slot === null ? 0 : 1,
+        }}
+      />
       <div className="flex flex-col">
         {mainPages.map((page, index) => (
           <div key={page} className={index === 0 ? '' : 'mt-0.5'}>
@@ -127,7 +188,7 @@ function SidebarItem({
         type="button"
         className={`${buttonVariants({ variant: 'ghost' })} relative h-11 w-full gap-3 ${
           collapsed ? 'justify-center' : 'justify-start'
-        }${selected ? ' bg-accent-soft text-accent' : ''}`}
+        }${selected ? ' text-accent' : ''}`}
         aria-current={selected ? 'page' : undefined}
         aria-label={collapsed ? label : undefined}
         onClick={() => {

@@ -6,6 +6,6 @@ const SEGMENT = 'flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounde
 
 export function segmentClass(selected: boolean): string {
   return selected
-    ? `${SEGMENT} bg-surface shadow-sm`
+    ? `${SEGMENT} segment-on bg-surface shadow-sm`
     : `${SEGMENT} text-muted hover:bg-surface hover:text-foreground`
 }

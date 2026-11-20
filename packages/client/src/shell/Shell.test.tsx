@@ -1,4 +1,5 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { Shell } from './Shell.js'
 import { badgeText } from './Sidebar.js'
@@ -31,6 +32,37 @@ it('the sidebar shows the six pages and marks the current one', () => {
   expect(within(sidebar).getByRole('button', { name: 'Tickets' })).not.toHaveAttribute(
     'aria-current',
   )
+})
+
+it('the sidebar indicator sits on the active page', () => {
+  stubMatchMedia(false)
+  stubFetch(() => jsonResponse({}, 500))
+  // jsdom has no layout: the nav sits at 10px, the active item 44px below it.
+  let activeTop = 54
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    const top =
+      this.tagName === 'NAV' ? 10 : this.getAttribute('aria-current') === 'page' ? activeTop : 0
+    return new DOMRect(0, top, 100, 40)
+  })
+  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(40)
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <Shell page="timesheet" />
+    </QueryClientProvider>,
+  )
+  const indicator = screen.getByTestId('nav-indicator')
+  expect(indicator.style.top).toBe('44px')
+  expect(indicator.style.height).toBe('40px')
+  expect(indicator.style.opacity).toBe('1')
+  activeTop = 98
+  view.rerender(
+    <QueryClientProvider client={queryClient}>
+      <Shell page="insights" />
+    </QueryClientProvider>,
+  )
+  expect(screen.getByTestId('nav-indicator').style.top).toBe('88px')
+  vi.restoreAllMocks()
 })
 
 it('the menu button folds the sidebar to icons and remembers it', () => {
@@ -135,7 +167,7 @@ it('sidebar shows the attention count on Board', async () => {
   })
 })
 
-it('the selected sidebar item has aria-current and an accent background', () => {
+it('the selected sidebar item has aria-current and an accent text', () => {
   stubMatchMedia(false)
   stubFetch(() => jsonResponse({}, 500))
   renderWithQuery(<Shell page="timesheet" />)
@@ -143,7 +175,7 @@ it('the selected sidebar item has aria-current and an accent background', () => 
     name: 'Timesheet',
   })
   expect(item).toHaveAttribute('aria-current', 'page')
-  expect(item).toHaveClass('bg-accent-soft')
+  expect(item).toHaveClass('text-accent')
 })
 
 it('the badge text caps at 99+', () => {

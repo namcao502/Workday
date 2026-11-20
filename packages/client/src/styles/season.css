@@ -1,7 +1,8 @@
 /* Seasonal looks, switched by data-season on <html> (App.tsx). A season repaints the accent and the page,
    and turns cards into frosted glass over a drawn backdrop. "html:root" outranks the plain theme rules. */
 
-/* Glass: a translucent surface, blurred backdrop, a lit top edge. Popovers and dialogs stay opaque. */
+/* Glass: a translucent surface, blurred backdrop, a lit top edge. glass.css (loaded after) thins these
+   values and glasses the floating layers. */
 html:root[data-season] {
   --surface: color-mix(in oklab, var(--white) 66%, transparent);
   --surface-shadow:
@@ -27,11 +28,6 @@ html:root[data-season][data-theme='dark'] {
 html:root[data-season] body,
 html:root[data-season] .app-shell {
   background: transparent;
-}
-
-html:root[data-season] :is(.card, .surface, .bg-surface) {
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  backdrop-filter: blur(18px) saturate(1.5);
 }
 
 /* Grey fills on glass turn into a lighter frost, so fields and tracks still read as fills. */
