@@ -1,6 +1,13 @@
 import type { BackupImportResult } from '@workday/core'
 import { isRecord } from '../json.js'
-import { ApiError, isPlainCode, send, type PlainCode } from './client.js'
+import {
+  ApiError,
+  clientHeaders,
+  isPlainCode,
+  noteTakeover,
+  send,
+  type PlainCode,
+} from './client.js'
 
 const EXPORT_PATH = '/api/backup/export'
 const IMPORT_PATH = '/api/backup/import'
@@ -24,13 +31,14 @@ async function failureOf(response: Response, path: string): Promise<ApiError> {
     return new ApiError(UNAUTHORIZED, path, 'notPaired')
   }
   const body: unknown = await response.json().catch(() => null)
+  noteTakeover(response.status, body)
   return new ApiError(response.status, path, codeOf(body))
 }
 
 export async function exportBackup(password: string): Promise<BackupDownload> {
   const response = await fetch(EXPORT_PATH, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...clientHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   })
   if (!response.ok) {

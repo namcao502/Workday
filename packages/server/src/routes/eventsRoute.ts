@@ -1,6 +1,12 @@
 import type { FastifyInstance } from 'fastify'
-import type { EventHub, RemoteSurface } from '../events.js'
+import type { ClientKind, EventHub, RemoteSurface } from '../events.js'
+import { isRecord } from '../jsonFile.js'
 import { isAllowedOrigin } from '../security/allowedHosts.js'
+
+function clientOf(query: unknown): ClientKind | null {
+  const client = isRecord(query) ? query['client'] : undefined
+  return client === 'app' || client === 'web' ? client : null
+}
 
 export function registerEventsRoute(
   app: FastifyInstance,
@@ -27,7 +33,8 @@ export function registerEventsRoute(
       },
     },
     (socket, request) => {
-      const remove = events.add(socket, request.remoteDevice?.id ?? null, surface)
+      const deviceId = request.remoteDevice?.id ?? null
+      const remove = events.add(socket, deviceId, surface, clientOf(request.query))
       socket.on('close', remove)
     },
   )

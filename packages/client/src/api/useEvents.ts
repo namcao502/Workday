@@ -1,6 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { isRecord } from '../json.js'
+import { clientKind } from '../shell/desktopHost.js'
+import { setSession } from '../shell/session.js'
 import { queryKeys } from './client.js'
 
 const RECONNECT_MS = 2000
@@ -71,6 +73,11 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
         void queryClient.invalidateQueries({ queryKey: queryKeys.schedules })
       } else if (type === 'work.changed') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.work })
+      } else if (type === 'session.takenByApp' || type === 'session.takenByTab') {
+        // No reconnect: the overlay (or a click on Use here) decides when to come back.
+        stopped = true
+        clearTimeout(reconnectTimer)
+        setSession(type === 'session.takenByApp' ? 'takenByApp' : 'takenByTab')
       } else if (type === 'chat.changed') {
         refetchChat()
       } else if (type === 'workspace.changed') {
@@ -82,7 +89,7 @@ export function useEvents(openSocket: SocketFactory = openSameOriginSocket): voi
     }
 
     function connect(): void {
-      socket = openSocket('/api/events')
+      socket = openSocket(`/api/events?client=${clientKind()}`)
       // Events sent while the socket was down (sleep, lock screen, server restart) are lost: refetch everything.
       socket.onopen = () => {
         if (wasOpen) {

@@ -13,6 +13,8 @@ import { SeasonLayer } from './season/SeasonLayer.js'
 import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
 import { currentHash } from './shell/appHash.js'
+import { useSession } from './shell/session.js'
+import { SessionTakenOverlay } from './shell/SessionTakenOverlay.js'
 import { useNarrow } from './shell/useNarrow.js'
 import { pageFromHash, type PageId } from './shell/pages.js'
 import { Shell } from './shell/Shell.js'
@@ -173,11 +175,21 @@ interface AppProps {
   readonly socketFactory?: SocketFactory | undefined
 }
 
+// Another screen holds the PC: only the overlay renders, so no page asks for data.
+function AppRoot({ socketFactory }: AppProps): React.JSX.Element {
+  const session = useSession()
+  return session === 'ok' ? (
+    <AppGate socketFactory={socketFactory} />
+  ) : (
+    <SessionTakenOverlay state={session} />
+  )
+}
+
 export function App({ socketFactory }: AppProps): React.JSX.Element {
   const [queryClient] = useState(createQueryClient)
   return (
     <QueryClientProvider client={queryClient}>
-      <AppGate socketFactory={socketFactory} />
+      <AppRoot socketFactory={socketFactory} />
     </QueryClientProvider>
   )
 }

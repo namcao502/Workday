@@ -74,7 +74,10 @@ it('schedules section marks bad runs seen on open', async () => {
   const fetchMock = serve(view([scanRun({ outcome: 'failed' })]))
   renderWithQuery(<SchedulesSection />)
   await waitFor(() => {
-    expect(fetchMock).toHaveBeenCalledWith('/api/schedules/scan/seen', { method: 'POST' })
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/schedules/scan/seen',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })
 

@@ -239,7 +239,10 @@ it('Start and Open are hidden while the workspace is not configured', async () =
   renderWithQuery(<BoardPage />)
   await screen.findByText('Alpha work')
   await waitFor(() => {
-    expect(fetchMock).toHaveBeenCalledWith('/api/workspace', { method: 'GET' })
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/workspace',
+      expect.objectContaining({ method: 'GET' }),
+    )
   })
   await new Promise((resolve) => setTimeout(resolve, 50))
   await openRowMenu()

@@ -53,3 +53,8 @@ export function onWindowState(listener: (isMaximized: boolean) => void): () => v
 export function requestServerRestart(): void {
   window.chrome?.webview?.postMessage({ type: 'server', action: 'restart' })
 }
+
+// Sent as ?client= on the event socket and X-Workday-Client on every request.
+export function clientKind(): 'app' | 'web' {
+  return isDesktopShell() ? 'app' : 'web'
+}

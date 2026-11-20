@@ -36,7 +36,10 @@ it('take shows the holder when someone else has the ticket', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Take' }))
   fireEvent.click(screen.getAllByRole('button', { name: 'Take' })[0] as HTMLElement)
   expect(await screen.findByText('Linh already took MDP-1')).toBeInTheDocument()
-  expect(fetchMock).toHaveBeenCalledWith('/api/work/suggestions/MDP-1/take', { method: 'POST' })
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/work/suggestions/MDP-1/take',
+    expect.objectContaining({ method: 'POST' }),
+  )
   await waitFor(() => {
     expect(screen.queryByText('Take MDP-1?')).not.toBeInTheDocument()
   })

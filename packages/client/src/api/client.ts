@@ -19,6 +19,8 @@ import type {
   TscSignInResult,
 } from '@workday/core'
 import { isRecord } from '../json.js'
+import { clientKind } from '../shell/desktopHost.js'
+import { setSession } from '../shell/session.js'
 import { trackAction } from './pendingActions.js'
 
 export const queryKeys = {
@@ -39,6 +41,7 @@ export const queryKeys = {
 } as const
 
 const UNAUTHORIZED = 401
+const CONFLICT = 409
 
 export class ApiError extends Error {
   readonly status: number
@@ -66,17 +69,30 @@ export function send(method: string, path: string, payload?: unknown): Promise<R
     : trackAction(path, () => request(method, path, payload))
 }
 
+export function clientHeaders(): Record<string, string> {
+  return { 'X-Workday-Client': clientKind() }
+}
+
+// The desktop app holds the PC's one screen: this tab shows the overlay instead of the error.
+export function noteTakeover(status: number, body: unknown): void {
+  const error = isRecord(body) ? body['error'] : undefined
+  if (status === CONFLICT && isRecord(error) && error['code'] === 'sessionInApp') {
+    setSession('takenByApp')
+  }
+}
+
 async function request(method: string, path: string, payload?: unknown): Promise<RawResponse> {
   const init: RequestInit =
     payload === undefined
-      ? { method }
+      ? { method, headers: clientHeaders() }
       : {
           method,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { ...clientHeaders(), 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         }
   const response = await fetch(path, init)
   const body: unknown = await response.json().catch(() => null)
+  noteTakeover(response.status, body)
   if (response.status === UNAUTHORIZED) {
     throw new ApiError(UNAUTHORIZED, path, 'notPaired')
   }
@@ -195,6 +211,7 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'backupWrongPassword',
   'backupInvalid',
   'backupPasswordTooShort',
+  'sessionInApp',
 ])
 
 export function isPlainCode(code: unknown): code is PlainCode {

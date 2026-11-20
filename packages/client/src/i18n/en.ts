@@ -54,6 +54,10 @@ export const en = {
     working: 'Working...',
   },
   app: {
+    workdayIsOpenInTheDesktopApp: 'Workday is open in the desktop app',
+    sessionInDesktopApp: 'Workday is open in the desktop app.',
+    sessionInAnotherTab: 'Workday is open in another tab.',
+    useHere: 'Use here',
     aGitCommandFailed: 'A git command failed',
     azureDevopsCouldNotBeReached: 'Azure DevOps could not be reached',
     azureDevopsIsNotSetUp: 'Azure DevOps is not set up',

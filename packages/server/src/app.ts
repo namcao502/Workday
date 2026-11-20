@@ -93,6 +93,20 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
 
   registerRemoteGate(app, deps.remote, vpn ?? null)
 
+  // One screen on this PC: the app wins. A header-less request (curl, tests) still passes.
+  app.addHook('onRequest', async (request, reply) => {
+    const isApi = request.url.startsWith('/api/') && !request.url.startsWith('/api/events')
+    if (
+      isApi &&
+      !request.isRemote &&
+      request.headers['x-workday-client'] === 'web' &&
+      deps.events.hasLocalApp()
+    ) {
+      return reply.code(409).send({ ok: false, error: { code: 'sessionInApp' } })
+    }
+    return undefined
+  })
+
   await app.register(fastifyWebsocket, { options: { maxPayload: SOCKET_MAX_PAYLOAD } })
 
   app.get('/api/health', { config: { access: { area: 'unpaired' } } }, () => ({

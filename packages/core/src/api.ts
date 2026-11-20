@@ -199,6 +199,7 @@ export type AppError =
         | 'backupWrongPassword'
         | 'backupInvalid'
         | 'backupPasswordTooShort'
+        | 'sessionInApp'
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
   | { readonly code: 'parentWorktreeMissing'; readonly parentKey: string }
@@ -359,6 +360,8 @@ export type ServerEvent =
   | { readonly type: 'notices.changed' }
   | { readonly type: 'schedules.changed' }
   | { readonly type: 'chat.changed' }
+  | { readonly type: 'session.takenByApp' } // the desktop app took this PC's one screen
+  | { readonly type: 'session.takenByTab' } // a newer web tab took it
 
 export interface SessionView {
   readonly name: string

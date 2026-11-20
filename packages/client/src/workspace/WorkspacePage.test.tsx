@@ -61,7 +61,10 @@ it('asks before closing a tab with a running session, then deletes it', async ()
   expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close MDP-2' }))
   await waitFor(() => {
-    expect(fetchMock).toHaveBeenCalledWith('/api/workspace/tabs/MDP-2', { method: 'DELETE' })
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/workspace/tabs/MDP-2',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
   })
 })
 
@@ -139,7 +142,7 @@ it('dropping a tab onto another moves it to that place', async () => {
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith('/api/workspace/tabs/MDP-2/position', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: expect.objectContaining({ 'Content-Type': 'application/json' }) as unknown,
       body: JSON.stringify({ index: 0 }),
     })
   })

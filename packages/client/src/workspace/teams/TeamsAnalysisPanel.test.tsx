@@ -65,7 +65,7 @@ it('Analyze sends the main point and the session, and says why a start was refus
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith('/api/teams/MDP-1/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: expect.objectContaining({ 'Content-Type': 'application/json' }) as unknown,
       body: JSON.stringify({ conversationId: 'c1', mainPoint: 'fixed already', session: 'MDP-1' }),
     })
   })

@@ -208,7 +208,9 @@ export function createServices(options: ServicesOptions): Services {
     events,
     now: () => new Date(),
     push: (message) => remote.push.sendToDevices(message),
-    pushLocal: (message) => remote.push.sendToLocal(message),
+    // Edge's local push would open Edge; the app shows its own notifications.
+    pushLocal: (message) =>
+      events.hasLocalApp() ? Promise.resolve() : remote.push.sendToLocal(message),
     settings: () => ({ prefs: settings.notices, language: settings.language }),
     logError: reportError,
   })

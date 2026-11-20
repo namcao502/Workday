@@ -56,6 +56,10 @@ export const vi: Messages = {
     working: 'Đang xử lý...',
   },
   app: {
+    workdayIsOpenInTheDesktopApp: 'Workday đang mở trong app desktop',
+    sessionInDesktopApp: 'Workday đang mở trong app desktop.',
+    sessionInAnotherTab: 'Workday đang mở ở tab khác.',
+    useHere: 'Dùng ở tab này',
     aGitCommandFailed: 'Lệnh git thất bại',
     azureDevopsCouldNotBeReached: 'Không kết nối được tới Azure DevOps',
     azureDevopsIsNotSetUp: 'Chưa cấu hình Azure DevOps',

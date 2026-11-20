@@ -97,7 +97,10 @@ it('ready to test asks first and shows the outcome', async () => {
   expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Move' }))
   expect(await screen.findByText('MDP-2 moved to Ready to Test')).toBeInTheDocument()
-  expect(fetchMock).toHaveBeenCalledWith('/api/work/ready-to-test/MDP-2', { method: 'POST' })
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/work/ready-to-test/MDP-2',
+    expect.objectContaining({ method: 'POST' }),
+  )
 })
 
 it('remote shows open on claude waiting', async () => {
@@ -284,7 +287,10 @@ it('TodoView qcBug shows Fix and calls the fix action', async () => {
   expect(await screen.findByText('MDP-9: QC bug on MDP-1')).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Fix' }))
   await waitFor(() => {
-    expect(fetchMock).toHaveBeenCalledWith('/api/work/bugs/MDP-9/fix', { method: 'POST' })
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/work/bugs/MDP-9/fix',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })
 

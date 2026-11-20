@@ -95,6 +95,8 @@ export function errorText(error: AppError): string {
       return t('app.thatTicketIsNotAQc')
     case 'busy':
       return t('app.thatIsAlreadyRunning')
+    case 'sessionInApp':
+      return t('app.workdayIsOpenInTheDesktopApp')
     case 'backupWrongPassword':
       return t('app.wrongPasswordForTheBackupFile')
     case 'backupInvalid':
