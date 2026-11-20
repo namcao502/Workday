@@ -95,6 +95,12 @@ export function errorText(error: AppError): string {
       return t('app.thatTicketIsNotAQc')
     case 'busy':
       return t('app.thatIsAlreadyRunning')
+    case 'backupWrongPassword':
+      return t('app.wrongPasswordForTheBackupFile')
+    case 'backupInvalid':
+      return t('app.theBackupFileIsInvalidOrDamaged')
+    case 'backupPasswordTooShort':
+      return t('app.thePasswordNeedsAtLeast8Characters')
     case 'parentWorktreeMissing':
       return t('app.hasNoWorktreeYetStartOr', { parentKey: error.parentKey })
     case 'claudeWaiting':

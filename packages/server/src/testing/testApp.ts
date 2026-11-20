@@ -186,6 +186,7 @@ export async function buildTestApp(
   const app = await createApp({
     port: TEST_PORT,
     dev: false,
+    dataDir,
     version: '9.9.9',
     clientDist: options.clientDist,
     vpn: options.vpn,

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createApp } from './app.js'
+import { applyPendingImport } from './backup/pendingImport.js'
 import { loadConfig, loadGraphTokenOverride, readPort } from './config.js'
 import { resolveDataDir } from './dataDir.js'
 import { HrmHoursLog } from './hrm/hrmHoursLog.js'
@@ -24,6 +25,9 @@ function readVersion(): string {
 
 async function main(): Promise<void> {
   const dataDir = resolveDataDir()
+  applyPendingImport(dataDir, new Date(), (message) => {
+    console.log(message)
+  })
   const config = loadConfig(dataDir)
   if (!isLoopbackHost(config.host)) {
     console.error('Remote access is not available yet')
@@ -53,6 +57,7 @@ async function main(): Promise<void> {
   const appDeps = {
     port,
     dev,
+    dataDir,
     version: readVersion(),
     clientDist: join(import.meta.dirname, '..', '..', 'client', 'dist'),
     ...services,

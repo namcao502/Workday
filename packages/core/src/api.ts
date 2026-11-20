@@ -196,6 +196,9 @@ export type AppError =
         | 'insightsFailed'
         | 'notABug'
         | 'busy'
+        | 'backupWrongPassword'
+        | 'backupInvalid'
+        | 'backupPasswordTooShort'
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
   | { readonly code: 'parentWorktreeMissing'; readonly parentKey: string }
@@ -678,3 +681,8 @@ export type TeamsAnalysisView =
   | { readonly kind: 'running' }
   | { readonly kind: 'failed' }
   | { readonly kind: 'done'; readonly analysis: TeamsAnalysis; readonly stale: boolean }
+
+// The files a staged import will install at the next start.
+export interface BackupImportResult {
+  readonly files: readonly string[]
+}

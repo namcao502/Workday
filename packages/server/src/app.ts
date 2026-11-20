@@ -10,6 +10,7 @@ import type { PrService } from './prs/prService.js'
 import type { EventHub } from './events.js'
 import type { ReportReader } from './insights/reportReader.js'
 import type { NoticeService } from './notices/noticeService.js'
+import { registerBackupRoutes } from './routes/backupRoutes.js'
 import { registerBoardRoutes } from './routes/boardRoutes.js'
 import { registerNoticeRoutes } from './routes/noticeRoutes.js'
 import { registerRemoteGate, type VpnSurface } from './remote/remoteGate.js'
@@ -44,6 +45,7 @@ const SOCKET_MAX_PAYLOAD = 1024 * 1024
 export interface AppDeps {
   port: number
   dev: boolean
+  dataDir: string
   version: string
   // Built client folder; the SPA fallback is active only when it exists.
   clientDist?: string | undefined
@@ -113,6 +115,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerTeamsRoutes(app, deps.teams, deps.teamsWatcher)
   registerInsightsRoutes(app, deps.insights, () => deps.settings.timeZone)
   registerSchedulesRoutes(app, deps.schedules)
+  registerBackupRoutes(app, deps.dataDir, () => deps.settings.timeZone)
 
   const { clientDist } = deps
   const hasClient = clientDist !== undefined && existsSync(join(clientDist, 'index.html'))
