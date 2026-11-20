@@ -47,6 +47,7 @@ it('posts minimize, toggleMaximize and close to the shell', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Maximize' }))
   fireEvent.click(screen.getByRole('button', { name: 'Close' }))
   expect(host.postMessage.mock.calls).toEqual([
+    [{ type: 'window', action: 'queryState' }],
     [{ type: 'window', action: 'minimize' }],
     [{ type: 'window', action: 'toggleMaximize' }],
     [{ type: 'window', action: 'close' }],
@@ -62,4 +63,12 @@ it('shows the restore glyph once the shell reports maximized', () => {
   expect(screen.queryByRole('button', { name: 'Maximize' })).not.toBeInTheDocument()
   host.emit({ type: 'windowState', maximized: false })
   expect(screen.getByRole('button', { name: 'Maximize' })).toBeInTheDocument()
+})
+
+it('asks the shell for its state on mount, so a missed load message still shows the right glyph', () => {
+  const host = stubDesktopHost()
+  render(<WindowControls />)
+  expect(host.postMessage).toHaveBeenCalledWith({ type: 'window', action: 'queryState' })
+  host.emit({ type: 'windowState', maximized: true })
+  expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument()
 })

@@ -146,6 +146,11 @@ internal sealed class MainForm : Form
         {
             Close();
         }
+        else if (action == "queryState")
+        {
+            _isLastPostedMaximized = null;
+            PostWindowState();
+        }
     }
 
     private void Quit()

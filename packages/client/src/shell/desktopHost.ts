@@ -42,5 +42,9 @@ export function onWindowState(listener: (isMaximized: boolean) => void): () => v
     }
   }
   host.addEventListener('message', handle)
-  return () => { host.removeEventListener('message', handle); }
+  // The shell's own post on load can land before this listener exists, so ask once listening.
+  host.postMessage({ type: 'window', action: 'queryState' })
+  return () => {
+    host.removeEventListener('message', handle)
+  }
 }
