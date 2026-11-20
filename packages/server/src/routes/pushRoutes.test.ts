@@ -159,7 +159,7 @@ describe('push routes', () => {
     expect(testApp.pushes.map((push) => push.endpoint)).toEqual(['https://push.example/tablet'])
   })
 
-  it('POST /api/remote/devices/:id/test-push is local-only and reaches that device', async () => {
+  it('POST /api/remote/devices/:id/test-push reaches that device from the phone and the PC', async () => {
     const testApp = await remoteApp()
     const token = await pairDevice(testApp)
     await subscribe(testApp, token, 'https://push.example/phone')
@@ -173,14 +173,14 @@ describe('push routes', () => {
     })
     const fromPc = await testApp.app.inject({ method: 'POST', url, headers: LOOPBACK_HEADERS })
 
-    expect(fromPhone.statusCode).toBe(403)
+    expect(fromPhone.json()).toEqual({ ok: true })
     expect(fromPc.json()).toEqual({ ok: true })
-    expect(testApp.pushes).toHaveLength(1)
+    expect(testApp.pushes).toHaveLength(2)
   })
 })
 
 describe('local push routes', () => {
-  it('local push routes reject a remote request', async () => {
+  it('local push routes accept a paired device', async () => {
     const testApp = await remoteApp()
     const token = await pairDevice(testApp)
 
@@ -199,8 +199,7 @@ describe('local push routes', () => {
       }),
     ])
 
-    expect(replies.map((reply) => reply.statusCode)).toEqual([403, 403])
-    expect(testApp.services.remote.push.local.list()).toEqual([])
+    expect(replies.map((reply) => reply.statusCode)).toEqual([204, 204])
   })
 
   it('PUT stores a local subscription, DELETE removes it, a bad body is a 400', async () => {

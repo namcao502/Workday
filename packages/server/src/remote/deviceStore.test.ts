@@ -10,14 +10,14 @@ function devicesPath(): string {
   return join(mkdtempSync(join(tmpdir(), 'workday-devices-')), 'devices.json')
 }
 
-function storedDevicesJson(rights: Record<string, string>): string {
+function storedDevicesJson(): string {
   return JSON.stringify([
     {
       id: 'a',
       name: 'old',
       email: null,
       tokenHash: 'h',
-      rights,
+      rights: { board: 'view', timesheet: 'off' },
       pushEnabled: false,
       pushSubscription: null,
       createdAt: '2026-11-01T00:00:00.000Z',
@@ -38,7 +38,6 @@ describe('DeviceStore', () => {
     expect(store.findByToken('wrong')).toBeNull()
     expect(readFileSync(path, 'utf8')).not.toContain(added.token)
     const reloaded = new DeviceStore(path).list()[0]
-    expect(reloaded?.rights.timesheet).toBe('act')
     expect(reloaded?.email).toBe('me@example.com')
   })
 
@@ -90,14 +89,14 @@ describe('DeviceStore', () => {
     expect(existsSync(`${path}.bad`)).toBe(true)
   })
 
-  it('load ignores unknown areas', () => {
+  it('load ignores the legacy rights field', () => {
     const path = devicesPath()
-    writeFileSync(path, storedDevicesJson({ hologram: 'act', board: 'view' }))
+    writeFileSync(path, storedDevicesJson())
 
     const devices = new DeviceStore(path).list()
 
     expect(devices).toHaveLength(1)
-    expect(devices[0]?.rights).toEqual({ board: 'view', timesheet: 'off' })
+    expect(devices[0]).not.toHaveProperty('rights')
     expect(existsSync(`${path}.bad`)).toBe(false)
   })
 

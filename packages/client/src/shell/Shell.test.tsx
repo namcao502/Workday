@@ -66,31 +66,20 @@ it('the Timesheet item shows a dot when a queued day is past its run', async () 
   })
 })
 
-it('remotely a page without the right is hidden and its hash falls back to the first visible page', () => {
+it('remote mode shows every page', () => {
   stubMatchMedia(false)
   stubFetch(() => jsonResponse({}, 500))
-  renderRemote(<Shell page="tickets" />, { board: 'off', timesheet: 'view' })
+  renderRemote(<Shell page="tickets" />)
   const sidebar = screen.getByRole('navigation', { name: 'Pages' })
-  const names = within(sidebar)
-    .getAllByRole('button')
-    .map((button) => button.textContent)
-  expect(names).toEqual(['Timesheet', 'Settings'])
-  expect(within(sidebar).getByRole('button', { name: 'Timesheet' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  )
+  expect(within(sidebar).getAllByRole('button')).toHaveLength(5)
 })
 
-it('remotely the tab bar hides pages too', () => {
+it('remotely the tab bar shows every page too', () => {
   stubMatchMedia(true)
   stubFetch(() => jsonResponse({}, 500))
-  renderRemote(<Shell page="settings" />, { board: 'view', timesheet: 'off' })
+  renderRemote(<Shell page="settings" />)
   const tabs = screen.getByRole('navigation', { name: 'Tabs' })
-  expect(
-    within(tabs)
-      .getAllByRole('button')
-      .map((button) => button.textContent),
-  ).toEqual(['Tickets', 'Settings'])
+  expect(within(tabs).getAllByRole('button')).toHaveLength(5)
 })
 
 it('locally every page and action stays available', async () => {

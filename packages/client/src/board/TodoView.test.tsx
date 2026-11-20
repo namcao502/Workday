@@ -100,12 +100,12 @@ it('ready to test asks first and shows the outcome', async () => {
   expect(fetchMock).toHaveBeenCalledWith('/api/work/ready-to-test/MDP-2', { method: 'POST' })
 })
 
-it('a remote device sees no workspace action on a Claude to-do', async () => {
+it('remote shows open on claude waiting', async () => {
   stubBackend(GROUPS)
-  renderRemote(<BoardPage />, { board: 'act', timesheet: 'off' })
+  renderRemote(<BoardPage />)
   await openTodoView()
   expect(await screen.findByText('Claude needs your permission')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Open' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Open' })).toBeInTheDocument()
 })
 
 it("a teams to-do opens the ticket's Teams view", async () => {
@@ -225,14 +225,6 @@ it('TodoView jiraUpdated shows Seen and View changes', async () => {
   })
 })
 
-it('TodoView jiraUpdated hides Seen without act access', async () => {
-  stubBackend([JIRA_GROUP])
-  renderRemote(<BoardPage />, { board: 'view', timesheet: 'off' })
-  await openTodoView()
-  expect(await screen.findByRole('button', { name: 'View changes' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Seen' })).not.toBeInTheDocument()
-})
-
 const DB_GROUP: TodoGroup = {
   ticketKey: 'MDP-1',
   neededNow: true,
@@ -306,14 +298,6 @@ it('TodoView qcBug names the parent when its worktree is missing', async () => {
   expect(await screen.findByText(/MDP-1 has no worktree yet/)).toBeInTheDocument()
 })
 
-it('TodoView qcBug hides Fix without act access', async () => {
-  stubBackend([QC_BUG_GROUP])
-  renderRemote(<BoardPage />, { board: 'view', timesheet: 'off' })
-  await openTodoView()
-  expect(await screen.findByText('MDP-9: QC bug on MDP-1')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Fix' })).not.toBeInTheDocument()
-})
-
 it('TodoView qcBugReply shows Reply and navigates to the parent thread', async () => {
   const fix = {
     bugKey: 'MDP-9',
@@ -358,12 +342,4 @@ it('TodoView prComments shows View PR and Seen, and Seen clears the alert', asyn
       expect.objectContaining({ method: 'POST' }),
     )
   })
-})
-
-it('TodoView prComments hides Seen without act access', async () => {
-  stubBackend([COMMENTS_GROUP])
-  renderRemote(<BoardPage />, { board: 'view', timesheet: 'off' })
-  await openTodoView()
-  expect(await screen.findByRole('link', { name: 'View PR' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Seen' })).not.toBeInTheDocument()
 })

@@ -41,7 +41,7 @@ describe('cleanup routes', () => {
     expect(noBody.statusCode).toBe(400)
   })
 
-  it('is local-only: a paired device gets a 403', async () => {
+  it('a paired device reaches the route', async () => {
     const remote = await buildRemoteApp()
     openApps.push(remote.app)
     const device = await pairDevice(remote)
@@ -49,6 +49,6 @@ describe('cleanup routes', () => {
       url: '/api/workspace/cleanup',
       headers: remoteHeaders(device),
     })
-    expect(reply.statusCode).toBe(403)
+    expect(reply.statusCode).toBe(200)
   })
 })

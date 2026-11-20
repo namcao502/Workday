@@ -1,6 +1,13 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { jsonResponse, renderWithQuery, settingsView, stubFetch } from '../testSupport.js'
+import {
+  jsonResponse,
+  remoteDevice,
+  renderRemote,
+  renderWithQuery,
+  settingsView,
+  stubFetch,
+} from '../testSupport.js'
 import { SettingsPage } from './SettingsPage.js'
 import { searchEntries, settingsGroupFromHash, settingsGroups } from './settingsGroups.js'
 
@@ -55,4 +62,29 @@ it('the guide is a group of its own', async () => {
   expect(screen.queryByRole('heading', { level: 2, name: 'Guide' })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Guide' }))
   expect(await screen.findByRole('heading', { level: 2, name: 'Guide' })).toBeInTheDocument()
+})
+
+it('remote settings shows the full settings page with this device', async () => {
+  window.location.hash = '#/settings/remote'
+  stubFetch((url) =>
+    jsonResponse(url === '/api/me' ? { mode: 'remote', device: remoteDevice() } : settingsView()),
+  )
+  renderRemote(<SettingsPage />)
+  expect(await screen.findByRole('heading', { level: 2, name: 'Device' })).toBeInTheDocument()
+  expect(await screen.findByText('iPhone')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'General' })).toBeInTheDocument()
+  expect(settingsGroups(true)[3]?.entries[0]?.id).toBe('thisDevice')
+})
+
+it('local settings hides this device', async () => {
+  window.location.hash = '#/settings/remote'
+  stubFetch(() => jsonResponse(settingsView()))
+  renderWithQuery(<SettingsPage />)
+  expect(await screen.findByRole('heading', { level: 2, name: 'VPN access' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { level: 2, name: 'Device' })).not.toBeInTheDocument()
+  expect(
+    settingsGroups()
+      .flatMap((group) => group.entries)
+      .some((entry) => entry.id === 'thisDevice'),
+  ).toBe(false)
 })

@@ -141,7 +141,7 @@ describe('workspace files routes', () => {
     expect(targets).toEqual([worktree, join(worktree, 'a.txt')])
   })
 
-  it('a paired device gets 403', async () => {
+  it('a paired device reaches the route', async () => {
     const remoteApp = await buildRemoteApp()
     openApps.push(remoteApp.app)
     const token = await pairDevice(remoteApp)
@@ -149,6 +149,6 @@ describe('workspace files routes', () => {
       url: '/api/workspace/tabs/MDP-1/files',
       headers: remoteHeaders(token),
     })
-    expect(reply.statusCode).toBe(403)
+    expect(reply.statusCode).not.toBe(403)
   })
 })

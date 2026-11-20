@@ -12,9 +12,6 @@ import { qcBugsOf } from '../workspace/bugFixes.js'
 import { BugFixer } from '../workspace/fixBug.js'
 import type { WorkspaceService } from '../workspace/workspaceService.js'
 
-const BOARD_VIEW = { config: { access: { area: 'board', level: 'view' } } } as const
-const BOARD_ACT = { config: { access: { area: 'board', level: 'act' } } } as const
-
 export interface WorkRouteDeps {
   readonly board: BoardService
   readonly prs: PrService
@@ -45,7 +42,7 @@ export function registerWorkRoutes(
     logError,
   })
 
-  app.get('/api/work', BOARD_VIEW, () => {
+  app.get('/api/work', () => {
     const { config } = settings.view()
     const { tabs, sessions } = workspace.view()
     return buildWorkView({
@@ -67,45 +64,36 @@ export function registerWorkRoutes(
     })
   })
 
-  app.post<{ Params: { key: string } }>(
-    '/api/work/ready-to-test/:key',
-    BOARD_ACT,
-    async (request, reply) => {
-      const { key } = request.params
-      if (!isTicketKey(key)) {
-        return fail(reply, 400, 'invalidKey')
-      }
-      if (!board.isConnected()) {
-        return fail(reply, 409, 'notConnected')
-      }
-      try {
-        return await prs.readyToTest(key)
-      } catch (error: unknown) {
-        logError(`Moving ${key} to ready to test failed`, error)
-        return fail(reply, 500, 'jiraUnreachable')
-      }
-    },
-  )
+  app.post<{ Params: { key: string } }>('/api/work/ready-to-test/:key', async (request, reply) => {
+    const { key } = request.params
+    if (!isTicketKey(key)) {
+      return fail(reply, 400, 'invalidKey')
+    }
+    if (!board.isConnected()) {
+      return fail(reply, 409, 'notConnected')
+    }
+    try {
+      return await prs.readyToTest(key)
+    } catch (error: unknown) {
+      logError(`Moving ${key} to ready to test failed`, error)
+      return fail(reply, 500, 'jiraUnreachable')
+    }
+  })
 
-  app.post<{ Params: { key: string } }>(
-    '/api/work/comments/:key/seen',
-    BOARD_ACT,
-    async (request, reply) => {
-      const { key } = request.params
-      if (!isTicketKey(key)) {
-        return fail(reply, 400, 'invalidKey')
-      }
-      if (settings.pullRequests === null) {
-        return fail(reply, 409, 'adoNotConfigured')
-      }
-      await prs.markCommentsSeen(key)
-      return { ok: true }
-    },
-  )
+  app.post<{ Params: { key: string } }>('/api/work/comments/:key/seen', async (request, reply) => {
+    const { key } = request.params
+    if (!isTicketKey(key)) {
+      return fail(reply, 400, 'invalidKey')
+    }
+    if (settings.pullRequests === null) {
+      return fail(reply, 409, 'adoNotConfigured')
+    }
+    await prs.markCommentsSeen(key)
+    return { ok: true }
+  })
 
   app.post<{ Params: { repo: string; id: string } }>(
     '/api/work/reviews/:repo/:id/hide',
-    BOARD_ACT,
     async (request, reply) => {
       const { repo, id } = request.params
       if (repo === '' || !/^\d+$/.test(id)) {
@@ -121,7 +109,6 @@ export function registerWorkRoutes(
 
   app.post<{ Params: { key: string } }>(
     '/api/work/suggestions/:key/take',
-    BOARD_ACT,
     async (request, reply) => {
       const { key } = request.params
       if (!isTicketKey(key)) {
@@ -140,28 +127,23 @@ export function registerWorkRoutes(
   )
 
   // Hands the QC bug to its parent's Claude session; a refusal changes nothing.
-  app.post<{ Params: { key: string } }>(
-    '/api/work/bugs/:key/fix',
-    BOARD_ACT,
-    async (request, reply) => {
-      const { key } = request.params
-      if (!isTicketKey(key)) {
-        return fail(reply, 400, 'invalidKey')
-      }
-      const outcome = await bugFixer.fix(key)
-      if (!outcome.ok && outcome.error.code === 'notABug') {
-        return reply.code(404).send(outcome)
-      }
-      if (!outcome.ok && outcome.error.code === 'busy') {
-        return reply.code(409).send(outcome)
-      }
-      return outcome
-    },
-  )
+  app.post<{ Params: { key: string } }>('/api/work/bugs/:key/fix', async (request, reply) => {
+    const { key } = request.params
+    if (!isTicketKey(key)) {
+      return fail(reply, 400, 'invalidKey')
+    }
+    const outcome = await bugFixer.fix(key)
+    if (!outcome.ok && outcome.error.code === 'notABug') {
+      return reply.code(404).send(outcome)
+    }
+    if (!outcome.ok && outcome.error.code === 'busy') {
+      return reply.code(409).send(outcome)
+    }
+    return outcome
+  })
 
   app.post<{ Params: { key: string } }>(
     '/api/work/suggestions/:key/hide',
-    BOARD_ACT,
     async (request, reply) => {
       const { key } = request.params
       if (!isTicketKey(key)) {

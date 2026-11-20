@@ -5,8 +5,6 @@ import { isTicketContent, type TicketUpdateService } from '../jira/ticketUpdates
 import { isRecord } from '../jsonFile.js'
 import type { PrService } from '../prs/prService.js'
 
-const BOARD_VIEW = { config: { access: { area: 'board', level: 'view' } } } as const
-const BOARD_ACT = { config: { access: { area: 'board', level: 'act' } } } as const
 const NOT_CONNECTED = { ok: false, error: { code: 'notConnected' } } as const
 
 function isBoardAction(value: string): value is BoardAction {
@@ -19,36 +17,31 @@ export function registerBoardRoutes(
   prs: PrService,
   ticketUpdates: TicketUpdateService,
 ): void {
-  app.get('/api/board', BOARD_VIEW, () => board.view())
+  app.get('/api/board', () => board.view())
 
   // null when nothing waits: no entry, or everything in it was viewed.
-  app.get<{ Params: { key: string } }>(
-    '/api/tickets/:key/update',
-    BOARD_VIEW,
-    async (request, reply) => {
-      const { key } = request.params
-      if (!isTicketKey(key)) {
-        return reply.code(400).send({ error: 'Invalid ticket key' })
-      }
-      const entry = ticketUpdates.view()[key]
-      if (entry === undefined || pendingFields(entry).length === 0) {
-        return { update: null }
-      }
-      return {
-        update: {
-          fields: pendingFields(entry),
-          viewed: entry.viewed,
-          current: entry.current,
-          changedBy: entry.changedBy,
-          changedAt: entry.changedAt,
-        },
-      }
-    },
-  )
+  app.get<{ Params: { key: string } }>('/api/tickets/:key/update', async (request, reply) => {
+    const { key } = request.params
+    if (!isTicketKey(key)) {
+      return reply.code(400).send({ error: 'Invalid ticket key' })
+    }
+    const entry = ticketUpdates.view()[key]
+    if (entry === undefined || pendingFields(entry).length === 0) {
+      return { update: null }
+    }
+    return {
+      update: {
+        fields: pendingFields(entry),
+        viewed: entry.viewed,
+        current: entry.current,
+        changedBy: entry.changedBy,
+        changedAt: entry.changedAt,
+      },
+    }
+  })
 
   app.post<{ Params: { key: string } }>(
     '/api/tickets/:key/update/viewed',
-    BOARD_ACT,
     async (request, reply) => {
       const { key } = request.params
       const body: unknown = request.body
@@ -61,7 +54,7 @@ export function registerBoardRoutes(
     },
   )
 
-  app.post('/api/board/check', BOARD_ACT, async (_request, reply) => {
+  app.post('/api/board/check', async (_request, reply) => {
     if (!board.isConnected()) {
       return reply.code(409).send(NOT_CONNECTED)
     }
@@ -70,7 +63,7 @@ export function registerBoardRoutes(
     return board.view()
   })
 
-  app.post('/api/board/add', BOARD_ACT, async (request, reply) => {
+  app.post('/api/board/add', async (request, reply) => {
     const body: unknown = request.body
     const input = isRecord(body) ? body['input'] : undefined
     if (typeof input !== 'string') {
@@ -84,7 +77,6 @@ export function registerBoardRoutes(
 
   app.post<{ Params: { key: string; action: string } }>(
     '/api/board/:key/:action',
-    BOARD_ACT,
     async (request, reply) => {
       const { key, action } = request.params
       if (!isBoardAction(action)) {

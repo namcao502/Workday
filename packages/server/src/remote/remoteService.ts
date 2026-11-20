@@ -1,9 +1,6 @@
 import { join } from 'node:path'
 import {
-  REMOTE_AREAS,
-  type AccessLevel,
   type ActivityEntry,
-  type DeviceRights,
   type PairingView,
   type PushSubscriptionJson,
   type RemoteConfig,
@@ -28,7 +25,6 @@ const DEVICES_FILE = 'devices.json'
 const ACTIVITY_FILE = 'remote-activity.json'
 const ACTIVITY_SHOWN = 50
 const SETUP_CHECK_MS = 10_000
-const LEVEL_RANK: Readonly<Record<AccessLevel, number>> = { off: 0, view: 1, act: 2 }
 
 export interface RemoteServiceDeps {
   readonly dataDir: string
@@ -46,7 +42,6 @@ export interface RemoteServiceDeps {
 
 export interface DeviceChanges {
   readonly name?: string
-  readonly rights?: DeviceRights
   readonly pushEnabled?: boolean
 }
 
@@ -55,13 +50,8 @@ export type PairingStatus =
   | { readonly status: 'approved'; readonly token: string }
 
 export function toRemoteDevice(device: StoredDevice): RemoteDevice {
-  const { id, name, email, rights, pushEnabled, hasPushSubscription, createdAt, lastSeenAt } =
-    device
-  return { id, name, email, rights, pushEnabled, hasPushSubscription, createdAt, lastSeenAt }
-}
-
-function isDowngrade(before: DeviceRights, after: DeviceRights): boolean {
-  return REMOTE_AREAS.some((area) => LEVEL_RANK[after[area]] < LEVEL_RANK[before[area]])
+  const { id, name, email, pushEnabled, hasPushSubscription, createdAt, lastSeenAt } = device
+  return { id, name, email, pushEnabled, hasPushSubscription, createdAt, lastSeenAt }
 }
 
 function createAccessVerifier(remote: RemoteConfig): AccessTokenVerifier {
@@ -242,23 +232,15 @@ export class RemoteService {
 
   // False when the device is unknown.
   async updateDevice(id: string, changes: DeviceChanges): Promise<boolean> {
-    const before = this.store.list().find((device) => device.id === id)
-    if (before === undefined) {
+    if (!this.store.list().some((device) => device.id === id)) {
       return false
     }
     if (changes.name !== undefined) {
       await this.store.rename(id, changes.name)
     }
-    const { rights, pushEnabled } = changes
-    if (rights !== undefined || pushEnabled !== undefined) {
-      await this.store.update(id, (device) => ({
-        ...device,
-        rights: rights ?? device.rights,
-        pushEnabled: pushEnabled ?? device.pushEnabled,
-      }))
-    }
-    if (rights !== undefined && isDowngrade(before.rights, rights)) {
-      this.deps.events.closeDevice(id)
+    const { pushEnabled } = changes
+    if (pushEnabled !== undefined) {
+      await this.store.update(id, (device) => ({ ...device, pushEnabled }))
     }
     this.changed()
     return true

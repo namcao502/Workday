@@ -183,20 +183,9 @@ it('without Jira the page links to Settings instead of a table', async () => {
   expect(window.location.hash).toBe('#/settings')
 })
 
-it('a board view device sees no Add, Check now or row menu', async () => {
-  stubBackend({ board: TWO_VIEWS })
-  renderRemote(<BoardPage />, { board: 'view', timesheet: 'off' })
-  await screen.findByText('Alpha work')
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'mdp-9' } })
-  await new Promise((resolve) => setTimeout(resolve, 50))
-  expect(screen.queryByRole('button', { name: 'Add MDP-9' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /Check now/ })).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /Actions for/ })).not.toBeInTheDocument()
-})
-
 it('a board act device keeps Check now and the row menu', async () => {
   stubBackend({ board: TWO_VIEWS })
-  renderRemote(<BoardPage />, { board: 'act', timesheet: 'off' })
+  renderRemote(<BoardPage />)
   expect(await screen.findByRole('button', { name: 'Actions for MDP-1' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /Check now/ })).toBeInTheDocument()
 })

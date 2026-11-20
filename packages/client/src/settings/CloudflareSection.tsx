@@ -1,7 +1,6 @@
 import type { RemoteStatusView, SettingsView } from '@workday/core'
 import { Button, Switch } from '@heroui/react'
 import { useState } from 'react'
-import { useAccess } from '../api/useMe.js'
 import { useRemote } from '../api/useRemote.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
@@ -149,12 +148,10 @@ function CloudflareBody({ settings }: { readonly settings: SettingsView }): Reac
   )
 }
 
-// Only the PC itself manages remote access; a paired device never sees this block.
 export function CloudflareSection({
   settings,
 }: {
   readonly settings: SettingsView
-}): React.JSX.Element | null {
-  const access = useAccess()
-  return access.mode === 'local' ? <CloudflareBody settings={settings} /> : null
+}): React.JSX.Element {
+  return <CloudflareBody settings={settings} />
 }

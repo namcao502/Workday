@@ -46,14 +46,13 @@ it('remembers the theme so index.html can apply it before the settings load', as
   expect(localStorage.getItem('workday.theme')).toBe('light')
 })
 
-const RIGHTS = { board: 'view', timesheet: 'view' } as const
 const noSocket = () => ({ onopen: null, onmessage: null, onclose: null, close: vi.fn() })
 
 it('a 401 notPaired from any call shows the pair page', async () => {
   stubMatchMedia(false)
   stubFetch((url) =>
     url === '/api/me'
-      ? jsonResponse({ mode: 'remote', device: remoteDevice(RIGHTS) })
+      ? jsonResponse({ mode: 'remote', device: remoteDevice() })
       : jsonResponse({ ok: false, error: { code: 'notPaired' } }, 401),
   )
   render(<App socketFactory={noSocket} />)

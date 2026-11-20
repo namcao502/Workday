@@ -1,7 +1,6 @@
 import type { SettingsView } from '@workday/core'
 import { Button } from '@heroui/react'
 import { useEffect, useState } from 'react'
-import { useAccess } from '../api/useMe.js'
 import { useRemote } from '../api/useRemote.js'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
@@ -81,12 +80,6 @@ function VpnBody({ settings }: { readonly settings: SettingsView }): React.JSX.E
   )
 }
 
-// Only the PC itself manages remote access; a paired device never sees this block.
-export function VpnSection({
-  settings,
-}: {
-  readonly settings: SettingsView
-}): React.JSX.Element | null {
-  const access = useAccess()
-  return access.mode === 'local' ? <VpnBody settings={settings} /> : null
+export function VpnSection({ settings }: { readonly settings: SettingsView }): React.JSX.Element {
+  return <VpnBody settings={settings} />
 }

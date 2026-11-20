@@ -7,10 +7,10 @@ afterEach(() => {
 
 it('t reads the key from the current language file and fills its placeholders', () => {
   expect(t('shell.settings')).toBe('Settings')
-  expect(t('settings.access', { area: 'Board' })).toBe('Board access')
+  expect(t('api.opening', { id: 'MDP-1' })).toBe('Opening MDP-1')
   setLanguage('vi')
   expect(t('shell.settings')).toBe('Cài đặt')
-  expect(t('settings.access', { area: 'Board' })).toBe('Quyền Board')
+  expect(t('api.opening', { id: 'MDP-1' })).toBe('Đang mở MDP-1')
 })
 
 it('vi has a text for every key of en', async () => {

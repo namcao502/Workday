@@ -12,7 +12,7 @@ interface Harness {
   readonly service: NoticeService
   readonly saved: (readonly Notice[])[]
   readonly events: ServerEvent[]
-  readonly pushes: { area: string; message: PushMessage }[]
+  readonly pushes: { message: PushMessage }[]
   readonly localPushes: PushMessage[]
   readonly errors: string[]
 }
@@ -43,7 +43,7 @@ function harness(
 ): Harness {
   const saved: (readonly Notice[])[] = []
   const events: ServerEvent[] = []
-  const pushes: { area: string; message: PushMessage }[] = []
+  const pushes: { message: PushMessage }[] = []
   const localPushes: PushMessage[] = []
   const errors: string[] = []
   const service = new NoticeService({
@@ -57,8 +57,8 @@ function harness(
     },
     events: { broadcast: (event) => events.push(event) },
     now: options.now ?? (() => NOW),
-    push: (area, message) => {
-      pushes.push({ area, message })
+    push: (message) => {
+      pushes.push({ message })
       return Promise.resolve()
     },
     pushLocal: (message) => {
@@ -153,7 +153,7 @@ describe('NoticeService', () => {
     expect(events).toHaveLength(3)
   })
 
-  it("add pushes to the board area only when the topic's phone channel is on", async () => {
+  it("add pushes to the devices only when the topic's phone channel is on", async () => {
     const { service, pushes } = harness({ prefs: { jira: { phone: true }, pr: { phone: false } } })
 
     await service.add(input({ topic: 'jira' }))
@@ -163,7 +163,7 @@ describe('NoticeService', () => {
       input({ topic: 'jira', target: { kind: 'url', url: 'https://example.com/pr/1' } }),
     )
 
-    expect(pushes.map((push) => push.area)).toEqual(['board', 'board'])
+    expect(pushes).toHaveLength(2)
     expect(pushes[0]?.message).toEqual({
       title: 'Workday',
       body: 'MDP-1 was not found in Jira.',

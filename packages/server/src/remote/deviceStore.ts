@@ -1,10 +1,5 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
-import {
-  DEFAULT_DEVICE_RIGHTS,
-  parseRights,
-  type PushSubscriptionJson,
-  type RemoteDevice,
-} from '@workday/core'
+import type { PushSubscriptionJson, RemoteDevice } from '@workday/core'
 import { isRecord, readJson, writeJsonAtomic } from '../jsonFile.js'
 
 export const NAME_MAX_LENGTH = 40
@@ -61,7 +56,6 @@ function parseDevice(raw: unknown): StoredDevice | null {
     name: raw['name'],
     email: textOrNull(raw['email']),
     tokenHash: raw['tokenHash'],
-    rights: parseRights(raw['rights']),
     pushEnabled: raw['pushEnabled'] === true,
     pushSubscription,
     hasPushSubscription: pushSubscription !== null,
@@ -110,7 +104,6 @@ export class DeviceStore {
       name: normalizeDeviceName(name),
       email,
       tokenHash: hashToken(token),
-      rights: DEFAULT_DEVICE_RIGHTS,
       pushEnabled: false,
       pushSubscription: null,
       hasPushSubscription: false,

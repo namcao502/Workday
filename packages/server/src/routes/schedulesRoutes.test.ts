@@ -125,11 +125,11 @@ describe('schedules routes', () => {
     testApp.services.scanRunner.stop()
   })
 
-  it('is local-only', async () => {
+  it('a paired device reaches the route', async () => {
     const remote = await buildRemoteApp()
     openApps.push(remote.app)
     const token = await pairDevice(remote)
     const reply = await remote.app.inject({ url: '/api/schedules', headers: remoteHeaders(token) })
-    expect(reply.statusCode).toBe(403)
+    expect(reply.statusCode).toBe(200)
   })
 })

@@ -134,17 +134,15 @@ export function TodoView({
   function buttonsFor(item: TodoItem): readonly TodoButton[] {
     switch (item.kind) {
       case 'claudeWaiting':
-        return access.mode === 'remote'
-          ? []
-          : [
-              {
-                id: 'open',
-                label: t('board.open'),
-                onClick: () => {
-                  navigateToWorkspace(item.tab, item.session)
-                },
-              },
-            ]
+        return [
+          {
+            id: 'open',
+            label: t('board.open'),
+            onClick: () => {
+              navigateToWorkspace(item.tab, item.session)
+            },
+          },
+        ]
       case 'readyToTest': {
         const failedBuild = item.deploy?.failedBuild ?? null
         const move: readonly TodoButton[] = canAct
@@ -208,24 +206,22 @@ export function TodoView({
             ]
           : []
       case 'teamsMessage':
-        return access.mode === 'remote'
-          ? []
-          : [
-              {
-                id: 'open',
-                label: t('board.open'),
-                onClick: () => {
-                  navigateToWorkspace(item.ticketKey, null, item.item.conversationId)
-                },
-              },
-              {
-                id: 'seen',
-                label: t('board.seen'),
-                onClick: () => {
-                  void run(() => actions.teamsSeen(item.ticketKey, item.item.conversationId))
-                },
-              },
-            ]
+        return [
+          {
+            id: 'open',
+            label: t('board.open'),
+            onClick: () => {
+              navigateToWorkspace(item.ticketKey, null, item.item.conversationId)
+            },
+          },
+          {
+            id: 'seen',
+            label: t('board.seen'),
+            onClick: () => {
+              void run(() => actions.teamsSeen(item.ticketKey, item.item.conversationId))
+            },
+          },
+        ]
       case 'dbReview': {
         const { sql, conversationKey } = item.approval
         const copy: TodoButton = {

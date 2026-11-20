@@ -129,7 +129,7 @@ describe('teams routes', () => {
     expect(reply.json()).toEqual({ ok: false, error: { code: 'teamsFailed' } })
   })
 
-  it('teams routes are local-only', async () => {
+  it('a paired device reaches the teams routes', async () => {
     const testApp = await buildRemoteApp()
     openApps.push(testApp.app)
     const token = await pairDevice(testApp)
@@ -140,7 +140,7 @@ describe('teams routes', () => {
       `/api/teams/image?url=${encodeURIComponent(AMS_URL)}`,
     ]) {
       const reply = await testApp.app.inject({ url, headers: remoteHeaders(token) })
-      expect(reply.statusCode).toBe(403)
+      expect(reply.statusCode).not.toBe(403)
     }
     const write = await testApp.app.inject({
       method: 'POST',
@@ -148,6 +148,6 @@ describe('teams routes', () => {
       headers: remoteHeaders(token),
       payload: {},
     })
-    expect(write.statusCode).toBe(403)
+    expect(write.statusCode).not.toBe(403)
   })
 })

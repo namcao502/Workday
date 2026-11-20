@@ -1,6 +1,7 @@
 import { Input, buttonVariants } from '@heroui/react'
 import { useState, useSyncExternalStore } from 'react'
 import { useSettings } from '../api/useSettings.js'
+import { useAccess } from '../api/useMe.js'
 import { t } from '../i18n.js'
 import { currentHash } from '../shell/appHash.js'
 import { Page } from '../ui/Page.js'
@@ -23,7 +24,7 @@ export function SettingsPage(): React.JSX.Element {
   const settings = useSettings()
   const hash = useSyncExternalStore(subscribeToHash, currentHash)
   const [query, setQuery] = useState('')
-  const groups = settingsGroups()
+  const groups = settingsGroups(useAccess().mode === 'remote')
   const groupId = settingsGroupFromHash(hash)
   const searching = query.trim() !== ''
   const entries: readonly SettingsEntry[] = searching

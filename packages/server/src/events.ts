@@ -43,7 +43,7 @@ export class EventHub implements EventSink {
     }
   }
 
-  // A revoked or downgraded device must reconnect, so the gate checks its new rights.
+  // A revoked device is disconnected so it cannot keep an open socket.
   closeDevice(deviceId: string): void {
     this.closeWhere((entry) => entry.deviceId === deviceId)
   }

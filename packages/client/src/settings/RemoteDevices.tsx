@@ -1,10 +1,9 @@
-import { REMOTE_AREAS, type AccessLevel, type RemoteArea, type RemoteDevice } from '@workday/core'
+import type { RemoteDevice } from '@workday/core'
 import { Button, Input, Switch } from '@heroui/react'
 import { useState } from 'react'
 import type { RemoteActions } from '../api/useRemote.js'
 import { formatShortDate, t, type Language } from '../i18n.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
-import { Segmented } from '../ui/Segmented.js'
 import { Tip } from '../ui/Tip.js'
 
 export type RunRemote = (action: () => Promise<void>) => void
@@ -15,18 +14,6 @@ interface RemoteDevicesProps {
   readonly run: RunRemote
   readonly language: Language
   readonly timeZone: string
-}
-
-function areaLabel(area: RemoteArea): string {
-  return area === 'board' ? t('settings.tickets') : t('settings.timesheet')
-}
-
-function levels(): readonly { readonly value: AccessLevel; readonly label: string }[] {
-  return [
-    { value: 'off', label: t('settings.off') },
-    { value: 'view', label: t('settings.view') },
-    { value: 'act', label: t('settings.act') },
-  ]
 }
 
 function DeviceName({
@@ -113,21 +100,6 @@ function DeviceRow({
             : formatShortDate(new Date(device.lastSeenAt), language, timeZone)}
         </span>
       </div>
-      {REMOTE_AREAS.map((area) => (
-        <div key={area} className="flex flex-wrap items-center gap-3">
-          <span className="w-24 text-sm">{areaLabel(area)}</span>
-          <Segmented
-            label={t('settings.access', { area: areaLabel(area) })}
-            value={device.rights[area]}
-            options={levels()}
-            onChange={(level) => {
-              run(() =>
-                actions.updateDevice(device.id, { rights: { ...device.rights, [area]: level } }),
-              )
-            }}
-          />
-        </div>
-      ))}
       <div className="flex flex-wrap items-center gap-2">
         <Switch
           isSelected={device.pushEnabled}

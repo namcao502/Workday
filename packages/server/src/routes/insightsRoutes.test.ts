@@ -32,7 +32,7 @@ describe('insights route', () => {
     )
   })
 
-  it('insights route rejects a bad range and is local-only', async () => {
+  it('insights route rejects a bad range and a paired device reaches it', async () => {
     const testApp = await buildTestApp()
     openApps.push(testApp.app)
     for (const query of [
@@ -57,7 +57,7 @@ describe('insights route', () => {
       url: '/api/insights?kind=thisWeek',
       headers: remoteHeaders(token),
     })
-    expect(reply.statusCode).toBe(403)
+    expect(reply.statusCode).toBe(200)
   })
 
   it('answers 500 insightsFailed when the read throws', async () => {

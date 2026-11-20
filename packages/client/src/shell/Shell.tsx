@@ -7,7 +7,6 @@ import { useNow, useTimesheetView } from '../api/useTimesheet.js'
 import { useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
 import { InsightsPage } from '../insights/InsightsPage.js'
-import { DevicePage } from '../remote/DevicePage.js'
 import { useSchedulesView } from '../schedules/useSchedules.js'
 import { SettingsPage } from '../settings/SettingsPage.js'
 import { TimesheetPage } from '../timesheet/TimesheetPage.js'
@@ -19,7 +18,7 @@ import { WorkspacePage } from '../workspace/WorkspacePage.js'
 import { Sidebar } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
 import { TopBar } from './TopBar.js'
-import { navigateTo, visiblePages, type PageId } from './pages.js'
+import { navigateTo, PAGE_IDS, type PageId } from './pages.js'
 import { useNarrow } from './useNarrow.js'
 import { useSidebarCollapsed } from './useSidebarCollapsed.js'
 import { zonedClock } from '@workday/core'
@@ -29,9 +28,8 @@ interface ShellProps {
 }
 
 function PageContent({ page }: ShellProps): React.JSX.Element {
-  const access = useAccess()
   if (page === 'settings') {
-    return access.mode === 'remote' ? <DevicePage /> : <SettingsPage />
+    return <SettingsPage />
   }
   if (page === 'tickets') {
     return <BoardPage />
@@ -61,18 +59,15 @@ function useWaitingSessions(): number {
   return sessions.filter((session) => session.wait !== null).length
 }
 
-export function Shell({ page: requested }: ShellProps): React.JSX.Element {
+export function Shell({ page }: ShellProps): React.JSX.Element {
   const narrow = useNarrow()
   const [collapsed, toggleCollapsed] = useSidebarCollapsed()
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null)
-  const pages = visiblePages(useAccess())
-  // A hash to a hidden page shows the first visible one.
-  const page = pages.includes(requested) ? requested : (pages[0] ?? 'settings')
   const attention = useTimesheetAttention()
   const waiting = useWaitingSessions()
   const todoAttention = useWork().data?.attention ?? 0
   const alerts = useNotices(page)
-  const schedulesDot = useSchedulesView(useAccess().mode !== 'remote').data?.scan.unseenBad === true
+  const schedulesDot = useSchedulesView(true).data?.scan.unseenBad === true
   return (
     <div className="app-shell flex h-dvh overflow-hidden bg-background text-foreground">
       {narrow ? null : (
@@ -81,7 +76,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
           onSelect={navigateTo}
           attention={attention}
           settingsBadge={schedulesDot ? 1 : 0}
-          pages={pages}
+          pages={PAGE_IDS}
           workspaceBadge={waiting}
           boardBadge={todoAttention}
           collapsed={collapsed}
@@ -102,7 +97,7 @@ export function Shell({ page: requested }: ShellProps): React.JSX.Element {
           current={page}
           onSelect={navigateTo}
           attention={attention}
-          pages={pages}
+          pages={PAGE_IDS}
           workspaceBadge={waiting}
         />
       ) : null}

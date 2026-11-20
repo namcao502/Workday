@@ -174,11 +174,11 @@ describe('workspace routes', () => {
     expect(worktrees).toHaveLength(2)
   })
 
-  it('a paired device gets 403', async () => {
+  it('a paired device reaches the route', async () => {
     const testApp = await buildRemoteApp()
     openApps.push(testApp.app)
     const token = await pairDevice(testApp)
     const reply = await testApp.app.inject({ url: '/api/workspace', headers: remoteHeaders(token) })
-    expect(reply.statusCode).toBe(403)
+    expect(reply.statusCode).toBe(200)
   })
 })

@@ -1,5 +1,5 @@
 import type { IncomingHttpHeaders } from 'node:http'
-import { allows, isInRanges, type AppError, type RemoteArea } from '@workday/core'
+import { isInRanges, type AppError } from '@workday/core'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { StoredDevice } from './deviceStore.js'
 import type { RemoteService } from './remoteService.js'
@@ -11,11 +11,8 @@ export interface VpnSurface {
   readonly tls: { readonly key: string; readonly cert: string }
 }
 
-// Declared on each route that a paired device may call; a route without it is local-only.
-export type RouteAccess =
-  | { readonly area: RemoteArea; readonly level: 'view' | 'act' }
-  | { readonly area: 'any' }
-  | { readonly area: 'unpaired' }
+// Declared on a route an unpaired device may call (pairing); every other route needs a paired device.
+export type RouteAccess = { readonly area: 'unpaired' }
 
 declare module 'fastify' {
   interface FastifyContextConfig {
@@ -80,7 +77,7 @@ function isApiRequest(request: FastifyRequest): boolean {
   return routeUrl.startsWith('/api') || request.url.startsWith('/api')
 }
 
-// The part both surfaces share: device, Origin and the route's right.
+// The part both surfaces share: device and Origin.
 function checkDevice(
   request: FastifyRequest,
   reply: FastifyReply,
@@ -105,12 +102,6 @@ function checkDevice(
     return deny(reply, 401, 'notPaired')
   }
   remote.markSeen(device)
-  if (access === undefined) {
-    return deny(reply, 403, 'forbidden')
-  }
-  if (access.area !== 'any' && !allows(device.rights, access.area, access.level)) {
-    return deny(reply, 403, 'forbidden')
-  }
   return undefined
 }
 
@@ -160,7 +151,7 @@ function checkVpn(
   return checkDevice(request, reply, remote, vpn.origin)
 }
 
-// Register after the Host check: every remote request needs Access, a paired device and the route's right.
+// Register after the Host check: every remote request needs Access, a paired device.
 export function registerRemoteGate(
   app: FastifyInstance,
   remote: RemoteService,

@@ -1,6 +1,5 @@
 import type { SettingsView } from '@workday/core'
 import { useState } from 'react'
-import { useAccess } from '../api/useMe.js'
 import { useRemote, useRemoteActions } from '../api/useRemote.js'
 import { t } from '../i18n.js'
 import { Section } from '../ui/Section.js'
@@ -52,12 +51,10 @@ function RemoteBody({ settings }: { readonly settings: SettingsView }): React.JS
   )
 }
 
-// Only the PC itself manages remote access; a paired device never sees this block.
 export function RemoteSection({
   settings,
 }: {
   readonly settings: SettingsView
-}): React.JSX.Element | null {
-  const access = useAccess()
-  return access.mode === 'local' ? <RemoteBody settings={settings} /> : null
+}): React.JSX.Element {
+  return <RemoteBody settings={settings} />
 }

@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { buildRemoteApp, pairDevice, remoteHeaders } from '../testing/remoteTestApp.js'
 import { buildTestApp, LOOPBACK_HEADERS, type TestApp } from '../testing/testApp.js'
 
 const openApps: FastifyInstance[] = []
@@ -119,22 +118,5 @@ describe('notice routes', () => {
     workspace.seen('claude')
 
     await expect.poll(() => notices.view().unread).toBe(0)
-  })
-
-  it('a remote device without board view gets 403 on GET /api/notices', async () => {
-    const testApp = await buildRemoteApp()
-    openApps.push(testApp.app)
-    const token = await pairDevice(testApp)
-    const [device] = testApp.services.remote.status().devices
-    await testApp.app.inject({
-      method: 'PUT',
-      url: `/api/remote/devices/${device?.id ?? ''}`,
-      headers: LOOPBACK_HEADERS,
-      payload: { rights: { board: 'off' } },
-    })
-
-    const reply = await testApp.app.inject({ url: '/api/notices', headers: remoteHeaders(token) })
-
-    expect(reply.statusCode).toBe(403)
   })
 })

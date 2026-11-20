@@ -1,10 +1,9 @@
-import type { DeviceRights, RemoteStatusView } from '@workday/core'
+import type { RemoteStatusView } from '@workday/core'
 import { isRecord } from '../json.js'
 import { ApiError, send } from './client.js'
 
 export interface DeviceChanges {
   readonly name?: string
-  readonly rights?: DeviceRights
   readonly pushEnabled?: boolean
 }
 

@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { allows, type PushSubscriptionJson, type RemoteArea } from '@workday/core'
+import type { PushSubscriptionJson } from '@workday/core'
 import { generateVAPIDKeys, sendNotification, WebPushError } from 'web-push'
 import { readFileSecrets, saveSecrets } from '../config.js'
 import { isRecord, readJson, writeJsonAtomic } from '../jsonFile.js'
@@ -109,7 +109,7 @@ export class PushService {
   }
 
   // Never rejects: a failed device is logged and skipped.
-  async sendToArea(area: RemoteArea, message: PushMessage): Promise<void> {
+  async sendToDevices(message: PushMessage): Promise<void> {
     try {
       const vapid = await this.vapidDetails()
       if (vapid === null) {
@@ -117,11 +117,7 @@ export class PushService {
       }
       const payload = JSON.stringify(message)
       for (const device of this.deps.store.list()) {
-        if (
-          device.pushEnabled &&
-          device.pushSubscription !== null &&
-          allows(device.rights, area, 'view')
-        ) {
+        if (device.pushEnabled && device.pushSubscription !== null) {
           await this.deliver(device, payload, vapid)
         }
       }
@@ -152,7 +148,7 @@ export class PushService {
     }
   }
 
-  // The Settings test push: this device only, whatever its rights.
+  // The Settings test push: this device only.
   async sendToDevice(deviceId: string, message: PushMessage): Promise<{ ok: boolean }> {
     try {
       const device = this.deps.store.list().find((candidate) => candidate.id === deviceId)

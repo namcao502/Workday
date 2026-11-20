@@ -187,7 +187,7 @@ export function createServices(options: ServicesOptions): Services {
     onRun: (summary) => {
       const message = runPushMessage(summary, settings.language, settings.timeZone)
       if (message !== null) {
-        remote.push.sendToArea('timesheet', message).catch((error: unknown) => {
+        remote.push.sendToDevices(message).catch((error: unknown) => {
           reportError('Pushing the run failed', error)
         })
       }
@@ -207,7 +207,7 @@ export function createServices(options: ServicesOptions): Services {
     save: (list) => saveNotices(dataDir, list),
     events,
     now: () => new Date(),
-    push: (area, message) => remote.push.sendToArea(area, message),
+    push: (message) => remote.push.sendToDevices(message),
     pushLocal: (message) => remote.push.sendToLocal(message),
     settings: () => ({ prefs: settings.notices, language: settings.language }),
     logError: reportError,

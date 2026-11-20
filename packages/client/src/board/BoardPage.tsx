@@ -179,7 +179,7 @@ export function BoardPage(): React.JSX.Element {
   }
 
   const rowWorkspace: RowWorkspace | undefined =
-    workspace?.configured === true && access.mode === 'local'
+    workspace?.configured === true
       ? {
           openKeys: new Set(workspace.tabs.map((tab) => tab.id)),
           starting: new Set(workspace.starting),

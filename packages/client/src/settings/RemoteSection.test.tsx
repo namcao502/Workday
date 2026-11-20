@@ -114,7 +114,7 @@ it('Pair a device shows the code and approves the waiting request', async () => 
       return jsonResponse(open)
     }
     if (url === '/api/remote/pairing/approve') {
-      current = status([remoteDevice({ board: 'view', timesheet: 'act' }, { name: 'My phone' })])
+      current = status([remoteDevice({ name: 'My phone' })])
       return jsonResponse(current)
     }
     return jsonResponse(current)
@@ -133,23 +133,22 @@ it('Pair a device shows the code and approves the waiting request', async () => 
   })
 })
 
-it("changing a right sends the device's new rights at once", async () => {
-  const device = remoteDevice({ board: 'view', timesheet: 'act' })
+it('turning push on for a device sends only pushEnabled', async () => {
+  const device = remoteDevice({ hasPushSubscription: true })
   const fetchMock = stubFetch(() => jsonResponse(status([device])))
   renderWithQuery(<RemoteSection settings={configured()} />)
-  const group = await screen.findByRole('radiogroup', { name: 'Tickets access' })
-  fireEvent.click(within(group).getByRole('radio', { name: 'Act' }))
+  fireEvent.click(await screen.findByRole('switch'))
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/remote/devices/d1',
       expect.objectContaining({ method: 'PUT' }),
     )
   })
-  expect(sentJson(fetchMock)).toEqual({ rights: { board: 'act', timesheet: 'act' } })
+  expect(sentJson(fetchMock)).toEqual({ pushEnabled: true })
 })
 
 it('Revoke asks before removing the device', async () => {
-  const device = remoteDevice({ board: 'view', timesheet: 'act' })
+  const device = remoteDevice()
   const fetchMock = stubFetch((url, init) =>
     init?.method === 'DELETE' ? jsonResponse(status()) : jsonResponse(status([device])),
   )
@@ -168,18 +167,16 @@ it('Revoke asks before removing the device', async () => {
   })
 })
 
-it('the remote section is not shown on a remote device', () => {
-  const fetchMock = stubFetch(() => jsonResponse(status()))
+it('a remote device sees the remote access sections like the PC', async () => {
+  stubFetch(() => jsonResponse(status()))
   renderRemote(
     <>
       <VpnSection settings={configured()} />
       <CloudflareSection settings={configured()} />
       <RemoteSection settings={configured()} />
     </>,
-    { board: 'act', timesheet: 'act' },
   )
-  expect(screen.queryByRole('heading')).not.toBeInTheDocument()
-  expect(fetchMock).not.toHaveBeenCalled()
+  expect(await screen.findByRole('heading', { name: 'Cloudflare' })).toBeInTheDocument()
 })
 
 it('VPN and Cloudflare are separate cards, each with its own Save', () => {

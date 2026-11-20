@@ -7,7 +7,6 @@ import type { SettingsService } from '../settings/settingsService.js'
 import { testPushMessage } from '../timesheet/runNotification.js'
 
 // A paired device may call these; the push routes act on the calling device only.
-const ANY_DEVICE = { config: { access: { area: 'any' } } } as const
 
 // Null unless the body is { subscription } with an https endpoint and both keys.
 function parseSubscription(body: unknown): PushSubscriptionJson | null {
@@ -24,9 +23,9 @@ export function registerPushRoutes(
   remote: RemoteService,
   settings: SettingsService,
 ): void {
-  app.get('/api/push/key', ANY_DEVICE, async () => ({ publicKey: await remote.push.publicKey() }))
+  app.get('/api/push/key', async () => ({ publicKey: await remote.push.publicKey() }))
 
-  app.put('/api/push', ANY_DEVICE, async (request, reply) => {
+  app.put('/api/push', async (request, reply) => {
     const device = request.remoteDevice
     if (device === null) {
       return deviceRequired(reply)
@@ -39,7 +38,7 @@ export function registerPushRoutes(
     return reply.code(204).send()
   })
 
-  app.delete('/api/push', ANY_DEVICE, async (request, reply) => {
+  app.delete('/api/push', async (request, reply) => {
     const device = request.remoteDevice
     if (device === null) {
       return deviceRequired(reply)
@@ -48,7 +47,7 @@ export function registerPushRoutes(
     return reply.code(204).send()
   })
 
-  app.post('/api/push/test', ANY_DEVICE, async (request, reply) => {
+  app.post('/api/push/test', async (request, reply) => {
     const device = request.remoteDevice
     if (device === null) {
       return deviceRequired(reply)
@@ -56,7 +55,7 @@ export function registerPushRoutes(
     return remote.push.sendToDevice(device.id, testPushMessage(settings.language))
   })
 
-  // This PC's browser subscription: no access config, so local-only.
+  // This PC's browser subscription.
   app.put('/api/push/local', async (request, reply) => {
     const subscription = parseSubscription(request.body)
     if (subscription === null) {
@@ -81,7 +80,7 @@ export function registerPushRoutes(
     return reply.code(204).send()
   })
 
-  // From the PC's Settings: no access config, so local-only.
+  // From the PC's Settings.
   app.post<{ Params: { id: string } }>('/api/remote/devices/:id/test-push', (request) =>
     remote.push.sendToDevice(request.params.id, testPushMessage(settings.language)),
   )

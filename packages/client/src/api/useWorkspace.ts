@@ -9,7 +9,6 @@ import type {
 } from '@workday/core'
 import { useEffect, useMemo, useRef } from 'react'
 import { queryKeys } from './client.js'
-import { useAccess } from './useMe.js'
 import {
   addSession,
   addTerminal,
@@ -28,13 +27,11 @@ import {
 const CHAT_STALE_MS = 30_000
 const CHAT_KEEP_MS = 30 * 60_000
 
-// The Workspace is local-only, so a remote device never asks for it. Refetch on workspace.changed is in useEvents.
+// Refetch on workspace.changed is in useEvents.
 export function useWorkspace(): UseQueryResult<WorkspaceView> {
-  const local = useAccess().mode === 'local'
   return useQuery({
     queryKey: queryKeys.workspace,
     queryFn: getWorkspace,
-    enabled: local,
     staleTime: CHAT_STALE_MS,
   })
 }

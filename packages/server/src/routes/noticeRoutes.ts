@@ -4,7 +4,6 @@ import type { Notice } from '@workday/core'
 import type { NoticeService } from '../notices/noticeService.js'
 import type { TeamsWatcher } from '../teams/teamsWatcher.js'
 
-const BOARD_VIEW = { config: { access: { area: 'board', level: 'view' } } } as const
 const POSITIVE_INTEGER = /^[1-9]\d*$/
 
 // Reading a Teams notice also reads its conversation, so the ticket's to-do and its dot go with it.
@@ -26,29 +25,25 @@ export function registerNoticeRoutes(
   notices: NoticeService,
   teams: TeamsWatcher,
 ): void {
-  app.get('/api/notices', BOARD_VIEW, () => notices.view())
+  app.get('/api/notices', () => notices.view())
 
-  app.post<{ Params: { id: string } }>(
-    '/api/notices/:id/read',
-    BOARD_VIEW,
-    async (request, reply) => {
-      const { id } = request.params
-      if (!POSITIVE_INTEGER.test(id) || !Number.isSafeInteger(Number(id))) {
-        return reply.code(400).send({ error: 'The id must be a positive integer' })
-      }
-      await markTeamsSeen(notices, teams, (notice) => notice.id === Number(id))
-      await notices.markRead(Number(id))
-      return notices.view()
-    },
-  )
+  app.post<{ Params: { id: string } }>('/api/notices/:id/read', async (request, reply) => {
+    const { id } = request.params
+    if (!POSITIVE_INTEGER.test(id) || !Number.isSafeInteger(Number(id))) {
+      return reply.code(400).send({ error: 'The id must be a positive integer' })
+    }
+    await markTeamsSeen(notices, teams, (notice) => notice.id === Number(id))
+    await notices.markRead(Number(id))
+    return notices.view()
+  })
 
-  app.post('/api/notices/read-all', BOARD_VIEW, async () => {
+  app.post('/api/notices/read-all', async () => {
     await markTeamsSeen(notices, teams, () => true)
     await notices.markAllRead()
     return notices.view()
   })
 
-  app.post('/api/notices/read-place', BOARD_VIEW, async (request, reply) => {
+  app.post('/api/notices/read-place', async (request, reply) => {
     const body: unknown = request.body
     const place = isRecord(body) ? body['place'] : undefined
     if (typeof place !== 'string' || place === '') {

@@ -18,7 +18,7 @@ async function post(
 }
 
 describe('work routes', () => {
-  it('work routes reject a malformed key with 400 and need board act for writes', async () => {
+  it('work routes reject a malformed key with 400 and a paired device may write', async () => {
     const local = await buildTestApp()
     openApps.push(local.app)
 
@@ -46,20 +46,13 @@ describe('work routes', () => {
     const remote = await buildRemoteApp()
     openApps.push(remote.app)
     const token = await pairDevice(remote)
-    const [device] = remote.services.remote.status().devices
-    await remote.app.inject({
-      method: 'PUT',
-      url: `/api/remote/devices/${device?.id ?? ''}`,
-      headers: LOOPBACK_HEADERS,
-      payload: { rights: { board: 'view' } },
-    })
     const read = await remote.app.inject({ url: '/api/work', headers: remoteHeaders(token) })
     const write = await post(remote, '/api/work/suggestions/MDP-1/hide', remoteHeaders(token))
     const fix = await post(remote, '/api/work/bugs/MDP-9/fix', remoteHeaders(token))
 
     expect(read.statusCode).toBe(200)
-    expect(write.statusCode).toBe(403)
-    expect(fix.statusCode).toBe(403)
+    expect(write.statusCode).not.toBe(403)
+    expect(fix.statusCode).not.toBe(403)
   })
 
   it('fix_rejects_a_key_that_is_not_a_bug', async () => {

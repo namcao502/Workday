@@ -1,18 +1,16 @@
 import { screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { jsonResponse, remoteDevice, renderWithQuery, stubFetch } from '../testSupport.js'
-import { DevicePage } from './DevicePage.js'
+import { ThisDeviceSection } from './ThisDeviceSection.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const RIGHTS = { board: 'view', timesheet: 'act' } as const
-
 it('the device page offers Add to Home Screen when push is not available', async () => {
   vi.stubGlobal('PushManager', undefined)
-  stubFetch(() => jsonResponse({ mode: 'remote', device: remoteDevice(RIGHTS) }))
-  renderWithQuery(<DevicePage />)
+  stubFetch(() => jsonResponse({ mode: 'remote', device: remoteDevice() }))
+  renderWithQuery(<ThisDeviceSection />)
   expect(
     await screen.findByText('Add Workday to the Home Screen first to get notifications'),
   ).toBeInTheDocument()
@@ -25,17 +23,17 @@ it('shows Turn off and Send test once push is on', async () => {
   stubFetch(() =>
     jsonResponse({
       mode: 'remote',
-      device: remoteDevice(RIGHTS, { pushEnabled: true, hasPushSubscription: true }),
+      device: remoteDevice({ pushEnabled: true, hasPushSubscription: true }),
     }),
   )
-  renderWithQuery(<DevicePage />)
+  renderWithQuery(<ThisDeviceSection />)
   expect(await screen.findByRole('button', { name: 'Turn off' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Send test' })).toBeInTheDocument()
 })
 
 it('offers Turn on notifications when push is available and off', async () => {
   vi.stubGlobal('PushManager', {})
-  stubFetch(() => jsonResponse({ mode: 'remote', device: remoteDevice(RIGHTS) }))
-  renderWithQuery(<DevicePage />)
+  stubFetch(() => jsonResponse({ mode: 'remote', device: remoteDevice() }))
+  renderWithQuery(<ThisDeviceSection />)
   expect(await screen.findByRole('button', { name: 'Turn on notifications' })).toBeInTheDocument()
 })

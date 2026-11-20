@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AccessLevel, PushSubscriptionJson } from '@workday/core'
+import type { PushSubscriptionJson } from '@workday/core'
 import { describe, expect, it } from 'vitest'
 import { DeviceStore } from './deviceStore.js'
 import { PushService, type PushMessage, type SendPush, type VapidDetails } from './pushService.js'
@@ -44,16 +44,10 @@ function setup(statusCode = 201, host: string | null = HOST) {
   return { dataDir, store, sent, push: create(), create }
 }
 
-async function addDevice(
-  store: DeviceStore,
-  endpoint: string,
-  timesheet: AccessLevel,
-  hasPush: boolean,
-): Promise<string> {
+async function addDevice(store: DeviceStore, endpoint: string, hasPush: boolean): Promise<string> {
   const { device } = await store.add(endpoint, NOW, null)
   await store.update(device.id, (current) => ({
     ...current,
-    rights: { ...current.rights, timesheet },
     pushEnabled: hasPush,
     pushSubscription: hasPush ? subscription(endpoint) : null,
   }))
@@ -61,42 +55,42 @@ async function addDevice(
 }
 
 describe('PushService', () => {
-  it('sendToArea skips devices without push or without view access to the area', async () => {
+  it('push goes to every device with push enabled', async () => {
     const { store, sent, push } = setup()
-    await addDevice(store, 'https://push/ok', 'view', true)
-    await addDevice(store, 'https://push/no-access', 'off', true)
-    await addDevice(store, 'https://push/no-push', 'view', false)
+    await addDevice(store, 'https://push/ok', true)
+    await addDevice(store, 'https://push/also-ok', true)
+    await addDevice(store, 'https://push/no-push', false)
 
-    await push.sendToArea('timesheet', MESSAGE)
+    await push.sendToDevices(MESSAGE)
 
-    expect(sent.map((item) => item.endpoint)).toEqual(['https://push/ok'])
+    expect(sent.map((item) => item.endpoint)).toEqual(['https://push/ok', 'https://push/also-ok'])
     expect(JSON.parse(sent[0]?.payload ?? '')).toEqual(MESSAGE)
     expect(sent[0]?.vapid.subject).toBe(`https://${HOST}`)
   })
 
-  it.each([404, 410])('sendToArea clears the subscription on %i', async (statusCode) => {
+  it.each([404, 410])('sendToDevices clears the subscription on %i', async (statusCode) => {
     const { store, push } = setup(statusCode)
-    const id = await addDevice(store, 'https://push/gone', 'view', true)
+    const id = await addDevice(store, 'https://push/gone', true)
 
-    await push.sendToArea('timesheet', MESSAGE)
+    await push.sendToDevices(MESSAGE)
 
     const device = store.list().find((item) => item.id === id)
     expect(device?.pushSubscription).toBeNull()
     expect(device?.hasPushSubscription).toBe(false)
   })
 
-  it('sendToArea keeps the subscription on another error and never rejects', async () => {
+  it('sendToDevices keeps the subscription on another error and never rejects', async () => {
     const { store, push } = setup(500)
-    const id = await addDevice(store, 'https://push/busy', 'view', true)
+    const id = await addDevice(store, 'https://push/busy', true)
 
-    await push.sendToArea('timesheet', MESSAGE)
+    await push.sendToDevices(MESSAGE)
 
     expect(store.list().find((item) => item.id === id)?.pushSubscription).not.toBeNull()
   })
 
-  it('sendToArea never rejects when the sender throws', async () => {
+  it('sendToDevices never rejects when the sender throws', async () => {
     const { dataDir, store } = setup()
-    await addDevice(store, 'https://push/boom', 'view', true)
+    await addDevice(store, 'https://push/boom', true)
     const logged: string[] = []
     const push = new PushService({
       dataDir,
@@ -106,15 +100,15 @@ describe('PushService', () => {
       logError: (message) => logged.push(message),
     })
 
-    await expect(push.sendToArea('timesheet', MESSAGE)).resolves.toBeUndefined()
+    await expect(push.sendToDevices(MESSAGE)).resolves.toBeUndefined()
     expect(logged).toHaveLength(1)
   })
 
   it('sends nothing while there is no public host', async () => {
     const { store, sent, push } = setup(201, null)
-    const id = await addDevice(store, 'https://push/ok', 'view', true)
+    const id = await addDevice(store, 'https://push/ok', true)
 
-    await push.sendToArea('timesheet', MESSAGE)
+    await push.sendToDevices(MESSAGE)
 
     expect(sent).toEqual([])
     expect(await push.sendToDevice(id, MESSAGE)).toEqual({ ok: false })
@@ -122,9 +116,9 @@ describe('PushService', () => {
 
   it('sendToDevice reaches only that device, and only when it has push turned on', async () => {
     const { store, sent, push } = setup()
-    const id = await addDevice(store, 'https://push/me', 'off', true)
-    await addDevice(store, 'https://push/other', 'view', true)
-    const off = await addDevice(store, 'https://push/off', 'view', false)
+    const id = await addDevice(store, 'https://push/me', true)
+    await addDevice(store, 'https://push/other', true)
+    const off = await addDevice(store, 'https://push/off', false)
 
     expect(await push.sendToDevice(id, MESSAGE)).toEqual({ ok: true })
     expect(await push.sendToDevice(off, MESSAGE)).toEqual({ ok: false })

@@ -74,8 +74,8 @@ Each package has two tsconfigs: `tsconfig.json` (noEmit, includes tests; used by
 - Each integration is an interface in `packages/core/src/ports`; adapters live in the server.
 - The server listens on 127.0.0.1 only (plus the VPN HTTPS listener when VPN mode is on) and rejects a foreign `Host` or WebSocket `Origin`
   (`packages/server/src/security/allowedHosts.ts`).
-- A remote request (via the tunnel) must carry a valid Cloudflare Access JWT, come from a paired device,
-  and have the right the route declares in `config.access`. A route with no `config.access` is local-only.
-- A request over the VPN is accepted only from the allowed IP ranges, from a paired device, with the route's right;
-  no Access JWT needed. Cloudflare stays fully supported next to it.
+- A remote request (via the tunnel) must carry a valid Cloudflare Access JWT and come from a paired device; a paired
+  device may then call every route, like the PC. Only the pairing routes declare `config.access = { area: 'unpaired' }`.
+- A request over the VPN is accepted only from the allowed IP ranges and from a paired device, with the same full
+  access; no Access JWT needed. Cloudflare stays fully supported next to it.
 - No `any` (lint error). English, ASCII punctuation in code, comments and docs.

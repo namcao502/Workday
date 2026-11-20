@@ -1,4 +1,3 @@
-import type { DeviceRights } from './remoteAccess.js'
 import type { SeasonEffects, SeasonSetting } from './season.js'
 import type { StatusFlow } from './statusFlow.js'
 import type { BoardSection } from './board.js'
@@ -389,7 +388,6 @@ export interface RemoteDevice {
   readonly id: string
   readonly name: string
   readonly email: string | null // the Cloudflare Access identity that paired it
-  readonly rights: DeviceRights
   readonly pushEnabled: boolean
   readonly hasPushSubscription: boolean
   readonly createdAt: string

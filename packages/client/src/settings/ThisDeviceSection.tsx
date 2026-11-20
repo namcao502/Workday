@@ -1,31 +1,13 @@
 import { Button } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { AccessLevel, RemoteArea, RemoteDevice } from '@workday/core'
-import { Fragment, useState } from 'react'
+import type { RemoteDevice } from '@workday/core'
+import { useState } from 'react'
 import { queryKeys } from '../api/client.js'
 import { useMe } from '../api/useMe.js'
 import { sendTestPush } from '../api/remoteApi.js'
 import { t } from '../i18n.js'
-import { Page } from '../ui/Page.js'
 import { Section } from '../ui/Section.js'
-import { pushSupported, subscribePush, unsubscribePush } from './pushSubscription.js'
-
-function areaLabel(area: RemoteArea): string {
-  return area === 'board' ? t('remote.tickets') : t('remote.timesheet')
-}
-
-function levelLabel(level: AccessLevel): string {
-  switch (level) {
-    case 'off':
-      return t('remote.off')
-    case 'view':
-      return t('remote.view')
-    case 'act':
-      return t('remote.act')
-  }
-}
-
-const AREAS: readonly RemoteArea[] = ['board', 'timesheet']
+import { pushSupported, subscribePush, unsubscribePush } from '../remote/pushSubscription.js'
 
 async function turnOff(): Promise<null> {
   await unsubscribePush()
@@ -95,33 +77,24 @@ function PushSection({ device }: { readonly device: RemoteDevice }): React.JSX.E
   )
 }
 
-// Settings for a paired remote device; everything else in Settings is PC-only.
-export function DevicePage(): React.JSX.Element {
+// This device's own card in Settings; shown on a paired remote device only.
+export function ThisDeviceSection(): React.JSX.Element {
   const me = useMe()
   const device = me.data?.mode === 'remote' ? me.data.device : null
   return (
-    <Page title={t('remote.settings')}>
+    <Section title={t('remote.device')}>
       {device === null ? (
         <p className="text-sm text-muted">{t('remote.loading')}</p>
       ) : (
-        <>
-          <Section title={t('remote.device')}>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
-              <dt className="text-muted">{t('remote.device')}</dt>
-              <dd>{device.name}</dd>
-              {AREAS.map((area) => (
-                <Fragment key={area}>
-                  <dt className="text-muted">{areaLabel(area)}</dt>
-                  <dd>{levelLabel(device.rights[area])}</dd>
-                </Fragment>
-              ))}
-            </dl>
-          </Section>
-          <Section title={t('remote.notifications')}>
-            <PushSection device={device} />
-          </Section>
-        </>
+        <div className="flex flex-col gap-3">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+            <dt className="text-muted">{t('remote.device')}</dt>
+            <dd>{device.name}</dd>
+          </dl>
+          <p className="text-sm text-muted">{t('remote.notifications')}</p>
+          <PushSection device={device} />
+        </div>
       )}
-    </Page>
+    </Section>
   )
 }

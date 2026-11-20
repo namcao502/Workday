@@ -11,6 +11,7 @@ import { NoticesSection } from './NoticesSection.js'
 import { RemoteSection } from './RemoteSection.js'
 import { TeamsSection } from './TeamsSection.js'
 import { TimesheetSection } from './TimesheetSection.js'
+import { ThisDeviceSection } from './ThisDeviceSection.js'
 import { VpnSection } from './VpnSection.js'
 import { WorkspaceSection } from './WorkspaceSection.js'
 
@@ -31,9 +32,9 @@ export interface SettingsGroup {
 
 export const DEFAULT_GROUP: SettingsGroupId = 'general'
 
-// Built on each render so the labels follow the UI language.
-export function settingsGroups(): readonly SettingsGroup[] {
-  return [
+// Built on each render so the labels follow the UI language; isRemote adds this device's card.
+export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
+  const groups: readonly SettingsGroup[] = [
     {
       id: 'general',
       label: t('settings.general'),
@@ -105,6 +106,12 @@ export function settingsGroups(): readonly SettingsGroup[] {
       label: t('settings.remoteAccess'),
       entries: [
         {
+          id: 'thisDevice',
+          title: t('remote.device'),
+          keywords: 'this device push notifications phone',
+          render: () => <ThisDeviceSection />,
+        },
+        {
           id: 'vpn',
           title: t('settings.vpnAccess'),
           keywords: 'vpn https certificate firewall ip range iphone',
@@ -137,6 +144,10 @@ export function settingsGroups(): readonly SettingsGroup[] {
       ],
     },
   ]
+  return groups.map((group) => ({
+    ...group,
+    entries: group.entries.filter((entry) => isRemote || entry.id !== 'thisDevice'),
+  }))
 }
 
 // "#/settings/work" -> "work"; anything else is the first group.

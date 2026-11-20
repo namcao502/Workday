@@ -14,7 +14,6 @@ import {
   type NoticeTarget,
   type NoticeTone,
   type NoticeTopic,
-  type RemoteArea,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
 import type { PushMessage } from '../remote/pushService.js'
@@ -32,7 +31,7 @@ export interface NoticeServiceDeps {
   readonly save: (notices: readonly Notice[]) => Promise<void>
   readonly events: EventSink
   readonly now: () => Date
-  readonly push: (area: RemoteArea, message: PushMessage) => Promise<void>
+  readonly push: (message: PushMessage) => Promise<void>
   readonly pushLocal: (message: PushMessage) => Promise<void> // this PC's browser, window closed
   readonly settings: () => { readonly prefs: NoticePrefs; readonly language: 'en' | 'vi' }
   readonly logError: (message: string, error: unknown) => void
@@ -131,7 +130,7 @@ export class NoticeService {
       url: pushUrl(notice.target),
       tag: `notice-${String(notice.id)}`,
     }
-    this.deps.push('board', message).catch((error: unknown) => {
+    this.deps.push(message).catch((error: unknown) => {
       this.deps.logError('Pushing a notice failed', error)
     })
   }

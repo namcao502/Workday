@@ -110,39 +110,41 @@ describe('remote gate', () => {
     }
   })
 
-  it('a view device cannot call a board action', async () => {
+  it('paired device reaches a route without access config', async () => {
     const testApp = await remoteApp()
     const token = await pairDevice(testApp)
 
-    const view = await testApp.app.inject({ url: '/api/board', headers: remoteHeaders(token) })
+    const remoteView = await testApp.app.inject({
+      url: '/api/remote',
+      headers: remoteHeaders(token),
+    })
+    const settings = await testApp.app.inject({
+      url: '/api/settings',
+      headers: remoteHeaders(token),
+    })
     const action = await testApp.app.inject({
       method: 'POST',
       url: '/api/board/MDP-1/done',
       headers: remoteHeaders(token),
     })
 
-    expect(view.statusCode).toBe(200)
-    expect(action.statusCode).toBe(403)
-    expect(action.json()).toEqual({ ok: false, error: { code: 'forbidden' } })
+    expect(remoteView.statusCode).toBe(200)
+    expect(settings.statusCode).toBe(200)
+    expect(action.statusCode).not.toBe(403)
+    expect(action.statusCode).not.toBe(401)
   })
 
-  it('a remote call to a route without access config gets 403', async () => {
-    const testApp = await remoteApp()
-    const token = await pairDevice(testApp)
+  it('unpaired device is refused on a former local-only route', async () => {
+    const { app } = await remoteApp()
 
     const replies = await Promise.all([
-      testApp.app.inject({ url: '/api/remote', headers: remoteHeaders(token) }),
-      testApp.app.inject({
-        method: 'POST',
-        url: '/api/settings/tsc/sign-in',
-        headers: remoteHeaders(token),
-      }),
-      testApp.app.inject({ url: '/api/nothing-here', headers: remoteHeaders(token) }),
+      app.inject({ url: '/api/remote', headers: remoteHeaders() }),
+      app.inject({ url: '/api/settings', headers: remoteHeaders('nope') }),
     ])
 
     for (const reply of replies) {
-      expect(reply.statusCode).toBe(403)
-      expect(reply.json()).toEqual({ ok: false, error: { code: 'forbidden' } })
+      expect(reply.statusCode).toBe(401)
+      expect(reply.json()).toEqual({ ok: false, error: { code: 'notPaired' } })
     }
   })
 
@@ -303,12 +305,12 @@ describe('vpn surface', () => {
     expect(me.json()).toEqual({ mode: 'unpaired' })
   })
 
-  it('a view device on the vpn cannot call a board action', async () => {
+  it('paired device on the vpn reaches a route without access config', async () => {
     const testApp = await vpnApp()
     const token = await pairOnVpn(testApp)
 
-    const view = await testApp.app.inject({
-      url: '/api/board',
+    const settings = await testApp.app.inject({
+      url: '/api/settings',
       remoteAddress: INSIDE,
       headers: vpnHeaders(token),
     })
@@ -319,9 +321,9 @@ describe('vpn surface', () => {
       headers: vpnHeaders(token),
     })
 
-    expect(view.statusCode).toBe(200)
-    expect(action.statusCode).toBe(403)
-    expect(action.json()).toEqual({ ok: false, error: { code: 'forbidden' } })
+    expect(settings.statusCode).toBe(200)
+    expect(action.statusCode).not.toBe(403)
+    expect(action.statusCode).not.toBe(401)
   })
 
   it('a vpn POST with an Origin other than the vpn origin gets 403', async () => {

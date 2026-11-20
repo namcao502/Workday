@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, type RenderResult } from '@testing-library/react'
-import type { DeviceRights, RemoteDevice, SettingsView } from '@workday/core'
+import type { RemoteDevice, SettingsView } from '@workday/core'
 import type { ReactElement } from 'react'
 import { vi, type Mock } from 'vitest'
 import { AccessContext, accessFor } from './api/useMe.js'
@@ -95,15 +95,11 @@ export function sentJson(fetchMock: FetchMock): Record<string, unknown> {
   throw new Error('No request carried a JSON body')
 }
 
-export function remoteDevice(
-  rights: DeviceRights,
-  overrides: Partial<RemoteDevice> = {},
-): RemoteDevice {
+export function remoteDevice(overrides: Partial<RemoteDevice> = {}): RemoteDevice {
   return {
     id: 'd1',
     name: 'iPhone',
     email: 'me@example.com',
-    rights,
     pushEnabled: false,
     hasPushSubscription: false,
     createdAt: '2026-11-01T00:00:00Z',
@@ -112,8 +108,8 @@ export function remoteDevice(
   }
 }
 
-// Renders as a paired remote device with the given rights.
-export function renderRemote(element: ReactElement, rights: DeviceRights): RenderResult {
-  const access = accessFor({ mode: 'remote', device: remoteDevice(rights) })
+// Renders as a paired remote device.
+export function renderRemote(element: ReactElement): RenderResult {
+  const access = accessFor({ mode: 'remote', device: remoteDevice() })
   return renderWithQuery(<AccessContext.Provider value={access}>{element}</AccessContext.Provider>)
 }

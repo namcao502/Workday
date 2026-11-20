@@ -12,7 +12,6 @@ export function registerEventsRoute(
     '/api/events',
     {
       websocket: true,
-      config: { access: { area: 'any' } },
       // A browser always sends Origin; a page on another site must not read our events.
       preValidation: async (request, reply) => {
         const { origin } = request.headers

@@ -1,5 +1,3 @@
-import type { RemoteArea } from '@workday/core'
-import type { Access } from '../api/useMe.js'
 import { t } from '../i18n.js'
 import { setHash } from './appHash.js'
 
@@ -38,21 +36,6 @@ export function pageFromHash(hash: string): PageId {
 
 export function navigateTo(page: PageId): void {
   setHash(`#/${page}`)
-}
-
-// Workspace and Insights have no remote area, so a remote device never sees them.
-const PAGE_AREAS: Partial<Record<PageId, RemoteArea>> = { tickets: 'board', timesheet: 'timesheet' }
-
-export function pageVisible(page: PageId, access: Access): boolean {
-  if (access.mode !== 'remote' || page === 'settings') {
-    return true
-  }
-  const area = PAGE_AREAS[page]
-  return area !== undefined && access.canSee(area)
-}
-
-export function visiblePages(access: Access): readonly PageId[] {
-  return PAGE_IDS.filter((page) => pageVisible(page, access))
 }
 
 export interface WorkspaceSelection {

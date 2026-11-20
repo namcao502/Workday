@@ -129,30 +129,31 @@ describe('remote routes', () => {
     expect(after.statusCode).toBe(401)
   })
 
-  it('lowering a right closes the socket and the new right applies', async () => {
+  it('updating a device changes its name and push, and keeps the socket open', async () => {
     const testApp = await remoteApp()
     const token = await pairDevice(testApp)
     const { id } = (await remoteStatus(testApp)).devices[0] ?? { id: '' }
     const socket = await testApp.app.injectWS('/api/events', { headers: remoteHeaders(token) })
-    const closed = new Promise<number>((resolve) => {
-      socket.on('close', resolve)
+    let closed = false
+    socket.on('close', () => {
+      closed = true
     })
 
     const updated = await testApp.app.inject({
       method: 'PUT',
       url: `/api/remote/devices/${id}`,
       headers: LOOPBACK_HEADERS,
-      payload: { name: 'Pixel', rights: { board: 'off', timesheet: 'act' }, pushEnabled: true },
+      payload: { name: 'Pixel', pushEnabled: true },
     })
 
     expect(updated.json<RemoteStatusView>().devices[0]).toMatchObject({
       name: 'Pixel',
-      rights: { board: 'off', timesheet: 'act' },
       pushEnabled: true,
     })
-    expect(await closed).toBe(1008)
+    expect(closed).toBe(false)
     const board = await testApp.app.inject({ url: '/api/board', headers: remoteHeaders(token) })
-    expect(board.statusCode).toBe(403)
+    expect(board.statusCode).toBe(200)
+    socket.terminate()
   })
 
   it('a remote write is recorded in the activity log without its body', async () => {
@@ -180,7 +181,7 @@ describe('remote routes', () => {
     expect(file).not.toContain('SECRET-42')
   })
 
-  it('GET /api/remote is refused remotely', async () => {
+  it('a paired device reaches /api/remote like the PC', async () => {
     const testApp = await remoteApp()
     const token = await pairDevice(testApp)
 
@@ -191,8 +192,8 @@ describe('remote routes', () => {
       headers: remoteHeaders(token),
     })
 
-    expect(reply.statusCode).toBe(403)
-    expect(pairing.statusCode).toBe(403)
+    expect(reply.statusCode).toBe(200)
+    expect(pairing.statusCode).toBe(200)
   })
 
   it('turning remote access off closes the device sockets', async () => {
@@ -271,7 +272,7 @@ describe('remote routes', () => {
       expect(commands).toEqual([])
     })
 
-    it('firewall is local-only', async () => {
+    it('a paired device can open the firewall', async () => {
       const { testApp, commands } = await firewallApp(VPN)
       const token = await pairDevice(testApp)
 
@@ -281,8 +282,8 @@ describe('remote routes', () => {
         headers: remoteHeaders(token),
       })
 
-      expect(reply.statusCode).toBe(403)
-      expect(commands).toEqual([])
+      expect(reply.statusCode).toBe(200)
+      expect(commands).toHaveLength(1)
     })
   })
 })

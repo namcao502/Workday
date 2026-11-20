@@ -1,4 +1,4 @@
-import { parseRights, type MeView } from '@workday/core'
+import type { MeView } from '@workday/core'
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { isRecord } from '../jsonFile.js'
 import { firewallCommand, openFirewall, type FirewallResult } from '../remote/firewall.js'
@@ -17,27 +17,25 @@ function notFound(reply: FastifyReply): FastifyReply {
   return reply.code(404).send({ error: 'Not found' })
 }
 
-// Null when any field it carries is invalid; rights go through parseRights (missing area = off).
+// Null when any field it carries is invalid.
 function parseDeviceChanges(body: unknown): DeviceChanges | null {
   if (!isRecord(body)) {
     return null
   }
-  const { name, rights, pushEnabled } = body
+  const { name, pushEnabled } = body
   if (
     (name !== undefined && typeof name !== 'string') ||
-    (rights !== undefined && !isRecord(rights)) ||
     (pushEnabled !== undefined && typeof pushEnabled !== 'boolean')
   ) {
     return null
   }
   return {
     ...(name === undefined ? {} : { name }),
-    ...(rights === undefined ? {} : { rights: parseRights(rights) }),
     ...(pushEnabled === undefined ? {} : { pushEnabled }),
   }
 }
 
-// /api/me and /api/pair* are open to an unpaired device; /api/remote* declares no access, so it is local-only.
+// /api/me and /api/pair* are open to an unpaired device; every other route needs a paired device.
 export function registerRemoteRoutes(
   app: FastifyInstance,
   remote: RemoteService,
@@ -114,7 +112,7 @@ export function registerRemoteRoutes(
   app.put<{ Params: { id: string } }>('/api/remote/devices/:id', async (request, reply) => {
     const changes = parseDeviceChanges(request.body)
     if (changes === null) {
-      return badRequest(reply, '{ name?, rights?, pushEnabled? }')
+      return badRequest(reply, '{ name?, pushEnabled? }')
     }
     if (!(await remote.updateDevice(request.params.id, changes))) {
       return notFound(reply)
