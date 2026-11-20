@@ -5,7 +5,8 @@ internal enum ServerStartResult
     AlreadyRunning,
     Started,
     NoServerDir,
-    TimedOut
+    TimedOut,
+    BuildFailed
 }
 
 internal interface IRunningServer
@@ -20,6 +21,10 @@ internal interface IServerHost
     Task<bool> IsHealthyAsync(CancellationToken cancellationToken);
 
     IRunningServer Start(string serverDir, string logPath);
+
+    Task<bool> BuildAsync(string serverDir, string logPath, CancellationToken cancellationToken);
+
+    void StopListener();
 }
 
 internal sealed class ServerProcess(IServerHost host, TimeSpan timeout, TimeSpan pollInterval)
@@ -53,11 +58,51 @@ internal sealed class ServerProcess(IServerHost host, TimeSpan timeout, TimeSpan
         return ServerStartResult.TimedOut;
     }
 
+    public async Task<ServerStartResult> RestartAsync(string? serverDir, string logPath, CancellationToken cancellationToken)
+    {
+        if (serverDir == null)
+        {
+            return ServerStartResult.NoServerDir;
+        }
+
+        if (!await host.BuildAsync(serverDir, logPath, cancellationToken))
+        {
+            return ServerStartResult.BuildFailed;
+        }
+
+        StopIfOwned();
+        // A server started elsewhere (npm start, a scheduled task) listens on the port too.
+        host.StopListener();
+        if (!await WaitForHealthAsync(false, cancellationToken))
+        {
+            return ServerStartResult.TimedOut;
+        }
+
+        _ownedServer = host.Start(serverDir, logPath);
+        return await WaitForHealthAsync(true, cancellationToken) ? ServerStartResult.Started : ServerStartResult.TimedOut;
+    }
+
     public void StopIfOwned()
     {
         if (_ownedServer != null && !_ownedServer.HasExited)
         {
             _ownedServer.KillTree();
         }
+    }
+
+    private async Task<bool> WaitForHealthAsync(bool isHealthyExpected, CancellationToken cancellationToken)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (await host.IsHealthyAsync(cancellationToken) == isHealthyExpected)
+            {
+                return true;
+            }
+
+            await Task.Delay(pollInterval, cancellationToken);
+        }
+
+        return false;
     }
 }

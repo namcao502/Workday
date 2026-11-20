@@ -46,10 +46,97 @@ internal sealed class NodeServerHost(int port) : IServerHost
         {
             StartInfo = startInfo
         };
-        var logWriter = new StreamWriter(new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+        AttachLog(process, OpenLog(logPath));
+
+        process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        return new RunningProcess(process);
+    }
+
+    public async Task<bool> BuildAsync(string serverDir, string logPath, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(logPath) ?? serverDir);
+
+        var startInfo = new ProcessStartInfo("cmd.exe")
+        {
+            WorkingDirectory = serverDir,
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        startInfo.ArgumentList.Add("/c");
+        startInfo.ArgumentList.Add("npm run build");
+
+        using var logWriter = OpenLog(logPath);
+        logWriter.WriteLine($"==== build {DateTime.Now:yyyy-MM-dd HH:mm:ss} ====");
+        using var process = new Process
+        {
+            StartInfo = startInfo
+        };
+        AttachLog(process, logWriter);
+
+        process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        await process.WaitForExitAsync(cancellationToken);
+        return process.ExitCode == 0;
+    }
+
+    public void StopListener()
+    {
+        var startInfo = new ProcessStartInfo("netstat", "-ano -p TCP")
+        {
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardOutput = true
+        };
+        using var netstat = Process.Start(startInfo);
+        if (netstat == null)
+        {
+            return;
+        }
+
+        var output = netstat.StandardOutput.ReadToEnd();
+        netstat.WaitForExit();
+
+        var localAddresses = new[] { $"127.0.0.1:{port}", $"0.0.0.0:{port}" };
+        var listenerProcessIds = new HashSet<int>();
+        foreach (var line in output.Split('\n'))
+        {
+            var columns = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (columns.Length >= 5 && columns[0] == "TCP" && columns[3] == "LISTENING" &&
+                localAddresses.Contains(columns[1]) && int.TryParse(columns[4], out var processId))
+            {
+                listenerProcessIds.Add(processId);
+            }
+        }
+
+        foreach (var processId in listenerProcessIds)
+        {
+            try
+            {
+                using var listener = Process.GetProcessById(processId);
+                listener.Kill(entireProcessTree: true);
+            }
+            catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+            {
+                // The process already exited between netstat and the kill.
+            }
+        }
+    }
+
+    private static StreamWriter OpenLog(string logPath)
+    {
+        return new StreamWriter(new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
         {
             AutoFlush = true
         };
+    }
+
+    private static void AttachLog(Process process, StreamWriter logWriter)
+    {
         var logLock = new object();
         DataReceivedEventHandler writeLine = (_, args) =>
         {
@@ -60,11 +147,6 @@ internal sealed class NodeServerHost(int port) : IServerHost
         };
         process.OutputDataReceived += writeLine;
         process.ErrorDataReceived += writeLine;
-
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        return new RunningProcess(process);
     }
 
     private sealed class RunningProcess(Process process) : IRunningServer

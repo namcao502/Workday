@@ -12,6 +12,7 @@ internal sealed class MainForm : Form
     private readonly bool _isStartMinimized;
     private readonly string _dataDir;
     private readonly int _port;
+    private readonly string _logPath;
     private readonly ShellStrings _text;
     private readonly ServerProcess _server;
     private readonly TrayIcon _tray;
@@ -30,13 +31,14 @@ internal sealed class MainForm : Form
         _port = DesktopPaths.Port(_dataDir, environment);
         _text = ShellText.For(DesktopPaths.Language(_dataDir));
         _settings = DesktopSettings.Load(_dataDir);
+        _logPath = Path.Combine(_dataDir, "desktop", "server.log");
         _server = new ServerProcess(new NodeServerHost(_port), TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(500));
 
         Text = "Workday";
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         ApplyBounds();
         Controls.Add(_webView);
-        _tray = new TrayIcon(_text, ShowWindow, Quit);
+        _tray = new TrayIcon(_text, ShowWindow, async () => await BuildAndRestartAsync(), Quit);
 
         // A --minimized start never raises Load, so create the handles now and start from the message loop.
         _ = Handle;
@@ -128,16 +130,58 @@ internal sealed class MainForm : Form
         await _webView.EnsureCoreWebView2Async(environment);
         ConfigureWebView(_webView.CoreWebView2);
 
-        var logPath = Path.Combine(desktopDir, "server.log");
-        var serverDir = _settings.ServerDir ?? DesktopPaths.FindServerDir(AppContext.BaseDirectory);
-        var result = await _server.EnsureRunningAsync(serverDir, logPath, CancellationToken.None);
+        var result = await _server.EnsureRunningAsync(ResolveServerDir(), _logPath, CancellationToken.None);
         if (result == ServerStartResult.AlreadyRunning || result == ServerStartResult.Started)
         {
             _webView.CoreWebView2.Navigate($"http://localhost:{_port}/");
             return;
         }
 
-        _webView.CoreWebView2.NavigateToString(ShellText.ErrorPage(_text, result, logPath));
+        _webView.CoreWebView2.NavigateToString(ShellText.ErrorPage(_text, result, _logPath));
+    }
+
+    private string? ResolveServerDir()
+    {
+        return _settings.ServerDir ?? DesktopPaths.FindServerDir(AppContext.BaseDirectory);
+    }
+
+    private async Task BuildAndRestartAsync()
+    {
+        var owner = Visible ? this : null;
+        var answer = MessageBox.Show(owner, _text.BuildAndRestartConfirm, "Workday", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (answer != DialogResult.Yes)
+        {
+            return;
+        }
+
+        _tray.IsBuildRestartEnabled = false;
+        try
+        {
+            _tray.ShowMessage(_text.Building);
+            var result = await _server.RestartAsync(ResolveServerDir(), _logPath, CancellationToken.None);
+            if (result == ServerStartResult.Started)
+            {
+                _webView.CoreWebView2.Navigate($"http://localhost:{_port}/");
+                _tray.ShowMessage(_text.ServerRestarted);
+            }
+            else if (result == ServerStartResult.BuildFailed)
+            {
+                _tray.ShowMessage(_text.BuildFailed.Replace("{path}", _logPath));
+            }
+            else
+            {
+                _webView.CoreWebView2.NavigateToString(ShellText.ErrorPage(_text, result, _logPath));
+            }
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
+        {
+            // npm or node could not be started at all; report it like a failed build instead of crashing the shell.
+            _tray.ShowMessage(_text.BuildFailed.Replace("{path}", _logPath));
+        }
+        finally
+        {
+            _tray.IsBuildRestartEnabled = true;
+        }
     }
 
     private void ConfigureWebView(CoreWebView2 core)

@@ -7,7 +7,12 @@ internal sealed record ShellStrings(
     string ErrorTitle,
     string ErrorNoServerDir,
     string ErrorTimedOut,
-    string ErrorLogPath);
+    string ErrorLogPath,
+    string BuildAndRestart,
+    string BuildAndRestartConfirm,
+    string Building,
+    string ServerRestarted,
+    string BuildFailed);
 
 internal static class ShellText
 {
@@ -18,7 +23,12 @@ internal static class ShellText
         "Workday could not start",
         "The Workday server folder was not found. Set serverDir in desktop.json or run npm run build.",
         "The Workday server did not answer in time.",
-        "Server log");
+        "Server log",
+        "Build && restart server",
+        "Build Workday and restart the server? Running Claude sessions will be stopped.",
+        "Building Workday...",
+        "Server restarted.",
+        "Build failed; the old server keeps running. Log: {path}");
 
     private static readonly ShellStrings Vietnamese = new(
         "Mở Workday",
@@ -27,7 +37,12 @@ internal static class ShellText
         "Workday không khởi động được",
         "Không tìm thấy thư mục server của Workday. Đặt serverDir trong desktop.json hoặc chạy npm run build.",
         "Server của Workday không phản hồi kịp.",
-        "Nhật ký server");
+        "Nhật ký server",
+        "Build && khởi động lại server",
+        "Build Workday rồi khởi động lại server? Các phiên Claude đang chạy sẽ bị dừng.",
+        "Đang build Workday...",
+        "Đã khởi động lại server.",
+        "Build lỗi, server cũ vẫn chạy. Log: {path}");
 
     public static ShellStrings For(string language)
     {

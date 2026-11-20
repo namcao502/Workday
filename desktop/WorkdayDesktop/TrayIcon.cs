@@ -10,17 +10,21 @@ internal sealed class TrayIcon : IDisposable
 
     private readonly NotifyIcon _notifyIcon;
     private readonly ToolStripMenuItem _autoStartItem;
+    private readonly ToolStripMenuItem _buildRestartItem;
     private CoreWebView2Notification? _currentNotification;
     private bool _isCurrentClicked;
 
-    public TrayIcon(ShellStrings text, Action showWindow, Action quit)
+    public TrayIcon(ShellStrings text, Action showWindow, Action buildAndRestart, Action quit)
     {
         _autoStartItem = new ToolStripMenuItem(text.StartWithWindows) { CheckOnClick = false };
         _autoStartItem.Click += (_, _) => ToggleAutoStart();
+        _buildRestartItem = new ToolStripMenuItem(text.BuildAndRestart);
+        _buildRestartItem.Click += (_, _) => buildAndRestart();
 
         var menu = new ContextMenuStrip();
         menu.Items.Add(text.OpenWorkday, null, (_, _) => showWindow());
         menu.Items.Add(_autoStartItem);
+        menu.Items.Add(_buildRestartItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(text.Quit, null, (_, _) => quit());
         menu.Opening += (_, _) => _autoStartItem.Checked = IsAutoStartEnabled();
@@ -56,6 +60,26 @@ internal sealed class TrayIcon : IDisposable
         _isCurrentClicked = false;
         _notifyIcon.ShowBalloonTip(10000, BalloonTitle, notification.Body, ToolTipIcon.None);
         notification.ReportShown();
+    }
+
+    public bool IsBuildRestartEnabled
+    {
+        get
+        {
+            return _buildRestartItem.Enabled;
+        }
+        set
+        {
+            _buildRestartItem.Enabled = value;
+        }
+    }
+
+    public void ShowMessage(string text)
+    {
+        // A plain balloon must not report a click or close to an older WebView2 notification.
+        _currentNotification = null;
+        _isCurrentClicked = false;
+        _notifyIcon.ShowBalloonTip(10000, BalloonTitle, text, ToolTipIcon.None);
     }
 
     public void Hide()
