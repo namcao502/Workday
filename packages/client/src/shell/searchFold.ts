@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 
-// Mirrors TopBar's classes: the header's side padding (pl-4 pr-5), the grid gap (gap-3) and the box width
-// (clamp(240px, 30vw, 440px)) from the width where the box opens.
+// Mirrors TopBar's classes: padding pl-4 pr-5, gap-3, and the box's clamp(240px, 30vw, 440px) from 900px.
 const HEADER_PADDING_PX = 36
 const GRID_GAP_PX = 12
 export const SEARCH_BOX_MIN_WIDTH_PX = 900
@@ -24,8 +23,8 @@ export interface FoldInput {
   readonly strips: readonly ScrollStrip[] // scrolling strips the page put in the bar (Workspace tabs)
 }
 
-// True when a strip in the title column would not fit with the box in the middle: the box then folds to its
-// magnifier at the right and the column takes the room. The same test runs folded or not, so it never flips.
+// True when a strip in the title column would not fit beside the centered box.
+// Folded or not, the test measures the centered layout, so it never flips back and forth.
 export function foldsSearch(input: FoldInput): boolean {
   if (input.viewportWidth < SEARCH_BOX_MIN_WIDTH_PX) {
     return false
