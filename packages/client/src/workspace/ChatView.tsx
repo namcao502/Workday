@@ -275,7 +275,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
           <div
             ref={listRef}
             data-testid="chat-list"
-            className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2"
+            className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden p-2"
             onScroll={(event) => {
               const list = event.currentTarget
               // A hidden list reports 0 for everything: that says nothing about where the reader was.
@@ -311,7 +311,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
             {echoed.map((text, index) => (
               <div
                 key={`echo-${String(index)}-${text}`}
-                className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap"
+                className="max-w-[80%] self-end rounded-2xl bg-accent-soft px-3 py-1.5 text-sm whitespace-pre-wrap wrap-anywhere"
               >
                 {text}
               </div>

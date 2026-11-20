@@ -108,7 +108,9 @@ function ToolLine({ message }: { readonly message: ChatMessage }): React.JSX.Ele
   const head = (
     <>
       <span className="font-semibold">{message.toolName ?? ''}</span>
-      {message.toolDetail === null ? null : <span>{message.toolDetail}</span>}
+      {message.toolDetail === null ? null : (
+        <span className="min-w-0 wrap-anywhere">{message.toolDetail}</span>
+      )}
       {message.status === 'running' ? (
         <Spinner size="sm" aria-label={t('workspace.running')} />
       ) : null}
