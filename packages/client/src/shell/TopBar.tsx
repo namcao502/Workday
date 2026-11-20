@@ -1,5 +1,5 @@
 import { Bars, Magnifier } from '@gravity-ui/icons'
-import { Button } from '@heroui/react'
+import { Button, Tooltip } from '@heroui/react'
 import { t } from '../i18n.js'
 import { NoticeBell } from '../notices/NoticeBell.js'
 import { ConnectionStatus } from './ConnectionStatus.js'
@@ -35,16 +35,22 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
       )}
       <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-between gap-3" />
       <ConnectionStatus />
-      <Button
-        variant="secondary"
-        aria-label={t('palette.open')}
-        onPress={() => {
-          setPaletteOpen(true)
-        }}
-      >
-        <Magnifier width={16} height={16} aria-hidden="true" />
-        <kbd className="hidden text-xs text-muted min-[900px]:inline">{shortcutHint()}</kbd>
-      </Button>
+      {/* The button itself is the trigger: wrapped in Tip's span, the inner button takes the trigger context. */}
+      <Tooltip delay={500} closeDelay={0}>
+        <Button
+          isIconOnly
+          variant="secondary"
+          aria-label={t('palette.open')}
+          onPress={() => {
+            setPaletteOpen(true)
+          }}
+        >
+          <Magnifier width={20} height={20} aria-hidden="true" />
+        </Button>
+        <Tooltip.Content placement="bottom">
+          {t('palette.open')} ({shortcutHint()})
+        </Tooltip.Content>
+      </Tooltip>
       <NoticeBell />
       <WindowControls />
     </header>
