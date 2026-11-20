@@ -369,7 +369,7 @@ html[data-season='rain']:not([data-season-effects='off']) :is(.app-sidebar, .app
 }
 
 /* Every season, kept light: one strip along the top bar (the same on every page, stopping short of the
-   bell) and a small piece on the notice bell and the search button. Effects "off" drops both. */
+   bell) and a small piece on the notice bell. Effects "off" drops both. */
 html[data-season]:not([data-season-effects='off']) .app-topbar::before,
 html[data-season='christmas']:not([data-season-effects='off']) .app-topbar::after {
   content: '';
@@ -385,7 +385,7 @@ html[data-season='christmas']:not([data-season-effects='off']) .app-topbar::afte
 
 /* The bell piece hugs the round rim from its left side to just before the top, clear of the unread
    count on the right. The frame is 60px, centered on the 36px button. */
-html[data-season]:not([data-season-effects='off']) :is(.notice-bell, .palette-button)::after {
+html[data-season]:not([data-season-effects='off']) .notice-bell::after {
   content: '';
   position: absolute;
   left: -12px;
@@ -506,38 +506,48 @@ html[data-season='rain']:not([data-season-effects='off']) .notice-bell::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Ccircle cx='10.8' cy='26.6' r='1.8' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='10.2' cy='26.0' r='0.5' fill='%23fff'/%3E%3Ccircle cx='12.8' cy='20.8' r='2.4' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='11.9' cy='20.0' r='0.7' fill='%23fff'/%3E%3Ccircle cx='16.5' cy='16.0' r='1.9' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='15.8' cy='15.3' r='0.6' fill='%23fff'/%3E%3Ccircle cx='21.5' cy='12.5' r='2.6' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='20.5' cy='11.6' r='0.8' fill='%23fff'/%3E%3Ccircle cx='27.3' cy='10.7' r='1.7' fill='%23a9c6e4' stroke='%236f8fb0' stroke-width='0.6'/%3E%3Ccircle cx='26.7' cy='10.1' r='0.5' fill='%23fff'/%3E%3C/svg%3E");
 }
 
-/* The search button's own piece for each season, on the right of its rim so it mirrors the bell. */
+/* The season's picture inside the search box, like the highlight in the Windows search box. A small screen folds
+   the box to its magnifier, so the picture shows only from the width where the box opens. */
+@media (min-width: 900px) {
+  html[data-season]:not([data-season-effects='off']) .palette-highlight {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    flex: none;
+    background: center / contain no-repeat;
+  }
+}
 /* A holly sprig. */
-html[data-season='christmas']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(43 15)'%3E%3Cpath d='M0 0 C3 -5 9 -6 12 -3 C9 0 4 2 0 0Z' fill='%232f8a4a' transform='rotate(-20)'/%3E%3Cpath d='M0 0 C-3 -5 -9 -6 -12 -3 C-9 0 -4 2 0 0Z' fill='%233fa35a' transform='rotate(20)'/%3E%3Ccircle cx='-1.8' cy='1' r='2.3' fill='%23d63a3a'/%3E%3Ccircle cx='1.8' cy='1' r='2.3' fill='%23e5484d'/%3E%3Ccircle cx='0' cy='-1.8' r='2.3' fill='%23c62f35'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+html[data-season='christmas']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(43 15)'%3E%3Cpath d='M0 0 C3 -5 9 -6 12 -3 C9 0 4 2 0 0Z' fill='%232f8a4a' transform='rotate(-20)'/%3E%3Cpath d='M0 0 C-3 -5 -9 -6 -12 -3 C-9 0 -4 2 0 0Z' fill='%233fa35a' transform='rotate(20)'/%3E%3Ccircle cx='-1.8' cy='1' r='2.3' fill='%23d63a3a'/%3E%3Ccircle cx='1.8' cy='1' r='2.3' fill='%23e5484d'/%3E%3Ccircle cx='0' cy='-1.8' r='2.3' fill='%23c62f35'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 /* A snowflake. */
-html[data-season='winter']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15)' fill='none' stroke-linecap='round'%3E%3Cpath d='M0 -6.5 V6.5 M-5.6 -3.25 L5.6 3.25 M-5.6 3.25 L5.6 -3.25' stroke='%238fb2d6' stroke-width='3.2'/%3E%3Cpath d='M0 -6.5 V6.5 M-5.6 -3.25 L5.6 3.25 M-5.6 3.25 L5.6 -3.25' stroke='%23fff' stroke-width='1.6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+html[data-season='winter']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15)' fill='none' stroke-linecap='round'%3E%3Cpath d='M0 -6.5 V6.5 M-5.6 -3.25 L5.6 3.25 M-5.6 3.25 L5.6 -3.25' stroke='%238fb2d6' stroke-width='3.2'/%3E%3Cpath d='M0 -6.5 V6.5 M-5.6 -3.25 L5.6 3.25 M-5.6 3.25 L5.6 -3.25' stroke='%23fff' stroke-width='1.6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 /* A butterfly. */
-html[data-season='spring']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 14) rotate(15)'%3E%3Cellipse cx='-3.6' cy='-2.4' rx='3.8' ry='3' fill='%23f58fb1' transform='rotate(-25 -3.6 -2.4)'/%3E%3Cellipse cx='3.6' cy='-2.4' rx='3.8' ry='3' fill='%23f58fb1' transform='rotate(25 3.6 -2.4)'/%3E%3Cellipse cx='-2.8' cy='2.6' rx='2.6' ry='2.1' fill='%23f9c2d4'/%3E%3Cellipse cx='2.8' cy='2.6' rx='2.6' ry='2.1' fill='%23f9c2d4'/%3E%3Crect x='-0.7' y='-4' width='1.4' height='8' rx='0.7' fill='%235b4636'/%3E%3Cpath d='M-0.3 -4 q-1.5 -2.5 -3 -3 M0.3 -4 q1.5 -2.5 3 -3' stroke='%235b4636' stroke-width='0.6' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+html[data-season='spring']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 14) rotate(15)'%3E%3Cellipse cx='-3.6' cy='-2.4' rx='3.8' ry='3' fill='%23f58fb1' transform='rotate(-25 -3.6 -2.4)'/%3E%3Cellipse cx='3.6' cy='-2.4' rx='3.8' ry='3' fill='%23f58fb1' transform='rotate(25 3.6 -2.4)'/%3E%3Cellipse cx='-2.8' cy='2.6' rx='2.6' ry='2.1' fill='%23f9c2d4'/%3E%3Cellipse cx='2.8' cy='2.6' rx='2.6' ry='2.1' fill='%23f9c2d4'/%3E%3Crect x='-0.7' y='-4' width='1.4' height='8' rx='0.7' fill='%235b4636'/%3E%3Cpath d='M-0.3 -4 q-1.5 -2.5 -3 -3 M0.3 -4 q1.5 -2.5 3 -3' stroke='%235b4636' stroke-width='0.6' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 /* A sun. */
-html[data-season='summer']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(45 14)'%3E%3Cpath d='M6.2 0.0 L8.6 0.0 M4.4 4.4 L6.1 6.1 M0.0 6.2 L0.0 8.6 M-4.4 4.4 L-6.1 6.1 M-6.2 0.0 L-8.6 0.0 M-4.4 -4.4 L-6.1 -6.1 M-0.0 -6.2 L-0.0 -8.6 M4.4 -4.4 L6.1 -6.1' stroke='%23f5a623' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle r='4.6' fill='%23ffc94a' stroke='%23f5a623' stroke-width='0.8'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+html[data-season='summer']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(45 14)'%3E%3Cpath d='M6.2 0.0 L8.6 0.0 M4.4 4.4 L6.1 6.1 M0.0 6.2 L0.0 8.6 M-4.4 4.4 L-6.1 6.1 M-6.2 0.0 L-8.6 0.0 M-4.4 -4.4 L-6.1 -6.1 M-0.0 -6.2 L-0.0 -8.6 M4.4 -4.4 L6.1 -6.1' stroke='%23f5a623' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle r='4.6' fill='%23ffc94a' stroke='%23f5a623' stroke-width='0.8'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 /* An acorn. */
-html[data-season='autumn']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15) rotate(25)'%3E%3Cellipse cx='0' cy='2.2' rx='3.8' ry='4.6' fill='%23c98a4b'/%3E%3Cpath d='M-4.6 -0.6 Q0 -6 4.6 -0.6 Q0 1.2 -4.6 -0.6Z' fill='%237a4e2e'/%3E%3Cpath d='M0 -3.6 q0.4 -2 1.8 -2.6' stroke='%235b3a22' stroke-width='1' fill='none' stroke-linecap='round'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+html[data-season='autumn']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15) rotate(25)'%3E%3Cellipse cx='0' cy='2.2' rx='3.8' ry='4.6' fill='%23c98a4b'/%3E%3Cpath d='M-4.6 -0.6 Q0 -6 4.6 -0.6 Q0 1.2 -4.6 -0.6Z' fill='%237a4e2e'/%3E%3Cpath d='M0 -3.6 q0.4 -2 1.8 -2.6' stroke='%235b3a22' stroke-width='1' fill='none' stroke-linecap='round'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 /* A lucky-money envelope. */
-html[data-season='tet']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15) rotate(20)'%3E%3Crect x='-5' y='-6.5' width='10' height='13' rx='1.2' fill='%23d63a3a'/%3E%3Cpath d='M-5 -5.8 L0 -1.8 L5 -5.8' fill='none' stroke='%23f5c84a' stroke-width='1'/%3E%3Ccircle cy='2' r='2' fill='%23f5c84a'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+html[data-season='tet']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15) rotate(20)'%3E%3Crect x='-5' y='-6.5' width='10' height='13' rx='1.2' fill='%23d63a3a'/%3E%3Cpath d='M-5 -5.8 L0 -1.8 L5 -5.8' fill='none' stroke='%23f5c84a' stroke-width='1'/%3E%3Ccircle cy='2' r='2' fill='%23f5c84a'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 /* A crescent moon and a star. */
-html[data-season='midautumn']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15) rotate(-25)'%3E%3Cpath d='M1.5 -5.8 A6 6 0 1 0 1.5 5.8 A7 7 0 0 1 1.5 -5.8Z' fill='%23f5c84a' stroke='%23d9a531' stroke-width='0.6'/%3E%3C/g%3E%3Cpath d='M50 8 l0.8 1.7 l1.8 0.2 l-1.4 1.2 l0.4 1.8 l-1.6 -0.9 l-1.6 0.9 l0.4 -1.8 l-1.4 -1.2 l1.8 -0.2Z' fill='%23f5c84a'/%3E%3C/g%3E%3C/svg%3E");
+html[data-season='midautumn']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 15) rotate(-25)'%3E%3Cpath d='M1.5 -5.8 A6 6 0 1 0 1.5 5.8 A7 7 0 0 1 1.5 -5.8Z' fill='%23f5c84a' stroke='%23d9a531' stroke-width='0.6'/%3E%3C/g%3E%3Cpath d='M50 8 l0.8 1.7 l1.8 0.2 l-1.4 1.2 l0.4 1.8 l-1.6 -0.9 l-1.6 0.9 l0.4 -1.8 l-1.4 -1.2 l1.8 -0.2Z' fill='%23f5c84a'/%3E%3C/g%3E%3C/svg%3E");
 }
 /* A rain cloud. */
-html[data-season='rain']:not([data-season-effects='off']) .palette-button::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 13)'%3E%3Ccircle cx='-3.5' cy='1' r='3' fill='%23e6eef7'/%3E%3Ccircle cx='0.5' cy='-1.5' r='4' fill='%23e6eef7'/%3E%3Ccircle cx='4' cy='1' r='3' fill='%23e6eef7'/%3E%3Crect x='-6.5' y='0.5' width='13.5' height='3.5' rx='1.75' fill='%23e6eef7'/%3E%3Cellipse cx='-2' cy='7.4' rx='1' ry='1.5' fill='%236fa0d6'/%3E%3Cellipse cx='2.6' cy='8.4' rx='1' ry='1.5' fill='%236fa0d6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+html[data-season='rain']:not([data-season-effects='off']) .palette-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='31 2 22 22'%3E%3Cg transform='translate(42 13) scale(1.2) translate(-44 -14)'%3E%3Cg transform='translate(44 13)'%3E%3Ccircle cx='-3.5' cy='1' r='3' fill='%23e6eef7'/%3E%3Ccircle cx='0.5' cy='-1.5' r='4' fill='%23e6eef7'/%3E%3Ccircle cx='4' cy='1' r='3' fill='%23e6eef7'/%3E%3Crect x='-6.5' y='0.5' width='13.5' height='3.5' rx='1.75' fill='%23e6eef7'/%3E%3Cellipse cx='-2' cy='7.4' rx='1' ry='1.5' fill='%236fa0d6'/%3E%3Cellipse cx='2.6' cy='8.4' rx='1' ry='1.5' fill='%236fa0d6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* The light level and reduced motion keep the sky still. */

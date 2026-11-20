@@ -659,6 +659,7 @@ export const en = {
     workspace: 'Workspace',
   },
   palette: {
+    searchBox: 'Search Workday',
     open: 'Search and jump to',
     placeholder: 'Search pages, settings, tickets, sessions...',
     noMatches: 'Nothing matches.',

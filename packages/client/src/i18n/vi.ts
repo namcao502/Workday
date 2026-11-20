@@ -662,6 +662,7 @@ export const vi: Messages = {
     workspace: 'Không gian làm việc',
   },
   palette: {
+    searchBox: 'Tìm trong Workday',
     open: 'Tìm kiếm và chuyển nhanh',
     placeholder: 'Tìm trang, cài đặt, ticket, phiên làm việc...',
     noMatches: 'Không có kết quả phù hợp.',
