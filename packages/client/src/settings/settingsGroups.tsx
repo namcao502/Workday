@@ -3,6 +3,7 @@ import { t } from '../i18n.js'
 import { SchedulesSection } from '../schedules/SchedulesSection.js'
 import { setHash } from '../shell/pages.js'
 import { AzureDevOpsSection } from './AzureDevOpsSection.js'
+import { CloudflareSection } from './CloudflareSection.js'
 import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
 import { GuideSection } from './GuideSection.js'
@@ -10,6 +11,7 @@ import { NoticesSection } from './NoticesSection.js'
 import { RemoteSection } from './RemoteSection.js'
 import { TeamsSection } from './TeamsSection.js'
 import { TimesheetSection } from './TimesheetSection.js'
+import { VpnSection } from './VpnSection.js'
 import { WorkspaceSection } from './WorkspaceSection.js'
 
 export type SettingsGroupId = 'general' | 'integrations' | 'work' | 'remote' | 'guide'
@@ -103,9 +105,21 @@ export function settingsGroups(): readonly SettingsGroup[] {
       label: t('settings.remoteAccess'),
       entries: [
         {
+          id: 'vpn',
+          title: t('settings.vpnAccess'),
+          keywords: 'vpn https certificate firewall ip range iphone',
+          render: (settings) => <VpnSection settings={settings} />,
+        },
+        {
+          id: 'cloudflare',
+          title: 'Cloudflare',
+          keywords: 'tunnel cloudflared access jwt public host aud token',
+          render: (settings) => <CloudflareSection settings={settings} />,
+        },
+        {
           id: 'remote',
-          title: t('settings.remoteAccess'),
-          keywords: 'tunnel cloudflare access device pair phone mobile jwt',
+          title: t('settings.devices'),
+          keywords: 'remote access device pair phone mobile revoke activity',
           render: (settings) => <RemoteSection settings={settings} />,
         },
       ],

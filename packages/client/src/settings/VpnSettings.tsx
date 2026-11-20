@@ -80,7 +80,6 @@ export function VpnSettings({
   const addresses = status?.addresses ?? []
   return (
     <>
-      <h3 className="text-sm font-semibold">{t('settings.vpnAccess')}</h3>
       <Switch
         isSelected={form.enabled}
         onChange={(selected) => {

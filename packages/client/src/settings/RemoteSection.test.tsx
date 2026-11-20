@@ -17,7 +17,9 @@ import {
   settingsView,
   stubFetch,
 } from '../testSupport.js'
+import { CloudflareSection } from './CloudflareSection.js'
 import { RemoteSection } from './RemoteSection.js'
+import { VpnSection } from './VpnSection.js'
 
 const CONFIG: RemoteConfig = {
   enabled: true,
@@ -76,11 +78,11 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('Save sends the remote block and leaves out an untouched tunnel token', async () => {
+it('Cloudflare Save sends only the remote block and leaves out an untouched tunnel token', async () => {
   const fetchMock = stubFetch((url, init) =>
     init?.method === 'PUT' ? jsonResponse(configured()) : jsonResponse(status()),
   )
-  renderWithQuery(<RemoteSection settings={configured()} />)
+  renderWithQuery(<CloudflareSection settings={configured()} />)
   fireEvent.click(screen.getByRole('button', { name: 'Save' }))
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith(
@@ -90,6 +92,7 @@ it('Save sends the remote block and leaves out an untouched tunnel token', async
   })
   const body = sentJson(fetchMock)
   expect(body).not.toHaveProperty('tunnelToken')
+  expect(body).not.toHaveProperty('vpn')
   expect(body['remote']).toEqual(CONFIG)
 })
 
@@ -167,9 +170,31 @@ it('Revoke asks before removing the device', async () => {
 
 it('the remote section is not shown on a remote device', () => {
   const fetchMock = stubFetch(() => jsonResponse(status()))
-  renderRemote(<RemoteSection settings={configured()} />, { board: 'act', timesheet: 'act' })
-  expect(screen.queryByRole('heading', { name: 'Remote access' })).not.toBeInTheDocument()
+  renderRemote(
+    <>
+      <VpnSection settings={configured()} />
+      <CloudflareSection settings={configured()} />
+      <RemoteSection settings={configured()} />
+    </>,
+    { board: 'act', timesheet: 'act' },
+  )
+  expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   expect(fetchMock).not.toHaveBeenCalled()
+})
+
+it('VPN and Cloudflare are separate cards, each with its own Save', () => {
+  stubFetch(() => jsonResponse(status()))
+  renderWithQuery(
+    <>
+      <VpnSection settings={withVpn()} />
+      <CloudflareSection settings={withVpn()} />
+    </>,
+  )
+  for (const name of ['VPN access', 'Cloudflare']) {
+    const card = screen.getByRole('heading', { name }).closest('.card')
+    expect(card).not.toBeNull()
+    expect(within(card as HTMLElement).getAllByRole('button', { name: 'Save' })).toHaveLength(1)
+  }
 })
 
 function withVpn(): ReturnType<typeof settingsView> {
@@ -177,11 +202,11 @@ function withVpn(): ReturnType<typeof settingsView> {
   return { ...base, config: { ...base.config, vpn: VPN } }
 }
 
-it('Save sends the vpn block next to the untouched Cloudflare block', async () => {
+it('VPN Save sends only the vpn block', async () => {
   const fetchMock = stubFetch((url, init) =>
     init?.method === 'PUT' ? jsonResponse(withVpn()) : jsonResponse(status()),
   )
-  renderWithQuery(<RemoteSection settings={withVpn()} />)
+  renderWithQuery(<VpnSection settings={withVpn()} />)
   fireEvent.click(screen.getByRole('button', { name: 'Save' }))
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith(
@@ -191,14 +216,15 @@ it('Save sends the vpn block next to the untouched Cloudflare block', async () =
   })
   const body = sentJson(fetchMock)
   expect(body['vpn']).toEqual(VPN)
-  expect(body['remote']).toEqual(CONFIG)
+  expect(body).not.toHaveProperty('remote')
+  expect(body).not.toHaveProperty('tunnelToken')
 })
 
 it('a bad range blocks Save and shows why', () => {
   const fetchMock = stubFetch(() => jsonResponse(status()))
   const base = withVpn()
   const bad = { ...VPN, allowedRanges: ['10.20.0.0/99'] }
-  renderWithQuery(<RemoteSection settings={{ ...base, config: { ...base.config, vpn: bad } }} />)
+  renderWithQuery(<VpnSection settings={{ ...base, config: { ...base.config, vpn: bad } }} />)
   fireEvent.click(screen.getByRole('button', { name: 'Save' }))
   expect(screen.getByRole('alert')).toHaveTextContent('10.20.0.0/99')
   expect(fetchMock).not.toHaveBeenCalledWith(
@@ -213,7 +239,7 @@ it('the firewall button reports a cancelled prompt', async () => {
       ? jsonResponse({ ok: false, error: { code: 'firewallCancelled' } }, 409)
       : jsonResponse(status()),
   )
-  renderWithQuery(<RemoteSection settings={withVpn()} />)
+  renderWithQuery(<VpnSection settings={withVpn()} />)
   fireEvent.click(screen.getByRole('button', { name: 'Open firewall' }))
   expect(await screen.findByText('Cancelled')).toBeInTheDocument()
   expect(fetchMock).toHaveBeenCalledWith(
