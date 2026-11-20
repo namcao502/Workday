@@ -12,7 +12,10 @@ internal sealed record ShellStrings(
     string BuildAndRestartConfirm,
     string Building,
     string ServerRestarted,
-    string BuildFailed);
+    string BuildFailed,
+    string UpdateApp,
+    string UpdateAppConfirm,
+    string UpdateAppNoScript);
 
 internal static class ShellText
 {
@@ -28,7 +31,10 @@ internal static class ShellText
         "Build Workday and restart the server? Running Claude sessions will be stopped.",
         "Building Workday...",
         "Server restarted.",
-        "Build failed; the old server keeps running. Log: {path}");
+        "Build failed; the old server keeps running. Log: {path}",
+        "Update desktop app",
+        "Publish the desktop app again and reopen it? The window closes for a moment; the server keeps running.",
+        "The install script was not found in the Workday folder (deploy/windows/install-desktop.ps1).");
 
     private static readonly ShellStrings Vietnamese = new(
         "Mở Workday",
@@ -42,7 +48,10 @@ internal static class ShellText
         "Build Workday rồi khởi động lại server? Các phiên Claude đang chạy sẽ bị dừng.",
         "Đang build Workday...",
         "Đã khởi động lại server.",
-        "Build lỗi, server cũ vẫn chạy. Log: {path}");
+        "Build lỗi, server cũ vẫn chạy. Log: {path}",
+        "Cập nhật app desktop",
+        "Publish lại app desktop rồi mở lại? Cửa sổ sẽ tắt một lát, server vẫn chạy.",
+        "Không tìm thấy script cài trong thư mục Workday (deploy/windows/install-desktop.ps1).");
 
     public static ShellStrings For(string language)
     {

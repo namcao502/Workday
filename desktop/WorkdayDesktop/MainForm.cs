@@ -42,7 +42,7 @@ internal sealed class MainForm : Form
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         ApplyBounds();
         Controls.Add(_webView);
-        _tray = new TrayIcon(_dataDir, _text, ShowWindow, async () => await BuildAndRestartAsync(), Quit);
+        _tray = new TrayIcon(_dataDir, _text, ShowWindow, async () => await BuildAndRestartAsync(), UpdateApp, Quit);
 
         // A --minimized start never raises Load, so create the handles now and start from the message loop.
         _ = Handle;
@@ -150,11 +150,46 @@ internal sealed class MainForm : Form
 
     private void Quit()
     {
+        _server.StopIfOwned();
+        Exit();
+    }
+
+    private void Exit()
+    {
         _isQuitting = true;
         SaveBounds();
-        _server.StopIfOwned();
         _tray.Hide();
         Application.Exit();
+    }
+
+    // The server is left running, so Claude sessions survive and the reopened app finds it.
+    private void UpdateApp()
+    {
+        var owner = Visible ? this : null;
+        var script = DesktopUpdate.ScriptPath(ResolveServerDir());
+        if (script == null)
+        {
+            MessageBox.Show(owner, _text.UpdateAppNoScript, "Workday", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var answer = MessageBox.Show(owner, _text.UpdateAppConfirm, "Workday", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (answer != DialogResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            Process.Start(DesktopUpdate.StartInfo(script, Environment.ProcessId, Path.Combine(_dataDir, "desktop", "update.log")));
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            _tray.ShowMessage(_text.UpdateAppNoScript);
+            return;
+        }
+
+        Exit();
     }
 
     private void ApplyBounds()

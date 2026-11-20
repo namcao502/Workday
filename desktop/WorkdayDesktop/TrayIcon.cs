@@ -16,7 +16,7 @@ internal sealed class TrayIcon : IDisposable
     private CoreWebView2Notification? _currentNotification;
     private bool _isCurrentClicked;
 
-    public TrayIcon(string dataDir, ShellStrings text, Action showWindow, Action buildAndRestart, Action quit)
+    public TrayIcon(string dataDir, ShellStrings text, Action showWindow, Action buildAndRestart, Action updateApp, Action quit)
     {
         _autoStartItem = new ToolStripMenuItem(text.StartWithWindows) { CheckOnClick = false };
         _autoStartItem.Click += (_, _) => ToggleAutoStart();
@@ -35,6 +35,7 @@ internal sealed class TrayIcon : IDisposable
         menu.Items.Add(text.OpenWorkday, null, (_, _) => showWindow());
         menu.Items.Add(_autoStartItem);
         menu.Items.Add(_buildRestartItem);
+        menu.Items.Add(text.UpdateApp, null, (_, _) => updateApp());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(text.Quit, null, (_, _) => quit());
         menu.SizeChanged += (_, _) => TrayMenuRenderer.ClipToRoundedCard(menu);

@@ -1,13 +1,24 @@
 <#
 Publishes the Workday desktop shell to %LOCALAPPDATA%\Programs\Workday and creates the Start Menu shortcut
 "Workday.lnk". With -Remove it deletes the folder, the shortcut and the Run key value. Windows PowerShell 5.1 compatible.
+The tray's "Update desktop app" runs it with -WaitPid (the exiting app), -Relaunch and -LogPath.
 #>
 param(
     [string]$RepoDir = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
-    [switch]$Remove
+    [switch]$Remove,
+    [int]$WaitPid = 0,
+    [switch]$Relaunch,
+    [string]$LogPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
+if ($LogPath) {
+    Start-Transcript -Path $LogPath -Force | Out-Null
+}
+if ($WaitPid -gt 0) {
+    # The running exe locks its files, so publish only after it has exited.
+    Wait-Process -Id $WaitPid -Timeout 60 -ErrorAction SilentlyContinue
+}
 $installDir = Join-Path $env:LOCALAPPDATA 'Programs\Workday'
 $shortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Workday.lnk'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
@@ -30,9 +41,18 @@ if ($Remove) {
     return
 }
 
-dotnet publish (Join-Path $RepoDir 'desktop\WorkdayDesktop') -c Release -r win-x64 --self-contained false -o $installDir
-if ($LASTEXITCODE -ne 0) {
-    throw "dotnet publish failed with exit code $LASTEXITCODE."
+$exe = Join-Path $installDir 'WorkdayDesktop.exe'
+try {
+    dotnet publish (Join-Path $RepoDir 'desktop\WorkdayDesktop') -c Release -r win-x64 --self-contained false -o $installDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet publish failed with exit code $LASTEXITCODE."
+    }
+}
+finally {
+    # A failed publish still reopens the app (the old build), so the tray never just disappears.
+    if ($Relaunch -and (Test-Path $exe)) {
+        Start-Process -FilePath $exe
+    }
 }
 
 # The installed exe sits outside the repo, so it cannot find the server by walking up: record the repo once.
@@ -46,7 +66,6 @@ if (-not $settings.serverDir) {
     Write-Host "Set serverDir to $RepoDir in $settingsPath."
 }
 
-$exe = Join-Path $installDir 'WorkdayDesktop.exe'
 $shell = New-Object -ComObject WScript.Shell
 $link = $shell.CreateShortcut($shortcut)
 $link.TargetPath = $exe
