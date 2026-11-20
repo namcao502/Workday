@@ -6,6 +6,8 @@ import type { VpnSurface } from './remoteGate.js'
 import { SetupServer } from './setupServer.js'
 
 const RENEW_CHECK_MS = 86_400_000
+// The VPN address may come up after Workday starts (autostart at logon), so a failed listen retries.
+const RETRY_MS = 30_000
 
 export interface LanListener {
   apply(vpn: VpnConfig | null): Promise<void>
@@ -53,6 +55,7 @@ export class LanServer implements LanListener {
   private state: VpnStatusView['server'] = 'off'
   private detail: string | null = null
   private setupWanted = false
+  private retryTimer: NodeJS.Timeout | null = null
 
   constructor(private readonly deps: LanServerDeps) {
     this.setup = deps.setup ?? new SetupServer()
@@ -93,6 +96,7 @@ export class LanServer implements LanListener {
   }
 
   private async doApply(vpn: VpnConfig | null): Promise<void> {
+    this.cancelRetry()
     this.config = vpn
     if (vpn === null || !vpn.enabled) {
       await this.stopListener()
@@ -137,6 +141,31 @@ export class LanServer implements LanListener {
         await this.closeApp(app)
       }
       this.setState('failed', messageOf(error))
+      this.scheduleRetry(vpn)
+    }
+  }
+
+  private scheduleRetry(vpn: VpnConfig): void {
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null
+      void this.enqueue(() => this.retry(vpn))
+    }, RETRY_MS)
+    this.retryTimer.unref()
+  }
+
+  // Skipped when the config changed or a listener already runs: that apply owns the state now.
+  private async retry(vpn: VpnConfig): Promise<void> {
+    if (this.config !== vpn || this.running !== null) {
+      return
+    }
+    await this.start(vpn)
+    await this.syncSetup()
+  }
+
+  private cancelRetry(): void {
+    if (this.retryTimer !== null) {
+      clearTimeout(this.retryTimer)
+      this.retryTimer = null
     }
   }
 

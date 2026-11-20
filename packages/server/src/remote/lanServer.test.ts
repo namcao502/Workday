@@ -24,6 +24,7 @@ interface FakeApp {
 }
 
 function setup(listenError: Error | null = null) {
+  const failure = { error: listenError }
   const apps: FakeApp[] = []
   const setupCalls: string[] = []
   const setupOptions: SetupServerOptions[] = []
@@ -54,7 +55,7 @@ function setup(listenError: Error | null = null) {
       const fake = {
         listen: (options: { host: string; port: number }) => {
           app.calls.push(`listen ${options.host}:${String(options.port)}`)
-          return listenError === null ? Promise.resolve('') : Promise.reject(listenError)
+          return failure.error === null ? Promise.resolve('') : Promise.reject(failure.error)
         },
         close: () => {
           app.calls.push('close')
@@ -69,12 +70,12 @@ function setup(listenError: Error | null = null) {
       return Promise.resolve(fake as unknown as FastifyInstance)
     },
   })
-  return { lan, apps, setupCalls, setupOptions, changes, clock }
+  return { lan, apps, setupCalls, setupOptions, changes, clock, failure }
 }
 
 describe('LanServer', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] })
   })
 
   afterEach(() => {
@@ -105,6 +106,36 @@ describe('LanServer', () => {
     expect(lan.status().server).toBe('failed')
     expect(lan.status().serverDetail).toBe('listen EADDRNOTAVAIL')
     expect(apps[0]?.calls).toContain('close')
+  })
+
+  it('a failed listen retries every 30 seconds until the address is up', async () => {
+    const { lan, apps, failure } = setup(new Error('listen EADDRNOTAVAIL'))
+    await lan.apply(VPN)
+
+    await vi.advanceTimersByTimeAsync(30_000)
+    await vi.waitFor(() => {
+      expect(apps).toHaveLength(2)
+    })
+    expect(lan.status().server).toBe('failed')
+
+    failure.error = null
+    await vi.advanceTimersByTimeAsync(30_000)
+    await vi.waitFor(() => {
+      expect(lan.status().server).toBe('running')
+    })
+    expect(apps).toHaveLength(3)
+    await lan.stop()
+  })
+
+  it('stop cancels the pending retry', async () => {
+    const { lan, apps } = setup(new Error('listen EADDRNOTAVAIL'))
+    await lan.apply(VPN)
+
+    await lan.stop()
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(apps).toHaveLength(1)
+    expect(lan.status().server).toBe('off')
   })
 
   it('a new address restarts the listener', async () => {
