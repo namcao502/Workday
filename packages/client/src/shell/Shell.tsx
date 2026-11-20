@@ -89,7 +89,7 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
   const schedulesDot = useSchedulesView(true).data?.scan.unseenBad === true
   useIdlePreload(LAZY_PAGE_LOADERS)
   return (
-    <div className="app-shell flex h-dvh overflow-hidden bg-background text-foreground">
+    <div className="app-shell flex h-dvh overflow-hidden bg-background pt-[env(safe-area-inset-top)] text-foreground">
       {narrow ? null : (
         <Sidebar
           current={page}
@@ -103,7 +103,7 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
         />
       )}
       <div
-        className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-[calc(5rem+env(safe-area-inset-bottom))]' : ''}`}
+        className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-[calc(4.5rem+max(0.5rem,calc(env(safe-area-inset-bottom)-0.75rem)))]' : ''}`}
       >
         <TopBar onToggleMenu={narrow ? undefined : toggleCollapsed} slotRef={setHeaderSlot} />
         <main className="min-h-0 flex-1 overflow-auto">

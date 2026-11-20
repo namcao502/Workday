@@ -20,7 +20,7 @@ export function TabBar({
 }: TabBarProps): React.JSX.Element {
   return (
     <nav
-      className="app-tabbar fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-20 flex rounded-2xl bg-surface shadow-surface"
+      className="app-tabbar fixed inset-x-2 bottom-[max(0.5rem,calc(env(safe-area-inset-bottom)-0.75rem))] z-20 flex rounded-2xl bg-surface shadow-surface"
       aria-label={t('shell.tabs')}
     >
       {pages.map((page) => {
