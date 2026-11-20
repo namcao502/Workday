@@ -215,9 +215,9 @@ export function NoticesSection({
           </tr>
         </thead>
         <tbody>
-          {/* The master row: tinted and bold so it reads as the switch for the whole column. */}
-          <tr className="bg-accent-soft">
-            <th scope="row" className="rounded-l-xl py-2 pl-3 text-left font-semibold text-accent">
+          {/* The master row: a neutral tint and bold text, so it reads as the column's switch, not a warning. */}
+          <tr className="bg-surface-secondary">
+            <th scope="row" className="rounded-l-xl py-2 pl-3 text-left font-semibold">
               {t('settings.allTopicsRow')}
             </th>
             {CHANNELS.map((channel, index) => (

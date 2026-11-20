@@ -1,7 +1,9 @@
+import { ChartColumn } from '@gravity-ui/icons'
 import { Card } from '@heroui/react'
 import { totalTokens, type TicketReport } from '@workday/core'
 import { useState } from 'react'
 import { t } from '../i18n.js'
+import { EmptyState } from '../ui/EmptyState.js'
 import { BarChart, type Bar } from './BarChart.js'
 import { dayLabel, EMPTY_CELL, formatHours, formatTokens } from './insightsText.js'
 import { ReportDetail } from './ReportDetail.js'
@@ -83,7 +85,12 @@ function Charts({ report }: { readonly report: TicketReport }): React.JSX.Elemen
 export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Element {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   if (report.rows.length === 0) {
-    return <p className="text-sm text-muted">{t('insights.noWorkInThisRangePick')}</p>
+    return (
+      <EmptyState
+        icon={<ChartColumn aria-hidden="true" />}
+        message={t('insights.noWorkInThisRangePick')}
+      />
+    )
   }
   const selected = report.rows.find((row) => row.ticketKey === selectedKey) ?? null
   return (

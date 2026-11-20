@@ -162,7 +162,7 @@ export const vi: Messages = {
     hide: 'Ẩn',
     isAlreadyPastReadyToTest: '{key} đã qua Ready to Test',
     isFixedAnswerQcOn: '{ticketKey} đã sửa xong - trả lời QC trên {parentKey}',
-    jiraIsNotConnectedOpenSettings: 'Chưa kết nối Jira - mở Cài đặt',
+    jiraIsNotConnectedOpenSettings: 'Chưa kết nối Jira.',
     key: 'Mã',
     like: 'giống {similarKey}',
     loading: 'Đang tải...',

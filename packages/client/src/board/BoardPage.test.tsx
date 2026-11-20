@@ -177,7 +177,7 @@ it("an overdue ticket's due cell uses the overdue color, a done ticket's never d
 it('without Jira the page links to Settings instead of a table', async () => {
   stubBackend({ board: boardView([], { connected: false }) })
   renderWithQuery(<BoardPage />)
-  expect(await screen.findByText('Jira is not connected - open Settings')).toBeInTheDocument()
+  expect(await screen.findByText('Jira is not connected yet.')).toBeInTheDocument()
   expect(screen.queryByRole('table')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Open Settings' }))
   expect(window.location.hash).toBe('#/settings')

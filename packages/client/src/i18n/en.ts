@@ -160,7 +160,7 @@ export const en = {
     hide: 'Hide',
     isAlreadyPastReadyToTest: '{key} is already past Ready to Test',
     isFixedAnswerQcOn: '{ticketKey} is fixed - answer QC on {parentKey}',
-    jiraIsNotConnectedOpenSettings: 'Jira is not connected - open Settings',
+    jiraIsNotConnectedOpenSettings: 'Jira is not connected yet.',
     key: 'Key',
     like: 'like {similarKey}',
     loading: 'Loading...',

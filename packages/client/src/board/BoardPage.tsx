@@ -1,3 +1,4 @@
+import { CircleCheck, FaceSmile, ListCheck, PlugConnection } from '@gravity-ui/icons'
 import { Button, SearchField, Spinner } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { parseTicketKey, type BoardAction, type BoardView } from '@workday/core'
@@ -34,6 +35,7 @@ import {
   type BoardViewId,
 } from './boardView.js'
 import { SkeletonRows } from '../ui/Skeleton.js'
+import { EmptyState } from '../ui/EmptyState.js'
 
 const SEARCH_DEBOUNCE_MS = 200
 
@@ -305,20 +307,19 @@ export function BoardPage(): React.JSX.Element {
       {board.data === undefined ? (
         <SkeletonRows label={t('board.loading')} rows={4} className="[&>div:not(.sr-only)]:h-16" />
       ) : !board.data.connected ? (
-        <div className="flex flex-col items-start gap-3">
-          <p className="text-sm text-muted">{t('board.jiraIsNotConnectedOpenSettings')}</p>
-          <Button
-            variant="primary"
-            onPress={() => {
+        <EmptyState
+          icon={<PlugConnection aria-hidden="true" />}
+          message={t('board.jiraIsNotConnectedOpenSettings')}
+          action={{
+            label: t('board.openSettings'),
+            onPress: () => {
               navigateTo('settings')
-            }}
-          >
-            {t('board.openSettings')}
-          </Button>
-        </div>
+            },
+          }}
+        />
       ) : activeView === 'available' && suggestions !== null ? (
         availableItems.length === 0 ? (
-          <p className="text-sm text-muted">{t('board.nothingToTake')}</p>
+          <EmptyState icon={<FaceSmile aria-hidden="true" />} message={t('board.nothingToTake')} />
         ) : (
           <SuggestionsCard
             suggestions={{ ...suggestions, items: availableItems }}
@@ -328,7 +329,7 @@ export function BoardPage(): React.JSX.Element {
         )
       ) : activeView === 'todo' ? (
         todoGroups.length === 0 ? (
-          <p className="text-sm text-muted">{t('board.nothingToDo')}</p>
+          <EmptyState icon={<CircleCheck aria-hidden="true" />} message={t('board.nothingToDo')} />
         ) : (
           <TodoView
             groups={todoGroups}
@@ -342,7 +343,7 @@ export function BoardPage(): React.JSX.Element {
           />
         )
       ) : listProps.rows.length === 0 ? (
-        <p className="text-sm text-muted">{t('board.noTickets')}</p>
+        <EmptyState icon={<ListCheck aria-hidden="true" />} message={t('board.noTickets')} />
       ) : narrow ? (
         <BoardCards {...listProps} />
       ) : (
