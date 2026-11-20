@@ -11,6 +11,7 @@ import {
   type WorkspaceSelection,
 } from '../shell/pages.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
+import { currentHash } from '../shell/appHash.js'
 import { useNarrow } from '../shell/useNarrow.js'
 import { Page, PageHeading } from '../ui/Page.js'
 import { SplitView } from '../ui/SplitView.js'
@@ -33,12 +34,12 @@ const DEFAULT_SHARE = 0.5
 const MIN_PANE_PX = 240
 
 function useHashSelection(): WorkspaceSelection {
-  const [selection, setSelection] = useState(() => workspaceSelectionFromHash(window.location.hash))
+  const [selection, setSelection] = useState(() => workspaceSelectionFromHash(currentHash()))
   // Read once: the sidebar link carries no tab, so the page opens where the user left it.
   const [remembered] = useState(rememberedSelection)
   useEffect(() => {
     function handleHashChange(): void {
-      setSelection(workspaceSelectionFromHash(window.location.hash))
+      setSelection(workspaceSelectionFromHash(currentHash()))
     }
     window.addEventListener('hashchange', handleHashChange)
     return () => {
@@ -132,7 +133,7 @@ export function WorkspacePage(): React.JSX.Element {
   }, [tabId])
 
   // A Teams notice must be visible even if the left pane was hidden.
-  const teamsConversation = teamsConversationFromHash(window.location.hash)
+  const teamsConversation = teamsConversationFromHash(currentHash())
   useEffect(() => {
     if (teamsConversation !== null) {
       showBoth.current()

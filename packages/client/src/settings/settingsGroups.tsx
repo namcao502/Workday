@@ -1,7 +1,7 @@
 import type { SettingsView } from '@workday/core'
 import { t } from '../i18n.js'
 import { SchedulesSection } from '../schedules/SchedulesSection.js'
-import { setHash } from '../shell/pages.js'
+import { setHash } from '../shell/appHash.js'
 import { AzureDevOpsSection } from './AzureDevOpsSection.js'
 import { CloudflareSection } from './CloudflareSection.js'
 import { ConnectionsSection } from './ConnectionsSection.js'

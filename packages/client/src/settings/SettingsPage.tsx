@@ -2,6 +2,7 @@ import { Input, buttonVariants } from '@heroui/react'
 import { useState, useSyncExternalStore } from 'react'
 import { useSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
+import { currentHash } from '../shell/appHash.js'
 import { Page } from '../ui/Page.js'
 import {
   navigateToSettings,
@@ -16,10 +17,6 @@ function subscribeToHash(onChange: () => void): () => void {
   return () => {
     window.removeEventListener('hashchange', onChange)
   }
-}
-
-function currentHash(): string {
-  return window.location.hash
 }
 
 export function SettingsPage(): React.JSX.Element {

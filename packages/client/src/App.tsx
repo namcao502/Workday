@@ -12,6 +12,7 @@ import { PairPage } from './remote/PairPage.js'
 import { SeasonLayer } from './season/SeasonLayer.js'
 import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
+import { currentHash } from './shell/appHash.js'
 import { useNarrow } from './shell/useNarrow.js'
 import { pageFromHash, type PageId } from './shell/pages.js'
 import { Shell } from './shell/Shell.js'
@@ -21,10 +22,10 @@ const THEME_STORAGE_KEY = 'workday.theme'
 const SEASON_STORAGE_KEY = 'workday.season'
 
 function useHashPage(): PageId {
-  const [page, setPage] = useState(() => pageFromHash(window.location.hash))
+  const [page, setPage] = useState(() => pageFromHash(currentHash()))
   useLayoutEffect(() => {
     function handleHashChange(): void {
-      setPage(pageFromHash(window.location.hash))
+      setPage(pageFromHash(currentHash()))
     }
     window.addEventListener('hashchange', handleHashChange)
     return () => {

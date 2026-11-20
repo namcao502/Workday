@@ -1,6 +1,7 @@
 import type { RemoteArea } from '@workday/core'
 import type { Access } from '../api/useMe.js'
 import { t } from '../i18n.js'
+import { setHash } from './appHash.js'
 
 export type PageId = 'tickets' | 'workspace' | 'timesheet' | 'insights' | 'settings'
 
@@ -33,17 +34,6 @@ export function pageLabel(page: PageId): string {
 export function pageFromHash(hash: string): PageId {
   const name = hash.replace(/^#\/?/, '').split('?')[0]?.split('/')[0]
   return PAGE_IDS.find((page) => page === name) ?? DEFAULT_PAGE
-}
-
-// Changes the hash with pushState and raises hashchange by hand: assigning location.hash is a navigation,
-// and in Edge's installed-app window that brought another Edge window to the front.
-export function setHash(hash: string): void {
-  if (window.location.hash === hash) {
-    return
-  }
-  const oldURL = window.location.href
-  window.history.pushState(window.history.state, '', hash)
-  window.dispatchEvent(new HashChangeEvent('hashchange', { oldURL, newURL: window.location.href }))
 }
 
 export function navigateTo(page: PageId): void {

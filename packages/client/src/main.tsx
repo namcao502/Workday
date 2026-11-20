@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App.js'
 import { registerServiceWorker } from './registerServiceWorker.js'
+import { startAppHash } from './shell/appHash.js'
 import '@fontsource-variable/inter'
 import './styles/app.css'
 
@@ -11,6 +12,7 @@ if (container === null) {
 }
 
 void registerServiceWorker()
+startAppHash()
 
 createRoot(container).render(
   <StrictMode>
