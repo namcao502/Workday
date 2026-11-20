@@ -1,0 +1,92 @@
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Win32;
+
+namespace WorkdayDesktop;
+
+internal sealed class TrayIcon : IDisposable
+{
+    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    private const string BalloonTitle = "Workday";
+
+    private readonly NotifyIcon _notifyIcon;
+    private readonly ToolStripMenuItem _autoStartItem;
+    private CoreWebView2Notification? _currentNotification;
+    private bool _isCurrentClicked;
+
+    public TrayIcon(ShellStrings text, Action showWindow, Action quit)
+    {
+        _autoStartItem = new ToolStripMenuItem(text.StartWithWindows) { CheckOnClick = false };
+        _autoStartItem.Click += (_, _) => ToggleAutoStart();
+
+        var menu = new ContextMenuStrip();
+        menu.Items.Add(text.OpenWorkday, null, (_, _) => showWindow());
+        menu.Items.Add(_autoStartItem);
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(text.Quit, null, (_, _) => quit());
+        menu.Opening += (_, _) => _autoStartItem.Checked = IsAutoStartEnabled();
+
+        _notifyIcon = new NotifyIcon
+        {
+            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath),
+            Text = BalloonTitle,
+            ContextMenuStrip = menu,
+            Visible = true
+        };
+        _notifyIcon.DoubleClick += (_, _) => showWindow();
+        _notifyIcon.BalloonTipClicked += (_, _) =>
+        {
+            _isCurrentClicked = true;
+            showWindow();
+            _currentNotification?.ReportClicked();
+        };
+        _notifyIcon.BalloonTipClosed += (_, _) =>
+        {
+            if (!_isCurrentClicked)
+            {
+                _currentNotification?.ReportClosed();
+            }
+
+            _currentNotification = null;
+        };
+    }
+
+    public void ShowNotification(CoreWebView2Notification notification)
+    {
+        _currentNotification = notification;
+        _isCurrentClicked = false;
+        _notifyIcon.ShowBalloonTip(10000, BalloonTitle, notification.Body, ToolTipIcon.None);
+        notification.ReportShown();
+    }
+
+    public void Hide()
+    {
+        _notifyIcon.Visible = false;
+    }
+
+    public void Dispose()
+    {
+        _notifyIcon.Visible = false;
+        _notifyIcon.Dispose();
+    }
+
+    private static bool IsAutoStartEnabled()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
+        return key?.GetValue(AutoStart.ValueName) != null;
+    }
+
+    private void ToggleAutoStart()
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
+        if (key.GetValue(AutoStart.ValueName) != null)
+        {
+            key.DeleteValue(AutoStart.ValueName, throwOnMissingValue: false);
+        }
+        else
+        {
+            key.SetValue(AutoStart.ValueName, AutoStart.CommandLine(Application.ExecutablePath));
+        }
+
+        _autoStartItem.Checked = IsAutoStartEnabled();
+    }
+}

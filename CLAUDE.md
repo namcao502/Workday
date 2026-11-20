@@ -17,6 +17,9 @@ npm run typecheck
 npm run lint
 npm run format
 
+dotnet test desktop/WorkdayDesktop.Tests   # desktop shell tests
+powershell -File deploy/windows/install-desktop.ps1   # publish the shell + Start Menu shortcut (-Remove undoes it)
+
 # One workspace / one test file / one test
 npm test -w @workday/server
 npx vitest run packages/server/src/app.test.ts
@@ -28,6 +31,7 @@ npx vitest run -t "health returns ok" --root packages/server
 - `packages/core` (`@workday/core`): domain logic and the port interfaces. No I/O.
 - `packages/server` (`@workday/server`): Fastify app (`createApp(deps)`), REST + WebSocket, adapters for the ports.
 - `packages/client` (`@workday/client`): Vite + React UI built on HeroUI + Tailwind; `src/ui/` holds the shared components, hand-written CSS remains only for rendered content (markdown, code, diff, Teams HTML).
+- `desktop/WorkdayDesktop`: .NET WinForms + WebView2 shell (tray, notifications, starts the server); tests in `desktop/WorkdayDesktop.Tests`.
 
 `@workday/core` exports a `development` condition pointing at `src`, so dev and tests need no core build;
 `npm start` uses the built `dist`.

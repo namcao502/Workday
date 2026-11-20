@@ -5,3 +5,6 @@ coverage/
 *.tsbuildinfo
 .env
 .env.*
+bin/
+obj/
+desktop/publish/

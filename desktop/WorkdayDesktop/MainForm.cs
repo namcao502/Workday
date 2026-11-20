@@ -1,0 +1,178 @@
+using System.Diagnostics;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+
+namespace WorkdayDesktop;
+
+internal sealed class MainForm : Form
+{
+    private const int DefaultWidth = 1280;
+    private const int DefaultHeight = 800;
+
+    private readonly bool _isStartMinimized;
+    private readonly string _dataDir;
+    private readonly int _port;
+    private readonly ShellStrings _text;
+    private readonly ServerProcess _server;
+    private readonly TrayIcon _tray;
+    private readonly WebView2 _webView = new() { Dock = DockStyle.Fill };
+    private DesktopSettings _settings;
+    private bool _isQuitting;
+    private bool _isVisibleAllowed;
+
+    public MainForm(bool isStartMinimized)
+    {
+        _isStartMinimized = isStartMinimized;
+        var environment = Environment.GetEnvironmentVariables()
+            .Cast<System.Collections.DictionaryEntry>()
+            .ToDictionary(entry => (string)entry.Key, entry => (string?)entry.Value);
+        _dataDir = DesktopPaths.DataDir(environment);
+        _port = DesktopPaths.Port(_dataDir, environment);
+        _text = ShellText.For(DesktopPaths.Language(_dataDir));
+        _settings = DesktopSettings.Load(_dataDir);
+        _server = new ServerProcess(new NodeServerHost(_port), TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(500));
+
+        Text = "Workday";
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        ApplyBounds();
+        Controls.Add(_webView);
+        _tray = new TrayIcon(_text, ShowWindow, Quit);
+
+        // A --minimized start never raises Load, so create the handles now and start from the message loop.
+        _ = Handle;
+        _ = _webView.Handle;
+        _isVisibleAllowed = !_isStartMinimized;
+        BeginInvoke(async () => await StartAsync());
+    }
+
+    public void ShowWindow()
+    {
+        _isVisibleAllowed = true;
+        Show();
+        if (WindowState == FormWindowState.Minimized)
+        {
+            WindowState = FormWindowState.Normal;
+        }
+
+        Activate();
+        BringToFront();
+    }
+
+    protected override void SetVisibleCore(bool value)
+    {
+        base.SetVisibleCore(value && _isVisibleAllowed);
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (e.CloseReason == CloseReason.UserClosing && !_isQuitting)
+        {
+            e.Cancel = true;
+            SaveBounds();
+            Hide();
+            return;
+        }
+
+        base.OnFormClosing(e);
+    }
+
+    private void Quit()
+    {
+        _isQuitting = true;
+        SaveBounds();
+        _server.StopIfOwned();
+        _tray.Hide();
+        Application.Exit();
+    }
+
+    private void ApplyBounds()
+    {
+        var saved = _settings.Window;
+        var primary = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, DefaultWidth, DefaultHeight);
+        var rectangle = saved == null ? Rectangle.Empty : new Rectangle(saved.X, saved.Y, saved.Width, saved.Height);
+        var isVisibleOnScreen = saved != null && Screen.AllScreens.Any(screen => screen.WorkingArea.IntersectsWith(rectangle));
+
+        StartPosition = FormStartPosition.Manual;
+        if (isVisibleOnScreen && saved != null)
+        {
+            Bounds = rectangle;
+            WindowState = saved.Maximized ? FormWindowState.Maximized : FormWindowState.Normal;
+            return;
+        }
+
+        var width = Math.Min(DefaultWidth, primary.Width);
+        var height = Math.Min(DefaultHeight, primary.Height);
+        Bounds = new Rectangle(primary.X + ((primary.Width - width) / 2), primary.Y + ((primary.Height - height) / 2), width, height);
+    }
+
+    private void SaveBounds()
+    {
+        var bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+        var window = new WindowBounds(bounds.X, bounds.Y, bounds.Width, bounds.Height, WindowState == FormWindowState.Maximized);
+        _settings = _settings with { Window = window };
+        try
+        {
+            _settings.Save(_dataDir);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Losing the window position is harmless; never block hiding or quitting on it.
+        }
+    }
+
+    private async Task StartAsync()
+    {
+        var desktopDir = Path.Combine(_dataDir, "desktop");
+        Directory.CreateDirectory(desktopDir);
+        var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(desktopDir, "webview"));
+        await _webView.EnsureCoreWebView2Async(environment);
+        ConfigureWebView(_webView.CoreWebView2);
+
+        var logPath = Path.Combine(desktopDir, "server.log");
+        var serverDir = _settings.ServerDir ?? DesktopPaths.FindServerDir(AppContext.BaseDirectory);
+        var result = await _server.EnsureRunningAsync(serverDir, logPath, CancellationToken.None);
+        if (result == ServerStartResult.AlreadyRunning || result == ServerStartResult.Started)
+        {
+            _webView.CoreWebView2.Navigate($"http://localhost:{_port}/");
+            return;
+        }
+
+        _webView.CoreWebView2.NavigateToString(ShellText.ErrorPage(_text, result, logPath));
+    }
+
+    private void ConfigureWebView(CoreWebView2 core)
+    {
+        core.DocumentTitleChanged += (_, _) => Text = string.IsNullOrEmpty(core.DocumentTitle) ? "Workday" : core.DocumentTitle;
+        core.NewWindowRequested += (_, e) =>
+        {
+            e.Handled = true;
+            if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+            }
+        };
+        core.PermissionRequested += (_, e) =>
+        {
+            if (e.PermissionKind == CoreWebView2PermissionKind.Notifications)
+            {
+                e.State = CoreWebView2PermissionState.Allow;
+            }
+        };
+        core.NotificationReceived += (_, e) =>
+        {
+            e.Handled = true;
+            _tray.ShowNotification(e.Notification);
+        };
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _tray.Dispose();
+            _webView.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+}
