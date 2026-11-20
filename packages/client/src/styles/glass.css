@@ -247,7 +247,7 @@ html:root[data-season][data-theme='dark'] .modal__dialog.command-palette {
 }
 
 /* The top strip sits in the gap above the floating bar instead of hanging into it, so it never covers the
-   title. Christmas bulbs hang from a wire, so only they flip to stand up; the other strips are upright. */
+   title. */
 @media (min-width: 720px) {
   html:root[data-season]:not([data-season-effects='off']) .app-topbar {
     margin-top: 30px;
@@ -256,10 +256,5 @@ html:root[data-season][data-theme='dark'] .modal__dialog.command-palette {
   html:root[data-season]:not([data-season-effects='off']) .app-topbar::before,
   html:root[data-season='christmas']:not([data-season-effects='off']) .app-topbar::after {
     top: -19px;
-  }
-
-  html:root[data-season='christmas']:not([data-season-effects='off']) .app-topbar::before,
-  html:root[data-season='christmas']:not([data-season-effects='off']) .app-topbar::after {
-    transform: scaleY(-1);
   }
 }
