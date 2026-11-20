@@ -35,8 +35,19 @@ export function pageFromHash(hash: string): PageId {
   return PAGE_IDS.find((page) => page === name) ?? DEFAULT_PAGE
 }
 
+// Changes the hash with pushState and raises hashchange by hand: assigning location.hash is a navigation,
+// and in Edge's installed-app window that brought another Edge window to the front.
+export function setHash(hash: string): void {
+  if (window.location.hash === hash) {
+    return
+  }
+  const oldURL = window.location.href
+  window.history.pushState(window.history.state, '', hash)
+  window.dispatchEvent(new HashChangeEvent('hashchange', { oldURL, newURL: window.location.href }))
+}
+
 export function navigateTo(page: PageId): void {
-  window.location.hash = `#/${page}`
+  setHash(`#/${page}`)
 }
 
 // Workspace and Insights have no remote area, so a remote device never sees them.
@@ -90,5 +101,5 @@ export function navigateToWorkspace(
     tab === null || teamsConversation === null
       ? ''
       : `?teams=${encodeURIComponent(teamsConversation)}`
-  window.location.hash = `#/workspace${parts.map((part) => `/${encodeURIComponent(part)}`).join('')}${query}`
+  setHash(`#/workspace${parts.map((part) => `/${encodeURIComponent(part)}`).join('')}${query}`)
 }

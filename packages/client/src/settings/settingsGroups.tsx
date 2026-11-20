@@ -1,6 +1,7 @@
 import type { SettingsView } from '@workday/core'
 import { t } from '../i18n.js'
 import { SchedulesSection } from '../schedules/SchedulesSection.js'
+import { setHash } from '../shell/pages.js'
 import { AzureDevOpsSection } from './AzureDevOpsSection.js'
 import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
@@ -131,7 +132,7 @@ export function settingsGroupFromHash(hash: string): SettingsGroupId {
 }
 
 export function navigateToSettings(group: SettingsGroupId): void {
-  window.location.hash = `#/settings/${group}`
+  setHash(`#/settings/${group}`)
 }
 
 // Every entry whose title or keywords contain all the words of the query; none for a blank query.
