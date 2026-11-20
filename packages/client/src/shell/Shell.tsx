@@ -100,7 +100,9 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
           collapsed={collapsed}
         />
       )}
-      <div className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-20' : ''}`}>
+      <div
+        className={`flex min-w-0 flex-1 flex-col${narrow ? ' pb-[calc(5rem+env(safe-area-inset-bottom))]' : ''}`}
+      >
         <TopBar onToggleMenu={narrow ? undefined : toggleCollapsed} slotRef={setHeaderSlot} />
         <main className="min-h-0 flex-1 overflow-auto">
           <HeaderSlotContext.Provider value={headerSlot}>

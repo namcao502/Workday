@@ -48,25 +48,28 @@ export function SettingsPage(): React.JSX.Element {
               setQuery(event.target.value)
             }}
           />
-          {groups.map((group) => {
-            const selected = !searching && group.id === groupId
-            return (
-              <button
-                key={group.id}
-                type="button"
-                className={`${buttonVariants({ variant: 'ghost' })} justify-start${
-                  selected ? ' bg-accent-soft text-accent' : ''
-                }`}
-                aria-current={selected ? 'page' : undefined}
-                onClick={() => {
-                  setQuery('')
-                  navigateToSettings(group.id)
-                }}
-              >
-                {group.label}
-              </button>
-            )
-          })}
+          {/* A row of chips that scrolls sideways on a phone; a column beside the cards from md up. */}
+          <div className="-mx-1 flex gap-1 overflow-x-auto px-1 md:mx-0 md:flex-col md:overflow-visible md:px-0">
+            {groups.map((group) => {
+              const selected = !searching && group.id === groupId
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  className={`${buttonVariants({ variant: 'ghost' })} shrink-0 justify-start${
+                    selected ? ' bg-accent-soft text-accent' : ''
+                  }`}
+                  aria-current={selected ? 'page' : undefined}
+                  onClick={() => {
+                    setQuery('')
+                    navigateToSettings(group.id)
+                  }}
+                >
+                  {group.label}
+                </button>
+              )
+            })}
+          </div>
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           {settings.data === undefined ? (
