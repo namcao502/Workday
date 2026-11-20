@@ -227,25 +227,6 @@ html:root[data-season][data-theme='dark']:not([data-season-effects='off']) .seas
   }
 }
 
-/* The command palette is text to read, not a pane to admire: blur what is behind it hard and keep it near-opaque. */
-html:root .modal__backdrop.command-palette-backdrop {
-  background-color: rgba(15, 23, 42, 0.3);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-}
-
-html:root[data-theme='dark'] .modal__backdrop.command-palette-backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-html:root[data-season] .modal__dialog.command-palette {
-  background-color: color-mix(in oklab, var(--white) 88%, transparent);
-}
-
-html:root[data-season][data-theme='dark'] .modal__dialog.command-palette {
-  background-color: color-mix(in oklab, oklch(0.21 0.006 286) 90%, transparent);
-}
-
 /* The top strip sits in the gap above the floating bar instead of hanging into it, so it never covers the
    title. */
 @media (min-width: 720px) {
