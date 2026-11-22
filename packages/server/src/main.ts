@@ -13,6 +13,7 @@ import { BrowserLock } from './tsc/browserLock.js'
 import { fileGraphTokenStore } from './tsc/graphTokenStore.js'
 import { GraphSheetLog } from './tsc/graphSheetLog.js'
 import { PlaywrightTokenSource } from './tsc/tokenSniffer.js'
+import { logServerLife } from './serverLifeLog.js'
 
 const LISTEN_HOST = '127.0.0.1'
 const TSC_BROWSER_FOLDER = 'tsc-browser'
@@ -23,8 +24,22 @@ function readVersion(): string {
   return version
 }
 
+// SIGHUP: the console closed; SIGBREAK: Ctrl+Break. Both used to end the server with no trace.
+const SHUTDOWN_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'] as const
+
+function watchServerLife(dataDir: string): void {
+  // The monitor only observes: the crash still ends the process as before.
+  process.on('uncaughtExceptionMonitor', (error, origin) => {
+    logServerLife(dataDir, `${origin}: ${error.stack ?? String(error)}`, new Date())
+  })
+  process.on('exit', (code) => {
+    logServerLife(dataDir, `exit code ${String(code)}`, new Date())
+  })
+}
+
 async function main(): Promise<void> {
   const dataDir = resolveDataDir()
+  watchServerLife(dataDir)
   applyPendingImport(dataDir, new Date(), (message) => {
     console.log(message)
   })
@@ -82,7 +97,10 @@ async function main(): Promise<void> {
     console.error('Startup catch-up failed', error)
   })
 
-  const shutdown = (): void => {
+  logServerLife(dataDir, `started pid ${String(process.pid)} port ${String(port)}`, new Date())
+
+  const shutdown = (signal: NodeJS.Signals): void => {
+    logServerLife(dataDir, `received ${signal}, shutting down`, new Date())
     services.scheduler.stop()
     services.prScheduler.stop()
     services.teamsScheduler.stop()
@@ -97,8 +115,9 @@ async function main(): Promise<void> {
       },
     )
   }
-  process.once('SIGINT', shutdown)
-  process.once('SIGTERM', shutdown)
+  for (const signal of SHUTDOWN_SIGNALS) {
+    process.once(signal, shutdown)
+  }
 }
 
 main().catch((error: unknown) => {
