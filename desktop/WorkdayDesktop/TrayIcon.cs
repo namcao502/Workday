@@ -11,17 +11,32 @@ internal sealed class TrayIcon : IDisposable
     private readonly NotifyIcon _notifyIcon;
     private readonly ToolStripMenuItem _autoStartItem;
     private readonly ToolStripMenuItem _buildRestartItem;
+    private readonly ToolStripMenuItem _autoRestartItem;
     private readonly Font _menuFont;
     private readonly TrayMenuRenderer _renderer;
     private CoreWebView2Notification? _currentNotification;
     private bool _isCurrentClicked;
 
-    public TrayIcon(string dataDir, ShellStrings text, Action showWindow, Action buildAndRestart, Action updateApp, Action quit)
+    public TrayIcon(
+        string dataDir,
+        ShellStrings text,
+        Action showWindow,
+        Action buildAndRestart,
+        Func<bool> isAutoRestartEnabled,
+        Action toggleAutoRestart,
+        Action updateApp,
+        Action quit)
     {
         _autoStartItem = new ToolStripMenuItem(text.StartWithWindows) { CheckOnClick = false };
         _autoStartItem.Click += (_, _) => ToggleAutoStart();
         _buildRestartItem = new ToolStripMenuItem(text.BuildAndRestart);
         _buildRestartItem.Click += (_, _) => buildAndRestart();
+        _autoRestartItem = new ToolStripMenuItem(text.AutoRestartServer) { CheckOnClick = false };
+        _autoRestartItem.Click += (_, _) =>
+        {
+            toggleAutoRestart();
+            _autoRestartItem.Checked = isAutoRestartEnabled();
+        };
 
         _menuFont = TrayMenuRenderer.CreateFont();
         _renderer = new TrayMenuRenderer(dataDir);
@@ -35,6 +50,7 @@ internal sealed class TrayIcon : IDisposable
         menu.Items.Add(text.OpenWorkday, null, (_, _) => showWindow());
         menu.Items.Add(_autoStartItem);
         menu.Items.Add(_buildRestartItem);
+        menu.Items.Add(_autoRestartItem);
         menu.Items.Add(text.UpdateApp, null, (_, _) => updateApp());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(text.Quit, null, (_, _) => quit());
@@ -44,6 +60,7 @@ internal sealed class TrayIcon : IDisposable
             _renderer.Refresh();
             TrayMenuRenderer.ApplyLayout(menu);
             _autoStartItem.Checked = IsAutoStartEnabled();
+            _autoRestartItem.Checked = isAutoRestartEnabled();
         };
 
         _notifyIcon = new NotifyIcon

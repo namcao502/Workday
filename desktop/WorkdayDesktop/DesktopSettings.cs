@@ -4,7 +4,7 @@ namespace WorkdayDesktop;
 
 internal sealed record WindowBounds(int X, int Y, int Width, int Height, bool Maximized);
 
-internal sealed record DesktopSettings(string? ServerDir, WindowBounds? Window)
+internal sealed record DesktopSettings(string? ServerDir, WindowBounds? Window, bool IsServerAutoRestartEnabled = true)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {

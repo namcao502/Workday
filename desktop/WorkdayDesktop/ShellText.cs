@@ -15,7 +15,10 @@ internal sealed record ShellStrings(
     string BuildFailed,
     string UpdateApp,
     string UpdateAppConfirm,
-    string UpdateAppNoScript);
+    string UpdateAppNoScript,
+    string AutoRestartServer,
+    string ServerRestartedAutomatically,
+    string ServerRestartFailed);
 
 internal static class ShellText
 {
@@ -34,7 +37,10 @@ internal static class ShellText
         "Build failed; the old server keeps running. Log: {path}",
         "Update desktop app",
         "Publish the desktop app again and reopen it? The window closes for a moment; the server keeps running.",
-        "The install script was not found in the Workday folder (deploy/windows/install-desktop.ps1).");
+        "The install script was not found in the Workday folder (deploy/windows/install-desktop.ps1).",
+        "Restart the server if it stops",
+        "The server had stopped; it is running again.",
+        "The server stopped and could not be started again. Log: {path}");
 
     private static readonly ShellStrings Vietnamese = new(
         "Mở Workday",
@@ -51,7 +57,10 @@ internal static class ShellText
         "Build lỗi, server cũ vẫn chạy. Log: {path}",
         "Cập nhật app desktop",
         "Publish lại app desktop rồi mở lại? Cửa sổ sẽ tắt một lát, server vẫn chạy.",
-        "Không tìm thấy script cài trong thư mục Workday (deploy/windows/install-desktop.ps1).");
+        "Không tìm thấy script cài trong thư mục Workday (deploy/windows/install-desktop.ps1).",
+        "Tự chạy lại server khi dừng",
+        "Server đã dừng và vừa được chạy lại.",
+        "Server đã dừng và không chạy lại được. Log: {path}");
 
     public static ShellStrings For(string language)
     {

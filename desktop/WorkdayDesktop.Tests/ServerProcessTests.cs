@@ -263,4 +263,83 @@ public class ServerProcessTests
         Assert.Equal(ServerStartResult.TimedOut, result);
         Assert.Equal(["Build", "StopListener", "Start"], host.Calls);
     }
+
+    private sealed class ScriptedHealthHost(params bool[] answers) : IServerHost
+    {
+        private int _checkCount;
+
+        public int StartCount { get; private set; }
+
+        public Task<bool> IsHealthyAsync(CancellationToken cancellationToken)
+        {
+            var answer = _checkCount < answers.Length ? answers[_checkCount] : true;
+            _checkCount++;
+            return Task.FromResult(answer);
+        }
+
+        public IRunningServer Start(string serverDir, string logPath)
+        {
+            StartCount++;
+            return new FakeRunningServer();
+        }
+
+        public Task<bool> BuildAsync(string serverDir, string logPath, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(true);
+        }
+
+        public void StopListener()
+        {
+        }
+    }
+
+    [Fact]
+    public async Task KeepAliveAsync_DoesNothing_WhenHealthy()
+    {
+        var host = new ScriptedHealthHost(true);
+        var server = new ServerProcess(host, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(10));
+
+        var result = await server.KeepAliveAsync(@"C:\Workday", "server.log", CancellationToken.None);
+
+        Assert.Null(result);
+        Assert.Equal(0, host.StartCount);
+    }
+
+    [Fact]
+    public async Task KeepAliveAsync_WaitsOneMoreCheck_WhenOneCheckFails()
+    {
+        var host = new ScriptedHealthHost(false);
+        var server = new ServerProcess(host, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(10));
+
+        var result = await server.KeepAliveAsync(@"C:\Workday", "server.log", CancellationToken.None);
+
+        Assert.Null(result);
+        Assert.Equal(0, host.StartCount);
+    }
+
+    [Fact]
+    public async Task KeepAliveAsync_StartsServer_WhenTwoChecksInARowFail()
+    {
+        // Two failed keep-alive checks, then EnsureRunning's own check fails, then the started server answers.
+        var host = new ScriptedHealthHost(false, false, false, true);
+        var server = new ServerProcess(host, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(10));
+
+        Assert.Null(await server.KeepAliveAsync(@"C:\Workday", "server.log", CancellationToken.None));
+        var result = await server.KeepAliveAsync(@"C:\Workday", "server.log", CancellationToken.None);
+
+        Assert.Equal(ServerStartResult.Started, result);
+        Assert.Equal(1, host.StartCount);
+    }
+
+    [Fact]
+    public async Task KeepAliveAsync_CountsAgain_AfterAHealthyCheck()
+    {
+        var host = new ScriptedHealthHost(false, true, false);
+        var server = new ServerProcess(host, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(10));
+
+        Assert.Null(await server.KeepAliveAsync(@"C:\Workday", "server.log", CancellationToken.None));
+        Assert.Null(await server.KeepAliveAsync(@"C:\Workday", "server.log", CancellationToken.None));
+        Assert.Null(await server.KeepAliveAsync(@"C:\Workday", "server.log", CancellationToken.None));
+        Assert.Equal(0, host.StartCount);
+    }
 }

@@ -44,11 +44,26 @@ internal sealed class NodeServerHost(int port) : IServerHost
 
         var process = new Process
         {
-            StartInfo = startInfo
+            StartInfo = startInfo,
+            EnableRaisingEvents = true
         };
-        AttachLog(process, OpenLog(logPath));
+        var logWriter = OpenLog(logPath);
+        AttachLog(process, logWriter);
+        // The exit code is the one clue left when a server stops without printing anything.
+        process.Exited += (_, _) =>
+        {
+            lock (logWriter)
+            {
+                logWriter.WriteLine(Stamped($"server exited with code {process.ExitCode}"));
+            }
+        };
 
         process.Start();
+        lock (logWriter)
+        {
+            logWriter.WriteLine(Stamped($"server started, pid {process.Id}"));
+        }
+
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         return new RunningProcess(process);
@@ -127,6 +142,25 @@ internal sealed class NodeServerHost(int port) : IServerHost
         }
     }
 
+    public static void AppendLog(string logPath, string text)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(logPath) ?? ".");
+            using var logWriter = OpenLog(logPath);
+            logWriter.WriteLine(Stamped(text));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // The log is a diagnostic; failing to write it must not stop the keep-alive.
+        }
+    }
+
+    private static string Stamped(string text)
+    {
+        return $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {text}";
+    }
+
     private static StreamWriter OpenLog(string logPath)
     {
         return new StreamWriter(new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
@@ -137,10 +171,9 @@ internal sealed class NodeServerHost(int port) : IServerHost
 
     private static void AttachLog(Process process, StreamWriter logWriter)
     {
-        var logLock = new object();
         DataReceivedEventHandler writeLine = (_, args) =>
         {
-            lock (logLock)
+            lock (logWriter)
             {
                 logWriter.WriteLine(args.Data);
             }

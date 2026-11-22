@@ -29,7 +29,11 @@ internal interface IServerHost
 
 internal sealed class ServerProcess(IServerHost host, TimeSpan timeout, TimeSpan pollInterval)
 {
+    // One missed check can be a busy event loop; two in a row means the server is gone.
+    private const int MissedChecksBeforeRestart = 2;
+
     private IRunningServer? _ownedServer;
+    private int _missedCheckCount;
 
     public async Task<ServerStartResult> EnsureRunningAsync(string? serverDir, string logPath, CancellationToken cancellationToken)
     {
@@ -80,6 +84,25 @@ internal sealed class ServerProcess(IServerHost host, TimeSpan timeout, TimeSpan
 
         _ownedServer = host.Start(serverDir, logPath);
         return await WaitForHealthAsync(true, cancellationToken) ? ServerStartResult.Started : ServerStartResult.TimedOut;
+    }
+
+    // Null while the server answers, or after a single miss; otherwise the result of starting it again.
+    public async Task<ServerStartResult?> KeepAliveAsync(string? serverDir, string logPath, CancellationToken cancellationToken)
+    {
+        if (await host.IsHealthyAsync(cancellationToken))
+        {
+            _missedCheckCount = 0;
+            return null;
+        }
+
+        _missedCheckCount++;
+        if (_missedCheckCount < MissedChecksBeforeRestart)
+        {
+            return null;
+        }
+
+        _missedCheckCount = 0;
+        return await EnsureRunningAsync(serverDir, logPath, cancellationToken);
     }
 
     public void StopIfOwned()

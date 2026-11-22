@@ -10,6 +10,7 @@ internal sealed class MainForm : Form
     private const int DefaultWidth = 1280;
     private const int DefaultHeight = 800;
     private const int ResizeGripLogical = 6;
+    private const int KeepAliveIntervalMilliseconds = 30_000;
 
     private readonly bool _isStartMinimized;
     private readonly string _dataDir;
@@ -19,10 +20,13 @@ internal sealed class MainForm : Form
     private readonly ServerProcess _server;
     private readonly TrayIcon _tray;
     private readonly WebView2 _webView = new() { Dock = DockStyle.Fill };
+    private readonly System.Windows.Forms.Timer _keepAliveTimer = new() { Interval = KeepAliveIntervalMilliseconds };
     private DesktopSettings _settings;
     private bool _isQuitting;
     private bool _isVisibleAllowed;
     private bool? _isLastPostedMaximized;
+    private bool _isServerBusy;
+    private bool _isRestartFailureShown;
 
     public MainForm(bool isStartMinimized)
     {
@@ -42,7 +46,16 @@ internal sealed class MainForm : Form
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         ApplyBounds();
         Controls.Add(_webView);
-        _tray = new TrayIcon(_dataDir, _text, ShowWindow, async () => await BuildAndRestartAsync(), UpdateApp, Quit);
+        _tray = new TrayIcon(
+            _dataDir,
+            _text,
+            ShowWindow,
+            async () => await BuildAndRestartAsync(),
+            () => _settings.IsServerAutoRestartEnabled,
+            ToggleServerAutoRestart,
+            UpdateApp,
+            Quit);
+        _keepAliveTimer.Tick += async (_, _) => await KeepServerAliveAsync();
 
         // A --minimized start never raises Load, so create the handles now and start from the message loop.
         _ = Handle;
@@ -262,6 +275,7 @@ internal sealed class MainForm : Form
         await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.__workdayDesktop = true");
 
         var result = await _server.EnsureRunningAsync(ResolveServerDir(), _logPath, CancellationToken.None);
+        _keepAliveTimer.Start();
         if (result == ServerStartResult.AlreadyRunning || result == ServerStartResult.Started)
         {
             _webView.CoreWebView2.Navigate($"http://localhost:{_port}/");
@@ -291,6 +305,7 @@ internal sealed class MainForm : Form
     private async Task RestartServerAsync(bool isBuildNeeded)
     {
         _tray.IsBuildRestartEnabled = false;
+        _isServerBusy = true;
         try
         {
             if (isBuildNeeded)
@@ -321,6 +336,65 @@ internal sealed class MainForm : Form
         finally
         {
             _tray.IsBuildRestartEnabled = true;
+            _isServerBusy = false;
+        }
+    }
+
+    private async Task KeepServerAliveAsync()
+    {
+        // A build, restart or quit in progress takes the server down on purpose.
+        if (!_settings.IsServerAutoRestartEnabled || _isServerBusy || _isQuitting)
+        {
+            return;
+        }
+
+        _isServerBusy = true;
+        try
+        {
+            var result = await _server.KeepAliveAsync(ResolveServerDir(), _logPath, CancellationToken.None);
+            if (result == ServerStartResult.Started)
+            {
+                NodeServerHost.AppendLog(_logPath, "server did not answer twice in a row; started it again");
+                _isRestartFailureShown = false;
+                _webView.CoreWebView2.Navigate($"http://localhost:{_port}/");
+                _tray.ShowMessage(_text.ServerRestartedAutomatically);
+            }
+            else if (result == ServerStartResult.NoServerDir || result == ServerStartResult.TimedOut)
+            {
+                ReportRestartFailure($"server did not answer; starting it again failed: {result}");
+            }
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
+        {
+            ReportRestartFailure($"server did not answer; node could not be started: {exception.Message}");
+        }
+        finally
+        {
+            _isServerBusy = false;
+        }
+    }
+
+    private void ReportRestartFailure(string logText)
+    {
+        NodeServerHost.AppendLog(_logPath, logText);
+        // The keep-alive retries every minute; one balloon is enough until a start succeeds.
+        if (!_isRestartFailureShown)
+        {
+            _isRestartFailureShown = true;
+            _tray.ShowMessage(_text.ServerRestartFailed.Replace("{path}", _logPath));
+        }
+    }
+
+    private void ToggleServerAutoRestart()
+    {
+        _settings = _settings with { IsServerAutoRestartEnabled = !_settings.IsServerAutoRestartEnabled };
+        try
+        {
+            _settings.Save(_dataDir);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // The choice still applies to this run; it only fails to persist.
         }
     }
 
