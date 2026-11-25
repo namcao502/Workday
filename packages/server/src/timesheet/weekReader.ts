@@ -97,15 +97,16 @@ export async function readCoverage(
   }
   const cells = tscRead.kind === 'read' ? tscRead.cells : null
   const hadToken = tscRead.kind !== 'noToken'
-  const off = new Set(offDates)
+  const leaveApproved = new Map(offDates.map((day) => [day.date, day.approved]))
   return weekdays.map((date) => {
     const holiday = holidayOn(date, holidays)
     return {
       date,
       hrmHours: dayHours[date] ?? null,
       tscText: cells?.[date] ?? null,
-      isOff: off.has(date) || holiday !== null,
+      isOff: leaveApproved.has(date) || holiday !== null,
       holiday,
+      leaveApproved: leaveApproved.get(date) ?? null,
       tscState: tscStateFor(date, today, hadToken, allowSniff, cells),
     }
   })

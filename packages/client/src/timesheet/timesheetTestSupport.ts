@@ -2,7 +2,7 @@ import type { DayCoverage, QueueEntry, SettingsView, TimesheetView } from '@work
 import { jsonResponse, settingsView, stubFetch, type FetchMock } from '../testSupport.js'
 
 export function coverage(date: string, overrides: Partial<DayCoverage> = {}): DayCoverage {
-  return { date, hrmHours: null, tscText: null, isOff: false, holiday: null, tscState: 'read', ...overrides }
+  return { date, hrmHours: null, tscText: null, isOff: false, holiday: null, leaveApproved: null, tscState: 'read', ...overrides }
 }
 
 // Thursday 2026-11-12; the week Mon 9 .. Fri 13 as the server would read it.
@@ -21,7 +21,7 @@ export function timesheetView(overrides: Partial<TimesheetView> = {}): Timesheet
       steps: [],
       coverage: [
         coverage('2026-11-09', { hrmHours: 8, tscText: 'MDP-1, MDP-2' }),
-        coverage('2026-11-10', { isOff: true }),
+        coverage('2026-11-10', { isOff: true, leaveApproved: true }),
         coverage('2026-11-11'),
         coverage('2026-11-12'),
         coverage('2026-11-13', { tscState: 'notDue' }),

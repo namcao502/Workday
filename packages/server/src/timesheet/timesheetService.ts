@@ -14,6 +14,7 @@ import {
   type EntryOutcome,
   type Holiday,
   type HoursLog,
+  type LeaveDay,
   type HrmTask,
   type QueueEntry,
   type RunSummary,
@@ -312,13 +313,14 @@ export class TimesheetService {
       this.record('schedule', 'dayOff')
       return true
     }
-    let offDates: readonly string[] = []
+    let offDates: readonly LeaveDay[] = []
     try {
       offDates = hours === null ? [] : await hours.offDates(clock.date, clock.date)
     } catch (error: unknown) {
       this.logError('HRM leave lookup failed; showing the reminder', error)
     }
-    this.record('schedule', offDates.includes(clock.date) ? 'dayOff' : 'reminder')
+    const isLeave = offDates.some((day) => day.date === clock.date)
+    this.record('schedule', isLeave ? 'dayOff' : 'reminder')
     return true
   }
 

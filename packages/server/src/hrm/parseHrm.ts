@@ -1,4 +1,4 @@
-import { isTicketKey, type HrmTask, type TimeSlot } from '@workday/core'
+import { isTicketKey, type HrmTask, type LeaveDay, type TimeSlot } from '@workday/core'
 import { isRecord } from '../jsonFile.js'
 
 export interface ToolEnvelope {
@@ -9,6 +9,7 @@ export interface ToolEnvelope {
 
 const DROPPED_STATUSES: ReadonlySet<string> = new Set(['rejected', 'cancelled'])
 const ALL_DAY_PERIOD = 'allday'
+const APPROVED_STATUS = 'approved'
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const SECONDS_PER_HOUR = 3600
 const MILLISECONDS_PER_DAY = 86_400_000
@@ -148,14 +149,14 @@ function expandDates(from: string, to: string): readonly string[] {
   return dates
 }
 
-// Only full-day leave counts: a half day is still half a working day and needs a real ticket.
-export function parseOffDates(isError: boolean, text: string | null): readonly string[] {
+// Full-day leave only (a half day still needs a ticket); a pending request counts, approved marks reviewed ones.
+export function parseOffDates(isError: boolean, text: string | null): readonly LeaveDay[] {
   const inner = isError ? undefined : successData(parseJson(text))
   const items = successData(inner)
   if (!Array.isArray(items)) {
     return []
   }
-  const dates = new Set<string>()
+  const approvedByDate = new Map<string, boolean>()
   for (const item of items as readonly unknown[]) {
     if (!isRecord(item)) {
       continue
@@ -166,11 +167,14 @@ export function parseOffDates(isError: boolean, text: string | null): readonly s
     if (DROPPED_STATUSES.has(status) || period !== ALL_DAY_PERIOD || from === null) {
       continue
     }
+    const approved = status === APPROVED_STATUS
     for (const date of expandDates(from, dateOf(item['toDate']) ?? from)) {
-      dates.add(date)
+      approvedByDate.set(date, approved || approvedByDate.get(date) === true)
     }
   }
-  return [...dates].sort()
+  return [...approvedByDate.entries()]
+    .map(([date, isApproved]) => ({ date, approved: isApproved }))
+    .sort((left, right) => (left.date < right.date ? -1 : 1))
 }
 
 // data.pagination.totalPages; 1 (stop) on anything unrecognised.

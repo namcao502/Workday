@@ -7,6 +7,7 @@ import type {
   HoursLog,
   HoursWrite,
   HrmTask,
+  LeaveDay,
   PrLookup,
   PrReviewRequest,
   PullRequests,
@@ -212,6 +213,7 @@ export class FakeHoursLog implements HoursLog {
   validateCalls = 0
   log: (date: string) => Promise<HoursWrite> = () => Promise.resolve({ ok: true })
   offDays: readonly string[] = []
+  pendingOffDays: readonly string[] = [] // of offDays, those whose request is not approved yet
   hrmTasks: readonly HrmTask[] | null = []
   hours: Readonly<Record<string, number | null>> = {}
   validation:
@@ -241,8 +243,12 @@ export class FakeHoursLog implements HoursLog {
     return Promise.resolve(this.hrmTasks)
   }
 
-  offDates(from: string, to: string): Promise<readonly string[]> {
+  offDates(from: string, to: string): Promise<readonly LeaveDay[]> {
     this.offDateCalls.push({ from, to })
-    return Promise.resolve(this.offDays.filter((date) => date >= from && date <= to))
+    return Promise.resolve(
+      this.offDays
+        .filter((date) => date >= from && date <= to)
+        .map((date) => ({ date, approved: !this.pendingOffDays.includes(date) })),
+    )
   }
 }

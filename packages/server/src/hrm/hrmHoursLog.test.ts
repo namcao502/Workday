@@ -145,7 +145,10 @@ describe('offDates', () => {
       call.args['page'] === 1 ? page(2, '2026-07-01') : page(2, '2026-07-02'),
     )
     const dates = await logFor(session).offDates('2026-07-01', '2026-07-31')
-    expect(dates).toEqual(['2026-07-01', '2026-07-02'])
+    expect(dates).toEqual([
+      { date: '2026-07-01', approved: true },
+      { date: '2026-07-02', approved: true },
+    ])
     expect(calls).toHaveLength(2)
     expect(calls[0]?.args).toEqual({
       kind: 'leave',

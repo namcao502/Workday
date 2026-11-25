@@ -159,13 +159,15 @@ describe('parseOffDates', () => {
   it('returns the date of an approved all-day request', () => {
     expect(
       parseOffDates(false, envelope(request('2026-08-31', '2026-08-31', 'AllDay', 'Approved'))),
-    ).toEqual(['2026-08-31'])
+    ).toEqual([{ date: '2026-08-31', approved: true }])
   })
 
   it('expands a multi-day range inclusively', () => {
     expect(
       parseOffDates(false, envelope(request('2026-04-28', '2026-04-30', 'AllDay', 'Approved'))),
-    ).toEqual(['2026-04-28', '2026-04-29', '2026-04-30'])
+    ).toEqual(
+      ['2026-04-28', '2026-04-29', '2026-04-30'].map((date) => ({ date, approved: true })),
+    )
   })
 
   it('skips half-day requests', () => {
@@ -176,12 +178,15 @@ describe('parseOffDates', () => {
     expect(parseOffDates(false, text)).toEqual([])
   })
 
-  it('counts a submitted request before it is approved', () => {
+  it('counts a submitted request before it is approved, marked not approved', () => {
     const text = envelope(
       request('2026-09-10', '2026-09-10', 'AllDay', 'Pending'),
       request('2026-09-11', '2026-09-11', 'AllDay', 'Approved'),
     )
-    expect(parseOffDates(false, text)).toEqual(['2026-09-10', '2026-09-11'])
+    expect(parseOffDates(false, text)).toEqual([
+      { date: '2026-09-10', approved: false },
+      { date: '2026-09-11', approved: true },
+    ])
   })
 
   it('skips rejected and cancelled requests', () => {
@@ -192,12 +197,15 @@ describe('parseOffDates', () => {
     expect(parseOffDates(false, text)).toEqual([])
   })
 
-  it('deduplicates and sorts overlapping requests', () => {
+  it('deduplicates and sorts overlapping requests; an approved one wins over a pending one', () => {
     const text = envelope(
       request('2026-09-11', '2026-09-11', 'AllDay', 'Approved'),
-      request('2026-09-10', '2026-09-11', 'AllDay', 'Approved'),
+      request('2026-09-10', '2026-09-11', 'AllDay', 'Pending'),
     )
-    expect(parseOffDates(false, text)).toEqual(['2026-09-10', '2026-09-11'])
+    expect(parseOffDates(false, text)).toEqual([
+      { date: '2026-09-10', approved: false },
+      { date: '2026-09-11', approved: true },
+    ])
   })
 
   it('returns [] on a FORBIDDEN envelope', () => {

@@ -13,6 +13,7 @@ export interface DayCoverage {
   readonly tscText: string | null
   readonly isOff: boolean
   readonly holiday: Holiday | null // set when the day is off for a listed holiday, not leave
+  readonly leaveApproved: boolean | null // a leave day: whether HRM approved it; null without leave
   readonly tscState: TscReadState
 }
 

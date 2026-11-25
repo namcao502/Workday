@@ -395,6 +395,18 @@ describe('TimesheetService week', () => {
     expect(coverage[0]?.holiday).toBeNull()
   })
 
+  it('a leave day reads off whether or not HRM approved it, and says which', async () => {
+    const { service, hours } = setup()
+    hours.offDays = ['2026-11-09', '2026-11-10']
+    hours.pendingOffDays = ['2026-11-10']
+
+    await service.readWeek(MONDAY, false)
+
+    const coverage = service.view().week?.coverage ?? []
+    expect(coverage.map((day) => day.isOff)).toEqual([true, true, false, false, false])
+    expect(coverage.map((day) => day.leaveApproved)).toEqual([true, false, null, null, null])
+  })
+
   it('the review does not flag a key Jira could not be asked about', async () => {
     const { service, sheet, hours, tracker } = setup()
     hours.hrmTasks = null

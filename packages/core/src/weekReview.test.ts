@@ -10,7 +10,7 @@ function day(
   tscText: string | null,
   overrides: Partial<DayCoverage> = {},
 ): DayCoverage {
-  return { date, hrmHours: 8, tscText, isOff: false, holiday: null, tscState: 'read', ...overrides }
+  return { date, hrmHours: 8, tscText, isOff: false, holiday: null, leaveApproved: null, tscState: 'read', ...overrides }
 }
 
 function task(date: string, ticketKey: string, summary: string | null): HrmTask {

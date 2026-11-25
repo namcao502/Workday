@@ -103,13 +103,26 @@ it('a day card shows leave, the logged hours, or Nothing logged by its state', a
   renderWithQuery(<TimesheetPage />)
   const off = await screen.findByRole('group', { name: /TUE 10/ })
   expect(within(off).getByText('Leave')).toBeInTheDocument()
-  expect(within(off).getByText('Approved leave in HRM')).toBeInTheDocument()
+  expect(within(off).getByText('Approved in HRM')).toBeInTheDocument()
   expect(screen.getByText('4 workdays, 1 off')).toBeInTheDocument()
   const monday = card(/MON 9/)
   expect(within(monday).getByText(/8h/)).toBeInTheDocument()
   expect(within(monday).getByText(/MDP-1, MDP-2/)).toBeInTheDocument()
   expect(within(card(/WED 11/)).getByText(/Nothing logged/)).toBeInTheDocument()
   expect(within(card(/FRI 13/)).getByText('not yet')).toBeInTheDocument()
+})
+
+it('a leave day not approved yet says Day of leave, not approved', async () => {
+  const base = timesheetView()
+  const week = base.week
+  const coverage = (week?.coverage ?? []).map((day) =>
+    day.date === '2026-11-10' ? { ...day, leaveApproved: false } : day,
+  )
+  backend({ ...base, week: week === null ? null : { ...week, coverage } })
+  renderWithQuery(<TimesheetPage />)
+  const off = await screen.findByRole('group', { name: /TUE 10/ })
+  expect(within(off).getByText('Day of leave')).toBeInTheDocument()
+  expect(within(off).queryByText('Approved in HRM')).toBeNull()
 })
 
 it('a holiday card says Public holiday and the holiday name', async () => {

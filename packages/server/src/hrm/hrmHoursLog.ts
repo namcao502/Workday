@@ -4,6 +4,7 @@ import {
   type HoursWrite,
   type HrmConfig,
   type HrmTask,
+  type LeaveDay,
 } from '@workday/core'
 import { retryTransient } from '../retry.js'
 import {
@@ -120,10 +121,10 @@ export class HrmHoursLog implements HoursLog {
   }
 
   // A timesheet-scoped key gets FORBIDDEN here; that must degrade to "no off days", not an error.
-  async offDates(from: string, to: string): Promise<readonly string[]> {
+  async offDates(from: string, to: string): Promise<readonly LeaveDay[]> {
     try {
       return await this.open(async (session) => {
-        const dates = new Set<string>()
+        const approvedByDate = new Map<string, boolean>()
         for (let page = 1; page <= MAX_LEAVE_PAGES; page += 1) {
           const result = await this.call(session, 'find_my_requests', {
             kind: 'leave',
@@ -133,14 +134,16 @@ export class HrmHoursLog implements HoursLog {
             page,
             pageSize: LEAVE_PAGE_SIZE,
           })
-          for (const date of parseOffDates(result.isError, result.text)) {
-            dates.add(date)
+          for (const day of parseOffDates(result.isError, result.text)) {
+            approvedByDate.set(day.date, day.approved || approvedByDate.get(day.date) === true)
           }
           if (page >= parseTotalPages(result.text)) {
             break
           }
         }
-        return [...dates].sort()
+        return [...approvedByDate.entries()]
+          .map(([date, approved]) => ({ date, approved }))
+          .sort((left, right) => (left.date < right.date ? -1 : 1))
       })
     } catch (error: unknown) {
       console.warn(`HRM off-day lookup failed: ${messageOf(error)}`)

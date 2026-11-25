@@ -180,14 +180,19 @@ function EmptyBody({ props }: { readonly props: DayCardProps }): React.JSX.Eleme
   )
 }
 
-// Why the day is off: the holiday's name, or the approved leave HRM reported.
-function OffBody({ day }: { readonly day: LogDayView }): React.JSX.Element {
+// Why the day is off: the holiday's name, or the leave request, said approved only once HRM approves it.
+function offReason(day: LogDayView): string {
   const holiday = day.coverage?.holiday ?? null
-  return (
-    <p className="text-sm font-medium text-violet-700 dark:text-violet-300">
-      {holiday === null ? t('timesheet.approvedLeaveInHrm') : holidayName(holiday)}
-    </p>
-  )
+  if (holiday !== null) {
+    return holidayName(holiday)
+  }
+  return day.coverage?.leaveApproved === true
+    ? t('timesheet.leaveApprovedInHrm')
+    : t('timesheet.leaveDay')
+}
+
+function OffBody({ day }: { readonly day: LogDayView }): React.JSX.Element {
+  return <p className="text-sm font-medium text-violet-700 dark:text-violet-300">{offReason(day)}</p>
 }
 
 function Body({ props }: { readonly props: DayCardProps }): React.JSX.Element | null {
