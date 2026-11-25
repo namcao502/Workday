@@ -78,13 +78,19 @@ function resolveRelative(path: string, groups: readonly FilesGroupView[]): FileL
       return { group: group.id, path: found, line: null }
     }
   }
-  const tail = `/${relative.toLowerCase()}`
-  const endings = groups.flatMap((group) =>
+  // No exact match: the path and a listed one may share a segment-aligned tail, in either direction -- a bare
+  // name a group lists under a folder, or a repo-relative path (docs/MDP-1/x.md) into a docs group rooted at
+  // that folder, which lists it as the bare name.
+  const relLower = relative.toLowerCase()
+  const matches = groups.flatMap((group) =>
     group.paths
-      .filter((candidate) => candidate.toLowerCase().endsWith(tail))
+      .filter((candidate) => {
+        const candidateLower = candidate.toLowerCase()
+        return candidateLower.endsWith(`/${relLower}`) || relLower.endsWith(`/${candidateLower}`)
+      })
       .map((candidate) => ({ group: group.id, path: candidate, line: null })),
   )
-  return endings.length === 1 ? (endings[0] ?? null) : null
+  return matches.length === 1 ? (matches[0] ?? null) : null
 }
 
 // The workspace file a chat link points at; null when no group has it.

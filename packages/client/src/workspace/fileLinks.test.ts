@@ -7,7 +7,8 @@ const GROUPS: readonly FilesGroupView[] = [
     id: 'docs',
     label: 'Docs - MDP-1',
     root: 'C:\\Project\\Backend\\.claude\\worktrees\\MDP-1\\docs\\MDP-1',
-    paths: ['plan.md'],
+    // teams-post.md is only in the docs group (an untracked note the worktree git list does not carry).
+    paths: ['plan.md', 'teams-post.md'],
     error: null,
   },
   {
@@ -75,6 +76,20 @@ describe('resolveFileLink', () => {
     })
     // app.ts ends two paths: no guess.
     expect(resolveFileLink('app.ts', GROUPS)).toBeNull()
+  })
+
+  it('maps a repo-relative path into a docs group that lists it by its bare name', () => {
+    // The docs group is rooted at docs/MDP-1, so it lists "teams-post.md"; a chat often writes the repo path.
+    expect(resolveFileLink('docs/MDP-1/teams-post.md', GROUPS)).toEqual({
+      group: 'docs',
+      path: 'teams-post.md',
+      line: null,
+    })
+    expect(resolveFileLink('teams-post.md', GROUPS)).toEqual({
+      group: 'docs',
+      path: 'teams-post.md',
+      line: null,
+    })
   })
 
   it('is null for a file no group has', () => {
