@@ -19,6 +19,7 @@ import { useNarrow } from './useNarrow.js'
 import { useSidebarCollapsed } from './useSidebarCollapsed.js'
 import { zonedClock } from '@workday/core'
 import { useIdlePreload } from './useIdlePreload.js'
+import { ErrorBoundary } from '../ui/ErrorBoundary.js'
 
 // Tickets is the start page and ships in the main bundle; the others load on first open or once the browser idles.
 const loadSettings = async () => import('../settings/SettingsPage.js')
@@ -38,11 +39,14 @@ interface ShellProps {
 // The fade sits inside Suspense, so it plays when the page shows rather than while its chunk still loads.
 function PageContent({ page }: ShellProps): React.JSX.Element {
   return (
-    <Suspense fallback={null}>
-      <div key={page} className="h-full animate-fade-in">
-        <PageBody page={page} />
-      </div>
-    </Suspense>
+    // resetKey=page: navigating to another page clears a crash so the shell keeps working.
+    <ErrorBoundary resetKey={page}>
+      <Suspense fallback={null}>
+        <div key={page} className="h-full animate-fade-in">
+          <PageBody page={page} />
+        </div>
+      </Suspense>
+    </ErrorBoundary>
   )
 }
 
