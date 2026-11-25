@@ -18,7 +18,6 @@ function renderViewer(
       content={content}
       knownPaths={KNOWN}
       onSelectPath={onSelectPath}
-      onOpenInEditor={vi.fn()}
     />,
   ).container
 }
@@ -69,9 +68,9 @@ it('shows the source with line numbers', () => {
   expect(container.querySelectorAll('.code-line')).toHaveLength(2)
 })
 
-it('offers VS Code for a file that is too large', () => {
+it('shows a notice for a file that is too large to preview', () => {
   renderViewer({ kind: 'tooLarge' })
-  expect(screen.getByRole('button', { name: /VS Code/ })).toBeTruthy()
+  expect(screen.getByText(/too large/i)).toBeTruthy()
 })
 
 it('copies the whole source of a text file and of a markdown file', () => {

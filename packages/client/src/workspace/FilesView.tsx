@@ -63,9 +63,6 @@ function OpenFile({
         onSelectPath={(path) => {
           onSelect({ group: file.group, path })
         }}
-        onOpenInEditor={() => {
-          void openInVsCode(tabId, file.group, file.path)
-        }}
       />
     </div>
   )
@@ -88,8 +85,17 @@ export function FilesView({ tabId, request = null }: FilesViewProps): React.JSX.
   const defaultDoc = DEFAULT_DOCS.map((name) => docs?.paths.find((path) => path === name)).find(
     (path) => path !== undefined,
   )
-  const selected =
-    chosen ?? (defaultDoc === undefined ? null : { group: DOCS_GROUP, path: defaultDoc })
+  // A ticket opens on a docs file; a plain repo has none, so fall back to its README or first file.
+  const firstGroup = groups.find((group) => group.paths.length !== 0)
+  const firstFile =
+    firstGroup?.paths.find((path) => /(^|\/)readme\.md$/i.test(path)) ?? firstGroup?.paths[0]
+  const fallback =
+    defaultDoc !== undefined
+      ? { group: DOCS_GROUP, path: defaultDoc }
+      : firstGroup !== undefined && firstFile !== undefined
+        ? { group: firstGroup.id, path: firstFile }
+        : null
+  const selected = chosen ?? fallback
   const pane = useListPane(split, selected !== null)
   const known = groups.find((group) => group.id === selected?.group)?.paths ?? []
 
@@ -119,6 +125,17 @@ export function FilesView({ tabId, request = null }: FilesViewProps): React.JSX.
           {t('workspace.refresh')}
         </Button>
         {selected === null ? null : <CopyPath text={selected.path} />}
+        {selected === null ? null : (
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={() => {
+              void openInVsCode(tabId, selected.group, selected.path)
+            }}
+          >
+            {t('workspace.openInVsCode')}
+          </Button>
+        )}
       </div>
       <SplitView
         className="flex-1"

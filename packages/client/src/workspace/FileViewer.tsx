@@ -1,5 +1,4 @@
 import type { FileContentView } from '@workday/core'
-import { Button } from '@heroui/react'
 import { useMemo, useState } from 'react'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -22,7 +21,6 @@ interface FileViewerProps {
   readonly content: FileContentView
   readonly knownPaths: readonly string[]
   readonly onSelectPath: (path: string) => void
-  readonly onOpenInEditor: () => void
 }
 
 const REMOTE_LINK = /^https?:\/\//i
@@ -147,7 +145,7 @@ function MarkdownWithSource(props: FileViewerProps & { readonly text: string }):
 }
 
 export function FileViewer(props: FileViewerProps): React.JSX.Element {
-  const { content, tabId, group, path, onOpenInEditor } = props
+  const { content, tabId, group, path } = props
   switch (content.kind) {
     case 'text':
       return <SourceView text={content.text} path={path} withCopy />
@@ -157,16 +155,11 @@ export function FileViewer(props: FileViewerProps): React.JSX.Element {
       return <img className="image-view" src={rawFileUrl(tabId, group, path)} alt={path} />
     default:
       return (
-        <div className="flex flex-col items-start gap-2">
-          <p className="text-sm text-muted">
-            {content.kind === 'tooLarge'
-              ? t('workspace.thisFileIsTooLargeTo')
-              : t('workspace.thisIsABinaryFile')}
-          </p>
-          <Button variant="secondary" size="sm" onPress={onOpenInEditor}>
-            {t('workspace.openInVsCode')}
-          </Button>
-        </div>
+        <p className="text-sm text-muted">
+          {content.kind === 'tooLarge'
+            ? t('workspace.thisFileIsTooLargeTo')
+            : t('workspace.thisIsABinaryFile')}
+        </p>
       )
   }
 }
