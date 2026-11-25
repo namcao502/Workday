@@ -4,6 +4,7 @@ import type { MeView } from '@workday/core'
 import { useLayoutEffect, useState } from 'react'
 import { ApiError, queryKeys } from './api/client.js'
 import { AccessContext, accessFor, useMe } from './api/useMe.js'
+import { ErrorBoundary } from './ui/ErrorBoundary.js'
 import { useEvents, type SocketFactory } from './api/useEvents.js'
 import { useSettings } from './api/useSettings.js'
 import { errorText } from './errors.js'
@@ -166,7 +167,11 @@ function createQueryClient(): QueryClient {
   const client: QueryClient = new QueryClient({
     queryCache: new QueryCache({ onError: handleError }),
     mutationCache: new MutationCache({ onError: handleError }),
-    defaultOptions: { queries: { retry: shouldRetry } },
+    // WebSocket events are the freshness source (useEvents invalidates the keys a change touches), so a
+    // tab switch or window focus need not refetch: a 30s stale window and no focus-refetch cut the churn.
+    defaultOptions: {
+      queries: { retry: shouldRetry, staleTime: 30_000, refetchOnWindowFocus: false },
+    },
   })
   return client
 }
@@ -189,7 +194,9 @@ export function App({ socketFactory }: AppProps): React.JSX.Element {
   const [queryClient] = useState(createQueryClient)
   return (
     <QueryClientProvider client={queryClient}>
-      <AppRoot socketFactory={socketFactory} />
+      <ErrorBoundary>
+        <AppRoot socketFactory={socketFactory} />
+      </ErrorBoundary>
     </QueryClientProvider>
   )
 }
