@@ -16,7 +16,7 @@ const FRIDAY = '2026-11-06'
 const WEEKDAYS = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06']
 
 function coverage(date: string, hrmHours: number | null, isOff = false): DayCoverage {
-  return { date, hrmHours, tscText: null, isOff, tscState: 'read' }
+  return { date, hrmHours, tscText: null, isOff, holiday: null, tscState: 'read' }
 }
 
 function dayOf(

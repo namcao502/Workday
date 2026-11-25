@@ -2,7 +2,7 @@ import type { DayCoverage, QueueEntry, SettingsView, TimesheetView } from '@work
 import { jsonResponse, settingsView, stubFetch, type FetchMock } from '../testSupport.js'
 
 export function coverage(date: string, overrides: Partial<DayCoverage> = {}): DayCoverage {
-  return { date, hrmHours: null, tscText: null, isOff: false, tscState: 'read', ...overrides }
+  return { date, hrmHours: null, tscText: null, isOff: false, holiday: null, tscState: 'read', ...overrides }
 }
 
 // Thursday 2026-11-12; the week Mon 9 .. Fri 13 as the server would read it.

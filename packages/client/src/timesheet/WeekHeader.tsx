@@ -152,6 +152,7 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
   const coverage = week?.coverage ?? null
   const hrm = coverage === null ? null : hrmWeekTotal(coverage, today)
   const steps = week?.steps ?? []
+  const offDays = coverage?.filter((day) => day.isOff).length ?? 0
   let status: React.ReactNode = ''
   if (steps.length !== 0) {
     status = <ReadSteps steps={steps} />
@@ -167,6 +168,14 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
         <span>{`HRM ${String(hrm.hours)}h / ${String(hrm.targetHours)}h`}</span>
       )}
       {coverage === null ? null : <span>{`TSC ${tscCount(coverage, today)}`}</span>}
+      {offDays === 0 ? null : (
+        <span className="font-medium text-violet-700 dark:text-violet-300">
+          {t('timesheet.weekWorkdaysOff', {
+            work: String(WORKDAYS - offDays),
+            off: String(offDays),
+          })}
+        </span>
+      )}
       {coverage?.some((day) => day.tscState === 'noToken') === true ? (
         <span>{t('timesheet.tscNotReadYetReadAgain')}</span>
       ) : null}

@@ -1,4 +1,5 @@
 import { Button, Card, Chip } from '@heroui/react'
+import { CalendarXmark } from '@gravity-ui/icons'
 import {
   entryMinutes,
   isHrmClosed,
@@ -12,6 +13,7 @@ import {
 } from '@workday/core'
 import { useAccess } from '../api/useMe.js'
 import { t, type Language } from '../i18n.js'
+import { holidayName } from './holidayName.js'
 import { TicketRows } from './TicketRows.js'
 import { dayHeader, DONE_MARK, formatMinutes, issueText, queueStatusText } from './timesheetText.js'
 import { Tip } from '../ui/Tip.js'
@@ -48,7 +50,7 @@ function stateLabel(props: DayCardProps): string {
   const { day } = props
   switch (day.state) {
     case 'off':
-      return t('timesheet.dayOff')
+      return day.coverage?.holiday == null ? t('timesheet.leave') : t('timesheet.publicHoliday')
     case 'logged':
       return `${DONE_MARK} ${formatMinutes(Math.round((day.coverage?.hrmHours ?? 0) * MINUTES_PER_HOUR))}`
     case 'queued':
@@ -178,6 +180,16 @@ function EmptyBody({ props }: { readonly props: DayCardProps }): React.JSX.Eleme
   )
 }
 
+// Why the day is off: the holiday's name, or the approved leave HRM reported.
+function OffBody({ day }: { readonly day: LogDayView }): React.JSX.Element {
+  const holiday = day.coverage?.holiday ?? null
+  return (
+    <p className="text-sm font-medium text-violet-700 dark:text-violet-300">
+      {holiday === null ? t('timesheet.approvedLeaveInHrm') : holidayName(holiday)}
+    </p>
+  )
+}
+
 function Body({ props }: { readonly props: DayCardProps }): React.JSX.Element | null {
   switch (props.day.state) {
     case 'queued':
@@ -187,6 +199,7 @@ function Body({ props }: { readonly props: DayCardProps }): React.JSX.Element | 
     case 'empty':
       return <EmptyBody props={props} />
     case 'off':
+      return <OffBody day={props.day} />
     case 'future':
       return null
   }
@@ -200,6 +213,13 @@ const STATE_COLOR = {
   empty: 'warning',
 } as const
 
+// Off days get their own violet chip with an icon, apart from the grey "not yet".
+const OFF_CHIP = 'bg-violet-500/15 text-violet-700 dark:text-violet-300'
+// Diagonal stripes, as calendars draw a day nobody works.
+// Important: the season glass sets its own background-image on every card.
+const OFF_CARD =
+  'border border-dashed border-violet-400/70 bg-[image:repeating-linear-gradient(135deg,transparent_0_10px,rgb(139_92_246/0.12)_10px_20px)]!'
+
 // A press on a control or the hours bar does its own job; picking the day then would steal its focus.
 const OWN_PRESS = 'button, input, textarea, select, a'
 
@@ -208,11 +228,13 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
   const header = dayHeader(day.date, language)
   const today = day.date === clock.date
   const label = stateLabel(props)
+  const off = day.state === 'off'
   return (
     <Card
       role="group"
       aria-label={header}
-      className={`card-pressable gap-2 p-3 ${selected ? 'bg-accent-soft' : ''}`}
+      className={`card-pressable gap-2 p-3 ${selected ? 'bg-accent-soft' : ''} ${off ? OFF_CARD : ''}`}
+      data-off={off}
       onClick={(event) => {
         if (!(event.target instanceof Element) || event.target.closest(OWN_PRESS) === null) {
           props.onSelect(day.date)
@@ -231,7 +253,8 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
           {header}
         </button>
         {label === '' ? null : (
-          <Chip size="sm" color={STATE_COLOR[day.state]}>
+          <Chip size="sm" color={STATE_COLOR[day.state]} className={off ? OFF_CHIP : ''}>
+            {off ? <CalendarXmark width={12} height={12} aria-hidden="true" /> : null}
             {label}
           </Chip>
         )}

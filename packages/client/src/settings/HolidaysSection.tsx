@@ -1,14 +1,15 @@
-import { normalizeHolidays, type SettingsView } from '@workday/core'
-import { Button, CloseButton, Switch } from '@heroui/react'
+import { normalizeHolidays, type Holiday, type SettingsView } from '@workday/core'
+import { Button, CloseButton, Input, Switch } from '@heroui/react'
 import { useState } from 'react'
 import { useSaveSettings } from '../api/useSettings.js'
 import { t } from '../i18n.js'
+import { holidayName } from '../timesheet/holidayName.js'
 import { DateInput } from '../ui/DateInput.js'
 import { Section } from '../ui/Section.js'
 
 // "04-30" -> "30/04 every year"; "2027-02-08" -> "08/02/2027".
-export function holidayLabel(entry: string): string {
-  const [first, second, third] = entry.split('-')
+export function holidayDateLabel(date: string): string {
+  const [first, second, third] = date.split('-')
   return third === undefined
     ? t('settings.yearlyHoliday', { day: `${second ?? ''}/${first ?? ''}` })
     : `${third}/${second ?? ''}/${first ?? ''}`
@@ -26,10 +27,11 @@ export function HolidaysSection({
   const [date, setDate] = useState(() =>
     new Date().toLocaleDateString('sv-SE', { timeZone: settings.config.timeZone }),
   )
+  const [name, setName] = useState('')
   const [yearly, setYearly] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  async function apply(next: readonly string[]): Promise<void> {
+  async function apply(next: readonly Holiday[]): Promise<void> {
     const normalized = normalizeHolidays(next)
     setHolidays(normalized)
     try {
@@ -41,7 +43,8 @@ export function HolidaysSection({
   }
 
   function add(): void {
-    void apply([...holidays, yearly ? date.slice(5) : date])
+    void apply([...holidays, { date: yearly ? date.slice(5) : date, name }])
+    setName('')
   }
 
   return (
@@ -51,25 +54,38 @@ export function HolidaysSection({
         <p className="text-sm text-muted">{t('settings.noHolidays')}</p>
       ) : (
         <ul className="flex flex-wrap gap-2">
-          {holidays.map((entry) => (
-            <li
-              key={entry}
-              className="flex items-center gap-1 rounded-full bg-surface-secondary py-1 pl-3 pr-1 text-sm"
-            >
-              {holidayLabel(entry)}
-              <CloseButton
-                className="size-6"
-                aria-label={t('settings.removeHoliday', { day: holidayLabel(entry) })}
-                onPress={() => {
-                  void apply(holidays.filter((candidate) => candidate !== entry))
-                }}
-              />
-            </li>
-          ))}
+          {holidays.map((holiday) => {
+            const label = `${holidayName(holiday)} - ${holidayDateLabel(holiday.date)}`
+            return (
+              <li
+                key={holiday.date}
+                className="flex items-center gap-1 rounded-full bg-surface-secondary py-1 pl-3 pr-1 text-sm"
+              >
+                {label}
+                <CloseButton
+                  className="size-6"
+                  aria-label={t('settings.removeHoliday', { day: label })}
+                  onPress={() => {
+                    void apply(holidays.filter((candidate) => candidate.date !== holiday.date))
+                  }}
+                />
+              </li>
+            )
+          })}
         </ul>
       )}
       <div className="flex flex-wrap items-center gap-3">
         <DateInput label={t('settings.holidayDate')} name="holiday" value={date} onChange={setDate} />
+        <Input
+          aria-label={t('settings.holidayName')}
+          placeholder={t('settings.holidayName')}
+          variant="secondary"
+          className="w-56"
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value)
+          }}
+        />
         <Switch isSelected={yearly} onChange={setYearly}>
           <Switch.Content>
             <Switch.Control>

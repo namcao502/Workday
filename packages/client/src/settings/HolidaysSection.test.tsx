@@ -1,42 +1,57 @@
+import type { SettingsView } from '@workday/core'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { holidayLabel, HolidaysSection } from './HolidaysSection.js'
+import { holidayDateLabel, HolidaysSection } from './HolidaysSection.js'
 import { jsonResponse, renderWithQuery, sentJson, settingsView, stubFetch } from '../testSupport.js'
+
+const LIST = [
+  { date: '04-30', name: null },
+  { date: '2027-02-08', name: 'Tet' },
+]
+
+function withHolidays(): SettingsView {
+  const view = settingsView()
+  return { ...view, config: { ...view.config, holidays: LIST } }
+}
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 
-it('labels a yearly entry and a one-off date', () => {
-  expect(holidayLabel('04-30')).toBe('30/04 every year')
-  expect(holidayLabel('2027-02-08')).toBe('08/02/2027')
+it('labels a yearly date and a one-off date', () => {
+  expect(holidayDateLabel('04-30')).toBe('30/04 every year')
+  expect(holidayDateLabel('2027-02-08')).toBe('08/02/2027')
 })
 
-it('removing a holiday saves the rest of the list', async () => {
+it('shows each holiday by name and removing one saves the rest', async () => {
   const fetchMock = stubFetch(() => jsonResponse(settingsView()))
-  renderWithQuery(<HolidaysSection settings={settingsView()} />)
+  renderWithQuery(<HolidaysSection settings={withHolidays()} />)
+  expect(screen.getByText('Reunification Day - 30/04 every year')).toBeInTheDocument()
 
-  fireEvent.click(screen.getByRole('button', { name: 'Remove 30/04 every year' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Tet - 08/02/2027' }))
 
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalled()
   })
-  expect(sentJson(fetchMock)).toEqual({ holidays: ['01-01', '05-01', '09-02', '11-24'] })
-  expect(screen.queryByText('30/04 every year')).toBeNull()
+  expect(sentJson(fetchMock)).toEqual({ holidays: [{ date: '04-30', name: null }] })
 })
 
-it('adds the picked date as a one-off, or as month-day when every year is on', async () => {
+it('adds the picked date with its name, as month-day when every year is on', async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
-  vi.setSystemTime(new Date('2027-02-08T03:00:00Z'))
+  vi.setSystemTime(new Date('2027-02-09T03:00:00Z'))
   const fetchMock = stubFetch(() => jsonResponse(settingsView()))
-  renderWithQuery(<HolidaysSection settings={settingsView()} />)
+  renderWithQuery(<HolidaysSection settings={withHolidays()} />)
 
+  fireEvent.change(screen.getByRole('textbox', { name: 'Name (optional)' }), {
+    target: { value: 'Tet day 2' },
+  })
   fireEvent.click(screen.getByRole('button', { name: 'Add' }))
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
   expect(sentJson(fetchMock)).toEqual({
-    holidays: ['01-01', '04-30', '05-01', '09-02', '11-24', '2027-02-08'],
+    holidays: [...LIST, { date: '2027-02-09', name: 'Tet day 2' }],
   })
 
   fireEvent.click(screen.getByRole('switch', { name: 'Every year' }))
@@ -45,7 +60,11 @@ it('adds the picked date as a one-off, or as month-day when every year is on', a
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
   expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
-    holidays: ['01-01', '02-08', '04-30', '05-01', '09-02', '11-24', '2027-02-08'],
+    holidays: [
+      { date: '02-09', name: null },
+      { date: '04-30', name: null },
+      { date: '2027-02-08', name: 'Tet' },
+      { date: '2027-02-09', name: 'Tet day 2' },
+    ],
   })
-  vi.useRealTimers()
 })

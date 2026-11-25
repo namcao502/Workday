@@ -1,6 +1,7 @@
 import {
   addDays,
-  isHoliday,
+  holidayOn,
+  type Holiday,
   parseTicketKeys,
   reviewWeek,
   tscStateFor,
@@ -67,7 +68,7 @@ async function readSheet(
 export async function readCoverage(
   sheet: SheetLog | null,
   hours: HoursLog | null,
-  holidays: readonly string[],
+  holidays: readonly Holiday[],
   monday: string,
   today: string,
   allowSniff: boolean,
@@ -97,13 +98,17 @@ export async function readCoverage(
   const cells = tscRead.kind === 'read' ? tscRead.cells : null
   const hadToken = tscRead.kind !== 'noToken'
   const off = new Set(offDates)
-  return weekdays.map((date) => ({
-    date,
-    hrmHours: dayHours[date] ?? null,
-    tscText: cells?.[date] ?? null,
-    isOff: off.has(date) || isHoliday(date, holidays),
-    tscState: tscStateFor(date, today, hadToken, allowSniff, cells),
-  }))
+  return weekdays.map((date) => {
+    const holiday = holidayOn(date, holidays)
+    return {
+      date,
+      hrmHours: dayHours[date] ?? null,
+      tscText: cells?.[date] ?? null,
+      isOff: off.has(date) || holiday !== null,
+      holiday,
+      tscState: tscStateFor(date, today, hadToken, allowSniff, cells),
+    }
+  })
 }
 
 export interface ReviewSources {

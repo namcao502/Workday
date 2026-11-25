@@ -44,7 +44,7 @@ export function settingsView(overrides: Partial<SettingsView> = {}): SettingsVie
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
       notices: {},
       noticeRouting: { phoneOnlyWhenAway: true, idleMinutes: 5, fallbackMinutes: 5 },
-      holidays: ['01-01', '04-30', '05-01', '09-02', '11-24'],
+      holidays: [],
       knowledgeScan: null,
     },
     jiraTokenSource: null,

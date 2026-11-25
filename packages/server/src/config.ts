@@ -16,6 +16,7 @@ import {
   type KnowledgeScanConfig,
   type AzureDevOpsConfig,
   type DbReviewChannel,
+  type Holiday,
   type HrmConfig,
   type JiraConfig,
   type JiraTokenSource,
@@ -298,11 +299,22 @@ export function parseNotices(raw: unknown): NoticePrefs {
 }
 
 // A missing list takes the yearly defaults; an empty list stays empty (the user removed them all).
-export function parseHolidays(raw: unknown): readonly string[] {
+export function parseHolidays(raw: unknown): readonly Holiday[] {
   if (!Array.isArray(raw)) {
     return DEFAULT_HOLIDAYS
   }
-  return normalizeHolidays(raw.filter((entry): entry is string => typeof entry === 'string'))
+  // A plain "MM-DD" string is the first saved format, before holidays had names.
+  const entries = raw.flatMap((entry): Holiday[] => {
+    if (typeof entry === 'string') {
+      return [{ date: entry, name: null }]
+    }
+    if (!isRecord(entry) || typeof entry['date'] !== 'string') {
+      return []
+    }
+    const name = entry['name']
+    return [{ date: entry['date'], name: typeof name === 'string' ? name : null }]
+  })
+  return normalizeHolidays(entries)
 }
 
 function routingMinutes(value: unknown, min: number, fallback: number): number {

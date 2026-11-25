@@ -1,7 +1,7 @@
 import {
   addTickets,
   HRM_OPENS_AT_MINUTES,
-  isHoliday,
+  holidayOn,
   isHrmClosed,
   isTicketKey,
   removeLogged,
@@ -12,6 +12,7 @@ import {
   zonedClock,
   type AppError,
   type EntryOutcome,
+  type Holiday,
   type HoursLog,
   type HrmTask,
   type QueueEntry,
@@ -41,7 +42,7 @@ export interface TimesheetSettings {
   readonly timeZone: string
   readonly logTime: string
   readonly offMarker: string
-  readonly holidays: readonly string[]
+  readonly holidays: readonly Holiday[]
 }
 
 export interface TimesheetServiceDeps {
@@ -307,7 +308,7 @@ export class TimesheetService {
       this.record('schedule', 'weekend')
       return true
     }
-    if (isHoliday(clock.date, this.settings.holidays)) {
+    if (holidayOn(clock.date, this.settings.holidays) !== null) {
       this.record('schedule', 'dayOff')
       return true
     }

@@ -263,7 +263,7 @@ describe('TimesheetService schedule', () => {
   })
 
   it('the schedule stays silent on a holiday from the list, without asking HRM', async () => {
-    const holiday = setup({ settings: { holidays: ['11-11'] } })
+    const holiday = setup({ settings: { holidays: [{ date: '11-11', name: null }] } })
 
     await holiday.service.runSchedule()
 
@@ -378,17 +378,21 @@ describe('TimesheetService week', () => {
   })
 
   it('a holiday from the list reads as a day off in the week, yearly or one-off', async () => {
-    const { service } = setup({ settings: { holidays: ['11-10', '2026-11-12'] } })
+    const { service } = setup({
+      settings: {
+        holidays: [
+          { date: '11-10', name: null },
+          { date: '2026-11-12', name: 'Company trip' },
+        ],
+      },
+    })
 
     await service.readWeek(MONDAY, false)
 
-    expect(service.view().week?.coverage?.map((day) => day.isOff)).toEqual([
-      false,
-      true,
-      false,
-      true,
-      false,
-    ])
+    const coverage = service.view().week?.coverage ?? []
+    expect(coverage.map((day) => day.isOff)).toEqual([false, true, false, true, false])
+    expect(coverage[3]?.holiday).toEqual({ date: '2026-11-12', name: 'Company trip' })
+    expect(coverage[0]?.holiday).toBeNull()
   })
 
   it('the review does not flag a key Jira could not be asked about', async () => {

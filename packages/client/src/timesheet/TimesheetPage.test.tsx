@@ -98,16 +98,31 @@ it('the first visit reads this week with allowSniff, the previous week without',
   })
 })
 
-it('a day card shows Day off, the logged hours, or Nothing logged by its state', async () => {
+it('a day card shows leave, the logged hours, or Nothing logged by its state', async () => {
   backend(timesheetView())
   renderWithQuery(<TimesheetPage />)
   const off = await screen.findByRole('group', { name: /TUE 10/ })
-  expect(within(off).getByText('Day off')).toBeInTheDocument()
+  expect(within(off).getByText('Leave')).toBeInTheDocument()
+  expect(within(off).getByText('Approved leave in HRM')).toBeInTheDocument()
+  expect(screen.getByText('4 workdays, 1 off')).toBeInTheDocument()
   const monday = card(/MON 9/)
   expect(within(monday).getByText(/8h/)).toBeInTheDocument()
   expect(within(monday).getByText(/MDP-1, MDP-2/)).toBeInTheDocument()
   expect(within(card(/WED 11/)).getByText(/Nothing logged/)).toBeInTheDocument()
   expect(within(card(/FRI 13/)).getByText('not yet')).toBeInTheDocument()
+})
+
+it('a holiday card says Public holiday and the holiday name', async () => {
+  const base = timesheetView()
+  const week = base.week
+  const coverage = (week?.coverage ?? []).map((day) =>
+    day.date === '2026-11-10' ? { ...day, holiday: { date: '11-10', name: 'Company day' } } : day,
+  )
+  backend({ ...base, week: week === null ? null : { ...week, coverage } })
+  renderWithQuery(<TimesheetPage />)
+  const off = await screen.findByRole('group', { name: /TUE 10/ })
+  expect(within(off).getByText('Public holiday')).toBeInTheDocument()
+  expect(within(off).getByText('Company day')).toBeInTheDocument()
 })
 
 it('an empty past day says Reading while the week read runs, not Nothing logged', async () => {

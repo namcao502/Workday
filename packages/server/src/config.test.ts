@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DEFAULT_HOLIDAYS } from '@workday/core'
 import {
   parseHolidays,
   parseNoticeRouting,
@@ -56,7 +57,7 @@ describe('loadConfig', () => {
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
       notices: {},
       noticeRouting: { phoneOnlyWhenAway: true, idleMinutes: 5, fallbackMinutes: 5 },
-      holidays: ['01-01', '04-30', '05-01', '09-02', '11-24'],
+      holidays: DEFAULT_HOLIDAYS,
       knowledgeScan: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
@@ -520,9 +521,14 @@ describe('parseNoticeRouting', () => {
 })
 
 describe('parseHolidays', () => {
-  it('takes the yearly defaults when missing, keeps an empty list, and drops bad entries', () => {
-    expect(parseHolidays(undefined)).toEqual(['01-01', '04-30', '05-01', '09-02', '11-24'])
+  it('takes the defaults when missing, keeps an empty list, and reads both saved formats', () => {
+    expect(parseHolidays(undefined)).toBe(DEFAULT_HOLIDAYS)
     expect(parseHolidays([])).toEqual([])
-    expect(parseHolidays(['2027-02-08', 5, 'nope', '04-30'])).toEqual(['04-30', '2027-02-08'])
+    expect(
+      parseHolidays(['04-30', { date: '2027-02-08', name: 'Tet' }, { date: 'nope' }, 5, { name: 'x' }]),
+    ).toEqual([
+      { date: '04-30', name: null },
+      { date: '2027-02-08', name: 'Tet' },
+    ])
   })
 })

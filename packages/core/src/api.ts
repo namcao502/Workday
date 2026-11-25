@@ -8,6 +8,7 @@ import type { QueueEntry } from './timesheetQueue.js'
 import type { DayCoverage, HrmTask } from './timesheetWeek.js'
 import type { WeekReviewItem } from './weekReview.js'
 import type { NoticePrefs, Notice } from './notices.js'
+import type { Holiday } from './holidays.js'
 import type { NoticeRouting } from './presence.js'
 import type { TicketPr } from './prTracking.js'
 import type { Suggestion } from './ticketSuggestions.js'
@@ -146,7 +147,7 @@ export interface WorkdayConfig {
   readonly teams: TeamsConfig
   readonly notices: NoticePrefs
   readonly noticeRouting: NoticeRouting
-  readonly holidays: readonly string[] // "MM-DD" every year or "YYYY-MM-DD"; see holidays.ts
+  readonly holidays: readonly Holiday[]
   readonly knowledgeScan: KnowledgeScanConfig | null // null = no scan command set up
 }
 
@@ -239,7 +240,7 @@ export interface SettingsUpdate {
   readonly adoPat?: string
   readonly notices?: NoticePrefs
   readonly noticeRouting?: NoticeRouting
-  readonly holidays?: readonly string[]
+  readonly holidays?: readonly Holiday[]
   readonly knowledgeScan?: KnowledgeScanConfig | null
 }
 

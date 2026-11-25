@@ -1,3 +1,4 @@
+import type { Holiday } from './holidays.js'
 import { entryMinutes, type QueueEntry } from './timesheetQueue.js'
 import { addDays, mondayOf } from './zonedDate.js'
 
@@ -11,6 +12,7 @@ export interface DayCoverage {
   readonly hrmHours: number | null
   readonly tscText: string | null
   readonly isOff: boolean
+  readonly holiday: Holiday | null // set when the day is off for a listed holiday, not leave
   readonly tscState: TscReadState
 }
 
