@@ -19,6 +19,7 @@ import { useNarrow } from './useNarrow.js'
 import { useSidebarCollapsed } from './useSidebarCollapsed.js'
 import { zonedClock } from '@workday/core'
 import { useIdlePreload } from './useIdlePreload.js'
+import { useAutoHideScrollbars } from './useAutoHideScrollbars.js'
 import { ErrorBoundary } from '../ui/ErrorBoundary.js'
 
 // Tickets is the start page and ships in the main bundle; the others load on first open or once the browser idles.
@@ -92,6 +93,7 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
   const alerts = useNotices(page)
   const schedulesDot = useSchedulesView(true).data?.scan.unseenBad === true
   useIdlePreload(LAZY_PAGE_LOADERS)
+  useAutoHideScrollbars()
   return (
     <div className="app-shell flex h-dvh overflow-hidden bg-background text-foreground">
       {narrow ? null : (

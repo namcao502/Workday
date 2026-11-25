@@ -375,10 +375,10 @@ body {
   app-region: no-drag;
 }
 
-/* VS Code-style auto-hide scrollbars. ::-webkit-scrollbar-thumb styles only its own element's bar (it does
-   not inherit), and :hover matches the whole ancestor chain, so a scroll container shows its thumb only
-   while the pointer is inside it and hides it otherwise. The gutter stays reserved, so nothing reflows.
-   Pointer devices only; touch keeps the native overlay scrollbar. */
+/* VS Code-style auto-hide scrollbars. useAutoHideScrollbars sets data-scrollon on the scroll container the
+   pointer is over or that is scrolling; toggling an attribute repaints the webkit thumb reliably, where a
+   bare :hover rule does not. The gutter stays reserved, so nothing reflows. Pointer devices only; touch
+   keeps the native overlay scrollbar. */
 @media (hover: hover) {
   ::-webkit-scrollbar {
     width: 10px;
@@ -396,11 +396,11 @@ body {
     background-clip: padding-box;
   }
 
-  :hover::-webkit-scrollbar-thumb {
+  [data-scrollon]::-webkit-scrollbar-thumb {
     background-color: color-mix(in oklch, var(--foreground) 22%, transparent);
   }
 
-  ::-webkit-scrollbar-thumb:hover {
+  [data-scrollon]::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in oklch, var(--foreground) 40%, transparent);
   }
 }
