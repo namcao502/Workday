@@ -15,6 +15,8 @@ internal sealed class MainForm : Form
 
     // ASFW_ANY: after this call any process may bring itself to the foreground.
     private const uint AllowAnyProcessForeground = 0xFFFFFFFF;
+    private const int EditorRaiseDelayMilliseconds = 500;
+    private const int ShowWindowRestore = 9; // SW_RESTORE
 
     private readonly bool _isStartMinimized;
     private readonly string _dataDir;
@@ -170,11 +172,12 @@ internal sealed class MainForm : Form
 
         if (messageType == "editor")
         {
-            // The shell owns the foreground window; grant it so a VS Code window the server reuses can raise
-            // itself past Windows' focus-stealing block.
+            // Grant foreground to any process, then raise VS Code ourselves: the grant alone is too short-lived
+            // for the server's open round-trip, so the delayed raise is the reliable path.
             if (action == "allowForeground")
             {
                 AllowSetForegroundWindow(AllowAnyProcessForeground);
+                RaiseEditorWindowSoon();
             }
 
             return;
@@ -206,6 +209,72 @@ internal sealed class MainForm : Form
 
     [DllImport("user32.dll")]
     private static extern bool AllowSetForegroundWindow(uint dwProcessId);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr handle, IntPtr processId);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint attach, uint attachTo, bool join);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    private static extern bool BringWindowToTop(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr handle, int command);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr handle);
+
+    // Give VS Code a moment to open the file and surface its window, then force that window to the front.
+    private void RaiseEditorWindowSoon()
+    {
+        var timer = new System.Windows.Forms.Timer { Interval = EditorRaiseDelayMilliseconds };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            timer.Dispose();
+            var editorWindow = IntPtr.Zero;
+            foreach (var process in Process.GetProcessesByName("Code"))
+            {
+                if (process.MainWindowHandle != IntPtr.Zero)
+                {
+                    editorWindow = process.MainWindowHandle;
+                    break;
+                }
+            }
+
+            if (editorWindow != IntPtr.Zero)
+            {
+                ForceForeground(editorWindow);
+            }
+        };
+        timer.Start();
+    }
+
+    // Attach to the current foreground thread's input so Windows lets SetForegroundWindow through its block.
+    private static void ForceForeground(IntPtr handle)
+    {
+        if (IsIconic(handle))
+        {
+            ShowWindow(handle, ShowWindowRestore);
+        }
+
+        var currentThread = GetCurrentThreadId();
+        var foregroundThread = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero);
+        AttachThreadInput(currentThread, foregroundThread, true);
+        SetForegroundWindow(handle);
+        BringWindowToTop(handle);
+        AttachThreadInput(currentThread, foregroundThread, false);
+    }
 
     private void Quit()
     {
