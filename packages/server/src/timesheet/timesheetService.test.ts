@@ -71,6 +71,7 @@ function setup(
       timeZone: 'Asia/Ho_Chi_Minh',
       logTime: '18:00',
       offMarker: 'OFF',
+      holidays: [],
       ...options.settings,
     },
   })
@@ -261,6 +262,15 @@ describe('TimesheetService schedule', () => {
     expect(weekend.hours.offDateCalls).toEqual([])
   })
 
+  it('the schedule stays silent on a holiday from the list, without asking HRM', async () => {
+    const holiday = setup({ settings: { holidays: ['11-11'] } })
+
+    await holiday.service.runSchedule()
+
+    expect(holiday.service.view().lastRun).toMatchObject({ kind: 'dayOff' })
+    expect(holiday.hours.offDateCalls).toEqual([])
+  })
+
   it('the Friday run reviews the week it just logged and reports what to check', async () => {
     const friday = setup({ now: FRIDAY_7PM })
     friday.hours.hrmTasks = null
@@ -365,6 +375,20 @@ describe('TimesheetService week', () => {
     reads[1]?.resolve({ kind: 'read', cells: { '2026-11-09': 'MDP-2' } })
     await newer
     expect(service.view().week?.coverage?.[0]).toMatchObject({ date: MONDAY, tscText: 'MDP-2' })
+  })
+
+  it('a holiday from the list reads as a day off in the week, yearly or one-off', async () => {
+    const { service } = setup({ settings: { holidays: ['11-10', '2026-11-12'] } })
+
+    await service.readWeek(MONDAY, false)
+
+    expect(service.view().week?.coverage?.map((day) => day.isOff)).toEqual([
+      false,
+      true,
+      false,
+      true,
+      false,
+    ])
   })
 
   it('the review does not flag a key Jira could not be asked about', async () => {

@@ -146,6 +146,7 @@ export interface WorkdayConfig {
   readonly teams: TeamsConfig
   readonly notices: NoticePrefs
   readonly noticeRouting: NoticeRouting
+  readonly holidays: readonly string[] // "MM-DD" every year or "YYYY-MM-DD"; see holidays.ts
   readonly knowledgeScan: KnowledgeScanConfig | null // null = no scan command set up
 }
 
@@ -238,6 +239,7 @@ export interface SettingsUpdate {
   readonly adoPat?: string
   readonly notices?: NoticePrefs
   readonly noticeRouting?: NoticeRouting
+  readonly holidays?: readonly string[]
   readonly knowledgeScan?: KnowledgeScanConfig | null
 }
 

@@ -1,6 +1,7 @@
 export type * from './api.js'
 export * from './notices.js'
 export * from './presence.js'
+export * from './holidays.js'
 export * from './ticketSuggestions.js'
 export * from './todos.js'
 export * from './board.js'

@@ -420,6 +420,16 @@ export const en = {
     couldNotReachTheWorkdayServer: 'Could not reach the Workday server',
     couldNotReachTheWorkdayServer2: 'Could not reach the Workday server',
     couldNotSaveTheNoticeSettings: 'Could not save the notice settings',
+    holidays: 'Public holidays',
+    holidaysHint:
+      'Days off for everyone: no log reminder, and the week counts them as off. Lunar holidays (Tet 5 days, Hung Kings), the second National Day day and make-up days move each year; add them as dates.',
+    holidayDate: 'Holiday date',
+    everyYear: 'Every year',
+    addHoliday: 'Add',
+    removeHoliday: 'Remove {day}',
+    yearlyHoliday: '{day} every year',
+    noHolidays: 'No holidays in the list.',
+    couldNotSaveTheHolidays: 'Could not save the holidays',
     phoneAndPc: 'Phone and PC',
     phoneOnlyWhenAway: 'Send to the phone only when I am away from the PC',
     phoneOnlyWhenAwayHint:

@@ -196,6 +196,7 @@ export class SettingsService {
       teams,
       notices,
       noticeRouting,
+      holidays,
       knowledgeScan,
     } = this.config
     return {
@@ -216,6 +217,7 @@ export class SettingsService {
         teams,
         notices,
         noticeRouting,
+        holidays,
         knowledgeScan,
       },
       jiraTokenSource: this.jiraToken.source,
@@ -494,7 +496,7 @@ export class SettingsService {
   }
 
   private applyTimesheet(previous: AppliedState | null): void {
-    const { jira, timeZone, timesheet } = this.config
+    const { jira, timeZone, timesheet, holidays } = this.config
     const { hrm, tsc, logTime } = timesheet
     const hrmKey = this.hrmKey.key
     const hoursChanged =
@@ -518,6 +520,7 @@ export class SettingsService {
       timeZone,
       logTime,
       offMarker: tsc?.offMarker ?? DEFAULT_OFF_MARKER,
+      holidays,
     })
     if (previous === null) {
       this.deps.logScheduler.start(logTime, timeZone)

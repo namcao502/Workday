@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  parseHolidays,
   parseNoticeRouting,
   DEFAULT_WORKSPACE,
   loadConfig,
@@ -55,6 +56,7 @@ describe('loadConfig', () => {
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
       notices: {},
       noticeRouting: { phoneOnlyWhenAway: true, idleMinutes: 5, fallbackMinutes: 5 },
+      holidays: ['01-01', '04-30', '05-01', '09-02', '11-24'],
       knowledgeScan: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
@@ -514,5 +516,13 @@ describe('parseNoticeRouting', () => {
       idleMinutes: 10,
       fallbackMinutes: 5,
     })
+  })
+})
+
+describe('parseHolidays', () => {
+  it('takes the yearly defaults when missing, keeps an empty list, and drops bad entries', () => {
+    expect(parseHolidays(undefined)).toEqual(['01-01', '04-30', '05-01', '09-02', '11-24'])
+    expect(parseHolidays([])).toEqual([])
+    expect(parseHolidays(['2027-02-08', 5, 'nope', '04-30'])).toEqual(['04-30', '2027-02-08'])
   })
 })

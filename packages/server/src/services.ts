@@ -182,6 +182,7 @@ export function createServices(options: ServicesOptions): Services {
       timeZone: config.timeZone,
       logTime: config.timesheet.logTime,
       offMarker: config.timesheet.tsc?.offMarker ?? DEFAULT_OFF_MARKER,
+      holidays: config.holidays,
     },
     recordJob,
     onRun: (summary) => {

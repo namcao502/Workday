@@ -15,6 +15,7 @@ import {
   parseJira,
   parseKnowledgeScan,
   parseNotices,
+  parseHolidays,
   parseNoticeRouting,
   parseRemote,
   parseTimesheet,
@@ -250,6 +251,12 @@ export function parseSettingsUpdate(raw: unknown, currentPort: number): Settings
       return null
     }
     update = { ...update, noticeRouting: parseNoticeRouting(raw['noticeRouting']) }
+  }
+  if (raw['holidays'] !== undefined) {
+    if (!Array.isArray(raw['holidays'])) {
+      return null
+    }
+    update = { ...update, holidays: parseHolidays(raw['holidays']) }
   }
   if (raw['knowledgeScan'] !== undefined) {
     const knowledgeScan =

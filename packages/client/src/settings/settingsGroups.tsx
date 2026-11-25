@@ -7,6 +7,7 @@ import { CloudflareSection } from './CloudflareSection.js'
 import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
 import { GuideSection } from './GuideSection.js'
+import { HolidaysSection } from './HolidaysSection.js'
 import { NoticeRoutingSection } from './NoticeRoutingSection.js'
 import { NoticesSection } from './NoticesSection.js'
 import { RemoteSection } from './RemoteSection.js'
@@ -100,6 +101,12 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
           title: t('settings.timesheet2'),
           keywords: 'hrm tsc log time hours reminder sign in work log',
           render: (settings) => <TimesheetSection settings={settings} />,
+        },
+        {
+          id: 'holidays',
+          title: t('settings.holidays'),
+          keywords: 'holiday day off tet public ngày lễ nghỉ',
+          render: (settings) => <HolidaysSection settings={settings} />,
         },
         {
           id: 'workspace',

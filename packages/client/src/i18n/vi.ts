@@ -422,6 +422,16 @@ export const vi: Messages = {
     couldNotReachTheWorkdayServer: 'Không kết nối được tới máy chủ Workday',
     couldNotReachTheWorkdayServer2: 'Không kết nối được tới Workday server',
     couldNotSaveTheNoticeSettings: 'Không lưu được cài đặt thông báo',
+    holidays: 'Ngày lễ',
+    holidaysHint:
+      'Ngày nghỉ chung: không nhắc log giờ, tuần coi là ngày nghỉ. Ngày âm lịch (Tết 5 ngày, Giỗ Tổ), ngày thứ hai của Quốc khánh và ngày nghỉ bù đổi theo năm, hãy thêm theo ngày cụ thể.',
+    holidayDate: 'Ngày lễ',
+    everyYear: 'Hằng năm',
+    addHoliday: 'Thêm',
+    removeHoliday: 'Xóa {day}',
+    yearlyHoliday: '{day} hằng năm',
+    noHolidays: 'Chưa có ngày lễ nào.',
+    couldNotSaveTheHolidays: 'Không lưu được danh sách ngày lễ',
     phoneAndPc: 'Điện thoại và PC',
     phoneOnlyWhenAway: 'Chỉ báo lên điện thoại khi rời PC',
     phoneOnlyWhenAwayHint:

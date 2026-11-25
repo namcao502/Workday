@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
+  DEFAULT_HOLIDAYS,
   DEFAULT_NOTICE_ROUTING,
+  normalizeHolidays,
   parseColumns,
   ROUTING_MINUTES_MAX,
   parseSeasonEffects,
@@ -295,6 +297,14 @@ export function parseNotices(raw: unknown): NoticePrefs {
   return prefs
 }
 
+// A missing list takes the yearly defaults; an empty list stays empty (the user removed them all).
+export function parseHolidays(raw: unknown): readonly string[] {
+  if (!Array.isArray(raw)) {
+    return DEFAULT_HOLIDAYS
+  }
+  return normalizeHolidays(raw.filter((entry): entry is string => typeof entry === 'string'))
+}
+
 function routingMinutes(value: unknown, min: number, fallback: number): number {
   return typeof value === 'number' &&
     Number.isInteger(value) &&
@@ -417,6 +427,7 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
     teams: parseTeams(raw['teams']),
     notices: parseNotices(raw['notices']),
     noticeRouting: parseNoticeRouting(raw['noticeRouting']),
+    holidays: parseHolidays(raw['holidays']),
     knowledgeScan: parseKnowledgeScan(raw['knowledgeScan']),
   }
 }
@@ -527,6 +538,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
   notices: {},
   noticeRouting: DEFAULT_NOTICE_ROUTING,
+  holidays: DEFAULT_HOLIDAYS,
   knowledgeScan: null,
 }
 

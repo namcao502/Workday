@@ -1,6 +1,7 @@
 import {
   addTickets,
   HRM_OPENS_AT_MINUTES,
+  isHoliday,
   isHrmClosed,
   isTicketKey,
   removeLogged,
@@ -40,6 +41,7 @@ export interface TimesheetSettings {
   readonly timeZone: string
   readonly logTime: string
   readonly offMarker: string
+  readonly holidays: readonly string[]
 }
 
 export interface TimesheetServiceDeps {
@@ -305,6 +307,10 @@ export class TimesheetService {
       this.record('schedule', 'weekend')
       return true
     }
+    if (isHoliday(clock.date, this.settings.holidays)) {
+      this.record('schedule', 'dayOff')
+      return true
+    }
     let offDates: readonly string[] = []
     try {
       offDates = hours === null ? [] : await hours.offDates(clock.date, clock.date)
@@ -390,7 +396,7 @@ export class TimesheetService {
   }
 
   private async runWeekRead(monday: string, allowSniff: boolean): Promise<void> {
-    const { sheet, hours, tracker, projectKey, offMarker } = this.settings
+    const { sheet, hours, tracker, projectKey, offMarker, holidays } = this.settings
     const today = this.clock().date
     const report: StepReporter = (id, state) => {
       this.setStep(monday, id, state)
@@ -398,6 +404,7 @@ export class TimesheetService {
     const coverage = await readCoverage(
       sheet,
       hours,
+      holidays,
       monday,
       today,
       allowSniff,

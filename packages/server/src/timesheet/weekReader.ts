@@ -1,5 +1,6 @@
 import {
   addDays,
+  isHoliday,
   parseTicketKeys,
   reviewWeek,
   tscStateFor,
@@ -66,6 +67,7 @@ async function readSheet(
 export async function readCoverage(
   sheet: SheetLog | null,
   hours: HoursLog | null,
+  holidays: readonly string[],
   monday: string,
   today: string,
   allowSniff: boolean,
@@ -99,7 +101,7 @@ export async function readCoverage(
     date,
     hrmHours: dayHours[date] ?? null,
     tscText: cells?.[date] ?? null,
-    isOff: off.has(date),
+    isOff: off.has(date) || isHoliday(date, holidays),
     tscState: tscStateFor(date, today, hadToken, allowSniff, cells),
   }))
 }
