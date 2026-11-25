@@ -87,15 +87,15 @@ function PollStatus({
   }
   if (!lastPoll.ok) {
     const text = errorText(lastPoll.error ?? { code: 'pollFailed' })
-    return <span className="text-sm text-danger">{text}</span>
+    return <span className="truncate whitespace-nowrap text-sm text-danger">{text}</span>
   }
   const clock = formatClock(new Date(lastPoll.at), language, timeZone)
   return (
     <span
       className={
         pollMinutes !== null && isPollLate(lastPoll.at, pollMinutes, now)
-          ? 'text-sm text-warning'
-          : 'text-sm text-muted'
+          ? 'truncate whitespace-nowrap text-sm text-warning'
+          : 'truncate whitespace-nowrap text-sm text-muted'
       }
     >
       {t('board.checkedAt', { clock })}
@@ -215,9 +215,31 @@ export function BoardPage(): React.JSX.Element {
     },
   }
 
-  // The view switch, search and the Add it offers for a typed key sit in the top bar, next to the title.
+  // The poll status, Check now, view switch, search and the Add it offers sit in the top bar.
   const headerControls = (
     <div className="flex min-w-0 items-center gap-2">
+      {board.data === undefined ? null : (
+        <PollStatus
+          board={board.data}
+          language={language}
+          timeZone={timeZone}
+          pollMinutes={settings.data?.config.pollMinutes ?? null}
+        />
+      )}
+      {canAct ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          isDisabled={check.isPending}
+          onPress={() => {
+            check.mutate()
+          }}
+        >
+          {check.isPending ? <Spinner size="sm" /> : null}
+          {t('board.checkNow')}
+        </Button>
+      ) : null}
       {/* min-w-0 lets the switch shrink and scroll sideways before it pushes the search off the bar. */}
       <div className="flex min-w-0">
         <Segmented
@@ -272,29 +294,6 @@ export function BoardPage(): React.JSX.Element {
 
   return (
     <Page title={t('board.tickets')} wide actions={headerControls}>
-      <div className="flex flex-wrap items-center gap-2">
-        {canAct ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            isDisabled={check.isPending}
-            onPress={() => {
-              check.mutate()
-            }}
-          >
-            {check.isPending ? <Spinner size="sm" /> : null}
-            {t('board.checkNow')}
-          </Button>
-        ) : null}
-        {board.data === undefined ? null : (
-          <PollStatus
-            board={board.data}
-            language={language}
-            timeZone={timeZone}
-            pollMinutes={settings.data?.config.pollMinutes ?? null}
-          />
-        )}
-      </div>
       {check.isError ? (
         <p className="text-sm text-danger">{errorText({ code: 'pollFailed' })}</p>
       ) : null}

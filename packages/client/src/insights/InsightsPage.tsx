@@ -5,7 +5,7 @@ import { Page } from '../ui/Page.js'
 import { useSettings } from '../api/useSettings.js'
 import { formatClock, getLanguage, t } from '../i18n.js'
 import { ReportBody } from './ReportBody.js'
-import { ReportActions, ReportHeader, ReportRange } from './ReportHeader.js'
+import { ReportActions, ReportHeader, ReportRange, ReportStatus } from './ReportHeader.js'
 import { useInsights } from './useInsights.js'
 
 const UTF8_BOM = '\uFEFF'
@@ -69,6 +69,7 @@ export function InsightsPage(): React.JSX.Element {
       wide
       actions={
         <div className="flex min-w-0 items-center gap-2">
+          <ReportStatus reading={insights.reading} status={notice === '' ? readAt : notice} />
           <ReportRange
             range={insights.range}
             onRange={(range) => {
@@ -88,8 +89,6 @@ export function InsightsPage(): React.JSX.Element {
     >
       <ReportHeader
         range={insights.range}
-        reading={insights.reading}
-        status={notice === '' ? readAt : notice}
         onRange={(range) => {
           setNotice('')
           insights.setRange(range)

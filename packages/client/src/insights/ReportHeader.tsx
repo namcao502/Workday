@@ -6,8 +6,6 @@ import type { InsightsRange } from './useInsights.js'
 
 interface ReportHeaderProps {
   readonly range: InsightsRange
-  readonly reading: boolean
-  readonly status: string
   readonly onRange: (range: InsightsRange) => void
 }
 
@@ -107,34 +105,43 @@ export function ReportRange({ range, onRange }: ReportRangeProps): React.JSX.Ele
   )
 }
 
-// Under the top bar: the custom dates (only for a custom range) and the report's status line.
-export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
-  const { range, reading } = props
+interface ReportStatusProps {
+  readonly reading: boolean
+  readonly status: string
+}
+
+// "Read at ..." or a copy/export notice; the page puts it in the top bar.
+export function ReportStatus({ reading, status }: ReportStatusProps): React.JSX.Element {
+  return (
+    <span className="truncate whitespace-nowrap text-sm text-muted" aria-live="polite">
+      {reading ? t('insights.readingTheReport') : status}
+    </span>
+  )
+}
+
+// Under the top bar: the from / to dates, only for a custom range.
+export function ReportHeader({ range, onRange }: ReportHeaderProps): React.JSX.Element | null {
+  if (range.kind !== 'custom') {
+    return null
+  }
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      {range.kind === 'custom' ? (
-        <>
-          <DateField
-            id="insights-from"
-            label={t('insights.from')}
-            value={range.from}
-            onChange={(from) => {
-              props.onRange({ ...range, from })
-            }}
-          />
-          <DateField
-            id="insights-to"
-            label={t('insights.to')}
-            value={range.to}
-            onChange={(to) => {
-              props.onRange({ ...range, to })
-            }}
-          />
-        </>
-      ) : null}
-      <div className="min-h-6 text-sm text-muted" aria-live="polite">
-        {reading ? t('insights.readingTheReport') : props.status}
-      </div>
+      <DateField
+        id="insights-from"
+        label={t('insights.from')}
+        value={range.from}
+        onChange={(from) => {
+          onRange({ ...range, from })
+        }}
+      />
+      <DateField
+        id="insights-to"
+        label={t('insights.to')}
+        value={range.to}
+        onChange={(to) => {
+          onRange({ ...range, to })
+        }}
+      />
     </div>
   )
 }
