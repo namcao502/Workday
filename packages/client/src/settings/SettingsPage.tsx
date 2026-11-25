@@ -1,10 +1,11 @@
 import { Input, buttonVariants } from '@heroui/react'
-import { useState, useSyncExternalStore } from 'react'
+import { Fragment, useState, useSyncExternalStore } from 'react'
 import { useSettings } from '../api/useSettings.js'
 import { useAccess } from '../api/useMe.js'
 import { t } from '../i18n.js'
 import { currentHash } from '../shell/appHash.js'
 import { Page } from '../ui/Page.js'
+import { FlatSections } from '../ui/Section.js'
 import {
   navigateToSettings,
   searchEntries,
@@ -79,13 +80,15 @@ export function SettingsPage(): React.JSX.Element {
               rows={2}
               className="[&>div:not(.sr-only)]:h-40"
             />
-          ) : (
-            // An entry may render several cards (Schedules: scan and jobs); they need the same gap as entries.
-            entries.map((entry) => (
-              <div key={entry.id} className="flex flex-col gap-5">
-                {entry.render(settings.data)}
+          ) : entries.length === 0 ? null : (
+            // One flat pane; its sections (an entry may render several) read apart by a 1px divider.
+            <FlatSections>
+              <div className="flex flex-col divide-y divide-[color:var(--default)] rounded-2xl bg-surface px-5 shadow-surface">
+                {entries.map((entry) => (
+                  <Fragment key={entry.id}>{entry.render(settings.data)}</Fragment>
+                ))}
               </div>
-            ))
+            </FlatSections>
           )}
           {searching && entries.length === 0 ? (
             <p className="text-sm text-muted" role="status">
