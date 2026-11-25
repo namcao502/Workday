@@ -1,19 +1,21 @@
 /* Flat season surface layer (replaced Liquid Glass). The per-season accent and the backdrop wash live in
-   season.css; here every pane is an opaque, flat surface with the base theme's hairline + soft shadow, and
-   nothing uses backdrop-filter. The season colour shows through the page margins and gaps from the static
-   .season-backdrop, so the seasonal feel stays without the per-frame GPU cost of blurring a moving backdrop.
-   Loaded after season.css, so these opaque values replace its translucent glass ones. */
+   season.css; here every pane is an opaque, flat surface with the base theme's 1px hairline ring (no drop
+   shadow), and nothing uses backdrop-filter. Season adds no lift accents on top of the base theme: content
+   blocks, buttons, segments and the nav highlight all render exactly as the default theme, so the two stay
+   consistent. The season colour shows through the page margins and gaps from the static .season-backdrop,
+   so the seasonal feel stays without the per-frame GPU cost of blurring a moving backdrop. Loaded after
+   season.css, so these opaque values replace its translucent glass ones. */
 
 html:root[data-season] {
   --surface: var(--white);
-  --surface-shadow: inset 0 0 0 1px oklch(0.915 0.003 286), 0 1px 3px 0 rgba(24, 24, 27, 0.05);
+  --surface-shadow: inset 0 0 0 1px oklch(0.915 0.003 286);
   --surface-shadow-raised:
     inset 0 0 0 1px oklch(0.87 0.004 286), 0 6px 18px -4px rgba(24, 24, 27, 0.12);
 }
 
 html:root[data-season][data-theme='dark'] {
   --surface: oklch(0.21 0.006 286);
-  --surface-shadow: inset 0 0 0 1px oklch(0.3 0.006 286), 0 1px 3px 0 rgba(0, 0, 0, 0.45);
+  --surface-shadow: inset 0 0 0 1px oklch(0.3 0.006 286);
   --surface-shadow-raised:
     inset 0 0 0 1px oklch(0.34 0.006 286), 0 8px 22px -6px rgba(0, 0, 0, 0.5);
 }
@@ -27,10 +29,6 @@ html:root[data-season]:not([data-theme='dark']) :is(.card, .surface, .bg-surface
 html:root[data-season][data-theme='dark'] :is(.card, .surface, .bg-surface) {
   --default: oklch(0.25 0.006 286);
   --surface-secondary: oklch(0.25 0.006 286);
-}
-
-html:root[data-season] :is(.card, .surface, .bg-surface) {
-  box-shadow: var(--surface-shadow);
 }
 
 /* Code and diff keep their own opaque fill so they read. */
@@ -73,63 +71,7 @@ html:root[data-season] .app-toast {
   }
 }
 
-/* Top bar: a floating flat strip, 12px from the top and right. Wide screens only; the narrow layout keeps the
-   plain bar. The drag region stays on .app-titlebar. */
-@media (min-width: 720px) {
-  html:root[data-season] .app-topbar {
-    /* 24px sideways lines it up with the page content (Page has px-6). */
-    margin: 12px 24px;
-    border-radius: 1rem;
-    background-color: var(--surface);
-    box-shadow: var(--surface-shadow);
-  }
-}
-
-/* Primary buttons and key pills: a lit gradient, a small colored shadow, a springy press. */
-html:root[data-season] :is(.button--primary, .key-pill) {
-  background-image: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent) 82%, white) 0%,
-    var(--accent) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    0 3px 10px -4px var(--accent);
-}
-
-/* The ticket key keeps the chip's soft-tint text color; on the solid accent fill it needs the light one. */
-html:root[data-season] .key-pill {
-  color: var(--accent-foreground);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-}
-
-html:root[data-season] .button--primary:not(:disabled, [aria-disabled='true']):active,
-html:root[data-season] .key-pill-button:active .key-pill {
-  transform: scale(0.95);
-}
-
-html:root[data-season] :is(.button--primary, .key-pill) {
-  transition:
-    transform 150ms ease,
-    box-shadow 150ms ease;
-}
-
-/* The chosen segment: a solid chip with a lit top edge. */
-html:root[data-season] .segment-on {
-  background-color: var(--surface);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 2px 8px -3px rgba(15, 23, 42, 0.3);
-}
-
-html:root[data-season][data-theme='dark'] .segment-on {
-  background-color: oklch(0.28 0.006 286);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 2px 8px -3px rgba(0, 0, 0, 0.5);
-}
-
-/* Sidebar sliding highlight: a solid accent-soft chip that glides to the active item. */
+/* Sidebar sliding highlight: the accent-soft chip (base .nav-indicator fill) glides to the active item. */
 .nav-indicator {
   transition:
     top 350ms cubic-bezier(0.3, 1.3, 0.5, 1),
@@ -137,29 +79,17 @@ html:root[data-season][data-theme='dark'] .segment-on {
     opacity 150ms ease;
 }
 
-html:root[data-season] .nav-indicator {
-  background-color: color-mix(in oklab, var(--accent) 14%, var(--surface));
-  box-shadow: 0 2px 8px -4px rgba(15, 23, 42, 0.25);
-}
-
-html:root[data-season][data-theme='dark'] .nav-indicator {
-  background-color: color-mix(in oklab, var(--accent) 22%, var(--surface));
-  box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.5);
-}
-
 @media (prefers-reduced-motion: reduce) {
   html:root[data-season] .app-toast {
     animation: none;
   }
 
-  .nav-indicator,
-  html:root[data-season] :is(.button--primary, .key-pill) {
+  .nav-indicator {
     transition: none;
   }
 }
 
-/* The top strip sits in the gap above the floating bar instead of hanging into it, so it never covers the
-   title. */
+/* Seasonal decorations hang from the top into the gap above the bar, so they never cover the title. */
 @media (min-width: 720px) {
   html:root[data-season]:not([data-season-effects='off']) .app-topbar {
     margin-top: 30px;
