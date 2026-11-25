@@ -1,5 +1,5 @@
 // Web Push (payload: { title, body, url, tag }) and an offline page for navigations; nothing else is cached.
-const CACHE_NAME = 'workday-offline-v1'
+const CACHE_NAME = 'workday-offline-v2' // bump when a precached file changes
 const PRECACHE = ['/offline.html', '/icons/icon-192.png']
 // 5xx from the tunnel or a proxy when the local server is down.
 const DOWN_STATUSES = new Set([502, 503, 504, 530])
