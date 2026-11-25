@@ -71,11 +71,20 @@ export function Segmented<Value extends string>({
   const overflow = useOverflow(group)
   const selectedIndex = options.findIndex((option) => option.value === value)
 
-  // Keep the chosen view in sight when the row scrolls.
+  // Keep the chosen chip in sight within the row's own horizontal scroll. scrollIntoView would also scroll
+  // the page vertically, which on mount yanks a tall settings page down to a segmented control below the fold.
   useLayoutEffect(() => {
-    const button = group.current?.children[selectedIndex]
-    if (button instanceof HTMLElement && typeof button.scrollIntoView === 'function') {
-      button.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    const row = group.current
+    const button = row?.children[selectedIndex]
+    if (row === null || !(button instanceof HTMLElement)) {
+      return
+    }
+    const rowRect = row.getBoundingClientRect()
+    const buttonRect = button.getBoundingClientRect()
+    if (buttonRect.left < rowRect.left) {
+      row.scrollLeft -= rowRect.left - buttonRect.left
+    } else if (buttonRect.right > rowRect.right) {
+      row.scrollLeft += buttonRect.right - rowRect.right
     }
   }, [selectedIndex])
 
