@@ -32,42 +32,38 @@ export function GuideSection(): React.JSX.Element {
   return (
     <Section title={t('settings.guide')}>
       {intro === undefined ? null : <GuideMarkdown text={intro.body} />}
-      <div className="flex flex-col gap-4 md:flex-row md:items-start">
-        <nav
-          aria-label={t('settings.contents')}
-          className="flex shrink-0 flex-col gap-1 md:sticky md:top-4 md:w-56"
-        >
-          <p className="text-sm font-semibold">{t('settings.contents')}</p>
-          {/* A row of chips that scrolls sideways on a phone; a pinned column beside the chapters from md up. */}
-          <div className="-mx-1 flex gap-1 overflow-x-auto px-1 md:mx-0 md:flex-col md:overflow-visible md:px-0">
-            {chapters.map((section) => (
-              <Button
-                key={section.id}
-                size="sm"
-                variant="secondary"
-                className="shrink-0 md:justify-start"
-                onPress={() => {
-                  scrollTo(section.id)
-                }}
-              >
-                {section.title}
-              </Button>
-            ))}
-          </div>
-        </nav>
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+      {/* Contents: a bar pinned to the top of the guide while the chapters scroll under it. */}
+      <nav
+        aria-label={t('settings.contents')}
+        className="sticky top-0 z-10 flex flex-col gap-1 bg-surface pb-2 pt-1"
+      >
+        <p className="text-sm font-semibold">{t('settings.contents')}</p>
+        <div className="flex gap-1 overflow-x-auto whitespace-nowrap pb-1">
           {chapters.map((section) => (
-            <section
+            <Button
               key={section.id}
-              id={`guide-${section.id}`}
-              className="flex flex-col gap-2 rounded-2xl bg-surface-secondary p-4"
+              size="sm"
+              variant="secondary"
+              className="shrink-0"
+              onPress={() => {
+                scrollTo(section.id)
+              }}
             >
-              <h3 className="text-base font-semibold">{section.title}</h3>
-              <GuideMarkdown text={section.body} />
-            </section>
+              {section.title}
+            </Button>
           ))}
         </div>
-      </div>
+      </nav>
+      {chapters.map((section) => (
+        <section
+          key={section.id}
+          id={`guide-${section.id}`}
+          className="flex scroll-mt-20 flex-col gap-2 rounded-2xl bg-surface-secondary p-4"
+        >
+          <h3 className="text-base font-semibold">{section.title}</h3>
+          <GuideMarkdown text={section.body} />
+        </section>
+      ))}
     </Section>
   )
 }
