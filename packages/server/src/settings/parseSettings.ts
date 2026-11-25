@@ -15,6 +15,7 @@ import {
   parseJira,
   parseKnowledgeScan,
   parseNotices,
+  parseNoticeRouting,
   parseRemote,
   parseTimesheet,
   parseVpn,
@@ -243,6 +244,12 @@ export function parseSettingsUpdate(raw: unknown, currentPort: number): Settings
       return null
     }
     update = { ...update, notices: parseNotices(raw['notices']) }
+  }
+  if (raw['noticeRouting'] !== undefined) {
+    if (!isRecord(raw['noticeRouting'])) {
+      return null
+    }
+    update = { ...update, noticeRouting: parseNoticeRouting(raw['noticeRouting']) }
   }
   if (raw['knowledgeScan'] !== undefined) {
     const knowledgeScan =

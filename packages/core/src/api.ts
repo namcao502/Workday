@@ -8,6 +8,7 @@ import type { QueueEntry } from './timesheetQueue.js'
 import type { DayCoverage, HrmTask } from './timesheetWeek.js'
 import type { WeekReviewItem } from './weekReview.js'
 import type { NoticePrefs, Notice } from './notices.js'
+import type { NoticeRouting } from './presence.js'
 import type { TicketPr } from './prTracking.js'
 import type { Suggestion } from './ticketSuggestions.js'
 import type { BugReply } from './bugReply.js'
@@ -144,6 +145,7 @@ export interface WorkdayConfig {
   readonly azureDevOps: AzureDevOpsConfig | null
   readonly teams: TeamsConfig
   readonly notices: NoticePrefs
+  readonly noticeRouting: NoticeRouting
   readonly knowledgeScan: KnowledgeScanConfig | null // null = no scan command set up
 }
 
@@ -235,6 +237,7 @@ export interface SettingsUpdate {
   readonly teams?: TeamsConfig
   readonly adoPat?: string
   readonly notices?: NoticePrefs
+  readonly noticeRouting?: NoticeRouting
   readonly knowledgeScan?: KnowledgeScanConfig | null
 }
 

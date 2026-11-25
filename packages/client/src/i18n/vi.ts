@@ -422,6 +422,14 @@ export const vi: Messages = {
     couldNotReachTheWorkdayServer: 'Không kết nối được tới máy chủ Workday',
     couldNotReachTheWorkdayServer2: 'Không kết nối được tới Workday server',
     couldNotSaveTheNoticeSettings: 'Không lưu được cài đặt thông báo',
+    phoneAndPc: 'Điện thoại và PC',
+    phoneOnlyWhenAway: 'Chỉ báo lên điện thoại khi rời PC',
+    phoneOnlyWhenAwayHint:
+      'Giống Teams: khi đang dùng PC, thông báo chỉ hiện trên PC. Rời PC là khi Windows bị khóa, không thao tác một lúc, hoặc app desktop đang tắt.',
+    awayAfter: 'Rời PC sau',
+    sendUnreadAfter: 'Chưa đọc trên PC thì gửi điện thoại sau',
+    minutesCount: '{minutes} phút',
+    neverSend: 'Không gửi',
     couldNotSaveTheTeamsSettings: 'Không lưu được cài đặt Teams',
     couldNotSaveTheWorkspaceSettings: 'Không lưu được cài đặt không gian làm việc',
     createOneAtIdAtlassianCom:

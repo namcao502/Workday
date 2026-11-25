@@ -19,6 +19,7 @@ internal sealed class MainForm : Form
     private readonly ShellStrings _text;
     private readonly ServerProcess _server;
     private readonly TrayIcon _tray;
+    private readonly PresenceReporter _presence;
     private readonly WebView2 _webView = new() { Dock = DockStyle.Fill };
     private readonly System.Windows.Forms.Timer _keepAliveTimer = new() { Interval = KeepAliveIntervalMilliseconds };
     private DesktopSettings _settings;
@@ -56,6 +57,7 @@ internal sealed class MainForm : Form
             UpdateApp,
             Quit);
         _keepAliveTimer.Tick += async (_, _) => await KeepServerAliveAsync();
+        _presence = new PresenceReporter(_port);
 
         // A --minimized start never raises Load, so create the handles now and start from the message loop.
         _ = Handle;
@@ -276,6 +278,7 @@ internal sealed class MainForm : Form
 
         var result = await _server.EnsureRunningAsync(ResolveServerDir(), _logPath, CancellationToken.None);
         _keepAliveTimer.Start();
+        _presence.Start();
         if (result == ServerStartResult.AlreadyRunning || result == ServerStartResult.Started)
         {
             _webView.CoreWebView2.Navigate($"http://localhost:{_port}/");
@@ -456,6 +459,7 @@ internal sealed class MainForm : Form
         if (disposing)
         {
             _tray.Dispose();
+            _presence.Dispose();
             _webView.Dispose();
         }
 

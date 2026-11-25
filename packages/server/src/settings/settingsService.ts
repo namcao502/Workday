@@ -147,6 +147,10 @@ export class SettingsService {
     return this.config.notices
   }
 
+  get noticeRouting(): WorkdayConfig['noticeRouting'] {
+    return this.config.noticeRouting
+  }
+
   get port(): number {
     return this.config.port
   }
@@ -191,6 +195,7 @@ export class SettingsService {
       azureDevOps,
       teams,
       notices,
+      noticeRouting,
       knowledgeScan,
     } = this.config
     return {
@@ -210,6 +215,7 @@ export class SettingsService {
         azureDevOps,
         teams,
         notices,
+        noticeRouting,
         knowledgeScan,
       },
       jiraTokenSource: this.jiraToken.source,

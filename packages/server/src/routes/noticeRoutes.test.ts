@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildTestApp, LOOPBACK_HEADERS, type TestApp } from '../testing/testApp.js'
+import { buildRemoteApp, pairDevice, remoteHeaders } from '../testing/remoteTestApp.js'
 
 const openApps: FastifyInstance[] = []
 
@@ -118,5 +119,39 @@ describe('notice routes', () => {
     workspace.seen('claude')
 
     await expect.poll(() => notices.view().unread).toBe(0)
+  })
+})
+
+describe('presence route', () => {
+  it('takes a report from this PC and holds the phone', async () => {
+    const testApp = await localApp()
+    expect(testApp.services.notices.holdsPhone()).toBe(false)
+    const reply = await post(testApp, '/api/presence', { idleSeconds: 3, locked: false })
+    expect(reply.statusCode).toBe(200)
+    expect(testApp.services.notices.holdsPhone()).toBe(true)
+  })
+
+  it('rejects a bad body with 400', async () => {
+    const testApp = await localApp()
+    const replies = await Promise.all([
+      post(testApp, '/api/presence', {}),
+      post(testApp, '/api/presence', { idleSeconds: -1, locked: false }),
+      post(testApp, '/api/presence', { idleSeconds: 1, locked: 'no' }),
+    ])
+    expect(replies.map((reply) => reply.statusCode)).toEqual([400, 400, 400])
+  })
+
+  it('refuses a report from a paired phone', async () => {
+    const remote = await buildRemoteApp()
+    openApps.push(remote.app)
+    const device = await pairDevice(remote)
+    const reply = await remote.app.inject({
+      method: 'POST',
+      url: '/api/presence',
+      headers: remoteHeaders(device),
+      payload: { idleSeconds: 1, locked: false },
+    })
+    expect(reply.statusCode).toBe(403)
+    expect(remote.services.notices.holdsPhone()).toBe(false)
   })
 })

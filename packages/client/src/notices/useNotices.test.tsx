@@ -65,6 +65,20 @@ it('a new notice shows a toast and a desktop notification only on the channels i
   expect(FakeNotification.shown).toEqual(['MDP-3: Claude is done - your turn.'])
 })
 
+it('a focused window still gets the Windows notification', async () => {
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+  const first = notice(1)
+  const harness = renderNotices(<Harness />, [first])
+  await firstLoad(harness)
+  harness.setView([
+    first,
+    notice(2, { topic: 'claude', event: { type: 'claudeWait', subject: 'MDP-3', wait: 'finished' } }),
+  ])
+  await act(() => harness.reload())
+  await screen.findByText('MDP-3: Claude is done - your turn.')
+  expect(FakeNotification.shown).toEqual(['MDP-3: Claude is done - your turn.'])
+})
+
 it('clicking a toast navigates to its target and marks it read', async () => {
   const first = notice(1)
   const harness = renderNotices(<Harness />, [first])

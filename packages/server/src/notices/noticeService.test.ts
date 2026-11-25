@@ -1,6 +1,6 @@
-import type { Notice, NoticePrefs, ServerEvent } from '@workday/core'
-import { NOTICE_CAP } from '@workday/core'
-import { describe, expect, it, vi } from 'vitest'
+import type { Notice, NoticePrefs, NoticeRouting, ServerEvent } from '@workday/core'
+import { DEFAULT_NOTICE_ROUTING, NOTICE_CAP } from '@workday/core'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PushMessage } from '../remote/pushService.js'
 import { NoticeService, type NoticeInput } from './noticeService.js'
 
@@ -36,6 +36,7 @@ function harness(
   options: {
     initial?: readonly Notice[]
     prefs?: NoticePrefs
+    routing?: NoticeRouting
     failSave?: boolean
     failLocalPush?: boolean
     now?: () => Date
@@ -68,7 +69,11 @@ function harness(
       localPushes.push(message)
       return Promise.resolve()
     },
-    settings: () => ({ prefs: options.prefs ?? {}, language: 'en' }),
+    settings: () => ({
+      prefs: options.prefs ?? {},
+      language: 'en',
+      routing: options.routing ?? DEFAULT_NOTICE_ROUTING,
+    }),
     logError: (message) => errors.push(message),
   })
   return { service, saved, events, pushes, localPushes, errors }
@@ -231,5 +236,69 @@ describe('NoticeService', () => {
     })
 
     expect(errors).toEqual(['Pushing a notice locally failed'])
+  })
+})
+
+describe('NoticeService phone routing', () => {
+  const phoneOn: NoticePrefs = { claude: { phone: true } }
+  const MINUTE = 60_000
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('pushes to the phone at once when no desktop app reports presence', async () => {
+    const { service, pushes } = harness({ prefs: phoneOn })
+    await service.add(input({ topic: 'claude' }))
+    expect(pushes).toHaveLength(1)
+  })
+
+  it('holds the phone while the user is at the PC, then sends it if still unread', async () => {
+    vi.useFakeTimers()
+    const { service, pushes } = harness({ prefs: phoneOn })
+    service.reportPresence(10, false)
+    await service.add(input({ topic: 'claude' }))
+    expect(pushes).toHaveLength(0)
+    await vi.advanceTimersByTimeAsync(5 * MINUTE)
+    expect(pushes).toHaveLength(1)
+  })
+
+  it('drops the held push once the notice is read on the PC', async () => {
+    vi.useFakeTimers()
+    const { service, pushes } = harness({ prefs: phoneOn })
+    service.reportPresence(10, false)
+    const notice = await service.add(input({ topic: 'claude' }))
+    await service.markRead(notice.id)
+    await vi.advanceTimersByTimeAsync(5 * MINUTE)
+    expect(pushes).toHaveLength(0)
+  })
+
+  it('pushes at once when the PC is locked or idle', async () => {
+    const { service, pushes } = harness({ prefs: phoneOn })
+    service.reportPresence(10, true)
+    await service.add(input({ topic: 'claude' }))
+    service.reportPresence(600, false)
+    await service.add(input({ topic: 'claude' }))
+    expect(pushes).toHaveLength(2)
+  })
+
+  it('keeps the old behaviour when routing is off, and no fallback with 0 minutes', async () => {
+    vi.useFakeTimers()
+    const off = harness({
+      prefs: phoneOn,
+      routing: { ...DEFAULT_NOTICE_ROUTING, phoneOnlyWhenAway: false },
+    })
+    off.service.reportPresence(10, false)
+    await off.service.add(input({ topic: 'claude' }))
+    expect(off.pushes).toHaveLength(1)
+
+    const never = harness({
+      prefs: phoneOn,
+      routing: { ...DEFAULT_NOTICE_ROUTING, fallbackMinutes: 0 },
+    })
+    never.service.reportPresence(10, false)
+    await never.service.add(input({ topic: 'claude' }))
+    await vi.advanceTimersByTimeAsync(60 * MINUTE)
+    expect(never.pushes).toHaveLength(0)
   })
 })

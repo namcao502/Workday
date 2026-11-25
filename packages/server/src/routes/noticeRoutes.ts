@@ -27,6 +27,26 @@ export function registerNoticeRoutes(
 ): void {
   app.get('/api/notices', () => notices.view())
 
+  // Only the desktop app on this PC reports where the user is; a phone saying "at the PC" would mute itself.
+  app.post('/api/presence', (request, reply) => {
+    if (request.isRemote) {
+      return reply.code(403).send({ error: 'Presence comes from this PC only' })
+    }
+    const body: unknown = request.body
+    const idleSeconds = isRecord(body) ? body['idleSeconds'] : undefined
+    const locked = isRecord(body) ? body['locked'] : undefined
+    if (
+      typeof idleSeconds !== 'number' ||
+      !Number.isFinite(idleSeconds) ||
+      idleSeconds < 0 ||
+      typeof locked !== 'boolean'
+    ) {
+      return reply.code(400).send({ error: 'Body must be { idleSeconds: number, locked: boolean }' })
+    }
+    notices.reportPresence(idleSeconds, locked)
+    return { ok: true }
+  })
+
   app.post<{ Params: { id: string } }>('/api/notices/:id/read', async (request, reply) => {
     const { id } = request.params
     if (!POSITIVE_INTEGER.test(id) || !Number.isSafeInteger(Number(id))) {

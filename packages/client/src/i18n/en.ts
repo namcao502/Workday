@@ -420,6 +420,14 @@ export const en = {
     couldNotReachTheWorkdayServer: 'Could not reach the Workday server',
     couldNotReachTheWorkdayServer2: 'Could not reach the Workday server',
     couldNotSaveTheNoticeSettings: 'Could not save the notice settings',
+    phoneAndPc: 'Phone and PC',
+    phoneOnlyWhenAway: 'Send to the phone only when I am away from the PC',
+    phoneOnlyWhenAwayHint:
+      'Like Teams: while you use the PC, notices stay on the PC. Away means Windows is locked, you have not touched it for a while, or the desktop app is closed.',
+    awayAfter: 'Away after',
+    sendUnreadAfter: 'Unread on the PC goes to the phone after',
+    minutesCount: '{minutes} min',
+    neverSend: 'Never',
     couldNotSaveTheTeamsSettings: 'Could not save the Teams settings',
     couldNotSaveTheWorkspaceSettings: 'Could not save the workspace settings',
     createOneAtIdAtlassianCom:

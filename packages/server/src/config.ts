@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
+  DEFAULT_NOTICE_ROUTING,
   parseColumns,
+  ROUTING_MINUTES_MAX,
   parseSeasonEffects,
   parseSeasonSetting,
   isIpv4Cidr,
@@ -17,6 +19,7 @@ import {
   type JiraTokenSource,
   type NoticeChannels,
   type NoticePrefs,
+  type NoticeRouting,
   type NoticeTopic,
   type RemoteConfig,
   type StatusFlow,
@@ -292,6 +295,33 @@ export function parseNotices(raw: unknown): NoticePrefs {
   return prefs
 }
 
+function routingMinutes(value: unknown, min: number, fallback: number): number {
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= min &&
+    value <= ROUTING_MINUTES_MAX
+    ? value
+    : fallback
+}
+
+// Each field falls back on its own, so one bad value keeps the rest.
+export function parseNoticeRouting(raw: unknown): NoticeRouting {
+  if (!isRecord(raw)) {
+    return DEFAULT_NOTICE_ROUTING
+  }
+  const away = raw['phoneOnlyWhenAway']
+  return {
+    phoneOnlyWhenAway:
+      typeof away === 'boolean' ? away : DEFAULT_NOTICE_ROUTING.phoneOnlyWhenAway,
+    idleMinutes: routingMinutes(raw['idleMinutes'], 1, DEFAULT_NOTICE_ROUTING.idleMinutes),
+    fallbackMinutes: routingMinutes(
+      raw['fallbackMinutes'],
+      0,
+      DEFAULT_NOTICE_ROUTING.fallbackMinutes,
+    ),
+  }
+}
+
 function parseHrm(raw: unknown): HrmConfig | null {
   if (!isRecord(raw)) {
     return null
@@ -386,6 +416,7 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
     azureDevOps: parseAzureDevOps(raw['azureDevOps']),
     teams: parseTeams(raw['teams']),
     notices: parseNotices(raw['notices']),
+    noticeRouting: parseNoticeRouting(raw['noticeRouting']),
     knowledgeScan: parseKnowledgeScan(raw['knowledgeScan']),
   }
 }
@@ -495,6 +526,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   azureDevOps: null,
   teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
   notices: {},
+  noticeRouting: DEFAULT_NOTICE_ROUTING,
   knowledgeScan: null,
 }
 

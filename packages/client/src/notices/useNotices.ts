@@ -43,12 +43,9 @@ export function useNoticeActions(): NoticeActions {
   }, [queryClient])
 }
 
+// Shown even while the window has focus: an in-app toast alone was easy to miss (user, 2026-11-25).
 function desktopAllowed(): boolean {
-  return (
-    typeof Notification !== 'undefined' &&
-    Notification.permission === 'granted' &&
-    (document.hidden || !document.hasFocus())
-  )
+  return typeof Notification !== 'undefined' && Notification.permission === 'granted'
 }
 
 export interface NoticeAlerts {

@@ -186,7 +186,8 @@ export function createServices(options: ServicesOptions): Services {
     recordJob,
     onRun: (summary) => {
       const message = runPushMessage(summary, settings.language, settings.timeZone)
-      if (message !== null) {
+      // At the PC the run's own notice shows there; the phone gets it only through that notice's routing.
+      if (message !== null && !notices.holdsPhone()) {
         remote.push.sendToDevices(message).catch((error: unknown) => {
           reportError('Pushing the run failed', error)
         })
@@ -211,7 +212,11 @@ export function createServices(options: ServicesOptions): Services {
     // Edge's local push would open Edge; the app shows its own notifications.
     pushLocal: (message) =>
       events.hasLocalApp() ? Promise.resolve() : remote.push.sendToLocal(message),
-    settings: () => ({ prefs: settings.notices, language: settings.language }),
+    settings: () => ({
+      prefs: settings.notices,
+      language: settings.language,
+      routing: settings.noticeRouting,
+    }),
     logError: reportError,
   })
   const ticketUpdates: TicketUpdateService = new TicketUpdateService({

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  parseNoticeRouting,
   DEFAULT_WORKSPACE,
   loadConfig,
   loadGraphTokenOverride,
@@ -53,6 +54,7 @@ describe('loadConfig', () => {
       azureDevOps: null,
       teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
       notices: {},
+      noticeRouting: { phoneOnlyWhenAway: true, idleMinutes: 5, fallbackMinutes: 5 },
       knowledgeScan: null,
       timesheet: { logTime: '18:00', hrm: null, tsc: null },
     })
@@ -491,5 +493,26 @@ describe('workspace auto start', () => {
 
   it('is off only when the file says false', () => {
     expect(parseWorkspace({ autoStartTickets: false }).autoStartTickets).toBe(false)
+  })
+})
+
+describe('parseNoticeRouting', () => {
+  it('takes the defaults for a missing value', () => {
+    expect(parseNoticeRouting(undefined)).toEqual({
+      phoneOnlyWhenAway: true,
+      idleMinutes: 5,
+      fallbackMinutes: 5,
+    })
+  })
+
+  it('keeps valid fields and replaces only the bad ones', () => {
+    expect(
+      parseNoticeRouting({ phoneOnlyWhenAway: false, idleMinutes: 0, fallbackMinutes: 0 }),
+    ).toEqual({ phoneOnlyWhenAway: false, idleMinutes: 5, fallbackMinutes: 0 })
+    expect(parseNoticeRouting({ idleMinutes: 10, fallbackMinutes: 61 })).toEqual({
+      phoneOnlyWhenAway: true,
+      idleMinutes: 10,
+      fallbackMinutes: 5,
+    })
   })
 })

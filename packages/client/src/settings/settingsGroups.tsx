@@ -7,6 +7,7 @@ import { CloudflareSection } from './CloudflareSection.js'
 import { ConnectionsSection } from './ConnectionsSection.js'
 import { GeneralSection } from './GeneralSection.js'
 import { GuideSection } from './GuideSection.js'
+import { NoticeRoutingSection } from './NoticeRoutingSection.js'
 import { NoticesSection } from './NoticesSection.js'
 import { RemoteSection } from './RemoteSection.js'
 import { TeamsSection } from './TeamsSection.js'
@@ -51,6 +52,12 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
           title: t('settings.notices'),
           keywords: 'notification toast sound topic bell alert',
           render: (settings) => <NoticesSection settings={settings} />,
+        },
+        {
+          id: 'noticeRouting',
+          title: t('settings.phoneAndPc'),
+          keywords: 'phone away idle teams presence push mobile điện thoại rời',
+          render: (settings) => <NoticeRoutingSection settings={settings} />,
         },
         {
           id: 'backup',

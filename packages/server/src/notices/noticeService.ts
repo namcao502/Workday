@@ -1,5 +1,6 @@
 import {
   addNotice,
+  isAtPc,
   markAllRead,
   markRead,
   markReadAt,
@@ -8,8 +9,10 @@ import {
   NOTICE_CAP,
   removeExpired,
   type Notice,
+  type DesktopPresence,
   type NoticeEvent,
   type NoticePrefs,
+  type NoticeRouting,
   type NoticesView,
   type NoticeTarget,
   type NoticeTone,
@@ -33,11 +36,16 @@ export interface NoticeServiceDeps {
   readonly now: () => Date
   readonly push: (message: PushMessage) => Promise<void>
   readonly pushLocal: (message: PushMessage) => Promise<void> // this PC's browser, window closed
-  readonly settings: () => { readonly prefs: NoticePrefs; readonly language: 'en' | 'vi' }
+  readonly settings: () => {
+    readonly prefs: NoticePrefs
+    readonly language: 'en' | 'vi'
+    readonly routing: NoticeRouting
+  }
   readonly logError: (message: string, error: unknown) => void
 }
 
 const BOARD_URL = '/#/board'
+const MINUTE_MS = 60_000
 
 // The phone cannot open the Workspace, so a workspace notice opens the board there.
 function pushUrl(target: NoticeTarget | null): string {
@@ -79,6 +87,7 @@ export class NoticeService {
   private notices: readonly Notice[]
   private nextId: number
   private queue: Promise<unknown> = Promise.resolve()
+  private presence: DesktopPresence | null = null
 
   constructor(private readonly deps: NoticeServiceDeps) {
     // Whatever came back from a restart counts as seen.
@@ -107,6 +116,20 @@ export class NoticeService {
     return notice
   }
 
+  // The desktop app's report of Windows input and lock state.
+  reportPresence(idleSeconds: number, locked: boolean): void {
+    this.presence = { idleSeconds, locked, at: this.deps.now().toISOString() }
+  }
+
+  // True while the phone should wait: the user is at the PC and asked for Teams-style routing.
+  holdsPhone(): boolean {
+    const { routing } = this.deps.settings()
+    return (
+      routing.phoneOnlyWhenAway &&
+      isAtPc(this.presence, routing, this.deps.now().toISOString())
+    )
+  }
+
   markRead(id: number): Promise<void> {
     return this.enqueue(() => this.commit(markRead(this.notices, id)))
   }
@@ -120,7 +143,7 @@ export class NoticeService {
   }
 
   private pushToPhone(notice: Notice): void {
-    const { prefs, language } = this.deps.settings()
+    const { prefs, language, routing } = this.deps.settings()
     if (!noticeChannels(notice.topic, prefs).phone) {
       return
     }
@@ -130,6 +153,24 @@ export class NoticeService {
       url: pushUrl(notice.target),
       tag: `notice-${String(notice.id)}`,
     }
+    if (!this.holdsPhone()) {
+      this.sendToPhone(message)
+      return
+    }
+    if (routing.fallbackMinutes === 0) {
+      return
+    }
+    // Like Teams: what the user has not read on the PC by then reaches the phone.
+    const timer = setTimeout(() => {
+      const current = this.notices.find((candidate) => candidate.id === notice.id)
+      if (current !== undefined && !current.read) {
+        this.sendToPhone(message)
+      }
+    }, routing.fallbackMinutes * MINUTE_MS)
+    timer.unref()
+  }
+
+  private sendToPhone(message: PushMessage): void {
     this.deps.push(message).catch((error: unknown) => {
       this.deps.logError('Pushing a notice failed', error)
     })

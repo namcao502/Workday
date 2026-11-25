@@ -27,6 +27,7 @@ async function timesheetApp(): Promise<TestApp> {
     azureDevOps: null,
     teams: { watchedChannels: [], postLeadName: null, postGreeting: null, dbReviewChannel: null },
     notices: {},
+    noticeRouting: { phoneOnlyWhenAway: true, idleMinutes: 5, fallbackMinutes: 5 },
     knowledgeScan: null,
     theme: 'dark',
     season: 'auto',
