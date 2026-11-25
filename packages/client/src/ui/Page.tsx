@@ -35,7 +35,8 @@ export function PageHeading({ title, actions }: PageHeadingProps): React.JSX.Ele
 // A page body: a column of blocks under its heading.
 export function Page({ title, actions, wide, className, children }: PageProps): React.JSX.Element {
   const classes = [
-    'mx-auto flex w-full flex-col gap-5 px-6 pb-8',
+    // pt-1 keeps a focused field's 2px outset ring off the scroll container's top edge, which clips it.
+    'mx-auto flex w-full flex-col gap-5 px-6 pb-8 pt-1',
     wide === true ? '' : 'max-w-4xl',
     className ?? '',
   ]
