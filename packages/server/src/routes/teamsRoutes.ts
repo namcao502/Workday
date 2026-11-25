@@ -181,6 +181,19 @@ export function registerTeamsRoutes(
     },
   )
 
+  // Draft only: rebuilds the post draft without a channel scan, so the Reload draft button is near-instant.
+  app.get<{ Params: { key: string } }>('/api/teams/:key/draft', async (request, reply) => {
+    const { key } = request.params
+    if (!isTicketKey(key)) {
+      return reply.code(400).send({ ok: false, error: { code: 'invalidKey' } })
+    }
+    try {
+      return await teams.draft(key)
+    } catch (error: unknown) {
+      return reply.code(502).send({ ok: false, error: teamsError(error) })
+    }
+  })
+
   // Parses the body, then runs the write; a wrong key or shape is a 400.
   function writeRoute(
     path: string,

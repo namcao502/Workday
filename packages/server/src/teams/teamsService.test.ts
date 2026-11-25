@@ -111,6 +111,15 @@ describe('TeamsService.read', () => {
     expect(view.state === 'notPosted' && view.posted).toBe(false)
   })
 
+  it('draft() rebuilds the draft without scanning any channel', async () => {
+    const { teams, service } = serviceRig(['c1', 'c2'])
+
+    const draft = await service.draft('MDP-1')
+
+    expect(draft.subject).toBe('MDP-1 Summary of MDP-1')
+    expect(teams.pageCalls).toHaveLength(0)
+  })
+
   it('opens the first ticket chat when no post exists', async () => {
     const { teams, service } = serviceRig(['c1'])
     teams.chats.push({ id: 'chat-9', topic: 'MDP-10 other' }, { id: 'chat-1', topic: 'MDP-1 talk' })

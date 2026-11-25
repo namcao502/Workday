@@ -2,7 +2,7 @@ import { Button } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { TeamsReadView } from '@workday/core'
 import { useMemo, useState } from 'react'
-import { postToChannel } from '../../api/teamsApi.js'
+import { getTeamsDraft, postToChannel } from '../../api/teamsApi.js'
 import { t } from '../../i18n.js'
 import { TeamsComposer } from './TeamsComposer.js'
 import { leadChip } from './teamsComposerDom.js'
@@ -46,6 +46,22 @@ export function TeamsPostCard({
     [draft.bodyHtml, draft.lead],
   )
 
+  // Refreshes only the draft text; the channel scan a full read runs is skipped. A failure falls back to it.
+  const reloadDraft = async (): Promise<void> => {
+    setWarned(false)
+    setVersion((current) => current + 1)
+    try {
+      const fresh = await getTeamsDraft(ticket)
+      setFrozen(null)
+      queryClient.setQueriesData<TeamsReadView>({ queryKey: ['teams', ticket] }, (old) =>
+        old !== undefined && old.state === 'notPosted' ? { ...old, draft: fresh } : old,
+      )
+    } catch {
+      setFrozen(null)
+      void queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
+    }
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <TeamsComposer
@@ -81,10 +97,7 @@ export function TeamsPostCard({
         size="sm"
         className="self-start"
         onPress={() => {
-          setFrozen(null)
-          setWarned(false)
-          setVersion((current) => current + 1)
-          void queryClient.invalidateQueries({ queryKey: ['teams', ticket] })
+          void reloadDraft()
         }}
       >
         {t('teams.reloadDraft')}

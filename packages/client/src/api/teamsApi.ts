@@ -25,6 +25,18 @@ export async function getTeams(ticket: string, conversation: string): Promise<Te
   return raw.body as unknown as TeamsReadView
 }
 
+type NotPostedDraft = Extract<TeamsReadView, { state: 'notPosted' }>['draft']
+
+// Rebuilds just the post draft (no channel scan), for the Reload draft button.
+export async function getTeamsDraft(ticket: string): Promise<NotPostedDraft> {
+  const path = `/api/teams/${encodeURIComponent(ticket)}/draft`
+  const raw = await send('GET', path)
+  if (!raw.ok || !isRecord(raw.body) || typeof raw.body['subject'] !== 'string') {
+    throw new ApiError(raw.status, path)
+  }
+  return raw.body as unknown as NotPostedDraft
+}
+
 // A write answers `{ ok, error? }` even on a 4xx/5xx; a body without the flag is a transport failure.
 async function write(path: string, payload?: unknown): Promise<TeamsWrite> {
   const raw = await send('POST', path, payload)

@@ -20,7 +20,7 @@ import {
 import type { TeamsGateway } from './teamsChatClient.js'
 import { TeamsAnalysisRunner } from './teamsAnalysisRunner.js'
 import type { NewTeamsMessage } from './teamsWatcher.js'
-import { loadPostDraft, ticketSummary } from './teamsDraft.js'
+import { loadPostDraft, ticketSummary, type PostDraft } from './teamsDraft.js'
 import { buildClaudeTask, handOff, type PromptOutcome } from './teamsHandOff.js'
 import { isLoadableImageUrl, TeamsLookup, type TeamsLookupDeps } from './teamsLookup.js'
 import { TeamsWrites, teamsError } from './teamsWrites.js'
@@ -345,13 +345,11 @@ export class TeamsService {
     return this.threadView(options, chatId, thread, myId)
   }
 
-  private async notPosted(
-    ticketKey: string,
-    options: readonly TeamsOption[],
-    channelId: string,
-  ): Promise<TeamsConversationView> {
+  // Rebuilds only the post draft from the ticket, PRs and the dev-repo file. No Teams call, so a reload of
+  // the draft needs no channel scan (the slow part of a full read).
+  async draft(ticketKey: string): Promise<PostDraft> {
     const { config, devRepoPath, repoLabels } = this.settings
-    const draft = await loadPostDraft(ticketKey, {
+    return loadPostDraft(ticketKey, {
       devRepoPath,
       summary: ticketSummary(this.deps.board.snapshot(), ticketKey),
       prs: latestPrs(ticketKey, this.deps.prs.state().tracking, repoLabels),
@@ -359,6 +357,14 @@ export class TeamsService {
       config,
       people: this.lookup.known,
     })
+  }
+
+  private async notPosted(
+    ticketKey: string,
+    options: readonly TeamsOption[],
+    channelId: string,
+  ): Promise<TeamsConversationView> {
+    const draft = await this.draft(ticketKey)
     const posted = this.lookup.postedAt(ticketKey) !== null
     return { state: 'notPosted', options, channelId, draft, posted, people: this.lookup.known }
   }
