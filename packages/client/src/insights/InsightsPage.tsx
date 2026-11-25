@@ -5,7 +5,7 @@ import { Page } from '../ui/Page.js'
 import { useSettings } from '../api/useSettings.js'
 import { formatClock, getLanguage, t } from '../i18n.js'
 import { ReportBody } from './ReportBody.js'
-import { ReportHeader } from './ReportHeader.js'
+import { ReportActions, ReportHeader } from './ReportHeader.js'
 import { useInsights } from './useInsights.js'
 
 const UTF8_BOM = '\uFEFF'
@@ -64,19 +64,27 @@ export function InsightsPage(): React.JSX.Element {
         })
 
   return (
-    <Page title={t('insights.insights')} wide>
+    <Page
+      title={t('insights.insights')}
+      wide
+      actions={
+        <ReportActions
+          reading={insights.reading}
+          hasReport={view !== null}
+          onRefresh={insights.reread}
+          onCopy={copy}
+          onExport={exportCsv}
+        />
+      }
+    >
       <ReportHeader
         range={insights.range}
         reading={insights.reading}
-        hasReport={view !== null}
         status={notice === '' ? readAt : notice}
         onRange={(range) => {
           setNotice('')
           insights.setRange(range)
         }}
-        onRefresh={insights.reread}
-        onCopy={copy}
-        onExport={exportCsv}
       />
       {insights.error === null ? null : (
         <p className="text-sm text-danger" role="alert">

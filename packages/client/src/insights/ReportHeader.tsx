@@ -7,12 +7,33 @@ import type { InsightsRange } from './useInsights.js'
 interface ReportHeaderProps {
   readonly range: InsightsRange
   readonly reading: boolean
-  readonly hasReport: boolean
   readonly status: string
   readonly onRange: (range: InsightsRange) => void
+}
+
+interface ReportActionsProps {
+  readonly reading: boolean
+  readonly hasReport: boolean
   readonly onRefresh: () => void
   readonly onCopy: () => void
   readonly onExport: () => void
+}
+
+// The report's actions; the page puts them in the top bar, next to the title.
+export function ReportActions(props: ReportActionsProps): React.JSX.Element {
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <Button variant="secondary" size="sm" isDisabled={props.reading} onPress={props.onRefresh}>
+        {t('insights.refresh')}
+      </Button>
+      <Button variant="secondary" size="sm" isDisabled={!props.hasReport} onPress={props.onCopy}>
+        {t('insights.copyMarkdown')}
+      </Button>
+      <Button variant="secondary" size="sm" isDisabled={!props.hasReport} onPress={props.onExport}>
+        {t('insights.exportCsv')}
+      </Button>
+    </div>
+  )
 }
 
 function kindLabel(kind: ReportRangeKind): string {
@@ -98,20 +119,6 @@ export function ReportHeader(props: ReportHeaderProps): React.JSX.Element {
             />
           </>
         ) : null}
-        <Button variant="secondary" size="sm" isDisabled={reading} onPress={props.onRefresh}>
-          {t('insights.refresh')}
-        </Button>
-        <Button variant="secondary" size="sm" isDisabled={!props.hasReport} onPress={props.onCopy}>
-          {t('insights.copyMarkdown')}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          isDisabled={!props.hasReport}
-          onPress={props.onExport}
-        >
-          {t('insights.exportCsv')}
-        </Button>
       </div>
       <div className="min-h-6 text-sm text-muted" aria-live="polite">
         {reading ? t('insights.readingTheReport') : props.status}

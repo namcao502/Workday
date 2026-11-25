@@ -34,22 +34,29 @@ export function SettingsPage(): React.JSX.Element {
     : (groups.find((group) => group.id === groupId)?.entries ?? [])
 
   return (
-    <Page title={t('settings.settings')} wide className="max-w-6xl">
+    <Page
+      title={t('settings.settings')}
+      wide
+      className="max-w-6xl"
+      actions={
+        <Input
+          type="search"
+          variant="secondary"
+          className="w-56 min-w-0"
+          aria-label={t('settings.searchSettings')}
+          placeholder={t('settings.searchSettings')}
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value)
+          }}
+        />
+      }
+    >
       <div className="flex flex-col gap-5 md:flex-row md:items-start">
         <nav
           className="flex shrink-0 flex-col gap-1 md:sticky md:top-4 md:w-52"
           aria-label={t('settings.settingsGroups')}
         >
-          <Input
-            type="search"
-            variant="secondary"
-            aria-label={t('settings.searchSettings')}
-            placeholder={t('settings.searchSettings')}
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value)
-            }}
-          />
           {/* A row of chips that scrolls sideways on a phone; a column beside the cards from md up. */}
           <div className="-mx-1 flex gap-1 overflow-x-auto px-1 md:mx-0 md:flex-col md:overflow-visible md:px-0">
             {groups.map((group) => {
@@ -58,7 +65,7 @@ export function SettingsPage(): React.JSX.Element {
                 <button
                   key={group.id}
                   type="button"
-                  className={`${buttonVariants({ variant: 'ghost' })} shrink-0 justify-start${
+                  className={`${buttonVariants({ variant: 'ghost' })} shrink-0 justify-start md:w-full${
                     selected ? ' bg-accent-soft text-accent' : ''
                   }`}
                   aria-current={selected ? 'page' : undefined}

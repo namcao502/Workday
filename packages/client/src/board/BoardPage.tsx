@@ -215,8 +215,47 @@ export function BoardPage(): React.JSX.Element {
     },
   }
 
+  // Search (and the Add it offers for a typed key) sits in the top bar, next to the title.
+  const headerSearch = (
+    <div className="flex min-w-0 items-center gap-2">
+      <SearchField
+        variant="secondary"
+        className="w-64 min-w-0"
+        aria-label={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
+        value={search}
+        onChange={(value) => {
+          setSearch(value)
+          setAddError(null)
+        }}
+        onSubmit={() => {
+          void addTypedTicket()
+        }}
+      >
+        <SearchField.Group>
+          <SearchField.SearchIcon />
+          <SearchField.Input
+            placeholder={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
+          />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
+      {addableKey === null || !canAct ? null : (
+        <Button
+          variant="primary"
+          size="sm"
+          className="shrink-0"
+          onPress={() => {
+            void addTypedTicket()
+          }}
+        >
+          {t('board.add', { addableKey })}
+        </Button>
+      )}
+    </div>
+  )
+
   return (
-    <Page title={t('board.tickets')} wide>
+    <Page title={t('board.tickets')} wide actions={headerSearch}>
       <div className="flex flex-wrap items-center gap-2">
         <Segmented
           label={t('board.boardView')}
@@ -231,38 +270,6 @@ export function BoardPage(): React.JSX.Element {
             setPickedForSearch(debouncedSearch)
           }}
         />
-        <SearchField
-          variant="secondary"
-          className="min-w-48 flex-1"
-          aria-label={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
-          value={search}
-          onChange={(value) => {
-            setSearch(value)
-            setAddError(null)
-          }}
-          onSubmit={() => {
-            void addTypedTicket()
-          }}
-        >
-          <SearchField.Group>
-            <SearchField.SearchIcon />
-            <SearchField.Input
-              placeholder={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
-            />
-            <SearchField.ClearButton />
-          </SearchField.Group>
-        </SearchField>
-        {addableKey === null || !canAct ? null : (
-          <Button
-            variant="primary"
-            size="sm"
-            onPress={() => {
-              void addTypedTicket()
-            }}
-          >
-            {t('board.add', { addableKey })}
-          </Button>
-        )}
         {canAct ? (
           <Button
             variant="secondary"
