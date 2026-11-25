@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -11,6 +12,9 @@ internal sealed class MainForm : Form
     private const int DefaultHeight = 800;
     private const int ResizeGripLogical = 6;
     private const int KeepAliveIntervalMilliseconds = 30_000;
+
+    // ASFW_ANY: after this call any process may bring itself to the foreground.
+    private const uint AllowAnyProcessForeground = 0xFFFFFFFF;
 
     private readonly bool _isStartMinimized;
     private readonly string _dataDir;
@@ -164,6 +168,18 @@ internal sealed class MainForm : Form
             return;
         }
 
+        if (messageType == "editor")
+        {
+            // The shell owns the foreground window; grant it so a VS Code window the server reuses can raise
+            // itself past Windows' focus-stealing block.
+            if (action == "allowForeground")
+            {
+                AllowSetForegroundWindow(AllowAnyProcessForeground);
+            }
+
+            return;
+        }
+
         if (messageType != "window")
         {
             return;
@@ -187,6 +203,9 @@ internal sealed class MainForm : Form
             PostWindowState();
         }
     }
+
+    [DllImport("user32.dll")]
+    private static extern bool AllowSetForegroundWindow(uint dwProcessId);
 
     private void Quit()
     {

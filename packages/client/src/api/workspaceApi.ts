@@ -13,6 +13,7 @@ import type {
   WorkspaceView,
 } from '@workday/core'
 import { isRecord } from '../json.js'
+import { allowEditorForeground } from '../shell/desktopHost.js'
 import { ApiError, hasOkFlag, isPlainCode, readError, send, type RawResponse } from './client.js'
 
 function isWorkspaceView(value: unknown): value is WorkspaceView {
@@ -159,6 +160,8 @@ export async function getFileContent(
 }
 
 export function openInVsCode(tabId: string, group?: string, path?: string): Promise<void> {
+  // Grant foreground rights first so a VS Code window that is already open rises to the front.
+  allowEditorForeground()
   return expectOk('POST', '/api/workspace/vscode', { tabId, group, path })
 }
 

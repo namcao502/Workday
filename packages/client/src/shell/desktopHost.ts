@@ -54,6 +54,12 @@ export function requestServerRestart(): void {
   window.chrome?.webview?.postMessage({ type: 'server', action: 'restart' })
 }
 
+// Lets the shell (the foreground window) grant foreground rights, so a reused VS Code window the server
+// opens can raise itself past Windows' focus-stealing block. A no-op in the browser.
+export function allowEditorForeground(): void {
+  window.chrome?.webview?.postMessage({ type: 'editor', action: 'allowForeground' })
+}
+
 // Sent as ?client= on the event socket and X-Workday-Client on every request.
 export function clientKind(): 'app' | 'web' {
   return isDesktopShell() ? 'app' : 'web'
