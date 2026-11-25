@@ -5,7 +5,7 @@ import { Page } from '../ui/Page.js'
 import { useSettings } from '../api/useSettings.js'
 import { formatClock, getLanguage, t } from '../i18n.js'
 import { ReportBody } from './ReportBody.js'
-import { ReportActions, ReportHeader } from './ReportHeader.js'
+import { ReportActions, ReportHeader, ReportRange } from './ReportHeader.js'
 import { useInsights } from './useInsights.js'
 
 const UTF8_BOM = '\uFEFF'
@@ -68,13 +68,22 @@ export function InsightsPage(): React.JSX.Element {
       title={t('insights.insights')}
       wide
       actions={
-        <ReportActions
-          reading={insights.reading}
-          hasReport={view !== null}
-          onRefresh={insights.reread}
-          onCopy={copy}
-          onExport={exportCsv}
-        />
+        <div className="flex min-w-0 items-center gap-2">
+          <ReportRange
+            range={insights.range}
+            onRange={(range) => {
+              setNotice('')
+              insights.setRange(range)
+            }}
+          />
+          <ReportActions
+            reading={insights.reading}
+            hasReport={view !== null}
+            onRefresh={insights.reread}
+            onCopy={copy}
+            onExport={exportCsv}
+          />
+        </div>
       }
     >
       <ReportHeader

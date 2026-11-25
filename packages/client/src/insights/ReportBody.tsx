@@ -95,9 +95,9 @@ export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Eleme
   const selected = report.rows.find((row) => row.ticketKey === selectedKey) ?? null
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-8">
+      <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
         {totals(report).map((fact) => (
-          <div key={fact.label} className="flex flex-col">
+          <div key={fact.label} className="flex flex-col items-center text-center">
             <span className="text-xs font-medium text-muted">{fact.label}</span>
             <span className="text-2xl font-semibold">{fact.value}</span>
           </div>

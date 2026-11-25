@@ -215,12 +215,28 @@ export function BoardPage(): React.JSX.Element {
     },
   }
 
-  // Search (and the Add it offers for a typed key) sits in the top bar, next to the title.
-  const headerSearch = (
+  // The view switch, search and the Add it offers for a typed key sit in the top bar, next to the title.
+  const headerControls = (
     <div className="flex min-w-0 items-center gap-2">
+      {/* min-w-0 lets the switch shrink and scroll sideways before it pushes the search off the bar. */}
+      <div className="flex min-w-0">
+        <Segmented
+          label={t('board.boardView')}
+          value={activeView}
+          options={viewIds.map((id) => ({
+            value: id,
+            label: viewLabel(id, counts[id]),
+            dot: (id === 'available' && availableDot) || (id === 'todo' && todoDot),
+          }))}
+          onChange={(picked) => {
+            setView(picked)
+            setPickedForSearch(debouncedSearch)
+          }}
+        />
+      </div>
       <SearchField
         variant="secondary"
-        className="w-64 min-w-0"
+        className="w-56 shrink-0"
         aria-label={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
         value={search}
         onChange={(value) => {
@@ -255,21 +271,8 @@ export function BoardPage(): React.JSX.Element {
   )
 
   return (
-    <Page title={t('board.tickets')} wide actions={headerSearch}>
+    <Page title={t('board.tickets')} wide actions={headerControls}>
       <div className="flex flex-wrap items-center gap-2">
-        <Segmented
-          label={t('board.boardView')}
-          value={activeView}
-          options={viewIds.map((id) => ({
-            value: id,
-            label: viewLabel(id, counts[id]),
-            dot: (id === 'available' && availableDot) || (id === 'todo' && todoDot),
-          }))}
-          onChange={(picked) => {
-            setView(picked)
-            setPickedForSearch(debouncedSearch)
-          }}
-        />
         {canAct ? (
           <Button
             variant="secondary"
