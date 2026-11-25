@@ -59,6 +59,7 @@ interface ChatComposerProps {
   readonly onSendFailed?: () => void
   readonly history?: readonly string[] // the user's earlier prompts, oldest first; Up recalls them
   readonly quote?: ChatQuoteRequest | null // text picked with Quote in the chat: added to the draft
+  readonly status?: React.ReactNode // the model chip (its tooltip holds branch, diff and tokens), in the send row
 }
 
 export interface ChatQuoteRequest {
@@ -83,6 +84,7 @@ export function ChatComposer({
   onSending,
   onSendFailed,
   quote = null,
+  status,
 }: ChatComposerProps): React.JSX.Element {
   const queryClient = useQueryClient()
   const narrow = useNarrow()
@@ -365,6 +367,9 @@ export function ChatComposer({
             ) : null}
           </div>
         </div>
+        {status === undefined ? null : (
+          <div className="flex shrink-0 items-center">{status}</div>
+        )}
         {working ? (
           <Button variant="danger" size="md" className="h-auto" onPress={stop}>
             {t('workspace.stop')}

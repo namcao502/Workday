@@ -1,7 +1,7 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { ChatMessage, ChatView as ChatData } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
-import { jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
+import { hoverTip, jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
 import { ChatView } from './ChatView.js'
 import { OPEN_FILE_EVENT } from './fileLinks.js'
 
@@ -183,7 +183,7 @@ it('shows no earlier-session note while Claude runs', async () => {
   expect(screen.queryByText(/history of an earlier session/)).not.toBeInTheDocument()
 })
 
-it('shows model, branch, changed lines and tokens under the composer', async () => {
+it('shows the model, with branch, changed lines and tokens in its tooltip', async () => {
   stubChat({
     model: 'claude-sonnet-5-5',
     branch: 'MDP-1',
@@ -192,15 +192,16 @@ it('shows model, branch, changed lines and tokens under the composer', async () 
     contextTokens: 75500,
   })
   renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
-  expect(await screen.findByText('claude-sonnet-5-5')).toBeInTheDocument()
-  expect(screen.getByText('MDP-1')).toBeInTheDocument()
-  expect(screen.getByText('+947')).toBeInTheDocument()
-  expect(screen.getByText('-117')).toBeInTheDocument()
-  expect(screen.getByText('75.5K')).toBeInTheDocument()
+  const tip = await hoverTip(await screen.findByText('claude-sonnet-5-5'))
+  expect(tip).toHaveTextContent('MDP-1')
+  expect(tip).toHaveTextContent('+947')
+  expect(tip).toHaveTextContent('-117')
+  expect(tip).toHaveTextContent('75.5K')
 })
 
-it('shows the context percent and the plan usage with its reset', async () => {
+it('shows the context percent next to the model, and the plan usage in the tooltip', async () => {
   stubChat({
+    model: 'claude-sonnet-5-5',
     contextTokens: 75500,
     usage: {
       contextPercent: 7.2,
@@ -208,9 +209,10 @@ it('shows the context percent and the plan usage with its reset', async () => {
     },
   })
   renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
-  expect(await screen.findByText(/\(7%\)/)).toBeInTheDocument()
-  expect(screen.getByText('92%')).toHaveClass('text-danger')
-  expect(screen.getByText(/\(resets /)).toBeInTheDocument()
+  expect(await screen.findByText('(7%)')).toBeInTheDocument()
+  const tip = await hoverTip(screen.getByText('claude-sonnet-5-5'))
+  expect(within(tip).getByText('92%')).toHaveClass('text-danger')
+  expect(tip).toHaveTextContent(/\(resets /)
 })
 
 it('expands an Edit to its diff and shows a TodoWrite as a checklist', async () => {

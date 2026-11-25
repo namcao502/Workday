@@ -12,6 +12,7 @@ import { SelectionQuote } from './SelectionQuote.js'
 import { ChatRequestCard } from './ChatRequestCard.js'
 import { ChatRows } from './ChatRows.js'
 import { addEcho, dropEchoes, useEchoes } from './promptEchoes.js'
+import { Tip } from '../ui/Tip.js'
 
 const BOTTOM_SLACK_PX = 24
 
@@ -26,6 +27,7 @@ function userPrompts(messages: readonly ChatMessage[]): readonly string[] {
   }
   return prompts
 }
+
 const TOKENS_PER_K = 1000
 
 // "Tue Nov 17, 5:00 PM" for a reset after today, "5:00 PM" for one today.
@@ -45,7 +47,7 @@ function formatReset(iso: string | null): string | null {
   })
 }
 
-// The terminal status line's thresholds: red from 90%, yellow from 70%, else green.
+// The usage thresholds: red from 90%, yellow from 70%, else green.
 function usageTone(percent: number): string {
   if (percent >= 90) {
     return 'text-danger'
@@ -208,6 +210,48 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   const empty = chat.data !== undefined && messages?.length === 0 && (requests?.length ?? 0) === 0
   // History is shown from the session's transcript even before Claude is started; the first prompt resumes it.
   const resumable = chat.data !== undefined && !running && (messages?.length ?? 0) !== 0
+
+  // The send row shows just the model and how full the context window is, e.g. "claude-opus-5-5 (13%)". The
+  // branch, diff, raw tokens, plan usage and bypass flag -- which used to take a whole line -- wait in its tooltip.
+  const contextPercent = usage?.contextPercent ?? null
+  const hasStatus =
+    branch !== null ||
+    added !== 0 ||
+    removed !== 0 ||
+    tokens !== null ||
+    (usage !== null && usage.usage !== null) ||
+    mode === 'bypassPermissions'
+  const statusInfo = !hasStatus ? null : (
+    <span className="flex flex-col gap-0.5 text-left text-xs">
+      {branch === null ? null : <span className="text-purple-500">{branch}</span>}
+      {added === 0 && removed === 0 ? null : (
+        <span>
+          <span className="text-success">+{added}</span> <span className="text-danger">-{removed}</span>
+        </span>
+      )}
+      {tokens === null ? null : (
+        <span>
+          {t('workspace.tokens')}: <span className="font-semibold">{formatTokens(tokens)}</span>
+        </span>
+      )}
+      {usage === null || usage.usage === null ? null : <UsageStat window={usage.usage} />}
+      {mode === 'bypassPermissions' ? <span>{t('workspace.bypassPermissionsOn')}</span> : null}
+    </span>
+  )
+  const modelChip =
+    model === null ? null : (
+      <Tip content={statusInfo}>
+        <span className="flex items-center gap-1 text-xs text-muted">
+          <ModelPicker
+            session={session}
+            model={model}
+            models={chat.data?.catalog?.models ?? []}
+            disabled={working}
+          />
+          {contextPercent === null ? null : <span>({String(Math.round(contextPercent))}%)</span>}
+        </span>
+      </Tip>
+    )
 
   // Stick to the bottom only while the reader is there.
   useLayoutEffect(() => {
@@ -390,6 +434,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
           commands={chat.data?.catalog?.commands ?? []}
           working={working}
           history={prompts}
+          status={modelChip}
           onSending={(text) => {
             addEcho(session, text)
           }}
@@ -397,34 +442,6 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
             dropEchoes(session)
           }}
         />
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 pb-1 text-xs text-muted">
-          {model === null ? null : (
-            <ModelPicker
-              session={session}
-              model={model}
-              models={chat.data?.catalog?.models ?? []}
-              disabled={working}
-            />
-          )}
-          {branch === null ? null : <span className="text-purple-500">{branch}</span>}
-          {added === 0 && removed === 0 ? null : (
-            <span>
-              <span className="text-success">+{added}</span>{' '}
-              <span className="text-danger">-{removed}</span>
-            </span>
-          )}
-          {tokens === null ? null : (
-            <span>
-              {t('workspace.tokens')}:{' '}
-              <span className="font-semibold text-foreground">{formatTokens(tokens)}</span>
-              {usage === null || usage.contextPercent === null
-                ? ''
-                : ` (${String(Math.round(usage.contextPercent))}%)`}
-            </span>
-          )}
-          {usage === null || usage.usage === null ? null : <UsageStat window={usage.usage} />}
-          {mode === 'bypassPermissions' ? <span>{t('workspace.bypassPermissionsOn')}</span> : null}
-        </div>
       </div>
     </ChatFileLinks>
   )
