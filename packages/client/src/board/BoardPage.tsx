@@ -215,31 +215,9 @@ export function BoardPage(): React.JSX.Element {
     },
   }
 
-  // The poll status, Check now, view switch, search and the Add it offers sit in the top bar.
+  // Top bar, left to right: view switch, search (and the Add it offers), Check now, then the poll status.
   const headerControls = (
     <div className="flex min-w-0 items-center gap-2">
-      {board.data === undefined ? null : (
-        <PollStatus
-          board={board.data}
-          language={language}
-          timeZone={timeZone}
-          pollMinutes={settings.data?.config.pollMinutes ?? null}
-        />
-      )}
-      {canAct ? (
-        <Button
-          variant="secondary"
-          size="sm"
-          className="shrink-0"
-          isDisabled={check.isPending}
-          onPress={() => {
-            check.mutate()
-          }}
-        >
-          {check.isPending ? <Spinner size="sm" /> : null}
-          {t('board.checkNow')}
-        </Button>
-      ) : null}
       {/* min-w-0 lets the switch shrink and scroll sideways before it pushes the search off the bar. */}
       <div className="flex min-w-0">
         <Segmented
@@ -288,6 +266,28 @@ export function BoardPage(): React.JSX.Element {
         >
           {t('board.add', { addableKey })}
         </Button>
+      )}
+      {canAct ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          isDisabled={check.isPending}
+          onPress={() => {
+            check.mutate()
+          }}
+        >
+          {check.isPending ? <Spinner size="sm" /> : null}
+          {t('board.checkNow')}
+        </Button>
+      ) : null}
+      {board.data === undefined ? null : (
+        <PollStatus
+          board={board.data}
+          language={language}
+          timeZone={timeZone}
+          pollMinutes={settings.data?.config.pollMinutes ?? null}
+        />
       )}
     </div>
   )

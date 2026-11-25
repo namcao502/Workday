@@ -21,7 +21,7 @@ export function PageHeading({ title, actions }: PageHeadingProps): React.JSX.Ele
   const slot = useContext(HeaderSlotContext)
   const heading = (
     <>
-      <h1 className="truncate text-2xl font-semibold tracking-tight">{title}</h1>
+      <h1 className="shrink-0 truncate text-2xl font-semibold tracking-tight">{title}</h1>
       {actions}
     </>
   )

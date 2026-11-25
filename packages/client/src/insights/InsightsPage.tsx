@@ -69,7 +69,6 @@ export function InsightsPage(): React.JSX.Element {
       wide
       actions={
         <div className="flex min-w-0 items-center gap-2">
-          <ReportStatus reading={insights.reading} status={notice === '' ? readAt : notice} />
           <ReportRange
             range={insights.range}
             onRange={(range) => {
@@ -84,6 +83,7 @@ export function InsightsPage(): React.JSX.Element {
             onCopy={copy}
             onExport={exportCsv}
           />
+          <ReportStatus reading={insights.reading} status={notice === '' ? readAt : notice} />
         </div>
       }
     >

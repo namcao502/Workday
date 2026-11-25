@@ -27,7 +27,7 @@ export function TopBar({ onToggleMenu, slotRef }: TopBarProps): React.JSX.Elemen
           <Bars width={18} height={18} aria-hidden="true" />
         </Button>
       )}
-      <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-between gap-3" />
+      <div ref={slotRef} className="flex min-w-0 flex-1 items-center gap-4" />
       <ConnectionStatus />
       <NoticeBell />
       <WindowControls />
