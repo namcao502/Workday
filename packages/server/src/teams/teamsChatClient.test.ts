@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { TeamsChatClient } from './teamsChatClient.js'
 import { TeamsHttpError } from './teamsHttp.js'
 import type { TeamsSession, TeamsSniffer, TeamsSniffResult } from './teamsSession.js'
+import type { TeamsSessionStore } from './teamsSessionStore.js'
 
 const CHAT_BASE = 'https://teams.test/api/chatsvc/apac/v1/users/ME/'
 const AGGREGATOR_BASE = 'https://teams.test/api/csa/apac/'
@@ -57,6 +58,49 @@ function json(status: number, body: unknown): Response {
 function clientWith(fetchMock: FetchMock, source = sniffer()): TeamsChatClient {
   return new TeamsChatClient(source, fetchMock, () => NOW)
 }
+
+function fakeStore(initial: TeamsSession | null = null): TeamsSessionStore & {
+  saved: TeamsSession | null
+  cleared: boolean
+} {
+  const store = {
+    saved: null as TeamsSession | null,
+    cleared: false,
+    load: () => initial,
+    save: (session: TeamsSession) => {
+      store.saved = session
+    },
+    clear: () => {
+      store.cleared = true
+    },
+  }
+  return store
+}
+
+describe('session store', () => {
+  it('a stored session serves reads without a sniff', async () => {
+    const source = sniffer()
+    const client = new TeamsChatClient(source, fakeFetch(() => json(200, {})), () => NOW, fakeStore(session()))
+    expect(await client.myId()).toBe('8:orgid:abc')
+    expect(source.sniffs).toBe(0)
+  })
+
+  it('a fresh sniff is saved to the store', async () => {
+    const source = sniffer()
+    const store = fakeStore()
+    const client = new TeamsChatClient(source, fakeFetch(() => json(200, {})), () => NOW, store)
+    await client.myId()
+    expect(source.sniffs).toBe(1)
+    expect(store.saved?.myId).toBe('8:orgid:abc')
+  })
+
+  it('a sign-in clears the stored session', async () => {
+    const store = fakeStore(session())
+    const client = new TeamsChatClient(sniffer(), fakeFetch(() => json(200, {})), () => NOW, store)
+    await client.signIn()
+    expect(store.cleared).toBe(true)
+  })
+})
 
 function urlOf(fetchMock: FetchMock, index = 0): string {
   const input = fetchMock.mock.calls[index]?.[0]

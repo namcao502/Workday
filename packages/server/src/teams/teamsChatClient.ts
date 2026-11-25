@@ -25,6 +25,7 @@ import { retryTransient } from '../retry.js'
 import { isChatListLink, parseArrivalTime } from './parseTeams.js'
 import { TeamsHttp, TeamsHttpError, TeamsNoResponse, type TeamsRequest } from './teamsHttp.js'
 import type { TeamsSession, TeamsSniffer } from './teamsSession.js'
+import type { TeamsSessionStore } from './teamsSessionStore.js'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const FILE_TIMEOUT_MILLISECONDS = 10 * 60_000
@@ -123,8 +124,9 @@ export class TeamsChatClient implements TeamsChat {
     sniffer: TeamsSniffer,
     fetchFunction: typeof fetch = fetch,
     now: () => number = Date.now,
+    store: TeamsSessionStore | null = null,
   ) {
-    this.http = new TeamsHttp(sniffer, fetchFunction, now)
+    this.http = new TeamsHttp(sniffer, fetchFunction, now, store)
   }
 
   async myId(): Promise<string> {

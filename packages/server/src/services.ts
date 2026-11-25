@@ -40,6 +40,7 @@ import type { SpawnTunnel } from './remote/tunnelSupervisor.js'
 import { NO_STATUS_FLOW, SettingsService, type Scheduler } from './settings/settingsService.js'
 import { TeamsChatClient, type TeamsGateway } from './teams/teamsChatClient.js'
 import { PlaywrightTeamsSniffer } from './teams/teamsSniffer.js'
+import { fileTeamsSessionStore } from './teams/teamsSessionStore.js'
 import { TeamsService } from './teams/teamsService.js'
 import { TeamsWatcher } from './teams/teamsWatcher.js'
 import { loadPostIndex, loadTeamsState, savePostIndex, saveTeamsState } from './teams/teamsStore.js'
@@ -385,6 +386,9 @@ export function createServices(options: ServicesOptions): Services {
       options.teams ??
       new TeamsChatClient(
         new PlaywrightTeamsSniffer(join(dataDir, TEAMS_BROWSER_FOLDER), new BrowserLock()),
+        undefined,
+        undefined,
+        fileTeamsSessionStore(dataDir),
       ),
     teamsService: teams,
     teamsWatcher,

@@ -1,5 +1,6 @@
 import { TeamsBusy, TeamsSignedOut } from '@workday/core'
 import type { TeamsSession, TeamsSignInResult, TeamsSniffer } from './teamsSession.js'
+import type { TeamsSessionStore } from './teamsSessionStore.js'
 
 const REQUEST_TIMEOUT_MILLISECONDS = 20_000
 const EXPIRY_MARGIN_MILLISECONDS = 2 * 60_000
@@ -38,10 +39,15 @@ export class TeamsHttp {
     private readonly sniffer: TeamsSniffer,
     private readonly fetchFunction: typeof fetch = fetch,
     private readonly now: () => number = Date.now,
-  ) {}
+    private readonly store: TeamsSessionStore | null = null,
+  ) {
+    // A session saved before a restart spares the browser; session() re-sniffs anyway once it is near expiry.
+    this.cached = store?.load() ?? null
+  }
 
   invalidate(): void {
     this.cached = null
+    this.store?.clear()
   }
 
   session(): Promise<TeamsSession> {
@@ -105,6 +111,7 @@ export class TeamsHttp {
     switch (result.kind) {
       case 'session':
         this.cached = result.session
+        this.store?.save(result.session)
         return result.session
       case 'signedOut':
         throw new TeamsSignedOut('Teams is signed out')
