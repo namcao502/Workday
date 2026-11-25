@@ -1,6 +1,7 @@
 import type { Holiday } from './holidays.js'
 import { entryMinutes, type QueueEntry } from './timesheetQueue.js'
-import { addDays, mondayOf } from './zonedDate.js'
+import { addDays, mondayOf } from '../zonedDate.js'
+import { compareTicketKeys } from '../ticket/ticketKey.js'
 
 const HOURS_PER_DAY = 8
 const WORKDAYS_PER_WEEK = 5
@@ -130,5 +131,5 @@ export function weekTicketTotals(
   }
   return [...minutesByKey]
     .map(([key, minutes]) => ({ key, minutes }))
-    .sort((left, right) => right.minutes - left.minutes || (left.key < right.key ? -1 : 1))
+    .sort((left, right) => right.minutes - left.minutes || compareTicketKeys(left.key, right.key))
 }

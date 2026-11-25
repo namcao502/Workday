@@ -1,8 +1,8 @@
 import type { WaitReason } from './claudeAttention.js'
 import type { ScanOutcome } from './api.js'
 import type { PrVote } from './prTracking.js'
-import type { TicketField } from './ticketChanges.js'
-import type { WeekReviewItem } from './weekReview.js'
+import type { TicketField } from './ticket/ticketChanges.js'
+import type { WeekReviewItem } from './timesheet/weekReview.js'
 import { coreText, type CoreTextKey, type TextParams } from './i18n/text.js'
 
 export type NoticeTopic =

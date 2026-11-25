@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ZonedClock } from './zonedDate.js'
+import type { ZonedClock } from '../zonedDate.js'
 import {
   addTickets,
   dayMinutes,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { matchesTicket } from './ticketSearch.js'
-import { makeTicket } from './testing/ticketFixture.js'
+import { makeTicket } from '../testing/ticketFixture.js'
 
 const ticket = makeTicket('MDP-8961', { summary: 'Change how Patch bins are configured in MDP' })
 

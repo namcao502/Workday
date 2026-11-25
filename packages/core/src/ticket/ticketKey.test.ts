@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { isTicketKey, parseTicketKey, parseTicketKeys } from './ticketKey.js'
+import {
+  compareTicketKeys,
+  isTicketKey,
+  parseTicketKey,
+  parseTicketKeys,
+} from './ticketKey.js'
+
+describe('compareTicketKeys', () => {
+  it('orders by the numeric part, so a 5-digit key sorts after every smaller one', () => {
+    const sorted = ['MDP-12345', 'MDP-9999', 'MDP-10', 'MDP-9', 'MDP-2000'].sort(compareTicketKeys)
+    expect(sorted).toEqual(['MDP-9', 'MDP-10', 'MDP-2000', 'MDP-9999', 'MDP-12345'])
+  })
+})
 
 describe('parseTicketKey', () => {
   it.each([

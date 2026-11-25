@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardState } from './board.js'
-import type { TeamsChannelIndex } from './teamsPostIndex.js'
-import type { QueueEntry } from './timesheetQueue.js'
+import type { TeamsChannelIndex } from './teams/teamsPostIndex.js'
+import type { QueueEntry } from './timesheet/timesheetQueue.js'
 import {
   mergeBoard,
   mergeDevRepoPath,
@@ -14,7 +14,7 @@ import {
   type WpfTeamsState,
   type WpfWorkspaceState,
 } from './wpfImport.js'
-import { MAX_PEOPLE } from './teamsCompose.js'
+import { MAX_PEOPLE } from './teams/teamsCompose.js'
 import { MAX_RECENT_FOLDERS } from './workspaceTabs.js'
 
 const EMPTY_TEAMS: WpfTeamsState = {

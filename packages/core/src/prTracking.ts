@@ -1,3 +1,5 @@
+import { compareTicketKeys } from './ticket/ticketKey.js'
+
 export type PrStatus = 'active' | 'completed' | 'abandoned'
 export type PrBuild = 'unknown' | 'running' | 'succeeded' | 'failed'
 export type PrMerge = 'unknown' | 'clean' | 'conflicts'
@@ -261,7 +263,7 @@ export function shippedKeys(
   tracking: PrTracking,
   repoLabels: Readonly<Record<string, string>>,
 ): readonly string[] {
-  return [...doneKeys].sort(compareText).filter((ticketKey) => {
+  return [...doneKeys].sort(compareTicketKeys).filter((ticketKey) => {
     const mainPrs = latestPrs(ticketKey, tracking, repoLabels).filter(
       (tp) => tp.branch === MAIN_BRANCH_LABEL && tp.pr.status !== 'abandoned',
     )

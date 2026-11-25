@@ -1,4 +1,4 @@
-import type { Ticket } from '../ticket.js'
+import type { Ticket } from '../ticket/ticket.js'
 
 // Test-only builder: a plain ticket with every optional field null unless overridden.
 export function makeTicket(key: string, overrides: Partial<Ticket> = {}): Ticket {

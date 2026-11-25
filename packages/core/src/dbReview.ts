@@ -1,7 +1,7 @@
 // Pure rules for the Database Review channel: a schema change, the lead's approval, then the SQL runs on dev.
 import type { DbReviewApproval, DbReviewChannel } from './api.js'
-import type { TeamsChannel, TeamsMessage, TeamsThread } from './teamsChat.js'
-import { htmlDecode, toPlainText } from './teamsHtml.js'
+import type { TeamsChannel, TeamsMessage, TeamsThread } from './teams/teamsChat.js'
+import { htmlDecode, toPlainText } from './teams/teamsHtml.js'
 
 // "approve", "appr", "approved", also after an "ok": only the reply's start counts.
 const APPROVAL_PATTERN = /^\s*(ok(e|ay)?\b[\s,.!]*)?appr(ove[ds]?)?\b/i

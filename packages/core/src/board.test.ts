@@ -14,7 +14,7 @@ import {
   type BoardState,
 } from './board.js'
 import type { StatusFlow } from './statusFlow.js'
-import type { Ticket } from './ticket.js'
+import type { Ticket } from './ticket/ticket.js'
 import { makeTicket } from './testing/ticketFixture.js'
 
 const mdpFlow: StatusFlow = {

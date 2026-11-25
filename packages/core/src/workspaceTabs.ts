@@ -1,4 +1,4 @@
-import { isTicketKey } from './ticketKey.js'
+import { isTicketKey } from './ticket/ticketKey.js'
 
 export type TabKind = 'ticket' | 'terminal'
 

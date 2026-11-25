@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { devPriorityLevel, dueUrgency, etaUrgency, isStatusDone, ticketEquals } from './ticket.js'
-import { makeTicket } from './testing/ticketFixture.js'
+import { makeTicket } from '../testing/ticketFixture.js'
 
 describe('isStatusDone', () => {
   it.each([

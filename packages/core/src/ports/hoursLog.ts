@@ -1,4 +1,4 @@
-import type { HrmTask } from '../timesheetWeek.js'
+import type { HrmTask } from '../timesheet/timesheetWeek.js'
 
 // HRM.
 export type HoursWrite = { readonly ok: true } | { readonly ok: false; readonly detail: string }

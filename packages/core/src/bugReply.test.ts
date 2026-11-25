@@ -9,7 +9,7 @@ import {
   qcToTag,
   type BugFix,
 } from './bugReply.js'
-import type { TeamsMessage, TeamsThread } from './teamsChat.js'
+import type { TeamsMessage, TeamsThread } from './teams/teamsChat.js'
 
 const ME = '8:orgid:me'
 const HELENA = '8:orgid:helena'

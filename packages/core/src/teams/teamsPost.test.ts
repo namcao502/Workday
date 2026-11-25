@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { TicketPr, TrackedPr } from './prTracking.js'
+import type { TicketPr, TrackedPr } from '../prTracking.js'
 import {
   buildPostDraft,
   postedKey,

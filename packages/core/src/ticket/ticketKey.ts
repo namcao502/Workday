@@ -21,6 +21,12 @@ export function isTicketKey(value: string): boolean {
   return TICKET_KEY.test(value)
 }
 
+// Natural order for ticket keys: the numeric part compares as a number, so MDP-9 < MDP-10 < MDP-12345
+// instead of the plain-string order that puts MDP-12345 before MDP-9999.
+export function compareTicketKeys(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true })
+}
+
 // Without a project key a bare number is invalid; only a full key counts.
 export function parseTicketKeys(
   raw: string | null,

@@ -1,5 +1,5 @@
-import { parseTicketKeys } from './ticketKey.js'
-import { typoNeighbors } from './ticketTypos.js'
+import { parseTicketKeys } from '../ticket/ticketKey.js'
+import { typoNeighbors } from '../ticket/ticketTypos.js'
 import type { DayCoverage, HrmTask } from './timesheetWeek.js'
 
 export type WeekReviewIssue = 'notFound' | 'notMine' | 'tscOnly' | 'hrmOnly'

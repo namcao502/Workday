@@ -1,3 +1,4 @@
+import { compareTicketKeys } from '../ticket/ticketKey.js'
 import { WORK_MINUTES } from './timeSlots.js'
 
 // Port of TicketActivities / DaySuggestions / TimeSlots.SplitByActivity: the tickets a day's git log and Claude
@@ -73,7 +74,7 @@ export function selectDaySuggestions(
   const ordered = [...active].sort(
     (left, right) =>
       right.found.activeMinutes - left.found.activeMinutes ||
-      left.ticket.key.localeCompare(right.ticket.key),
+      compareTicketKeys(left.ticket.key, right.ticket.key),
   )
   const shares = splitByActivity(ordered.map((item) => item.found.activeMinutes))
   return ordered.map(({ ticket, found }, index) => ({

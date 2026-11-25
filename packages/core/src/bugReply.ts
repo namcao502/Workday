@@ -1,8 +1,8 @@
 // Pure parts of answering QC about a fixed bug: the draft, the reply built from it, who to tag, whether it was answered.
-import { escapeHtml, toPlainText } from './teamsHtml.js'
-import type { TeamsMessage, TeamsThread } from './teamsChat.js'
-import { shortName, type TeamsMention, type TeamsPerson } from './teamsCompose.js'
-import { splitSubject } from './teamsPost.js'
+import { escapeHtml, toPlainText } from './teams/teamsHtml.js'
+import type { TeamsMessage, TeamsThread } from './teams/teamsChat.js'
+import { shortName, type TeamsMention, type TeamsPerson } from './teams/teamsCompose.js'
+import { splitSubject } from './teams/teamsPost.js'
 
 export interface BugFixPr {
   readonly block: string

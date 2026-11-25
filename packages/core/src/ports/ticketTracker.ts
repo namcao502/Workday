@@ -1,6 +1,6 @@
-import type { Ticket } from '../ticket.js'
-import type { ChangeHistory, TicketContent } from '../ticketChanges.js'
-import type { EpicTicket } from '../ticketSuggestions.js'
+import type { Ticket } from '../ticket/ticket.js'
+import type { ChangeHistory, TicketContent } from '../ticket/ticketChanges.js'
+import type { EpicTicket } from '../ticket/ticketSuggestions.js'
 
 export type TrackerValidation =
   | { readonly ok: true; readonly displayName: string }

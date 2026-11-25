@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { makeTicket } from './testing/ticketFixture.js'
+import { makeTicket } from '../testing/ticketFixture.js'
 import { isBug, parentOf } from './ticketBugs.js'
 
 const bug = makeTicket('MDP-9323', { issueType: 'Defect', linkedKeys: ['MDP-1', 'MDP-2', 'MDP-3'] })

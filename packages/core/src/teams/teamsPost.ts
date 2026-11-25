@@ -1,6 +1,6 @@
 // The ticket's Teams post: "<KEY> <summary>", a description, then "[label]" blocks of "<branch>: <url>".
-import type { TicketPr } from './prTracking.js'
-import { repoLabel } from './prTracking.js'
+import type { TicketPr } from '../prTracking.js'
+import { repoLabel } from '../prTracking.js'
 import type { TeamsPerson } from './teamsCompose.js'
 
 const NEW_LINE = '\n'

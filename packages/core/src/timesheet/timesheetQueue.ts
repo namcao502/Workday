@@ -1,6 +1,6 @@
-import { isTicketKey } from './ticketKey.js'
+import { isTicketKey } from '../ticket/ticketKey.js'
 import { evenSplit, HRM_OPENS_AT_MINUTES, WORK_MINUTES } from './timeSlots.js'
-import type { ZonedClock } from './zonedDate.js'
+import type { ZonedClock } from '../zonedDate.js'
 
 export interface QueueEntry {
   readonly date: string

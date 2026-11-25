@@ -1,12 +1,12 @@
 // Maps NOIS Workday (WPF) data onto Workday state. Added = taken from WPF, kept = Workday already had it.
 // Malformed input is skipped, never thrown.
 import type { BoardSection, BoardState, DismissedTicket } from './board.js'
-import { postedKey } from './teamsPost.js'
-import { MAX_PEOPLE, type TeamsPerson } from './teamsCompose.js'
-import type { TeamsChannelIndex, TeamsIndexedPost, TeamsPostIndex } from './teamsPostIndex.js'
-import type { Ticket } from './ticket.js'
-import { isTicketKey } from './ticketKey.js'
-import type { QueueEntry } from './timesheetQueue.js'
+import { postedKey } from './teams/teamsPost.js'
+import { MAX_PEOPLE, type TeamsPerson } from './teams/teamsCompose.js'
+import type { TeamsChannelIndex, TeamsIndexedPost, TeamsPostIndex } from './teams/teamsPostIndex.js'
+import type { Ticket } from './ticket/ticket.js'
+import { isTicketKey } from './ticket/ticketKey.js'
+import type { QueueEntry } from './timesheet/timesheetQueue.js'
 import { isTerminalName, MAX_RECENT_FOLDERS, type WorkspaceTab } from './workspaceTabs.js'
 
 export interface MergeCount {

@@ -1,6 +1,7 @@
 import type { DbReviewApproval } from './api.js'
 import type { BugFix } from './bugReply.js'
 import type { BoardState } from './board.js'
+import { compareTicketKeys } from './ticket/ticketKey.js'
 import type { WaitReason } from './claudeAttention.js'
 import type { DevDeploy } from './devDeploys.js'
 import {
@@ -14,9 +15,9 @@ import {
 } from './prTracking.js'
 import { isWithDeveloper, readyToTestSteps } from './readyToTest.js'
 import type { StatusFlow } from './statusFlow.js'
-import type { TeamsAttentionItem } from './teamsAttention.js'
-import { dueUrgency, isStatusDone, type Ticket } from './ticket.js'
-import { pendingFields, type TicketField, type TicketUpdate } from './ticketChanges.js'
+import type { TeamsAttentionItem } from './teams/teamsAttention.js'
+import { dueUrgency, isStatusDone, type Ticket } from './ticket/ticket.js'
+import { pendingFields, type TicketField, type TicketUpdate } from './ticket/ticketChanges.js'
 
 // The order of the union is the order on screen.
 export type TodoItem =
@@ -126,7 +127,7 @@ function byDue(tickets: Readonly<Record<string, Ticket>>): readonly Ticket[] {
     (a, b) =>
       Number(a.dueDate === null) - Number(b.dueDate === null) ||
       compareText(a.dueDate ?? '', b.dueDate ?? '') ||
-      compareText(a.key, b.key),
+      compareTicketKeys(a.key, b.key),
   )
 }
 
@@ -208,7 +209,7 @@ function updatedTodos(input: TodoInput): readonly TodoItem[] {
     .sort(
       (a, b) =>
         compareText(b.at, a.at) ||
-        compareText(ticketKeyOf(a.item) ?? '', ticketKeyOf(b.item) ?? ''),
+        compareTicketKeys(ticketKeyOf(a.item) ?? '', ticketKeyOf(b.item) ?? ''),
     )
     .map((todo) => todo.item)
 }
@@ -249,7 +250,7 @@ export function buildTodos(input: TodoInput): readonly TodoItem[] {
   // A bug still New is one to fix, read against this board; its overdue row would only repeat it.
   const bugsToFix = [...input.qcBugs]
     .filter((qcBug) => Object.hasOwn(input.board.new, qcBug.bug.key))
-    .sort((a, b) => compareText(a.bug.key, b.bug.key))
+    .sort((a, b) => compareTicketKeys(a.bug.key, b.bug.key))
   const bugKeys = new Set(bugsToFix.map((qcBug) => qcBug.bug.key))
   overdue('inProgress', started)
   overdue(
@@ -279,7 +280,7 @@ export function buildTodos(input: TodoInput): readonly TodoItem[] {
   for (const qcBug of bugsToFix) {
     todos.push({ kind: 'qcBug', ticketKey: qcBug.bug.key, parentKey: qcBug.parentKey })
   }
-  for (const fix of [...input.bugFixes].sort((a, b) => compareText(a.bugKey, b.bugKey))) {
+  for (const fix of [...input.bugFixes].sort((a, b) => compareTicketKeys(a.bugKey, b.bugKey))) {
     todos.push({ kind: 'qcBugReply', ticketKey: fix.bugKey, parentKey: fix.parentKey, fix })
   }
   return todos.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind))

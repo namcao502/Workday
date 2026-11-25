@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { AgentCompact, AgentDayUsage, AgentStats } from './agentStats.js'
-import type { ReportRange } from './reportRanges.js'
+import type { AgentCompact, AgentDayUsage, AgentStats } from '../agentStats.js'
+import type { ReportRange } from '../reportRanges.js'
 import type { TicketCommitStats } from './ticketCommits.js'
 import {
   agentInRange,
@@ -9,7 +9,7 @@ import {
   type TicketReportFacts,
   type TicketReportInput,
 } from './ticketReports.js'
-import type { HrmTask } from './timesheetWeek.js'
+import type { HrmTask } from '../timesheet/timesheetWeek.js'
 
 const WEEK: ReportRange = { kind: 'thisWeek', from: '2026-11-02', to: '2026-11-08' }
 

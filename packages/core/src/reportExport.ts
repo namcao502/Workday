@@ -1,5 +1,5 @@
 import { addDayUsage, EMPTY_DAY_USAGE } from './agentStats.js'
-import { totalTokens, type TicketReport, type TicketReportRow } from './ticketReports.js'
+import { totalTokens, type TicketReport, type TicketReportRow } from './ticket/ticketReports.js'
 
 const TOTAL_KEY = 'Total'
 const CSV_LINE_BREAK = '\r\n'

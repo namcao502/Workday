@@ -1,5 +1,5 @@
 import { isSentBack, type StatusFlow } from './statusFlow.js'
-import { isStatusDone, ticketEquals, type Ticket } from './ticket.js'
+import { isStatusDone, ticketEquals, type Ticket } from './ticket/ticket.js'
 
 export type BoardSection = 'new' | 'inProgress' | 'done'
 export interface DismissedTicket {

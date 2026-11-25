@@ -8,7 +8,7 @@ import {
   pendingApproval,
   sqlOf,
 } from './dbReview.js'
-import type { TeamsMessage, TeamsThread } from './teamsChat.js'
+import type { TeamsMessage, TeamsThread } from './teams/teamsChat.js'
 
 const ME = '8:orgid:me'
 const LEAD = '8:orgid:lead'

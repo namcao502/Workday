@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { reportCsv, reportMarkdown } from './reportExport.js'
-import type { TicketReport } from './ticketReports.js'
+import type { TicketReport } from './ticket/ticketReports.js'
 
 const NO_USAGE = {
   inputTokens: 0,

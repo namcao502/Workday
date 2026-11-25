@@ -1,6 +1,6 @@
-import type { TeamsMessageBody } from '../teamsCompose.js'
-import type { TeamsUploadedFile } from '../teamsFiles.js'
-import type { TeamsChannel, TeamsGroupChat, TeamsMessagePage, TeamsThread } from '../teamsChat.js'
+import type { TeamsMessageBody } from '../teams/teamsCompose.js'
+import type { TeamsUploadedFile } from '../teams/teamsFiles.js'
+import type { TeamsChannel, TeamsGroupChat, TeamsMessagePage, TeamsThread } from '../teams/teamsChat.js'
 
 export interface TeamsImage {
   readonly bytes: Uint8Array
