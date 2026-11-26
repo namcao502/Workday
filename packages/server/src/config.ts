@@ -429,6 +429,8 @@ export function parseConfig(raw: unknown): WorkdayConfig | null {
     theme: raw['theme'] === 'light' ? 'light' : 'dark',
     season: parseSeasonSetting(raw['season']) ?? DEFAULT_CONFIG.season,
     seasonEffects: parseSeasonEffects(raw['seasonEffects']) ?? DEFAULT_CONFIG.seasonEffects,
+    seasonCursor:
+      typeof raw['seasonCursor'] === 'boolean' ? raw['seasonCursor'] : DEFAULT_CONFIG.seasonCursor,
     language: raw['language'] === 'vi' ? 'vi' : 'en',
     jira: parseJira(raw['jira']),
     timesheet: parseTimesheet(raw['timesheet']),
@@ -540,6 +542,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
   theme: 'dark',
   season: 'auto',
   seasonEffects: 'auto',
+  seasonCursor: true,
   language: 'en',
   jira: null,
   timesheet: { logTime: DEFAULT_LOG_TIME, hrm: null, tsc: null },

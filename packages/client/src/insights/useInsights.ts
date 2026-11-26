@@ -7,6 +7,7 @@ import {
 } from '@workday/core'
 import { useEffect, useState } from 'react'
 import { getInsights, queryKeys, type InsightsRequest } from '../api/client.js'
+import { useSettings } from '../api/useSettings.js'
 import { isRecord } from '../json.js'
 
 export const RANGE_STORAGE_KEY = 'workday.insights.range'
@@ -31,8 +32,8 @@ function isKind(value: unknown): value is ReportRangeKind {
   return typeof value === 'string' && KINDS.has(value)
 }
 
-function readStoredRange(): InsightsRange {
-  const today = todayIn(DEFAULT_REPORT_TIME_ZONE, new Date())
+function readStoredRange(timeZone: string): InsightsRange {
+  const today = todayIn(timeZone, new Date())
   const fallback: InsightsRange = { kind: 'thisWeek', from: today, to: today }
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(RANGE_STORAGE_KEY) ?? 'null')
@@ -69,7 +70,8 @@ export interface InsightsState {
 }
 
 export function useInsights(): InsightsState {
-  const [range, setRangeState] = useState(readStoredRange)
+  const timeZone = useSettings().data?.config.timeZone ?? DEFAULT_REPORT_TIME_ZONE
+  const [range, setRangeState] = useState(() => readStoredRange(timeZone))
   const request = requestFor(range)
   const query = useQuery({
     queryKey: [...queryKeys.insights, request.kind, request.from ?? '', request.to ?? ''],

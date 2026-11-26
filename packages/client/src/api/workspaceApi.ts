@@ -9,6 +9,7 @@ import type {
   FolderListing,
   FilesGroupView,
   OpenOutcome,
+  PastChat,
   StartOutcome,
   WorkspaceView,
 } from '@workday/core'
@@ -194,6 +195,30 @@ export function sendPrompt(
   images: readonly AgentImage[] = [],
 ): Promise<void> {
   return expectOkWithCode(sessionPath(session, 'prompt'), { text, images })
+}
+
+function isPastChat(value: unknown): value is PastChat {
+  return (
+    isRecord(value) &&
+    typeof value['id'] === 'string' &&
+    (value['title'] === null || typeof value['title'] === 'string') &&
+    typeof value['modifiedAt'] === 'string' &&
+    typeof value['current'] === 'boolean'
+  )
+}
+
+// The chats of the session's folder, newest first, for /resume.
+export async function getPastChats(session: string): Promise<readonly PastChat[]> {
+  const body = await getJson(
+    sessionPath(session, 'past-chats'),
+    (value) => Array.isArray(value) && value.every(isPastChat),
+  )
+  return body as readonly PastChat[]
+}
+
+// The session's next prompt resumes this chat; a working Claude refuses with claudeWorking.
+export function resumeChat(session: string, sessionId: string): Promise<void> {
+  return expectOkWithCode(sessionPath(session, 'resume'), { sessionId })
 }
 
 export function setSessionModel(session: string, model: string): Promise<void> {

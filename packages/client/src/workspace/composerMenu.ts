@@ -1,6 +1,7 @@
-import type { AgentCommand } from '@workday/core'
+import type { AgentCommand, PastChat } from '@workday/core'
 
 const MAX_SUGGESTIONS = 8
+const RESUME = 'resume' // handled by the app: the SDK has no /resume
 
 export interface Suggestion {
   readonly key: string
@@ -10,14 +11,18 @@ export interface Suggestion {
 }
 
 export interface ActiveToken {
-  readonly kind: 'command' | 'file'
+  readonly kind: 'command' | 'file' | 'resume'
   readonly start: number // index of the "/" or "@"
   readonly query: string
 }
 
-// The "/command" at the very start, or the "@path" right before the caret; null when the caret is elsewhere.
+// The "/command" at the very start, "/resume <words>", or the "@path" right before the caret; null elsewhere.
 export function activeToken(text: string, caret: number): ActiveToken | null {
   const before = text.slice(0, caret)
+  const resume = /^\/resume\s+([^\n]*)$/.exec(before)
+  if (resume !== null) {
+    return { kind: 'resume', start: 0, query: resume[1] ?? '' }
+  }
   const command = /^\/(\S*)$/.exec(before)
   if (command !== null) {
     return { kind: 'command', start: 0, query: command[1] ?? '' }
@@ -78,4 +83,31 @@ export function applySuggestion(
 ): { readonly text: string; readonly caret: number } {
   const next = `${text.slice(0, token.start)}${suggestion.insert}${text.slice(caret)}`
   return { text: next, caret: token.start + suggestion.insert.length }
+}
+
+// The commands with the app's own /resume first.
+export function withResume(
+  commands: readonly AgentCommand[],
+  description: string,
+): readonly AgentCommand[] {
+  return [
+    { name: RESUME, description, hint: '' },
+    ...commands.filter((command) => command.name !== RESUME),
+  ]
+}
+
+// Every typed word must be in the title; the order stays the server's, newest first.
+export function pastChatSuggestions(
+  chats: readonly PastChat[],
+  query: string,
+  labelOf: (chat: PastChat) => string,
+  noteOf: (chat: PastChat) => string,
+): readonly Suggestion[] {
+  const words = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word !== '')
+  return chats
+    .filter((chat) => words.every((word) => (chat.title ?? '').toLowerCase().includes(word)))
+    .map((chat) => ({ key: chat.id, insert: '', label: labelOf(chat), note: noteOf(chat) }))
 }

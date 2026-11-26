@@ -212,6 +212,8 @@ const PLAIN_CODES: ReadonlySet<string> = new Set<PlainCode>([
   'backupInvalid',
   'backupPasswordTooShort',
   'sessionInApp',
+  'chatNotFound',
+  'claudeWorking',
 ])
 
 export function isPlainCode(code: unknown): code is PlainCode {

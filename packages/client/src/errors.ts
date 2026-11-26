@@ -107,5 +107,9 @@ export function errorText(error: AppError): string {
       return t('app.hasNoWorktreeYetStartOr', { parentKey: error.parentKey })
     case 'claudeWaiting':
       return t('app.claudeIsWaitingForYourAnswer')
+    case 'chatNotFound':
+      return t('app.thatChatIsGone')
+    case 'claudeWorking':
+      return t('app.stopClaudeBeforeResuming')
   }
 }

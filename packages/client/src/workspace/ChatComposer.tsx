@@ -1,12 +1,13 @@
 import { Button, CloseButton, Spinner, TextArea } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { AgentCommand, AgentImage, AgentImageType } from '@workday/core'
+import type { AgentCommand, AgentImage, AgentImageType, PastChat } from '@workday/core'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ApiError } from '../api/client.js'
-import { chatKey, useFilePaths } from '../api/useWorkspace.js'
-import { interruptSession, sendPrompt } from '../api/workspaceApi.js'
+import { useSettings } from '../api/useSettings.js'
+import { chatKey, useFilePaths, usePastChats } from '../api/useWorkspace.js'
+import { interruptSession, resumeChat, sendPrompt } from '../api/workspaceApi.js'
 import { errorText } from '../errors.js'
-import { t } from '../i18n.js'
+import { formatShortDate, getLanguage, t } from '../i18n.js'
 import { withQuote } from './chatQuote.js'
 import { useNarrow } from '../shell/useNarrow.js'
 import {
@@ -14,6 +15,8 @@ import {
   applySuggestion,
   commandSuggestions,
   fileSuggestions,
+  pastChatSuggestions,
+  withResume,
   type Suggestion,
 } from './composerMenu.js'
 
@@ -100,18 +103,42 @@ export function ChatComposer({
 
   const token = activeToken(text, caret)
   const filePaths = useFilePaths(tabId, token?.kind === 'file')
+  const pastChats = usePastChats(session, token?.kind === 'resume' && closedAt !== text)
+  const timeZone = useSettings().data?.config.timeZone ?? 'UTC'
+  const chatNote = (chat: PastChat): string => {
+    const at = formatShortDate(new Date(chat.modifiedAt), getLanguage(), timeZone)
+    return chat.current ? `${at} - ${t('workspace.shownNow')}` : at
+  }
   let suggestions: readonly Suggestion[] = []
   if (token !== null && closedAt !== text) {
-    suggestions =
-      token.kind === 'command'
-        ? commandSuggestions(commands, token.query)
-        : fileSuggestions(filePaths, token.query)
+    if (token.kind === 'command') {
+      suggestions = commandSuggestions(
+        withResume(commands, t('workspace.resumeAnEarlierChat')),
+        token.query,
+      )
+    } else if (token.kind === 'resume') {
+      suggestions = pastChatSuggestions(
+        pastChats.data ?? [],
+        token.query,
+        (chat) => chat.title ?? t('workspace.untitledChat'),
+        chatNote,
+      )
+    } else {
+      suggestions = fileSuggestions(filePaths, token.query)
+    }
   }
+  const noPastChats = token?.kind === 'resume' && closedAt !== text && pastChats.data?.length === 0
   const current = Math.min(picked, Math.max(suggestions.length - 1, 0))
   const canSend = text.trim() !== '' || images.length !== 0
 
   function choose(suggestion: Suggestion): void {
     if (token === null) {
+      return
+    }
+    if (token.kind === 'resume') {
+      setText('')
+      setPicked(0)
+      void run(() => resumeChat(session, suggestion.key))
       return
     }
     const next = applySuggestion(text, caret, token, suggestion)
@@ -298,6 +325,14 @@ export function ChatComposer({
           ))}
         </ul>
       )}
+      {noPastChats ? (
+        <p
+          className="absolute inset-x-2 bottom-full z-10 mb-1 rounded-2xl bg-surface px-4 py-2 text-sm text-muted shadow-surface"
+          role="status"
+        >
+          {t('workspace.noEarlierChats')}
+        </p>
+      ) : null}
       {failure === null ? null : (
         <p className="text-sm text-danger" role="alert">
           {failure}
@@ -367,9 +402,7 @@ export function ChatComposer({
             ) : null}
           </div>
         </div>
-        {status === undefined ? null : (
-          <div className="flex shrink-0 items-center">{status}</div>
-        )}
+        {status === undefined ? null : <div className="flex shrink-0 items-center">{status}</div>}
         {working ? (
           <Button variant="danger" size="md" className="h-auto" onPress={stop}>
             {t('workspace.stop')}

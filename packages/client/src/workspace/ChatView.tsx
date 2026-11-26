@@ -211,14 +211,15 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   // History is shown from the session's transcript even before Claude is started; the first prompt resumes it.
   const resumable = chat.data !== undefined && !running && (messages?.length ?? 0) !== 0
 
-  // The send row shows just the model and how full the context window is, e.g. "claude-opus-5-5 (13%)". The
-  // branch, diff, raw tokens, plan usage and bypass flag -- which used to take a whole line -- wait in its tooltip.
+  // The send row shows just the model; branch, diff, tokens, context fill, plan usage and the bypass flag wait in
+  // its tooltip.
   const contextPercent = usage?.contextPercent ?? null
   const hasStatus =
     branch !== null ||
     added !== 0 ||
     removed !== 0 ||
     tokens !== null ||
+    contextPercent !== null ||
     (usage !== null && usage.usage !== null) ||
     mode === 'bypassPermissions'
   const statusInfo = !hasStatus ? null : (
@@ -232,6 +233,12 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
       {tokens === null ? null : (
         <span>
           {t('workspace.tokens')}: <span className="font-semibold">{formatTokens(tokens)}</span>
+        </span>
+      )}
+      {contextPercent === null ? null : (
+        <span>
+          {t('workspace.contextUsed')}:{' '}
+          <span className={usageTone(contextPercent)}>{String(Math.round(contextPercent))}%</span>
         </span>
       )}
       {usage === null || usage.usage === null ? null : <UsageStat window={usage.usage} />}
@@ -248,7 +255,6 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
             models={chat.data?.catalog?.models ?? []}
             disabled={working}
           />
-          {contextPercent === null ? null : <span>({String(Math.round(contextPercent))}%)</span>}
         </span>
       </Tip>
     )

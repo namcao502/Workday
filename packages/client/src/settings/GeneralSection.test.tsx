@@ -58,3 +58,21 @@ it('the effect level saves, and is hidden while seasons are off', async () => {
   )
   expect(screen.queryByRole('radiogroup', { name: 'Effects' })).toBeNull()
 })
+
+it('the season cursor switch saves, and is hidden while seasons are off', async () => {
+  const fetchMock = stubFetch(() => jsonResponse(settingsView()))
+  const { unmount } = renderWithQuery(<GeneralSection settings={settingsView()} />)
+  const cursor = screen.getByRole('radiogroup', { name: 'Cursor' })
+  fireEvent.click(within(cursor).getByRole('radio', { name: 'Off' }))
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalled()
+  })
+  expect(sentJson(fetchMock)).toEqual({ seasonCursor: false })
+  unmount()
+
+  const off = settingsView()
+  renderWithQuery(
+    <GeneralSection settings={{ ...off, config: { ...off.config, season: 'off' } }} />,
+  )
+  expect(screen.queryByRole('radiogroup', { name: 'Cursor' })).toBeNull()
+})

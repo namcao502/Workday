@@ -137,6 +137,7 @@ export interface WorkdayConfig {
   readonly theme: 'dark' | 'light'
   readonly season: SeasonSetting // 'auto' follows the date
   readonly seasonEffects: SeasonEffects
+  readonly seasonCursor: boolean // a seasonal mouse cursor while a season is shown
   readonly language: 'en' | 'vi'
   readonly jira: JiraConfig | null
   readonly timesheet: TimesheetConfig
@@ -204,6 +205,8 @@ export type AppError =
         | 'backupInvalid'
         | 'backupPasswordTooShort'
         | 'sessionInApp'
+        | 'chatNotFound' // the picked chat's transcript is gone
+        | 'claudeWorking' // a turn runs: stop it before another chat is resumed
     }
   | { readonly code: 'notFound' | 'alreadyOnBoard'; readonly key: string }
   | { readonly code: 'parentWorktreeMissing'; readonly parentKey: string }
@@ -226,6 +229,7 @@ export interface SettingsUpdate {
   readonly theme?: 'dark' | 'light'
   readonly season?: SeasonSetting
   readonly seasonEffects?: SeasonEffects
+  readonly seasonCursor?: boolean
   readonly language?: 'en' | 'vi'
   readonly jira?: JiraConfig | null
   readonly jiraApiToken?: string

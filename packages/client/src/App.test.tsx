@@ -93,3 +93,27 @@ it('tells the CSS how much the season may decorate, and drops it with the season
   expect(document.documentElement.dataset['season']).toBe('christmas')
   expect(document.documentElement.dataset['seasonEffects']).toBe('light')
 })
+
+it('puts the season cursor on the page only when the setting allows it', async () => {
+  stubMatchMedia(false)
+  const cursorOn = { ...settingsView().config, season: 'tet', seasonCursor: true } as const
+  stubFetch((url) =>
+    url === '/api/me' ? jsonResponse({ mode: 'local' }) : jsonResponse(settingsView({ config: cursorOn })),
+  )
+  const { unmount } = render(<App socketFactory={noSocket} />)
+  expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
+  const root = document.documentElement
+  expect(root.dataset['seasonCursor']).toBe('')
+  expect(root.style.getPropertyValue('--season-cursor')).toMatch(/^url\("data:image\/svg\+xml,/)
+  expect(root.style.getPropertyValue('--season-cursor-pointer')).toMatch(/, pointer$/)
+  unmount()
+
+  const cursorOff = { ...cursorOn, seasonCursor: false } as const
+  stubFetch((url) =>
+    url === '/api/me' ? jsonResponse({ mode: 'local' }) : jsonResponse(settingsView({ config: cursorOff })),
+  )
+  render(<App socketFactory={noSocket} />)
+  expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
+  expect(root.dataset['seasonCursor']).toBeUndefined()
+  expect(root.style.getPropertyValue('--season-cursor')).toBe('')
+})

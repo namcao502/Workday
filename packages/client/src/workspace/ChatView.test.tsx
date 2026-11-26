@@ -199,7 +199,7 @@ it('shows the model, with branch, changed lines and tokens in its tooltip', asyn
   expect(tip).toHaveTextContent('75.5K')
 })
 
-it('shows the context percent next to the model, and the plan usage in the tooltip', async () => {
+it('shows the context percent and the plan usage in the tooltip, not next to the model', async () => {
   stubChat({
     model: 'claude-sonnet-5-5',
     contextTokens: 75500,
@@ -209,8 +209,10 @@ it('shows the context percent next to the model, and the plan usage in the toolt
     },
   })
   renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
-  expect(await screen.findByText('(7%)')).toBeInTheDocument()
-  const tip = await hoverTip(screen.getByText('claude-sonnet-5-5'))
+  const tip = await hoverTip(await screen.findByText('claude-sonnet-5-5'))
+  expect(screen.queryByText('(7%)')).toBeNull()
+  expect(tip).toHaveTextContent('Context: 7%')
+  expect(within(tip).getByText('7%')).toHaveClass('text-success')
   expect(within(tip).getByText('92%')).toHaveClass('text-danger')
   expect(tip).toHaveTextContent(/\(resets /)
 })
@@ -292,6 +294,50 @@ it('suggests slash commands and completes one with Tab', async () => {
   expect(screen.queryByRole('option', { name: /compact/ })).not.toBeInTheDocument()
   fireEvent.keyDown(box, { key: 'Tab' })
   expect(box).toHaveValue('/ship ')
+})
+
+it('/resume lists the folder chats and picking one resumes it', async () => {
+  const chats = [
+    {
+      id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+      title: 'Fix the board',
+      modifiedAt: '2026-11-25T03:00:00Z',
+      current: false,
+    },
+    {
+      id: '0f8fad5b-d9cb-469f-a165-70867728950e',
+      title: null,
+      modifiedAt: '2026-11-24T03:00:00Z',
+      current: true,
+    },
+  ]
+  const fetchMock = stubFetch((url, init) => {
+    if (init?.method === 'POST') {
+      return jsonResponse({ ok: true })
+    }
+    return jsonResponse(url.endsWith('/past-chats') ? chats : chatData({ catalog: CATALOG }))
+  })
+  renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  const box = await screen.findByRole('textbox', { name: 'Message to Claude' })
+  await waitFor(() => {
+    fireEvent.change(box, { target: { value: '/res', selectionStart: 4 } })
+    expect(screen.getByRole('option', { name: /\/resume/ })).toBeInTheDocument()
+  })
+  fireEvent.keyDown(box, { key: 'Tab' })
+  expect(box).toHaveValue('/resume ')
+  fireEvent.change(box, { target: { value: '/resume ', selectionStart: 8 } })
+  expect(await screen.findByRole('option', { name: /Fix the board/ })).toBeInTheDocument()
+  expect(screen.getByRole('option', { name: /\(no prompt\).*shown now/ })).toBeInTheDocument()
+  fireEvent.keyDown(box, { key: 'Enter' })
+  await waitFor(() => {
+    expect(posts(fetchMock)).toEqual([
+      {
+        url: '/api/workspace/sessions/claude/resume',
+        body: { sessionId: '7c9e6679-7425-40de-944b-e07fc1f90ae7' },
+      },
+    ])
+  })
+  expect(box).toHaveValue('')
 })
 
 it('pastes an image, shows it, and sends it with the prompt', async () => {

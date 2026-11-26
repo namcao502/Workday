@@ -168,3 +168,13 @@ it('clicking a row shows its Claude detail tables', async () => {
   expect(screen.getByText('Bash')).toBeInTheDocument()
   expect(screen.getByText('150k → 20k')).toBeInTheDocument()
 })
+
+it('detail times follow the configured time zone', async () => {
+  const utc = settingsView({ config: { ...settingsView().config, timeZone: 'UTC' } })
+  stubFetch((url) => jsonResponse(url.startsWith('/api/insights') ? view([row('MDP-1')]) : utc))
+  renderWithQuery(<InsightsPage />)
+  fireEvent.click(await screen.findByText('Summary of MDP-1'))
+  // 03:00Z is 3:00 AM in UTC, 10:00 AM in Ho Chi Minh.
+  expect(await screen.findAllByText(/Nov 10, 3:00\sAM/)).not.toHaveLength(0)
+  expect(screen.queryByText(/10:00\sAM/)).not.toBeInTheDocument()
+})

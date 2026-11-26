@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { claudeProjectDirName, type ChatView } from '@workday/core'
+import { claudeProjectDirName, type ChatView, type PastChat } from '@workday/core'
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
 import { afterEach, describe, expect, it } from 'vitest'
 import { buildTestApp, LOOPBACK_HEADERS, type TestApp } from '../testing/testApp.js'
@@ -178,6 +178,36 @@ describe('chat routes', () => {
     const chat = (await testApp.app.inject({ url, headers: LOOPBACK_HEADERS })).json<ChatView>()
     expect(chat.messages.map((message) => message.text)).toEqual(['hi'])
     expect(chat).toMatchObject({ working: true, running: true, model: 'opus' })
+  })
+
+  it('past-chats lists the folder chats and resume points the session at one', async () => {
+    const { testApp, devRepoPath } = await setup()
+    const folder = join(testApp.homeDir, '.claude', 'projects', claudeProjectDirName(devRepoPath))
+    mkdirSync(folder, { recursive: true })
+    writeFileSync(join(folder, `${SESSION_ID}.jsonl`), PROMPT_LINE)
+    const url = '/api/workspace/sessions/claude/past-chats'
+    const list = await testApp.app.inject({ url, headers: LOOPBACK_HEADERS })
+    expect(list.json<readonly PastChat[]>()).toMatchObject([
+      { id: SESSION_ID, title: 'hi', current: false },
+    ])
+    const ghost = await testApp.app.inject({
+      url: '/api/workspace/sessions/ghost/past-chats',
+      headers: LOOPBACK_HEADERS,
+    })
+    expect(ghost.statusCode).toBe(404)
+
+    expect((await post(testApp, 'resume', { sessionId: 'nope' })).statusCode).toBe(400)
+    const missing = await post(testApp, 'resume', {
+      sessionId: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+    })
+    expect(missing.statusCode).toBe(404)
+    expect(missing.json()).toEqual({ ok: false, error: { code: 'chatNotFound' } })
+    expect((await post(testApp, 'resume', { sessionId: SESSION_ID })).json()).toEqual({ ok: true })
+    const chat = await testApp.app.inject({
+      url: '/api/workspace/sessions/claude/chat',
+      headers: LOOPBACK_HEADERS,
+    })
+    expect(chat.json<ChatView>().messages.map((message) => message.text)).toEqual(['hi'])
   })
 
   it('the terminal and hook routes are gone (404)', async () => {

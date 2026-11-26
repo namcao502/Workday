@@ -535,3 +535,39 @@ html[data-season]:not([data-season-effects='off']) .app-sidebar--collapsed::befo
 html[data-season]:not([data-season-effects='off']) .app-sidebar.app-sidebar--collapsed {
   margin-top: 16px;
 }
+
+/* Seasonal cursors (App.tsx sets the variables from season/cursors.ts). The arrow is inherited, so any element
+   with its own cursor (resize, grab, wait) keeps it; clickables take the pointer, fields keep the text beam. */
+html[data-season-cursor] {
+  cursor: var(--season-cursor);
+}
+
+html[data-season-cursor]
+  :is(
+    button,
+    summary,
+    select,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='option'],
+    [role='switch'],
+    [role='checkbox'],
+    [role='radio'],
+    input[type='checkbox'],
+    input[type='radio'],
+    label:has(input[type='checkbox'], input[type='radio']),
+    a[href],
+    .cursor-pointer
+  ):not(:disabled, [aria-disabled='true']) {
+  cursor: var(--season-cursor-pointer);
+}
+
+html[data-season-cursor]
+  :is(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file']),
+    textarea,
+    [contenteditable]:not([contenteditable='false'])
+  ) {
+  cursor: text;
+}

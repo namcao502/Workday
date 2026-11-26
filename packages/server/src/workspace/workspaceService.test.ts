@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { claudeProjectDirName, type ServerEvent, type WaitReason } from '@workday/core'
@@ -10,6 +10,7 @@ import { WorkspaceService } from './workspaceService.js'
 import { EMPTY_WORKSPACE, type WorkspaceState } from './workspaceStore.js'
 
 const SESSION_ID = '0f8fad5b-d9cb-469f-a165-70867728950e'
+const OTHER_ID = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
 const PROMPT_LINE = `${JSON.stringify({ type: 'user', message: { content: 'hi' } })}\n`
 
 interface Built {
@@ -306,6 +307,86 @@ describe('WorkspaceService chat and prompt', () => {
     service.prompt('claude', 'two')
     expect(agent.handles).toHaveLength(2)
     expect(agent.last().options.resume).toBe(SESSION_ID)
+  })
+
+  it('a folder tab opened again on the same folder shows and resumes the chat of the closed one', async () => {
+    const { service, agent, saved, devRepo, homeDir } = build(terminalState('claude'))
+    writeFileSync(join(transcriptFolder(homeDir, devRepo), `${SESSION_ID}.jsonl`), PROMPT_LINE)
+    service.prompt('claude', 'hi')
+    agent.last().emit({ type: 'init', sessionId: SESSION_ID, model: 'opus', mode: 'default' })
+    await settle()
+    await service.closeTab('claude')
+    await service.addTerminal(null)
+    const reopened = service.view().tabs.at(-1)?.id ?? ''
+    expect(service.chat(reopened)?.messages.map((message) => message.text)).toEqual(['hi'])
+    service.prompt(reopened, 'again')
+    expect(agent.last().options.resume).toBe(SESSION_ID)
+    expect(saved.at(-1)?.closedFolderSessions).toEqual({})
+  })
+
+  it('pastChats lists the folder chats newest first and marks the one shown', async () => {
+    const { service, agent, devRepo, homeDir } = build(terminalState('claude'))
+    const folder = transcriptFolder(homeDir, devRepo)
+    writeFileSync(join(folder, `${SESSION_ID}.jsonl`), PROMPT_LINE)
+    writeFileSync(
+      join(folder, `${OTHER_ID}.jsonl`),
+      `${JSON.stringify({ type: 'custom-title', customTitle: 'named' })}\n`,
+    )
+    utimesSync(join(folder, `${SESSION_ID}.jsonl`), new Date('2026-11-20'), new Date('2026-11-20'))
+    service.prompt('claude', 'hi')
+    agent.last().emit({ type: 'init', sessionId: SESSION_ID, model: 'opus', mode: 'default' })
+    await settle()
+    expect(service.pastChats('ghost')).toBeNull()
+    expect(
+      service.pastChats('claude')?.map(({ id, title, current }) => ({ id, title, current })),
+    ).toEqual([
+      { id: OTHER_ID, title: 'named', current: false },
+      { id: SESSION_ID, title: 'hi', current: true },
+    ])
+  })
+
+  it('resumeChat stops an idle session and points it at the picked chat', async () => {
+    const { service, agent, devRepo, homeDir } = build(terminalState('claude'))
+    const folder = transcriptFolder(homeDir, devRepo)
+    writeFileSync(join(folder, `${SESSION_ID}.jsonl`), PROMPT_LINE)
+    writeFileSync(join(folder, `${OTHER_ID}.jsonl`), PROMPT_LINE)
+    service.prompt('claude', 'hi')
+    agent.last().emit({ type: 'init', sessionId: SESSION_ID, model: 'opus', mode: 'default' })
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    await settle()
+    expect(await service.resumeChat('claude', 'not-a-guid')).toBe('chatNotFound')
+    expect(await service.resumeChat('ghost', OTHER_ID)).toBe('notFound')
+    expect(await service.resumeChat('claude', OTHER_ID)).toBe('ok')
+    expect(agent.last().closed).toBe(true)
+    service.prompt('claude', 'again')
+    expect(agent.handles).toHaveLength(2)
+    expect(agent.last().options.resume).toBe(OTHER_ID)
+  })
+
+  it('resumeChat refuses while a turn runs', async () => {
+    const { service, agent, devRepo, homeDir } = build(terminalState('claude'))
+    writeFileSync(join(transcriptFolder(homeDir, devRepo), `${OTHER_ID}.jsonl`), PROMPT_LINE)
+    service.prompt('claude', 'hi')
+    agent.last().emit({ type: 'init', sessionId: SESSION_ID, model: 'opus', mode: 'default' })
+    expect(await service.resumeChat('claude', OTHER_ID)).toBe('claudeWorking')
+  })
+
+  it('a closed folder chat is not resumed while another tab already holds it', async () => {
+    const { service, agent, devRepo, homeDir } = build(terminalState('claude'))
+    writeFileSync(join(transcriptFolder(homeDir, devRepo), `${SESSION_ID}.jsonl`), PROMPT_LINE)
+    service.prompt('claude', 'hi')
+    agent.last().emit({ type: 'init', sessionId: SESSION_ID, model: 'opus', mode: 'default' })
+    await settle()
+    await service.closeTab('claude')
+    await service.addTerminal(null)
+    await service.addTerminal(null)
+    const [first, second] = service.view().tabs.map((tab) => tab.id)
+    service.prompt(first ?? '', 'one')
+    service.prompt(second ?? '', 'two')
+    expect(agent.handles.slice(1).map((handle) => handle.options.resume ?? null)).toEqual([
+      SESSION_ID,
+      null,
+    ])
   })
 })
 

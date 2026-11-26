@@ -7,9 +7,15 @@ export interface WorkspaceState {
   readonly tabs: readonly WorkspaceTab[]
   readonly sessionIds: Readonly<Record<string, string>> // "<session>|<cwd>" -> claude session id
   readonly recentFolders: readonly string[]
+  readonly closedFolderSessions: Readonly<Record<string, string>> // cwd -> main chat of a closed folder tab
 }
 
-export const EMPTY_WORKSPACE: WorkspaceState = { tabs: [], sessionIds: {}, recentFolders: [] }
+export const EMPTY_WORKSPACE: WorkspaceState = {
+  tabs: [],
+  sessionIds: {},
+  recentFolders: [],
+  closedFolderSessions: {},
+}
 export { MAX_RECENT_FOLDERS }
 const WORKSPACE_FILE = 'workspace.json'
 const EXTRA_SESSION_SUFFIX = /^~\d+$/
@@ -44,6 +50,17 @@ function parseTab(raw: unknown): WorkspaceTab | null {
   }
 }
 
+// Keeps the entries whose key passes and whose value is a session id.
+function guidRecord(raw: unknown, isKey: (key: string) => boolean): Record<string, string> {
+  const record = isRecord(raw) ? raw : {}
+  return Object.fromEntries(
+    Object.entries(record).filter(
+      (entry): entry is [string, string] =>
+        isKey(entry[0]) && typeof entry[1] === 'string' && isGuid(entry[1]),
+    ),
+  )
+}
+
 export function parseWorkspaceFile(raw: unknown): WorkspaceState | null {
   if (!isRecord(raw)) {
     return null
@@ -53,18 +70,13 @@ export function parseWorkspaceFile(raw: unknown): WorkspaceState | null {
     .map(parseTab)
     .filter((tab): tab is WorkspaceTab => tab !== null)
     .filter((tab, index, all) => all.findIndex((other) => other.id === tab.id) === index)
-  const rawIds = isRecord(raw['sessionIds']) ? raw['sessionIds'] : {}
-  const sessionIds = Object.fromEntries(
-    Object.entries(rawIds).filter(
-      (entry): entry is [string, string] =>
-        entry[0].includes('|') && typeof entry[1] === 'string' && isGuid(entry[1]),
-    ),
-  )
+  const sessionIds = guidRecord(raw['sessionIds'], (key) => key.includes('|'))
+  const closedFolderSessions = guidRecord(raw['closedFolderSessions'], (key) => key !== '')
   const rawRecent = Array.isArray(raw['recentFolders']) ? raw['recentFolders'] : []
   const recentFolders = rawRecent
     .filter((folder: unknown): folder is string => typeof folder === 'string' && folder !== '')
     .slice(0, MAX_RECENT_FOLDERS)
-  return { tabs, sessionIds, recentFolders }
+  return { tabs, sessionIds, recentFolders, closedFolderSessions }
 }
 
 export function loadWorkspace(dataDir: string): WorkspaceState {

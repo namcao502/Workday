@@ -59,6 +59,7 @@ describe('workspaceStore', () => {
       ],
       sessionIds: {},
       recentFolders: ['C:\\x'],
+      closedFolderSessions: { 'C:\\x': '0f8fad5b-d9cb-469f-a165-70867728950e' },
     }
     await saveWorkspace(dataDir, state)
     expect(loadWorkspace(dataDir)).toEqual(state)

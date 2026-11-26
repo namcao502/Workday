@@ -65,6 +65,7 @@ async function connectedApp(): Promise<TestApp> {
     theme: 'dark',
     season: 'auto',
     seasonEffects: 'auto',
+    seasonCursor: true,
     language: 'en',
     jira: JIRA,
     timesheet: { logTime: '18:00', hrm: null, tsc: null },
@@ -92,6 +93,7 @@ async function hrmApp(): Promise<TestApp> {
     theme: 'dark',
     season: 'auto',
     seasonEffects: 'auto',
+    seasonCursor: true,
     language: 'en',
     jira: null,
     timesheet: TIMESHEET,
@@ -147,6 +149,7 @@ describe('settings routes', () => {
         theme: 'dark',
         season: 'auto',
         seasonEffects: 'auto',
+        seasonCursor: true,
         language: 'en',
         jira: JIRA,
         timesheet: { logTime: '18:00', hrm: null, tsc: null },
@@ -210,9 +213,13 @@ describe('settings routes', () => {
     expect((await putSettings(testApp, { season: 'monsoon' })).statusCode).toBe(400)
     expect((await putSettings(testApp, { seasonEffects: 'light' })).statusCode).toBe(200)
     expect((await putSettings(testApp, { seasonEffects: 'loud' })).statusCode).toBe(400)
+    expect((await putSettings(testApp, { seasonCursor: false })).statusCode).toBe(200)
+    expect((await putSettings(testApp, { seasonCursor: 'no' })).statusCode).toBe(400)
 
     const settings = await testApp.app.inject({ url: '/api/settings', headers: LOOPBACK_HEADERS })
-    expect(settings.json()).toMatchObject({ config: { season: 'winter', seasonEffects: 'light' } })
+    expect(settings.json()).toMatchObject({
+      config: { season: 'winter', seasonEffects: 'light', seasonCursor: false },
+    })
   })
 
   it('PUT /api/settings broadcasts settings.changed', async () => {

@@ -23,6 +23,7 @@ import {
   type WorkspaceConfig,
   type WorkspaceTab,
   type WorkspaceView,
+  type PastChat,
 } from '@workday/core'
 import type { EventSink } from '../events.js'
 import type { PromptOutcome } from '../teams/teamsHandOff.js'
@@ -37,6 +38,7 @@ import {
   transcriptExists,
 } from './launchEnvironment.js'
 import { openInVsCode, spawnEditor, type SpawnEditor } from './openInEditor.js'
+import { listPastChats } from './pastChats.js'
 import { TicketLauncher, type TicketLauncherDeps } from './ticketLauncher.js'
 import { WorkspaceStartError, type WorkspaceStartCode } from './workspaceStartError.js'
 import { MAX_RECENT_FOLDERS, type WorkspaceState } from './workspaceStore.js'
@@ -67,6 +69,8 @@ export interface WorkspaceServiceDeps {
 
 // mainSession: the first session of a tab closes only with its tab.
 export type WorkspaceOutcome = 'ok' | 'notFound' | 'mainSession'
+
+export type ResumeOutcome = 'ok' | 'notFound' | 'chatNotFound' | 'claudeWorking'
 
 // sessionNotFound: the tab closed while the prompt was on its way.
 export type SendOutcome = 'sent' | 'notFound' | 'waiting' | WorkspaceStartCode
@@ -178,11 +182,23 @@ export class WorkspaceService {
   }
 
   // Opens a folder tab; the name stays from the terminal days because the client calls it.
+  // A chat closed earlier in the same folder becomes the new tab's, so its history shows and resumes.
   addTerminal(folder: string | null): Promise<void> {
     return this.enqueue(() => {
       const { tabs } = addTerminal(this.state, folder)
       const recentFolders = recentWith(this.state.recentFolders, folder)
-      return this.commit({ ...this.state, tabs, recentFolders }, true)
+      const name = tabs.at(-1)?.id ?? ''
+      const cwd = folder ?? this.config.devRepoPath
+      const closed = cwd === null ? undefined : this.closedFolderKey(cwd)
+      if (cwd === null || closed === undefined) {
+        return this.commit({ ...this.state, tabs, recentFolders }, true)
+      }
+      const { [closed]: sessionId = '', ...closedFolderSessions } = this.state.closedFolderSessions
+      const sessionIds = { ...this.state.sessionIds, [sessionKey(name, cwd)]: sessionId }
+      return this.commit(
+        { ...this.state, tabs, recentFolders, sessionIds, closedFolderSessions },
+        true,
+      )
     })
   }
 
@@ -235,7 +251,11 @@ export class WorkspaceService {
       }
       const { tabs } = closeTab(this.state, id)
       const sessionIds = withoutSessionIds(this.state.sessionIds, tab.sessions)
-      await this.commit({ ...this.state, tabs, sessionIds }, true)
+      const closedFolderSessions =
+        tab.kind === 'terminal'
+          ? { ...this.state.closedFolderSessions, ...this.folderSessionsOf(tab.id) }
+          : this.state.closedFolderSessions
+      await this.commit({ ...this.state, tabs, sessionIds, closedFolderSessions }, true)
       this.disposeSessions(tab.sessions)
       return 'ok'
     })
@@ -272,12 +292,7 @@ export class WorkspaceService {
     }
     const session = this.sessions.get(name)
     const cwd = session?.state.cwd ?? this.idleDirectory(name)
-    const sessionId = session?.state.sessionId ?? null
-    const view = readChat(
-      this.transcriptPath(name, cwd, sessionId),
-      cwd,
-      session?.state.working === true,
-    )
+    const view = readChat(this.transcriptPath(name, cwd), cwd, session?.state.working === true)
     if (session === undefined) {
       return { ...view, mode: START_MODE, catalog: this.lastCatalog }
     }
@@ -383,6 +398,38 @@ export class WorkspaceService {
     }
     await this.sessions.get(name)?.interrupt()
     return true
+  }
+
+  // Null for a name that is no session of an open tab.
+  pastChats(name: string): readonly PastChat[] | null {
+    if (this.tabOf(name) === undefined) {
+      return null
+    }
+    const cwd = this.sessions.get(name)?.state.cwd ?? this.idleDirectory(name)
+    return cwd === null ? [] : listPastChats(this.projectsRoot(), cwd, this.shownChatId(name, cwd))
+  }
+
+  // The next prompt resumes the picked chat; an idle session stops so it can, a working one is left alone.
+  resumeChat(name: string, sessionId: string): Promise<ResumeOutcome> {
+    return this.enqueue(async (): Promise<ResumeOutcome> => {
+      if (this.tabOf(name) === undefined) {
+        return 'notFound'
+      }
+      const session = this.sessions.get(name)
+      if (session?.state.working === true) {
+        return 'claudeWorking'
+      }
+      const cwd = session?.state.cwd ?? this.idleDirectory(name)
+      const id = sessionId.toLowerCase()
+      if (cwd === null || !isGuid(id) || !transcriptExists(this.projectsRoot(), cwd, id)) {
+        return 'chatNotFound'
+      }
+      this.disposeSessions([name])
+      const sessionIds = { ...this.state.sessionIds, [sessionKey(name, cwd)]: id }
+      await this.commit({ ...this.state, sessionIds }, true)
+      this.deps.events.broadcast({ type: 'chat.changed' })
+      return 'ok'
+    })
   }
 
   // False for an unknown session; a stopped one keeps the mode for its next start.
@@ -501,6 +548,24 @@ export class WorkspaceService {
     return join(this.deps.homeDir, '.claude', 'projects')
   }
 
+  // cwd -> chat id of a folder tab's main session, by every folder it ran in.
+  private folderSessionsOf(name: string): Record<string, string> {
+    const prefix = `${name}|`
+    return Object.fromEntries(
+      Object.entries(this.state.sessionIds)
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, sessionId]) => [key.slice(prefix.length), sessionId]),
+    )
+  }
+
+  // Windows paths compare without case.
+  private closedFolderKey(cwd: string): string | undefined {
+    const wanted = this.platform === 'win32' ? cwd.toLowerCase() : cwd
+    return Object.keys(this.state.closedFolderSessions).find(
+      (key) => (this.platform === 'win32' ? key.toLowerCase() : key) === wanted,
+    )
+  }
+
   private savedSessionId(name: string, cwd: string): string | null {
     return this.state.sessionIds[sessionKey(name, cwd)] ?? null
   }
@@ -520,19 +585,21 @@ export class WorkspaceService {
     return tab?.kind === 'ticket' && tab.id === name
   }
 
-  private transcriptPath(
-    name: string,
-    cwd: string | null,
-    sessionId: string | null,
-  ): string | null {
+  // The chat the session shows: its live id, the saved one, or (a main ticket session not started yet) the
+  // transcript `continue` picks up on its first prompt.
+  private shownChatId(name: string, cwd: string): string | null {
+    return (
+      this.sessions.get(name)?.state.sessionId ??
+      this.savedSessionId(name, cwd) ??
+      (this.isMainTicketSession(name) ? latestTranscriptId(this.projectsRoot(), cwd) : null)
+    )
+  }
+
+  private transcriptPath(name: string, cwd: string | null): string | null {
     if (cwd === null) {
       return null
     }
-    // A main ticket session not started yet shows the transcript `continue` will pick up on its first prompt.
-    const id =
-      sessionId ??
-      this.savedSessionId(name, cwd) ??
-      (this.isMainTicketSession(name) ? latestTranscriptId(this.projectsRoot(), cwd) : null)
+    const id = this.shownChatId(name, cwd)
     if (id === null || !isGuid(id)) {
       return null
     }

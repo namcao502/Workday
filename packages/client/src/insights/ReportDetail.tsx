@@ -1,4 +1,5 @@
 import { DEFAULT_REPORT_TIME_ZONE, type AgentStats, type TicketReportRow } from '@workday/core'
+import { useSettings } from '../api/useSettings.js'
 import { formatShortDate, getLanguage, t } from '../i18n.js'
 import { EMPTY_CELL, formatTokens } from './insightsText.js'
 
@@ -10,10 +11,8 @@ interface StatsTableProps {
 
 const MS_PER_SECOND = 1000
 
-function timeText(iso: string | null): string {
-  return iso === null
-    ? EMPTY_CELL
-    : formatShortDate(new Date(iso), getLanguage(), DEFAULT_REPORT_TIME_ZONE)
+function timeText(iso: string | null, timeZone: string): string {
+  return iso === null ? EMPTY_CELL : formatShortDate(new Date(iso), getLanguage(), timeZone)
 }
 
 function StatsTable({ title, headers, rows }: StatsTableProps): React.JSX.Element {
@@ -67,6 +66,7 @@ function toolRows(stats: AgentStats): readonly (readonly string[])[] {
 }
 
 export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.JSX.Element {
+  const timeZone = useSettings().data?.config.timeZone ?? DEFAULT_REPORT_TIME_ZONE
   const stats = row.agent
   if (stats === null) {
     return <p className="text-sm text-muted">{t('insights.noClaudeActivityInThisRange')}</p>
@@ -78,7 +78,11 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
       <StatsTable
         title="Skills"
         headers={[time, 'SKILL', t('insights.args')]}
-        rows={stats.skills.map((skill) => [timeText(skill.at), skill.skill, skill.args ?? ''])}
+        rows={stats.skills.map((skill) => [
+          timeText(skill.at, timeZone),
+          skill.skill,
+          skill.args ?? '',
+        ])}
       />
       <StatsTable
         title="Tools"
@@ -97,7 +101,7 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
           status,
         ]}
         rows={stats.subagents.map((sub) => [
-          timeText(sub.startedAt),
+          timeText(sub.startedAt, timeZone),
           sub.agentType,
           sub.description,
           sub.model ?? EMPTY_CELL,
@@ -110,7 +114,7 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
         title="Compacts"
         headers={[time, t('insights.type'), t('insights.beforeAfter'), t('insights.duration')]}
         rows={stats.compacts.map((compact) => [
-          timeText(compact.at),
+          timeText(compact.at, timeZone),
           compact.isAuto ? 'auto' : 'manual',
           `${formatTokens(compact.preTokens)} → ${formatTokens(compact.postTokens)}`,
           `${String(Math.round(compact.durationMs / MS_PER_SECOND))}s`,
@@ -120,7 +124,7 @@ export function ReportDetail({ row }: { readonly row: TicketReportRow }): React.
         title={t('insights.apiErrors')}
         headers={[time, status, t('insights.message')]}
         rows={stats.apiErrors.map((error) => [
-          timeText(error.at),
+          timeText(error.at, timeZone),
           error.status === null ? EMPTY_CELL : String(error.status),
           error.text,
         ])}

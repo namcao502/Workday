@@ -67,3 +67,40 @@ Per-user data (`config.json`, `secrets.json`, `board.json`) goes under `WORKDAY_
 - Linux and others: `$XDG_DATA_HOME/workday`, default `~/.local/share/workday`
 
 A corrupt file is kept as `<file>.bad` and replaced by defaults; it never stops the server.
+
+## Moving to another PC
+
+Settings > General > **Backup & move to another PC** exports the whole data dir (config, encrypted secrets, board,
+history and the key that opens `secrets.json`) into one `.wdbackup` file locked with a password (8 characters or more).
+On the new PC, import it in the same place and restart; the files it replaces are kept in `before-import-<stamp>/`.
+Sign-ins (TSC, Teams) do not move: sign in again from Settings > Work > Timesheet and Settings > Integrations > Teams.
+
+## Another project or company
+
+Every company value is in config, so a new project is mostly Settings (or `config.json` in the data dir). Start from
+an empty data dir rather than a copy of someone else's: a copied config keeps signing in to their systems.
+
+| What                                    | Where                       | Off when                    |
+| --------------------------------------- | --------------------------- | --------------------------- |
+| Jira site, email, token, key prefix     | Integrations > Connections  | required                    |
+| Board queries, field ids, status flow   | Connections > Advanced      | defaults apply              |
+| Available to take queries               | Connections > Advanced      | the three queries are empty |
+| Azure DevOps org, project, repos, PAT   | Integrations > Azure DevOps | org or project is empty     |
+| Teams channels, posts, DB review        | Integrations > Teams        | no `Team > Channel` line    |
+| HRM, TSC, log time                      | Work > Timesheet            | a required field is empty   |
+| Public holidays (default: Vietnam's)    | Work > Public holidays      |                             |
+| Dev repo, sibling repos, start prompt   | Work > Workspace            |                             |
+| Knowledge scan command                  | Work > Schedules            | not set                     |
+| `timeZone` (default `Asia/Ho_Chi_Minh`) | `config.json` only          |                             |
+
+HRM and TSC are NOIS systems; another company leaves them empty, and the Timesheet page then has nothing to log to.
+
+Still built in, so a project that differs needs a code change:
+
+- Jira is the only tracker and Azure DevOps the only PR host (`packages/core/src/ports`).
+- Two PRs per ticket: branch `<KEY>` into `main` and `<KEY>-dev` into `development` (`server/src/azureDevOps/adoClient.ts`,
+  `server/src/prs/prPass.ts`, `core/src/prTracking.ts`, `core/src/gitParse.ts`).
+- Ticket notes in `<dev repo>/docs/<KEY>/`, written by the Claude skills of the dev repo (`teams-post.md`,
+  `teams-analysis.json`).
+- The Teams thread analysis asks Claude for Vietnamese replies (`server/src/teams/teamsAnalysis.ts`).
+- The in-app guide (`packages/client/src/guide/`) describes NOIS's setup.

@@ -163,6 +163,13 @@ export function parseSettingsUpdate(raw: unknown, currentPort: number): Settings
     }
     update = { ...update, seasonEffects }
   }
+  if (Object.hasOwn(raw, 'seasonCursor')) {
+    const seasonCursor = raw['seasonCursor']
+    if (typeof seasonCursor !== 'boolean') {
+      return null
+    }
+    update = { ...update, seasonCursor }
+  }
   if (language !== undefined) {
     if (language !== 'en' && language !== 'vi') {
       return null

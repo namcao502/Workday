@@ -12,6 +12,7 @@ import { Section } from '../ui/Section.js'
 import { Segmented } from '../ui/Segmented.js'
 
 type Theme = SettingsView['config']['theme']
+type OnOff = 'on' | 'off'
 
 export function seasonName(season: Season): string {
   switch (season) {
@@ -40,7 +41,7 @@ export function GeneralSection({
   readonly settings: SettingsView
 }): React.JSX.Element {
   const save = useSaveSettings()
-  const { theme, language, season, seasonEffects, timeZone } = settings.config
+  const { theme, language, season, seasonEffects, seasonCursor, timeZone } = settings.config
   const shown = useActiveSeason(season, timeZone)
   return (
     <Section title={t('settings.general')}>
@@ -96,6 +97,22 @@ export function GeneralSection({
             }}
           />
           <span className="text-sm text-muted">{t('settings.autoFullOnAComputerLight')}</span>
+        </div>
+      )}
+      {season === 'off' ? null : (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="w-24 text-sm text-muted">{t('settings.cursor')}</span>
+          <Segmented<OnOff>
+            label={t('settings.cursor')}
+            value={seasonCursor ? 'on' : 'off'}
+            options={[
+              { value: 'on', label: t('settings.on') },
+              { value: 'off', label: t('settings.off') },
+            ]}
+            onChange={(next) => {
+              void save({ seasonCursor: next === 'on' })
+            }}
+          />
         </div>
       )}
       <div className="flex flex-wrap items-center gap-3">

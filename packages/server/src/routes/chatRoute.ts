@@ -191,6 +191,35 @@ export function registerChatRoutes(app: FastifyInstance, workspace: WorkspaceSer
     },
   )
 
+  app.get<{ Params: { name: string } }>(
+    '/api/workspace/sessions/:name/past-chats',
+    (request, reply) => {
+      const chats = workspace.pastChats(request.params.name)
+      return chats === null ? reply.code(404).send(SESSION_NOT_FOUND) : chats
+    },
+  )
+
+  app.post<{ Params: { name: string } }>(
+    '/api/workspace/sessions/:name/resume',
+    async (request, reply) => {
+      const sessionId = isRecord(request.body) ? request.body['sessionId'] : undefined
+      if (typeof sessionId !== 'string' || !UUID.test(sessionId)) {
+        return reply.code(400).send({ error: 'Body must be { sessionId: uuid }' })
+      }
+      const outcome = await workspace.resumeChat(request.params.name, sessionId)
+      switch (outcome) {
+        case 'ok':
+          return OK
+        case 'notFound':
+          return reply.code(404).send(SESSION_NOT_FOUND)
+        case 'chatNotFound':
+          return reply.code(404).send({ ok: false, error: { code: 'chatNotFound' } })
+        case 'claudeWorking':
+          return reply.code(409).send({ ok: false, error: { code: 'claudeWorking' } })
+      }
+    },
+  )
+
   app.post<{ Params: { name: string } }>(
     '/api/workspace/sessions/:name/model',
     async (request, reply) => {

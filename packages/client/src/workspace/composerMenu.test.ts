@@ -4,6 +4,8 @@ import {
   applySuggestion,
   commandSuggestions,
   fileSuggestions,
+  pastChatSuggestions,
+  withResume,
 } from './composerMenu.js'
 
 it('finds a slash command only at the start and an @path anywhere', () => {
@@ -36,4 +38,42 @@ it('replaces the typed token with the chosen file', () => {
       caret: 17,
     })
   }
+})
+
+it('/resume with a space opens the chat list; its text filters the titles', () => {
+  expect(activeToken('/resume ', 8)).toEqual({ kind: 'resume', start: 0, query: '' })
+  expect(activeToken('/resume board fix', 17)).toEqual({
+    kind: 'resume',
+    start: 0,
+    query: 'board fix',
+  })
+  expect(activeToken('/resume', 7)).toEqual({ kind: 'command', start: 0, query: 'resume' })
+})
+
+it('resume is offered first among the commands and only once', () => {
+  const commands = [
+    { name: 'review', description: 'r', hint: '' },
+    { name: 'resume', description: 'from the SDK', hint: '' },
+  ]
+  const merged = withResume(commands, 'Resume an earlier chat')
+  expect(merged.map((command) => command.name)).toEqual(['resume', 'review'])
+  expect(merged[0]?.description).toBe('Resume an earlier chat')
+})
+
+it('lists the past chats matching every typed word, newest first as given', () => {
+  const chats = [
+    { id: 'a', title: 'Fix the board view', modifiedAt: '2026-11-25T01:00:00Z', current: false },
+    { id: 'b', title: null, modifiedAt: '2026-11-24T01:00:00Z', current: true },
+    { id: 'c', title: 'Board totals', modifiedAt: '2026-11-23T01:00:00Z', current: false },
+  ]
+  const label = (chat: (typeof chats)[number]): string => chat.title ?? '(no prompt)'
+  const note = (chat: (typeof chats)[number]): string => chat.modifiedAt.slice(0, 10)
+  expect(pastChatSuggestions(chats, '', label, note).map((item) => item.key)).toEqual([
+    'a',
+    'b',
+    'c',
+  ])
+  expect(pastChatSuggestions(chats, 'BOARD fix', label, note)).toEqual([
+    { key: 'a', insert: '', label: 'Fix the board view', note: '2026-11-25' },
+  ])
 })

@@ -11,6 +11,7 @@ import { errorText } from './errors.js'
 import { setLanguage, t } from './i18n.js'
 import { PairPage } from './remote/PairPage.js'
 import { SeasonLayer } from './season/SeasonLayer.js'
+import { cursorValue } from './season/cursors.js'
 import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
 import { currentHash } from './shell/appHash.js'
@@ -77,6 +78,21 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
       localStorage.setItem(SEASON_STORAGE_KEY, season)
     }
   }, [season, level, settings.data])
+
+  const cursor = season !== null && settings.data?.config.seasonCursor === true ? season : null
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    if (cursor === null) {
+      delete root.dataset['seasonCursor']
+      root.style.removeProperty('--season-cursor')
+      root.style.removeProperty('--season-cursor-pointer')
+      return
+    }
+    // season.css reads these: the arrow for the page, the pointer for what can be clicked.
+    root.style.setProperty('--season-cursor', cursorValue(cursor, 'default'))
+    root.style.setProperty('--season-cursor-pointer', cursorValue(cursor, 'pointer'))
+    root.dataset['seasonCursor'] = ''
+  }, [cursor])
 
   if (settings.data === undefined) {
     return settings.isError ? (

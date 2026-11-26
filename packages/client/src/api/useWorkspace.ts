@@ -5,6 +5,7 @@ import type {
   DiffView,
   FileContentView,
   FilesGroupView,
+  PastChat,
   WorkspaceView,
 } from '@workday/core'
 import { useEffect, useMemo, useRef } from 'react'
@@ -19,6 +20,7 @@ import {
   getDiff,
   getFileContent,
   getFiles,
+  getPastChats,
   getWorkspace,
   markSeen,
   moveTab,
@@ -155,6 +157,19 @@ export function useFileContent(
 }
 
 // Under the `workspace` key root, so a workspace.changed event refetches an open chat at once.
+// Read each time the /resume list opens: a chat may have been written since.
+export function usePastChats(
+  session: string,
+  enabled: boolean,
+): UseQueryResult<readonly PastChat[]> {
+  return useQuery({
+    queryKey: ['workspace', 'past-chats', session],
+    queryFn: () => getPastChats(session),
+    enabled,
+    staleTime: 0,
+  })
+}
+
 export function chatKey(session: string): readonly string[] {
   return ['workspace', 'chat', session]
 }
