@@ -94,3 +94,12 @@ it('rain slants by its drift and a drop blown off one side comes back on the oth
   const [wrapped] = stepParticles([{ ...BASE, x: -15, speed: 700 }], drops, 800, 2000, 0.1, HALF)
   expect(wrapped?.x).toBeGreaterThan(800)
 })
+
+it('outlines snow on a light backdrop, where a white flake would vanish, and not on a dark one', () => {
+  for (const season of ['winter', 'christmas'] as const) {
+    const light = seasonStyles(season, false).find((style) => style.shape === 'flake')
+    const dark = seasonStyles(season, true).find((style) => style.shape === 'flake')
+    expect(light?.outline).toBe('rgba(80,110,155,0.55)')
+    expect(dark?.outline).toBeUndefined()
+  }
+})

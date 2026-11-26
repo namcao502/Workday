@@ -108,6 +108,11 @@ it('puts the season cursor on the page only when the setting allows it', async (
   expect(root.dataset['seasonCursor']).toBe('')
   expect(root.style.getPropertyValue('--season-cursor')).toMatch(/^url\("data:image\/svg\+xml,/)
   expect(root.style.getPropertyValue('--season-cursor-pointer')).toMatch(/, pointer$/)
+  expect(root.style.getPropertyValue('--season-cursor-text')).toMatch(/, text$/)
+  expect(root.style.getPropertyValue('--season-cursor-not-allowed')).toMatch(/, not-allowed$/)
+  expect(root.style.getPropertyValue('--season-cursor-col-resize')).toMatch(/, col-resize$/)
+  expect(root.style.getPropertyValue('--season-cursor-grab')).toMatch(/, grab$/)
+  expect(root.style.getPropertyValue('--season-cursor-zoom-in')).toMatch(/, zoom-in$/)
   unmount()
 
   const cursorOff = { ...cursorOn, seasonCursor: false } as const
@@ -120,31 +125,4 @@ it('puts the season cursor on the page only when the setting allows it', async (
   expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
   expect(root.dataset['seasonCursor']).toBeUndefined()
   expect(root.style.getPropertyValue('--season-cursor')).toBe('')
-})
-
-it('frames the sidebar while season effects are on, and drops the frame when they are off', async () => {
-  stubMatchMedia(false)
-  const effectsOn = { ...settingsView().config, season: 'spring', seasonEffects: 'full' } as const
-  stubFetch((url) =>
-    url === '/api/me'
-      ? jsonResponse({ mode: 'local' })
-      : jsonResponse(settingsView({ config: effectsOn })),
-  )
-  const { unmount } = render(<App socketFactory={noSocket} />)
-  expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
-  const root = document.documentElement
-  expect(root.dataset['seasonFrame']).toBe('')
-  expect(root.style.getPropertyValue('--season-frame')).toMatch(/^url\("data:image\/svg\+xml,/)
-  unmount()
-
-  const effectsOff = { ...effectsOn, seasonEffects: 'off' } as const
-  stubFetch((url) =>
-    url === '/api/me'
-      ? jsonResponse({ mode: 'local' })
-      : jsonResponse(settingsView({ config: effectsOff })),
-  )
-  render(<App socketFactory={noSocket} />)
-  expect(await screen.findByRole('heading', { name: 'Tickets' })).toBeInTheDocument()
-  expect(root.dataset['seasonFrame']).toBeUndefined()
-  expect(root.style.getPropertyValue('--season-frame')).toBe('')
 })

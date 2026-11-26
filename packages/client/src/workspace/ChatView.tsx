@@ -11,7 +11,14 @@ import { ChatComposer, type ChatQuoteRequest } from './ChatComposer.js'
 import { SelectionQuote } from './SelectionQuote.js'
 import { ChatRequestCard } from './ChatRequestCard.js'
 import { ChatRows } from './ChatRows.js'
-import { addEcho, dropEchoes, useEchoes } from './promptEchoes.js'
+import {
+  addEcho,
+  consumeEchoes,
+  dropEchoes,
+  newestUserId,
+  pendingEchoes,
+  useEchoes,
+} from './promptEchoes.js'
 import { Tip } from '../ui/Tip.js'
 import { useNarrow } from '../shell/useNarrow.js'
 
@@ -183,18 +190,12 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   const [answering, setAnswering] = useState(false)
   const [rewind, setRewind] = useState<RewindState | null>(null)
   const queued = useEchoes(session)
-  const echoBase = useRef<number | null>(null) // user rows in the transcript when the first echo arrived
   const listRef = useRef<HTMLDivElement>(null)
   const atBottom = useRef(true)
   const [awayFromBottom, setAwayFromBottom] = useState(false)
   const messages = chat.data?.messages
   const requests = chat.data?.requests
-  const userCount = (messages ?? []).filter((message) => message.role === 'user').length
-  if (queued.length !== 0 && echoBase.current === null) {
-    echoBase.current = userCount
-  }
-  const consumed = echoBase.current === null ? 0 : Math.max(userCount - echoBase.current, 0)
-  const echoed = queued.slice(consumed)
+  const echoed = pendingEchoes(queued, messages ?? [])
   const prompts = useMemo(() => userPrompts(messages ?? []), [messages])
   const working = chat.data?.working === true
   useRefreshFilesAfterTurn(tabId, working)
@@ -285,13 +286,12 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
     }
   }, [messages, working, requests, shown, echoed.length])
 
-  // The transcript has taken over the first `consumed` echoes.
+  // The transcript took over the echoes its new user rows stand for; only the shown, loaded chat decides.
   useEffect(() => {
-    if (consumed !== 0) {
-      dropEchoes(session, consumed)
-      echoBase.current = consumed >= queued.length ? null : (echoBase.current ?? 0) + consumed
+    if (shown && messages !== undefined && queued !== null) {
+      consumeEchoes(session, messages)
     }
-  }, [consumed, queued.length, session])
+  }, [shown, messages, queued, session])
 
   async function settle(action: () => Promise<void>): Promise<void> {
     try {
@@ -460,7 +460,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
           history={prompts}
           status={modelChip}
           onSending={(text) => {
-            addEcho(session, text)
+            addEcho(session, text, messages === undefined ? null : newestUserId(messages))
           }}
           onSendFailed={() => {
             dropEchoes(session)

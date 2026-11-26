@@ -283,24 +283,6 @@ html[data-season='rain'] :is(.card, .surface, .bg-surface) {
     176px 190px;
 }
 
-/* Every season frames the sidebar (and the phone tab bar) with a cord and its motifs: App.tsx sets
-   data-season-frame and --season-frame from season/frame.ts; 22 is that tile's FRAME_SLICE. */
-html[data-season-frame] :is(.app-sidebar, .app-tabbar)::before {
-  content: '';
-  position: absolute;
-  inset: -11px;
-  border: 22px solid transparent;
-  border-image: var(--season-frame) 22 round;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* The phone tab bar sits a few px from the screen edges, so it keeps only the cord along its top. */
-html[data-season-frame] .app-tabbar::before {
-  inset: -11px 0 auto;
-  border-width: 22px 0 0;
-}
-
 /* The bell piece hugs the round rim from its left side to just before the top, clear of the unread
    count on the right. The frame is 60px, centered on the 36px button. */
 html[data-season]:not([data-season-effects='off']) .notice-bell::after {
@@ -370,10 +352,12 @@ html[data-season='rain']:not([data-season-effects='off']) .notice-bell::after {
   }
 }
 
-/* Seasonal cursors (App.tsx sets the variables from season/cursors.ts). The arrow is inherited, so any element
-   with its own cursor (resize, grab, wait) keeps it; clickables take the pointer, fields keep the text beam. */
+/* Seasonal cursors, one variable per kind the app shows (App.tsx, season/cursors.ts). The arrow is inherited;
+   HeroUI reads its pointer and disabled cursors from --cursor-interactive and --cursor-disabled. */
 html[data-season-cursor] {
   cursor: var(--season-cursor);
+  --cursor-interactive: var(--season-cursor-pointer);
+  --cursor-disabled: var(--season-cursor-not-allowed);
 }
 
 html[data-season-cursor]
@@ -403,5 +387,30 @@ html[data-season-cursor]
     textarea,
     [contenteditable]:not([contenteditable='false'])
   ) {
-  cursor: text;
+  cursor: var(--season-cursor-text);
+}
+
+html[data-season-cursor]
+  :is(
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='option']
+  )[aria-disabled='true'],
+html[data-season-cursor] button:disabled,
+html[data-season-cursor] .cursor-not-allowed {
+  cursor: var(--season-cursor-not-allowed);
+}
+
+html[data-season-cursor] .cursor-col-resize {
+  cursor: var(--season-cursor-col-resize);
+}
+
+html[data-season-cursor] .cursor-grab {
+  cursor: var(--season-cursor-grab);
+}
+
+html[data-season-cursor] .teams-content img {
+  cursor: var(--season-cursor-zoom-in);
 }

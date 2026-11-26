@@ -11,8 +11,7 @@ import { errorText } from './errors.js'
 import { setLanguage, t } from './i18n.js'
 import { PairPage } from './remote/PairPage.js'
 import { SeasonLayer } from './season/SeasonLayer.js'
-import { cursorValue } from './season/cursors.js'
-import { frameValue } from './season/frame.js'
+import { CURSOR_KINDS, CURSOR_VARIABLES, cursorValue } from './season/cursors.js'
 import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
 import { currentHash } from './shell/appHash.js'
@@ -85,28 +84,17 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
     const root = document.documentElement
     if (cursor === null) {
       delete root.dataset['seasonCursor']
-      root.style.removeProperty('--season-cursor')
-      root.style.removeProperty('--season-cursor-pointer')
+      for (const kind of CURSOR_KINDS) {
+        root.style.removeProperty(CURSOR_VARIABLES[kind])
+      }
       return
     }
-    // season.css reads these: the arrow for the page, the pointer for what can be clicked.
-    root.style.setProperty('--season-cursor', cursorValue(cursor, 'default'))
-    root.style.setProperty('--season-cursor-pointer', cursorValue(cursor, 'pointer'))
+    // season.css reads one variable per cursor kind the app shows.
+    for (const kind of CURSOR_KINDS) {
+      root.style.setProperty(CURSOR_VARIABLES[kind], cursorValue(cursor, kind))
+    }
     root.dataset['seasonCursor'] = ''
   }, [cursor])
-
-  // The sidebar's seasonal frame (season.css), drawn only while the season may decorate.
-  const framed = season !== null && level !== 'off' ? season : null
-  useLayoutEffect(() => {
-    const root = document.documentElement
-    if (framed === null) {
-      delete root.dataset['seasonFrame']
-      root.style.removeProperty('--season-frame')
-    } else {
-      root.style.setProperty('--season-frame', frameValue(framed, theme === 'dark'))
-      root.dataset['seasonFrame'] = ''
-    }
-  }, [framed, theme])
 
   if (settings.data === undefined) {
     return settings.isError ? (

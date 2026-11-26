@@ -19,44 +19,61 @@ function inFrame(context: CanvasRenderingContext2D, p: Particle, draw: () => voi
   context.restore()
 }
 
-function drawFlake(context: CanvasRenderingContext2D, p: Particle): void {
-  // A faint cool halo keeps a white flake visible on a light backdrop.
-  context.fillStyle = FLAKE_HALO
+// The six arms of a crystal flake, each with a short twig two thirds out, in the particle's frame.
+function crystalPath(context: CanvasRenderingContext2D, p: Particle): void {
   context.beginPath()
-  context.arc(p.x, p.y, p.size + 1.2, 0, Math.PI * 2)
-  context.fill()
+  for (let arm = 0; arm < CRYSTAL_ARMS; arm += 1) {
+    const angle = (arm * Math.PI * 2) / CRYSTAL_ARMS
+    const tipX = Math.cos(angle) * p.size * 1.6
+    const tipY = Math.sin(angle) * p.size * 1.6
+    context.moveTo(0, 0)
+    context.lineTo(tipX, tipY)
+    const midX = tipX * 0.6
+    const midY = tipY * 0.6
+    context.moveTo(midX, midY)
+    context.lineTo(
+      midX + Math.cos(angle + 0.8) * p.size * 0.5,
+      midY + Math.sin(angle + 0.8) * p.size * 0.5,
+    )
+    context.moveTo(midX, midY)
+    context.lineTo(
+      midX + Math.cos(angle - 0.8) * p.size * 0.5,
+      midY + Math.sin(angle - 0.8) * p.size * 0.5,
+    )
+  }
+}
+
+// outline: an edge color for a light backdrop, where a white flake would vanish; without it a faint cool halo.
+function drawFlake(context: CanvasRenderingContext2D, p: Particle, outline: string | null): void {
+  if (outline === null) {
+    context.fillStyle = FLAKE_HALO
+    context.beginPath()
+    context.arc(p.x, p.y, p.size + 1.2, 0, Math.PI * 2)
+    context.fill()
+  }
   if (p.size < CRYSTAL_FROM) {
     context.fillStyle = p.color
     context.beginPath()
     context.arc(p.x, p.y, p.size, 0, Math.PI * 2)
     context.fill()
+    if (outline !== null) {
+      context.strokeStyle = outline
+      context.lineWidth = 1
+      context.stroke()
+    }
     return
   }
   inFrame(context, p, () => {
+    context.lineCap = 'round'
+    if (outline !== null) {
+      context.strokeStyle = outline
+      context.lineWidth = 3
+      crystalPath(context, p)
+      context.stroke()
+    }
     context.strokeStyle = p.color
     context.lineWidth = 1.4
-    context.lineCap = 'round'
-    context.beginPath()
-    for (let arm = 0; arm < CRYSTAL_ARMS; arm += 1) {
-      const angle = (arm * Math.PI * 2) / CRYSTAL_ARMS
-      const tipX = Math.cos(angle) * p.size * 1.6
-      const tipY = Math.sin(angle) * p.size * 1.6
-      context.moveTo(0, 0)
-      context.lineTo(tipX, tipY)
-      // A short twig on each arm, two thirds out.
-      const midX = tipX * 0.6
-      const midY = tipY * 0.6
-      context.moveTo(midX, midY)
-      context.lineTo(
-        midX + Math.cos(angle + 0.8) * p.size * 0.5,
-        midY + Math.sin(angle + 0.8) * p.size * 0.5,
-      )
-      context.moveTo(midX, midY)
-      context.lineTo(
-        midX + Math.cos(angle - 0.8) * p.size * 0.5,
-        midY + Math.sin(angle - 0.8) * p.size * 0.5,
-      )
-    }
+    crystalPath(context, p)
     context.stroke()
   })
 }
@@ -163,11 +180,12 @@ export function drawParticle(
   shape: ParticleShape,
   p: Particle,
   slant = 0,
+  outline: string | null = null, // ParticleStyle.outline
 ): void {
   context.globalAlpha = particleAlpha(shape, p)
   switch (shape) {
     case 'flake':
-      drawFlake(context, p)
+      drawFlake(context, p, outline)
       break
     case 'star':
       drawStar(context, p)

@@ -1,6 +1,6 @@
 import { Button, Spinner } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
-import { paragraphsFromText, type TeamsMessage } from '@workday/core'
+import { paragraphsFromText, type ChatView as ChatData, type TeamsMessage } from '@workday/core'
 import { useEffect, useState } from 'react'
 import {
   deleteMessage,
@@ -10,6 +10,7 @@ import {
   type TeamsWrite,
 } from '../../api/teamsApi.js'
 import { useSettings } from '../../api/useSettings.js'
+import { chatKey } from '../../api/useWorkspace.js'
 import { errorText } from '../../errors.js'
 import { formatShortDate, getLanguage, t } from '../../i18n.js'
 import { FindablePane } from '../../ui/FindablePane.js'
@@ -22,7 +23,7 @@ import {
 } from './TeamsPanels.js'
 import { TeamsBugReplyCard } from './TeamsBugReplyCard.js'
 import { TeamsEditBox, TeamsReplyBox, type LoadedReply } from './TeamsComposeParts.js'
-import { addEcho, dropEchoes } from '../promptEchoes.js'
+import { addEcho, dropEchoes, newestUserId } from '../promptEchoes.js'
 import { TeamsAnalysisPanel } from './TeamsAnalysisPanel.js'
 import { TeamsPostCard } from './TeamsPostCard.js'
 import { outcomeOf, type SendAction } from './teamsSend.js'
@@ -211,9 +212,11 @@ export function TeamsView({
             }}
             onAskClaude={(message) => {
               // The task file and the line to Claude take a moment; the chat shows the ask at once.
+              const sessionChat = queryClient.getQueryData<ChatData>(chatKey(firstSession))
               addEcho(
                 firstSession,
                 t('teams.lookIntoTheTeamsMessageFrom', { senderName: message.senderName }),
+                sessionChat === undefined ? null : newestUserId(sessionChat.messages),
               )
               void run(() =>
                 handOffMessage(ticket, view.conversationId, message.id, firstSession),
