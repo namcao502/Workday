@@ -32,7 +32,7 @@ import { DayCard } from './DayCard.js'
 import { DaySuggestions } from './DaySuggestions.js'
 import { LogInput, type LogAction } from './LogInput.js'
 import { TimesheetBanners } from './TimesheetBanners.js'
-import { showReminder, logTimeMinutes } from './timesheetState.js'
+import { bentoDays, logTimeMinutes, showReminder } from './timesheetState.js'
 import { dateLabel, formatMinutes } from './timesheetText.js'
 import { useColumns } from './useColumns.js'
 import { useTimesheetActions } from './useTimesheetActions.js'
@@ -92,6 +92,12 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
   const usesCustom = custom !== null && custom.length === typedKeys.length
   const typedMinutes = usesCustom ? custom : evenSplit(typedKeys.length)
   const checks = useTicketChecks(typedKeys)
+  const queuedChecks = useTicketChecks([...new Set(view.queue.flatMap((entry) => entry.tickets))])
+  const summaries = Object.fromEntries(
+    Object.values(queuedChecks).flatMap((check) =>
+      check.summary === null ? [] : [[check.key, check.summary]],
+    ),
+  )
   const total = typedMinutes.reduce((sum, minutes) => sum + minutes, 0)
   const problem = ((): string | null => {
     if (parsed.invalid.length !== 0) {
@@ -107,6 +113,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
   const reading = week === null || week.reading
   const weekdays = Array.from({ length: WORKDAYS }, (_, index) => addDays(monday, index))
   const days = buildLogDays(weekdays, week?.coverage ?? null, view.queue, clock.date)
+  const bento = bentoDays(days, clock.date, columns)
   const outside = view.queue.filter(
     (entry) => !days.some((day) => day.queued !== null && day.date === entry.date),
   )
@@ -151,6 +158,8 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         logTime={view.logTime}
         logTimeMinutes={logTimeMinutes(view.logTime)}
         selected={day.date === date}
+        big={day.date === bento.big}
+        summaries={summaries}
         canLog={canLog}
         reading={reading}
         working={working !== null && working.action === 'drain' && working.date === day.date}
@@ -163,13 +172,6 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
           void actions.saveMinutes(target, tickets, minutes)
         }
         onRemove={(target, key) => void actions.removeTicket(target, key)}
-        onRejected={() => {
-          actions.setStatus({
-            tone: 'danger',
-            text: t('timesheet.eachTicketNeeds0hAndThe'),
-            detail: null,
-          })
-        }}
       />
     )
   }
@@ -267,7 +269,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         className={`grid gap-3 ${columns > 1 ? 'auto-rows-fr' : ''} ${reading ? 'pointer-events-none [&>*>*]:opacity-70' : ''}`}
         style={{ gridTemplateColumns: `repeat(${String(columns)}, 1fr)` }}
       >
-        {days.map(renderCard)}
+        {bento.days.map(renderCard)}
       </div>
       <WeekTotals
         hrmTasks={week?.hrmTasks ?? null}

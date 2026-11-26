@@ -13,6 +13,27 @@ import { useTeamsPending } from './teams/useTeams.js'
 
 type LeftTab = 'changes' | 'files' | 'teams'
 
+const TAB_STORAGE_PREFIX = 'workday.leftTab.'
+const DEFAULT_TAB: LeftTab = 'files'
+
+// The pane tab each workspace tab was left on; Teams only counts for a ticket.
+function readTab(tabId: string, isTicket: boolean): LeftTab {
+  const stored = localStorage.getItem(TAB_STORAGE_PREFIX + tabId)
+  if (stored === 'changes' || (stored === 'teams' && isTicket)) {
+    return stored
+  }
+  return DEFAULT_TAB
+}
+
+// The default drops its entry, so storage does not grow with every ticket ever opened.
+function writeTab(tabId: string, tab: LeftTab): void {
+  if (tab === DEFAULT_TAB) {
+    localStorage.removeItem(TAB_STORAGE_PREFIX + tabId)
+  } else {
+    localStorage.setItem(TAB_STORAGE_PREFIX + tabId, tab)
+  }
+}
+
 interface LeftPaneProps {
   readonly tab: WorkspaceTab
   readonly teamsConversation: string | null // from the hash; opens the Teams view on it
@@ -60,9 +81,13 @@ export function LeftPane({
 }: LeftPaneProps): React.JSX.Element {
   const tabId = workspaceTab.id
   const isTicket = workspaceTab.kind === 'ticket'
-  const [tab, setTab] = useState<LeftTab>(
-    teamsConversation !== null && isTicket ? 'teams' : 'files',
+  const [tab, setShownTab] = useState<LeftTab>(() =>
+    teamsConversation !== null && isTicket ? 'teams' : readTab(tabId, isTicket),
   )
+  function setTab(next: LeftTab): void {
+    writeTab(tabId, next)
+    setShownTab(next)
+  }
   const [viewPending, setViewPending] = useState(false)
   useEffect(() => {
     if (teamsConversation !== null && isTicket) {

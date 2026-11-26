@@ -778,6 +778,15 @@ export const en = {
     youAreSignedOutOfTeams: 'You are signed out of Teams.',
   },
   timesheet: {
+    today: 'Today',
+    dayActions: 'Day actions',
+    editHours: 'Edit hours...',
+    editHoursFor: 'Edit hours - {dayLabel}',
+    queueOnlyNote:
+      'Changes here touch only the queue on this PC; nothing already logged in HRM or TSC is changed or deleted.',
+    halfAnHourLessFor: 'Half an hour less for {key}',
+    halfAnHourMoreFor: 'Half an hour more for {key}',
+    save: 'Save',
     aLogRunIsAlreadyIn: 'A log run is already in progress',
     addToQueue: 'Add to queue',
     after6Pm: '(after 6 PM)',
@@ -802,7 +811,6 @@ export const en = {
     weekWorkdaysOff: '{work} workdays, {off} off',
     didYouMean: ', did you mean {suggestedKey}?',
     eachTicketNeeds0h: 'each ticket needs > 0h',
-    eachTicketNeeds0hAndThe: 'Each ticket needs > 0h and the day up to 8h',
     hoursFor: 'Hours for {ticketKey}',
     hrmHours: 'HRM hours',
     hrmIsNotConnectedOpenSettings: 'HRM is not connected - open Settings',

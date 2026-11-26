@@ -44,7 +44,8 @@ export function ConversationSelect({
   return (
     <Select
       aria-label={t('teams.conversation')}
-      className="min-w-0 max-w-full flex-1"
+      // At least 16rem before the buttons beside it wrap below, so a phone never squeezes it to a column.
+      className="min-w-0 max-w-full flex-1 basis-64"
       value={value}
       onChange={(key) => {
         if (key !== null) {

@@ -53,7 +53,7 @@ function Charts({ report }: { readonly report: TicketReport }): React.JSX.Elemen
     value: totalTokens(row.tokens),
   }))
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(380px,1fr))] items-start gap-x-6 gap-y-4">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(380px,100%),1fr))] items-start gap-x-6 gap-y-4">
       {report.hoursRead ? (
         <BarChart title={t('insights.hoursByTicket')} bars={hoursBars} formatValue={formatHours} />
       ) : null}

@@ -115,6 +115,25 @@ it('switching tabs back and forth leaves exactly one file pane', async () => {
   expect(screen.getAllByTestId('workspace-left')).toHaveLength(1)
 })
 
+it('each ticket keeps its own pane tab when switching between tickets', async () => {
+  stubWorkspace(view())
+  renderWithQuery(<WorkspacePage />)
+  await screen.findByTestId('workspace-left')
+  fireEvent.click(screen.getByRole('tab', { name: 'MDP-1' }))
+  fireEvent.click(await screen.findByRole('tab', { name: 'Changes' }))
+  fireEvent.click(screen.getByRole('tab', { name: 'MDP-2' }))
+  fireEvent.click(await screen.findByRole('tab', { name: 'Teams' }))
+  fireEvent.click(screen.getByRole('tab', { name: 'MDP-1' }))
+  await waitFor(() => {
+    expect(screen.getByRole('tab', { name: 'Changes' })).toHaveAttribute('aria-selected', 'true')
+  })
+  fireEvent.click(screen.getByRole('tab', { name: 'MDP-2' }))
+  await waitFor(() => {
+    expect(screen.getByRole('tab', { name: /^Teams/ })).toHaveAttribute('aria-selected', 'true')
+  })
+  localStorage.clear()
+})
+
 it('switching tickets keeps each Claude session mounted instead of remounting it', async () => {
   stubWorkspace(view())
   renderWithQuery(<WorkspacePage />)

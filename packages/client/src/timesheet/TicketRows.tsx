@@ -12,6 +12,7 @@ const MINUTES_PER_HOUR = 60
 export interface TicketRow {
   readonly key: string
   readonly minutes: number
+  readonly summary?: string | null // shown beside the key; otherwise the check's summary
 }
 
 interface TicketRowsProps {
@@ -23,12 +24,12 @@ interface TicketRowsProps {
   readonly onUseKey?: (from: string, to: string) => void
 }
 
-function hoursText(minutes: number): string {
+export function hoursText(minutes: number): string {
   return String(Math.round((minutes / MINUTES_PER_HOUR) * 100) / 100)
 }
 
 // Decimal hours ("2.5" or "2,5") to whole minutes; NaN when it is not a number.
-function parseHours(text: string): number {
+export function parseHours(text: string): number {
   const hours = Number(text.trim().replace(',', '.'))
   return text.trim() === '' ? Number.NaN : Math.round(hours * MINUTES_PER_HOUR)
 }
@@ -115,14 +116,16 @@ export function TicketRows({
     <ul className="m-0 flex list-none flex-col gap-1 p-0">
       {rows.map((row, index) => {
         const check = checks?.[row.key]
+        const summary = row.summary ?? check?.summary ?? ''
         return (
           <li key={row.key}>
             <div className="flex items-center gap-2">
               {checks === undefined ? null : <CheckDot check={check} />}
               <KeyPill ticketKey={row.key} url={urlFor(row.key)} />
-              <span className="min-w-0 flex-1 truncate text-sm text-muted">
-                {check?.summary ?? ''}
-              </span>
+              {/* A long summary ends in "...", the tooltip holds the whole of it. */}
+              <Tip className="min-w-0 flex-1 truncate text-sm text-muted" content={summary}>
+                {summary}
+              </Tip>
               {onHours === undefined ? (
                 <span className="text-sm">{formatMinutes(row.minutes)}</span>
               ) : (

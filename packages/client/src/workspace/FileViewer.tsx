@@ -11,6 +11,7 @@ import { ctrlLinkHint, openLinkOnCtrl } from '../ui/ctrlLink.js'
 import { remarkBreaks } from '../ui/remarkBreaks.js'
 import { COPY_BLOCKS } from '../ui/markdownBlocks.js'
 import { highlightLines, languageOf } from '../ui/highlight.js'
+import { ImageViewer } from '../ui/ImageViewer.js'
 import { Segmented } from '../ui/Segmented.js'
 import { Tip } from '../ui/Tip.js'
 
@@ -104,7 +105,7 @@ function MarkdownView(props: FileViewerProps & { readonly text: string }): React
       return target === null ? (
         <span>{alt}</span>
       ) : (
-        <img src={rawFileUrl(tabId, group, target)} alt={alt ?? ''} />
+        <ZoomableImage src={rawFileUrl(tabId, group, target)} alt={alt ?? ''} />
       )
     },
   }
@@ -144,6 +145,38 @@ function MarkdownWithSource(props: FileViewerProps & { readonly text: string }):
   )
 }
 
+interface ZoomableImageProps {
+  readonly src: string
+  readonly alt: string
+  readonly className?: string
+}
+
+// An image that opens in the full-screen viewer on click, as Teams images do.
+function ZoomableImage({ src, alt, className }: ZoomableImageProps): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <img
+        className={`zoomable-image cursor-zoom-in ${className ?? ''}`}
+        src={src}
+        alt={alt}
+        onClick={() => {
+          setOpen(true)
+        }}
+      />
+      {open ? (
+        <ImageViewer
+          images={[{ src, fullSrc: null }]}
+          startIndex={0}
+          onClose={() => {
+            setOpen(false)
+          }}
+        />
+      ) : null}
+    </>
+  )
+}
+
 export function FileViewer(props: FileViewerProps): React.JSX.Element {
   const { content, tabId, group, path } = props
   switch (content.kind) {
@@ -152,7 +185,9 @@ export function FileViewer(props: FileViewerProps): React.JSX.Element {
     case 'markdown':
       return <MarkdownWithSource {...props} text={content.text} />
     case 'image':
-      return <img className="image-view" src={rawFileUrl(tabId, group, path)} alt={path} />
+      return (
+        <ZoomableImage className="image-view" src={rawFileUrl(tabId, group, path)} alt={path} />
+      )
     default:
       return (
         <p className="text-sm text-muted">

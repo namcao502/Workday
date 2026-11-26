@@ -69,6 +69,31 @@ it('Log now for today before 6 PM is disabled and says after 6 PM', async () => 
   expect(within(today).getByText(/Auto-logs at 6:00 PM \(8h left\)/)).toBeInTheDocument()
 })
 
+it('a queued day edits its hours in a dialog from the card menu, not inline', async () => {
+  const fetchMock = backend(timesheetView({ queue: [queued('2026-11-11', ['MDP-1', 'MDP-2'])] }))
+  renderWithQuery(<TimesheetPage />)
+  const day = await screen.findByRole('group', { name: /WED 11/ })
+  expect(within(day).queryByLabelText('Hours for MDP-1')).toBeNull()
+  fireEvent.click(within(day).getByRole('button', { name: 'Day actions' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit hours...' }))
+  const dialog = await screen.findByRole('dialog', { name: /Edit hours/ })
+  expect(within(dialog).getByText(/nothing already logged in HRM or TSC/)).toBeInTheDocument()
+  const hours = within(dialog).getByLabelText('Hours for MDP-1')
+  fireEvent.change(hours, { target: { value: '6' } })
+  expect(within(dialog).getByText('10h / 8h')).toBeInTheDocument()
+  expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled()
+  fireEvent.change(hours, { target: { value: '3' } })
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Half an hour more for MDP-2' }))
+  expect(within(dialog).getByText('7.5h / 8h')).toBeInTheDocument()
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
+  await waitFor(() => {
+    expect(bodyOf(fetchMock, '/api/timesheet/queue/2026-11-11/minutes')).toEqual({
+      tickets: ['MDP-1', 'MDP-2'],
+      minutes: [180, 270],
+    })
+  })
+})
+
 it('a queued day past the run reads Retry', async () => {
   backend(timesheetView({ queue: [queued('2026-11-11')] }))
   renderWithQuery(<TimesheetPage />)
@@ -159,6 +184,42 @@ it('week bars measure each ticket against the whole working week', async () => {
   const track = document.querySelector('[data-slot="tooltip-trigger"].h-2')
   // 4h of a 40h week.
   expect(await hoverTip(track ?? document.body)).toHaveTextContent('10% of the week')
+})
+
+it('day cards show each ticket summary next to its key, the full text in a tooltip', async () => {
+  const base = timesheetView({ queue: [queued('2026-11-11')] })
+  const task = {
+    date: '2026-11-09',
+    ticketKey: 'MDP-9',
+    summary: 'Sticker WIP filters',
+    workingSeconds: 4 * 3600,
+  }
+  const check = {
+    key: 'MDP-1',
+    status: 'valid',
+    summary: 'Queued one',
+    isMine: true,
+    suggestedKey: null,
+  }
+  backend({ ...base, week: base.week === null ? null : { ...base.week, hrmTasks: [task] } }, [
+    check,
+  ])
+  renderWithQuery(<TimesheetPage />)
+  await screen.findByRole('group', { name: /MON 9/ })
+  const logged = within(card(/MON 9/)).getByText('Sticker WIP filters')
+  expect(logged).toHaveClass('truncate')
+  expect(await hoverTip(logged)).toHaveTextContent('Sticker WIP filters')
+  expect(
+    await within(card(/WED 11/)).findByText('Queued one', {}, { timeout: 3000 }),
+  ).toBeInTheDocument()
+})
+
+it('marks today with a Today chip, and only today', async () => {
+  backend(timesheetView())
+  renderWithQuery(<TimesheetPage />)
+  await screen.findByRole('group', { name: /THU 12/ })
+  expect(within(card(/THU 12/)).getByText('Today')).toBeInTheDocument()
+  expect(within(card(/WED 11/)).queryByText('Today')).toBeNull()
 })
 
 it('pressing anywhere on a day card picks that day', async () => {

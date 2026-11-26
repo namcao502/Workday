@@ -135,7 +135,7 @@ export function TeamsView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="relative flex flex-wrap items-center gap-2 py-1.5">
+      <div className="flex flex-wrap items-center gap-2 py-1.5">
         {options.length === 0 ? null : (
           <ConversationSelect
             options={options}
@@ -164,11 +164,8 @@ export function TeamsView({
         >
           {t('teams.refresh')}
         </Button>
-        {/* A fixed-size slot: the 10 s background read must not change the header's layout. */}
-        <span
-          className="absolute right-1 top-2.5 flex size-5 items-center justify-center"
-          role="status"
-        >
+        {/* A fixed-size slot beside Refresh: the 10 s background read must not change the header's layout. */}
+        <span className="flex size-5 flex-none items-center justify-center" role="status">
           {isFetching ? <Spinner size="sm" aria-label={t('teams.reading')} /> : null}
         </span>
         {problem === null ? null : (
@@ -186,54 +183,58 @@ export function TeamsView({
       />
       {view.state === 'thread' ? (
         // Ctrl+F finds in the thread like in a file; the thread scrolls itself to keep the newest in view.
-        <FindablePane scrolls={false}>
-          <TeamsThread
-            thread={view.thread}
-            myId={view.myId}
-            timeZone={timeZone}
-            locked={writing}
-            editingId={editingId}
-            renderEditor={(message) => (
-              <TeamsEditBox
-                ticket={ticket}
-                conversationId={view.conversationId}
-                message={message}
-                isRoot={message.id === view.thread.rootId && !view.thread.isChat}
-                people={view.people}
-                locked={writing}
-                send={send}
-                onClose={() => {
-                  setEditingId(null)
-                }}
-              />
-            )}
-            onReact={(message, key) => {
-              void run(() => reactToMessage(ticket, view.conversationId, message.id, key))
-            }}
-            onAskClaude={(message) => {
-              // The task file and the line to Claude take a moment; the chat shows the ask at once.
-              const sessionChat = queryClient.getQueryData<ChatData>(chatKey(firstSession))
-              addEcho(
-                firstSession,
-                t('teams.lookIntoTheTeamsMessageFrom', { senderName: message.senderName }),
-                sessionChat === undefined ? null : newestUserId(sessionChat.messages),
-              )
-              void run(() =>
-                handOffMessage(ticket, view.conversationId, message.id, firstSession),
-              ).then((ok) => {
-                if (!ok) {
-                  dropEchoes(firstSession)
-                }
-              })
-            }}
-            onEdit={(message) => {
-              setEditingId(message.id)
-            }}
-            onDelete={(message) => {
-              void run(() => deleteMessage(ticket, view.conversationId, message.id))
-            }}
-          />
-        </FindablePane>
+        // At least 12rem: on a phone the analysis and composer would squeeze the thread to nothing, so the pane
+        // scrolls instead.
+        <div className="flex min-h-48 flex-1 flex-col">
+          <FindablePane scrolls={false}>
+            <TeamsThread
+              thread={view.thread}
+              myId={view.myId}
+              timeZone={timeZone}
+              locked={writing}
+              editingId={editingId}
+              renderEditor={(message) => (
+                <TeamsEditBox
+                  ticket={ticket}
+                  conversationId={view.conversationId}
+                  message={message}
+                  isRoot={message.id === view.thread.rootId && !view.thread.isChat}
+                  people={view.people}
+                  locked={writing}
+                  send={send}
+                  onClose={() => {
+                    setEditingId(null)
+                  }}
+                />
+              )}
+              onReact={(message, key) => {
+                void run(() => reactToMessage(ticket, view.conversationId, message.id, key))
+              }}
+              onAskClaude={(message) => {
+                // The task file and the line to Claude take a moment; the chat shows the ask at once.
+                const sessionChat = queryClient.getQueryData<ChatData>(chatKey(firstSession))
+                addEcho(
+                  firstSession,
+                  t('teams.lookIntoTheTeamsMessageFrom', { senderName: message.senderName }),
+                  sessionChat === undefined ? null : newestUserId(sessionChat.messages),
+                )
+                void run(() =>
+                  handOffMessage(ticket, view.conversationId, message.id, firstSession),
+                ).then((ok) => {
+                  if (!ok) {
+                    dropEchoes(firstSession)
+                  }
+                })
+              }}
+              onEdit={(message) => {
+                setEditingId(message.id)
+              }}
+              onDelete={(message) => {
+                void run(() => deleteMessage(ticket, view.conversationId, message.id))
+              }}
+            />
+          </FindablePane>
+        </div>
       ) : null}
       {view.state === 'thread' ? (
         <div className="flex flex-col gap-2 py-2" data-testid="teams-compose-slot">

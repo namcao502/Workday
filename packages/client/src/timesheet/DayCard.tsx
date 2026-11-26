@@ -4,15 +4,17 @@ import {
   entryMinutes,
   isHrmClosed,
   minutesUntilRun,
-  minutesWith,
   queueDayState,
   type HrmTask,
   type LogDayView,
   type WeekReviewItem,
   type ZonedClock,
 } from '@workday/core'
+import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { t, type Language } from '../i18n.js'
+import { ActionMenu } from './ActionMenu.js'
+import { EditHoursDialog } from './EditHoursDialog.js'
 import { holidayName } from './holidayName.js'
 import { TicketRows } from './TicketRows.js'
 import { dayHeader, DONE_MARK, formatMinutes, issueText, queueStatusText } from './timesheetText.js'
@@ -29,6 +31,8 @@ export interface DayCardProps {
   readonly logTime: string
   readonly logTimeMinutes: number
   readonly selected: boolean
+  readonly big?: boolean // the bento layout's 2x2 cell
+  readonly summaries: Readonly<Record<string, string>> // ticket key -> Jira summary, for queued tickets
   readonly canLog: boolean
   readonly working: boolean
   readonly reading: boolean // the week read is still running: an empty day may only be unread
@@ -43,7 +47,6 @@ export interface DayCardProps {
     minutes: readonly number[],
   ) => void
   readonly onRemove: (date: string, key: string) => void
-  readonly onRejected: () => void
 }
 
 function stateLabel(props: DayCardProps): string {
@@ -86,6 +89,7 @@ function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
           rows={tasks.map((task) => ({
             key: task.ticketKey,
             minutes: Math.round(task.workingSeconds / SECONDS_PER_MINUTE),
+            summary: task.summary,
           }))}
           urlFor={props.urlFor}
         />
@@ -98,6 +102,54 @@ function LoggedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
           </Tip>
         </p>
       )}
+    </>
+  )
+}
+
+// A queued day's menu: its hours are edited in a dialog rather than inline on the card.
+function QueuedMenu({ props }: { readonly props: DayCardProps }): React.JSX.Element | null {
+  const entry = props.day.queued
+  const canAct = useAccess().canAct('timesheet')
+  const [editing, setEditing] = useState(false)
+  if (entry === null || !canAct) {
+    return null
+  }
+  const minutes = entryMinutes(entry)
+  return (
+    <>
+      <ActionMenu
+        size="sm"
+        label={t('timesheet.dayActions')}
+        actions={[
+          {
+            label: t('timesheet.editHours'),
+            disabled: props.working,
+            onSelect: () => {
+              setEditing(true)
+            },
+          },
+        ]}
+      />
+      {editing ? (
+        <EditHoursDialog
+          dayLabel={dayHeader(entry.date, props.language)}
+          rows={entry.tickets.map((key, index) => ({
+            key,
+            minutes: minutes[index] ?? 0,
+            summary: props.summaries[key] ?? null,
+          }))}
+          urlFor={props.urlFor}
+          onSave={(next) => {
+            props.onSaveMinutes(entry.date, entry.tickets, next)
+          }}
+          onRemove={(key) => {
+            props.onRemove(entry.date, key)
+          }}
+          onClose={() => {
+            setEditing(false)
+          }}
+        />
+      ) : null}
     </>
   )
 }
@@ -142,27 +194,12 @@ function QueuedBody({ props }: { readonly props: DayCardProps }): React.JSX.Elem
         </Button>
       ) : null}
       <TicketRows
-        rows={entry.tickets.map((key, index) => ({ key, minutes: minutes[index] ?? 0 }))}
+        rows={entry.tickets.map((key, index) => ({
+          key,
+          minutes: minutes[index] ?? 0,
+          summary: props.summaries[key] ?? null,
+        }))}
         urlFor={props.urlFor}
-        onHours={
-          canAct
-            ? (key, ticketMinutes) => {
-                const next = minutesWith(entry, key, ticketMinutes)
-                if (next === null) {
-                  props.onRejected()
-                  return
-                }
-                props.onSaveMinutes(entry.date, entry.tickets, next)
-              }
-            : undefined
-        }
-        onRemove={
-          canAct
-            ? (key) => {
-                props.onRemove(entry.date, key)
-              }
-            : undefined
-        }
       />
     </>
   )
@@ -192,7 +229,9 @@ function offReason(day: LogDayView): string {
 }
 
 function OffBody({ day }: { readonly day: LogDayView }): React.JSX.Element {
-  return <p className="text-sm font-medium text-violet-700 dark:text-violet-300">{offReason(day)}</p>
+  return (
+    <p className="text-sm font-medium text-violet-700 dark:text-violet-300">{offReason(day)}</p>
+  )
 }
 
 function Body({ props }: { readonly props: DayCardProps }): React.JSX.Element | null {
@@ -225,11 +264,14 @@ const OFF_CHIP = 'bg-violet-500/15 text-violet-700 dark:text-violet-300'
 const OFF_CARD =
   'border border-dashed border-violet-400/70 bg-[image:repeating-linear-gradient(135deg,transparent_0_10px,rgb(139_92_246/0.12)_10px_20px)]! bg-auto!'
 
+// Today stands out from the other days whether or not it is the picked one.
+const TODAY_CARD = 'outline-2 outline-solid outline-accent -outline-offset-2'
+
 // A press on a control or the hours bar does its own job; picking the day then would steal its focus.
 const OWN_PRESS = 'button, input, textarea, select, a'
 
 export function DayCard(props: DayCardProps): React.JSX.Element {
-  const { day, clock, language, selected } = props
+  const { day, clock, language, selected, big = false } = props
   const header = dayHeader(day.date, language)
   const today = day.date === clock.date
   const label = stateLabel(props)
@@ -238,7 +280,7 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
     <Card
       role="group"
       aria-label={header}
-      className={`card-pressable gap-2 p-3 ${selected ? 'bg-accent-soft' : ''} ${off ? OFF_CARD : ''}`}
+      className={`card-pressable gap-2 p-3 ${big ? 'col-span-2 row-span-2' : ''} ${today ? TODAY_CARD : ''} ${selected ? 'bg-accent-soft' : ''} ${off ? OFF_CARD : ''}`}
       data-off={off}
       onClick={(event) => {
         if (!(event.target instanceof Element) || event.target.closest(OWN_PRESS) === null) {
@@ -257,12 +299,19 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
         >
           {header}
         </button>
+        {today ? (
+          <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
+            {t('timesheet.today')}
+          </span>
+        ) : null}
+        <span className="flex-1" />
         {label === '' ? null : (
           <Chip size="sm" color={STATE_COLOR[day.state]} className={off ? OFF_CHIP : ''}>
             {off ? <CalendarXmark width={12} height={12} aria-hidden="true" /> : null}
             {label}
           </Chip>
         )}
+        {day.state === 'queued' ? <QueuedMenu props={props} /> : null}
       </div>
       <Body props={props} />
     </Card>

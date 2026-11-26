@@ -63,6 +63,16 @@ it('shows an image file from the raw url', () => {
   expect(container.querySelector('img')?.getAttribute('src')).toContain('files/raw')
 })
 
+it('opens an image file and a markdown image full screen on click', () => {
+  const container = renderViewer({ kind: 'image' }, 'docs/pic.png')
+  fireEvent.click(container.querySelector('img') ?? document.body)
+  expect(screen.getByRole('dialog', { name: 'Image viewer' })).toBeTruthy()
+  cleanup()
+  const markdown = renderViewer({ kind: 'markdown', text: '![shot](../pic.png)' })
+  fireEvent.click(markdown.querySelector('img') ?? document.body)
+  expect(screen.getByRole('dialog', { name: 'Image viewer' })).toBeTruthy()
+})
+
 it('shows the source with line numbers', () => {
   const container = renderViewer({ kind: 'text', text: 'one\ntwo' }, 'docs/x.txt')
   expect(container.querySelectorAll('.code-line')).toHaveLength(2)

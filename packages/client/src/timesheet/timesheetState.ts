@@ -34,3 +34,23 @@ export function hasDueDay(view: TimesheetView, clock: ZonedClock): boolean {
 export function needsAttention(view: TimesheetView, clock: ZonedClock, timeZone: string): boolean {
   return showReminder(view, clock, timeZone) || hasDueDay(view, clock)
 }
+
+export interface BentoWeek<T> {
+  readonly days: readonly T[]
+  readonly big: string | null // the date shown as the 2x2 cell
+}
+
+// At 4 columns a 5-day week would leave Friday alone on a row: today moves first and takes a 2x2 cell, the
+// other four fill the two columns beside it in week order. Another week gives its first day the big cell.
+// Other widths keep the plain week.
+export function bentoDays<T extends { readonly date: string }>(
+  days: readonly T[],
+  today: string,
+  columns: number,
+): BentoWeek<T> {
+  const pick = days.find((day) => day.date === today) ?? days[0]
+  if (columns !== 4 || days.length !== 5 || pick === undefined) {
+    return { days, big: null }
+  }
+  return { days: [pick, ...days.filter((day) => day !== pick)], big: pick.date }
+}

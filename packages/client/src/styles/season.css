@@ -411,6 +411,6 @@ html[data-season-cursor] .cursor-grab {
   cursor: var(--season-cursor-grab);
 }
 
-html[data-season-cursor] .teams-content img {
+html[data-season-cursor] :is(.teams-content img, .zoomable-image) {
   cursor: var(--season-cursor-zoom-in);
 }

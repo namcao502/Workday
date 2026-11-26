@@ -19,8 +19,6 @@ import {
   pendingEchoes,
   useEchoes,
 } from './promptEchoes.js'
-import { Tip } from '../ui/Tip.js'
-import { useNarrow } from '../shell/useNarrow.js'
 
 const BOTTOM_SLACK_PX = 24
 
@@ -213,10 +211,9 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   // History is shown from the session's transcript even before Claude is started; the first prompt resumes it.
   const resumable = chat.data !== undefined && !running && (messages?.length ?? 0) !== 0
 
-  // The send row shows just the model; branch, diff, tokens, context fill, plan usage and the bypass flag wait in
-  // its tooltip.
+  // The send row shows just an icon; the model, branch, diff, tokens, context fill, plan usage and the bypass flag
+  // wait in its popup.
   const contextPercent = usage?.contextPercent ?? null
-  const narrow = useNarrow()
   const hasStatus =
     branch !== null ||
     added !== 0 ||
@@ -258,9 +255,9 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
         disabled={working}
       />
     )
-  // A phone has no hover and little width: the chip folds into an icon whose popup holds the picker and status.
+  // An icon, not the model name, so the composer keeps its width; the popup holds the picker and the status.
   const modelChip =
-    picker === null ? null : narrow ? (
+    picker === null ? null : (
       <Popover>
         <Button isIconOnly size="sm" variant="secondary" aria-label={t('workspace.sessionInfo')}>
           <Cpu width={16} height={16} aria-hidden="true" />
@@ -272,10 +269,6 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
           </Popover.Dialog>
         </Popover.Content>
       </Popover>
-    ) : (
-      <Tip content={statusInfo}>
-        <span className="flex items-center gap-1 text-xs text-muted">{picker}</span>
-      </Tip>
     )
 
   // Stick to the bottom only while the reader is there.

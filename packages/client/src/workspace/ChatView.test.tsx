@@ -1,14 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { ChatMessage, ChatView as ChatData } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
-import {
-  hoverTip,
-  jsonResponse,
-  renderWithQuery,
-  stubFetch,
-  stubMatchMedia,
-  type FetchMock,
-} from '../testSupport.js'
+import { jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
 import { ChatView } from './ChatView.js'
 import { OPEN_FILE_EVENT } from './fileLinks.js'
 
@@ -152,7 +145,7 @@ it('Stop shows while working and calls interrupt', async () => {
 it('shows no permission mode picker', async () => {
   stubChat({ model: 'claude-opus' })
   renderWithQuery(<ChatView session="claude" tabId="claude" />)
-  expect(await screen.findByText('claude-opus')).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Session info' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Permission mode/ })).not.toBeInTheDocument()
 })
 
@@ -190,7 +183,12 @@ it('shows no earlier-session note while Claude runs', async () => {
   expect(screen.queryByText(/history of an earlier session/)).not.toBeInTheDocument()
 })
 
-it('shows the model, with branch, changed lines and tokens in its tooltip', async () => {
+async function openSessionInfo(): Promise<HTMLElement> {
+  fireEvent.click(await screen.findByRole('button', { name: 'Session info' }))
+  return screen.findByRole('dialog')
+}
+
+it('folds the model into an icon whose popup holds the model, branch, changed lines and tokens', async () => {
   stubChat({
     model: 'claude-sonnet-5-5',
     branch: 'MDP-1',
@@ -199,14 +197,17 @@ it('shows the model, with branch, changed lines and tokens in its tooltip', asyn
     contextTokens: 75500,
   })
   renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
-  const tip = await hoverTip(await screen.findByText('claude-sonnet-5-5'))
+  await screen.findByRole('button', { name: 'Session info' })
+  expect(screen.queryByText('claude-sonnet-5-5')).toBeNull()
+  const tip = await openSessionInfo()
+  expect(tip).toHaveTextContent('claude-sonnet-5-5')
   expect(tip).toHaveTextContent('MDP-1')
   expect(tip).toHaveTextContent('+947')
   expect(tip).toHaveTextContent('-117')
   expect(tip).toHaveTextContent('75.5K')
 })
 
-it('shows the context percent and the plan usage in the tooltip, not next to the model', async () => {
+it('shows the context percent and the plan usage in the popup', async () => {
   stubChat({
     model: 'claude-sonnet-5-5',
     contextTokens: 75500,
@@ -216,29 +217,11 @@ it('shows the context percent and the plan usage in the tooltip, not next to the
     },
   })
   renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
-  const tip = await hoverTip(await screen.findByText('claude-sonnet-5-5'))
-  expect(screen.queryByText('(7%)')).toBeNull()
+  const tip = await openSessionInfo()
   expect(tip).toHaveTextContent('Context: 7%')
   expect(within(tip).getByText('7%')).toHaveClass('text-success')
   expect(within(tip).getByText('92%')).toHaveClass('text-danger')
   expect(tip).toHaveTextContent(/\(resets /)
-})
-
-it('on a phone folds the model chip into an icon whose popup holds the model and the status', async () => {
-  stubMatchMedia(true)
-  stubChat({
-    model: 'claude-sonnet-5-5',
-    contextTokens: 75500,
-    usage: { contextPercent: 7.2, usage: null },
-  })
-  renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
-  const info = await screen.findByRole('button', { name: 'Session info' })
-  expect(screen.queryByText('claude-sonnet-5-5')).toBeNull()
-  fireEvent.click(info)
-  const dialog = await screen.findByRole('dialog')
-  expect(dialog).toHaveTextContent('claude-sonnet-5-5')
-  expect(dialog).toHaveTextContent('75.5K')
-  expect(dialog).toHaveTextContent('Context: 7%')
 })
 
 it('expands an Edit to its diff and shows a TodoWrite as a checklist', async () => {
@@ -297,6 +280,7 @@ const CATALOG = {
 it('switches the model from the menu under the composer', async () => {
   const fetchMock = stubChat({ model: 'claude-opus-5-5', catalog: CATALOG })
   renderWithQuery(<ChatView session="claude" tabId="claude" />)
+  await openSessionInfo()
   fireEvent.click(await screen.findByRole('button', { name: 'Switch model' }))
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Sonnet' }))
   await waitFor(() => {

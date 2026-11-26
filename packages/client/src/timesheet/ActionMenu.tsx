@@ -10,12 +10,16 @@ export interface MenuAction {
 
 export function ActionMenu({
   actions,
+  label = t('timesheet.moreActions'),
+  size,
 }: {
   readonly actions: readonly MenuAction[]
+  readonly label?: string
+  readonly size?: 'sm'
 }): React.JSX.Element {
   return (
     <Dropdown>
-      <Button isIconOnly variant="secondary" aria-label={t('timesheet.moreActions')}>
+      <Button isIconOnly size={size} variant="secondary" aria-label={label}>
         <EllipsisVertical />
       </Button>
       <Dropdown.Popover>
