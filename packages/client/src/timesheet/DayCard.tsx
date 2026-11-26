@@ -13,7 +13,7 @@ import {
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { t, type Language } from '../i18n.js'
-import { ActionMenu } from './ActionMenu.js'
+import { ActionMenu } from '../ui/ActionMenu.js'
 import { EditHoursDialog } from './EditHoursDialog.js'
 import { holidayName } from './holidayName.js'
 import { TicketRows } from './TicketRows.js'
@@ -33,6 +33,7 @@ export interface DayCardProps {
   readonly selected: boolean
   readonly big?: boolean // the bento layout's 2x2 cell
   readonly summaries: Readonly<Record<string, string>> // ticket key -> Jira summary, for queued tickets
+  readonly extra?: React.ReactNode // shown under the body: the day's worked-on suggestions in the big cell
   readonly canLog: boolean
   readonly working: boolean
   readonly reading: boolean // the week read is still running: an empty day may only be unread
@@ -264,6 +265,10 @@ const OFF_CHIP = 'bg-violet-500/15 text-violet-700 dark:text-violet-300'
 const OFF_CARD =
   'border border-dashed border-violet-400/70 bg-[image:repeating-linear-gradient(135deg,transparent_0_10px,rgb(139_92_246/0.12)_10px_20px)]! bg-auto!'
 
+// The picked day: a light tint, so its text keeps its contrast (a full accent fill read as a disabled card).
+// Today keeps the plain surface: its outline and Today chip already mark it.
+const SELECTED_CARD = 'bg-accent-soft/40'
+
 // Today stands out from the other days whether or not it is the picked one.
 const TODAY_CARD = 'outline-2 outline-solid outline-accent -outline-offset-2'
 
@@ -280,7 +285,7 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
     <Card
       role="group"
       aria-label={header}
-      className={`card-pressable gap-2 p-3 ${big ? 'col-span-2 row-span-2' : ''} ${today ? TODAY_CARD : ''} ${selected ? 'bg-accent-soft' : ''} ${off ? OFF_CARD : ''}`}
+      className={`card-pressable gap-2 p-3 ${big ? 'col-span-2 row-span-2' : ''} ${today ? TODAY_CARD : ''} ${selected && !today ? SELECTED_CARD : ''} ${off ? OFF_CARD : ''}`}
       data-off={off}
       onClick={(event) => {
         if (!(event.target instanceof Element) || event.target.closest(OWN_PRESS) === null) {
@@ -314,6 +319,7 @@ export function DayCard(props: DayCardProps): React.JSX.Element {
         {day.state === 'queued' ? <QueuedMenu props={props} /> : null}
       </div>
       <Body props={props} />
+      {props.extra ?? null}
     </Card>
   )
 }

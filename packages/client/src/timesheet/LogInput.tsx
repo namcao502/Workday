@@ -3,7 +3,7 @@ import { Plus } from '@gravity-ui/icons'
 import type { TicketCheck } from '@workday/core'
 import { t } from '../i18n.js'
 import { DateInput } from '../ui/DateInput.js'
-import { ActionMenu } from './ActionMenu.js'
+import { ActionMenu } from '../ui/ActionMenu.js'
 import { TicketRows, type TicketRow } from './TicketRows.js'
 
 export type LogAction = 'add' | 'now' | 'tsc' | 'hrm' | 'off' | 'clear'

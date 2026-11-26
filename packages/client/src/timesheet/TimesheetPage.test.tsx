@@ -345,6 +345,31 @@ it('a worked-on ticket queues for the selected day with one press', async () => 
     })
   })
 })
+it('at 4 columns the worked-on suggestions sit inside the big today card', async () => {
+  // A grid 1100px wide: four 260px columns, so the bento layout applies.
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(private readonly callback: (entries: unknown[]) => void) {}
+      observe(): void {
+        this.callback([{ contentRect: { width: 1100 } }])
+      }
+      disconnect(): void {}
+    },
+  )
+  backend(
+    timesheetView(),
+    [],
+    [{ ticketKey: 'MDP-7', summary: 'Seven', commits: 2, claude: true, shareMinutes: 480 }],
+  )
+  renderWithQuery(<TimesheetPage />)
+  await screen.findByRole('group', { name: /THU 12/ })
+  expect(
+    await within(card(/THU 12/)).findByRole('button', { name: /MDP-7 2 commits/ }),
+  ).toBeInTheDocument()
+  expect(screen.getAllByRole('button', { name: /MDP-7 2 commits/ })).toHaveLength(1)
+})
+
 it('a server that has no week yet is asked to read it, even when the page was visited before', async () => {
   const fetchMock = backend(timesheetView({ week: null }))
   renderWithQuery(<TimesheetPage />)

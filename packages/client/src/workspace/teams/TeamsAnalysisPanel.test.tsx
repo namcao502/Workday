@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import type { TeamsAnalysisView } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
 import { jsonResponse, renderWithQuery, stubFetch } from '../../testSupport.js'
@@ -36,20 +36,38 @@ function renderPanel(onUseReply = vi.fn()) {
   return onUseReply
 }
 
-it('shows the summary, stale note and waiting line, details on demand, and loads a reply', async () => {
+it('starts collapsed to its summary line, opens on demand, remembers it per ticket, and loads a reply', async () => {
+  localStorage.clear()
   stubFetch(() => jsonResponse(DONE))
   const onUseReply = renderPanel()
   expect(await screen.findByText(/Claude: 2 issue\(s\), 1 open/)).toBeInTheDocument()
   expect(screen.getByText(/New messages since this analysis/)).toBeInTheDocument()
   expect(screen.getByText(/QC is waiting since 3:05 PM/)).toBeInTheDocument()
-  expect(screen.getByText('The SP misses a join')).toBeInTheDocument()
-  expect(screen.getByText('Column is wrong')).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Collapse' }))
   expect(screen.queryByText('The SP misses a join')).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'da e fix r a' })).not.toBeInTheDocument()
+  // The result reads first, the action that refreshes it comes after.
+  const summary = screen.getByRole('status')
+  const analyze = screen.getByRole('button', { name: 'Analyze again' })
+  expect(summary.compareDocumentPosition(analyze) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Expand' }))
+  expect(screen.getByText('The SP misses a join')).toBeInTheDocument()
+  // The details scroll inside a box capped at a third of the screen.
+  expect(screen.getByTestId('teams-analysis-details')).toHaveClass('overflow-y-auto')
   fireEvent.click(screen.getByRole('button', { name: 'da e fix r a' }))
   expect(onUseReply).toHaveBeenCalledWith('da e fix r a')
+  cleanup()
+  renderPanel()
+  expect(await screen.findByText('The SP misses a join')).toBeInTheDocument()
+  localStorage.clear()
+})
+
+it('opens by itself once an analysis it watched running is done', async () => {
+  localStorage.clear()
+  let view: TeamsAnalysisView = { kind: 'running' }
+  stubFetch(() => jsonResponse(view))
+  renderPanel()
+  expect(await screen.findByText(/Claude is analyzing/)).toBeInTheDocument()
+  view = DONE
+  expect(await screen.findByText('The SP misses a join', {}, { timeout: 5000 })).toBeInTheDocument()
 })
 
 it('Analyze sends the main point and the session, and says why a start was refused', async () => {

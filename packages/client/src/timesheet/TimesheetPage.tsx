@@ -126,6 +126,17 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
   }
   const canLog = view.tscConnected && view.hrmConnected
   const working = actions.working
+  const suggestions = canAct ? (
+    <DaySuggestions
+      suggestions={daySuggestions.data ?? []}
+      busy={working !== null}
+      onAdd={(tickets, minutes) => {
+        void actions.addTyped({ date, tickets, minutes }, refreshSuggestions)
+      }}
+    />
+  ) : null
+  // The picked day's suggestions fill the big bento cell when it is that day; elsewhere they sit on top.
+  const suggestionsInCard = bento.big !== null && bento.big === date
 
   function shiftWeek(weeks: -1 | 1): void {
     const next = addDays(monday, weeks * 7)
@@ -160,6 +171,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         selected={day.date === date}
         big={day.date === bento.big}
         summaries={summaries}
+        extra={suggestionsInCard && day.date === bento.big ? suggestions : null}
         canLog={canLog}
         reading={reading}
         working={working !== null && working.action === 'drain' && working.date === day.date}
@@ -182,15 +194,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
   return (
     <Page title={t('timesheet.timesheet')} wide className="max-w-[1300px]">
       <TimesheetBanners view={view} reminder={showReminder(view, clock, timeZone)} />
-      {canAct ? (
-        <DaySuggestions
-          suggestions={daySuggestions.data ?? []}
-          busy={working !== null}
-          onAdd={(tickets, minutes) => {
-            void actions.addTyped({ date, tickets, minutes }, refreshSuggestions)
-          }}
-        />
-      ) : null}
+      {suggestionsInCard ? null : suggestions}
       {canAct ? (
         <LogInput
           date={date}

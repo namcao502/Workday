@@ -134,6 +134,33 @@ it('each ticket keeps its own pane tab when switching between tickets', async ()
   localStorage.clear()
 })
 
+// Every ticket's Claude pane stays mounted; the other tickets' ones carry the hidden class.
+function visibleButton(name: string): HTMLElement {
+  const button = screen
+    .getAllByRole('button', { name })
+    .find((candidate) => candidate.closest('.hidden, [hidden]') === null)
+  if (button === undefined) {
+    throw new Error(`No visible ${name} button`)
+  }
+  return button
+}
+
+it('Hide panel and Hide chat hide a pane, and the other pane brings it back', async () => {
+  stubWorkspace(view())
+  renderWithQuery(<WorkspacePage />)
+  await screen.findByTestId('workspace-left')
+  fireEvent.click(visibleButton('Hide panel'))
+  expect(screen.queryByTestId('workspace-left')).toBeNull()
+  fireEvent.click(visibleButton('Show panel'))
+  expect(await screen.findByTestId('workspace-left')).toBeInTheDocument()
+  fireEvent.click(visibleButton('Hide chat'))
+  fireEvent.click(
+    within(screen.getByTestId('workspace-left')).getByRole('button', { name: 'Show chat' }),
+  )
+  expect(visibleButton('Hide panel')).toBeInTheDocument()
+  localStorage.clear()
+})
+
 it('switching tickets keeps each Claude session mounted instead of remounting it', async () => {
   stubWorkspace(view())
   renderWithQuery(<WorkspacePage />)

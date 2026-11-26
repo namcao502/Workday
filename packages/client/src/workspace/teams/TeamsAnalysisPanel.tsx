@@ -2,12 +2,26 @@ import { ChevronDown, ChevronUp } from '@gravity-ui/icons'
 import { Button, Input } from '@heroui/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TeamsAnalysis, TeamsAnalysisView, TeamsIssueStatus } from '@workday/core'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { analysisKey, getAnalysis, startAnalysis } from '../../api/teamsApi.js'
 import { errorText } from '../../errors.js'
 import { t } from '../../i18n.js'
 
 const POLL_MS = 3_000
+const OPEN_STORAGE_PREFIX = 'workday.teamsAnalysisOpen.'
+
+// Collapsed by default, so the thread keeps the height; a ticket remembers being opened.
+function readOpen(ticket: string): boolean {
+  return localStorage.getItem(OPEN_STORAGE_PREFIX + ticket) === '1'
+}
+
+function writeOpen(ticket: string, open: boolean): void {
+  if (open) {
+    localStorage.setItem(OPEN_STORAGE_PREFIX + ticket, '1')
+  } else {
+    localStorage.removeItem(OPEN_STORAGE_PREFIX + ticket)
+  }
+}
 
 const STATUS_DOT: Readonly<Record<TeamsIssueStatus, string>> = {
   open: 'bg-danger',
@@ -108,7 +122,7 @@ export function TeamsAnalysisPanel({
 }: PanelProps): React.JSX.Element {
   const queryClient = useQueryClient()
   const [mainPoint, setMainPoint] = useState('')
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(() => readOpen(ticket))
   const [problem, setProblem] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
   const key = analysisKey(ticket, conversationId)
@@ -119,6 +133,17 @@ export function TeamsAnalysisPanel({
   })
   const view: TeamsAnalysisView = data ?? { kind: 'none' }
   const running = view.kind === 'running' || starting
+
+  // An analysis seen running here opens once it is done, so a fresh result is not missed.
+  const sawRunning = useRef(false)
+  useEffect(() => {
+    if (view.kind === 'running') {
+      sawRunning.current = true
+    } else if (view.kind === 'done' && sawRunning.current) {
+      sawRunning.current = false
+      setOpen(true)
+    }
+  }, [view.kind])
 
   async function analyze(): Promise<void> {
     if (running) {
@@ -158,7 +183,63 @@ export function TeamsAnalysisPanel({
   const hint = t('teams.mainPointOfTheReplyOptional')
 
   return (
-    <div className="flex flex-col gap-2 py-1" data-testid="teams-analysis">
+    <div className="flex min-h-0 flex-col gap-2 py-1" data-testid="teams-analysis">
+      {parts.length === 0 ? null : (
+        <div className="flex min-h-0 flex-col rounded-2xl bg-surface-secondary p-3">
+          <div className="flex items-center gap-2">
+            <p
+              className={`m-0 min-w-0 flex-1 text-sm ${view.kind === 'failed' ? 'text-danger' : ''}`}
+              role="status"
+            >
+              {parts.join('  -  ')}
+            </p>
+            {done === null ? null : (
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label={open ? t('teams.collapse') : t('teams.expand')}
+                onPress={() => {
+                  writeOpen(ticket, !open)
+                  setOpen(!open)
+                }}
+              >
+                {open ? <ChevronUp /> : <ChevronDown />}
+              </Button>
+            )}
+          </div>
+          {done !== null && open ? (
+            // At most a third of the screen, and less when the pane is short: the details scroll here, so
+            // neither the thread nor the whole pane has to.
+            <div
+              className="max-h-[33vh] min-h-24 shrink overflow-y-auto pr-1"
+              data-testid="teams-analysis-details"
+            >
+              <AnalysisBody analysis={done} />
+              <div
+                className="flex flex-col gap-1 pt-2"
+                role="group"
+                aria-label={t('teams.suggestedReplies')}
+              >
+                {done.replies.map((reply, index) => (
+                  <Button
+                    key={`${String(index)}-${reply}`}
+                    variant="secondary"
+                    size="sm"
+                    className="h-auto justify-start whitespace-normal bg-surface py-1.5 text-left"
+                    onPress={() => {
+                      onUseReply(reply)
+                    }}
+                  >
+                    {reply}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+      {/* Result first, then the action that refreshes it. */}
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm" isDisabled={running} onPress={() => void analyze()}>
           {view.kind === 'done' || waitingLine !== null
@@ -186,55 +267,6 @@ export function TeamsAnalysisPanel({
         <p className="m-0 text-sm text-danger" role="alert">
           {problem}
         </p>
-      )}
-      {parts.length === 0 ? null : (
-        <div className="rounded-2xl bg-surface-secondary p-3">
-          <div className="flex items-center gap-2">
-            <p
-              className={`m-0 min-w-0 flex-1 text-sm ${view.kind === 'failed' ? 'text-danger' : ''}`}
-              role="status"
-            >
-              {parts.join('  -  ')}
-            </p>
-            {done === null ? null : (
-              <Button
-                isIconOnly
-                size="sm"
-                variant="ghost"
-                aria-label={open ? t('teams.collapse') : t('teams.expand')}
-                onPress={() => {
-                  setOpen((value) => !value)
-                }}
-              >
-                {open ? <ChevronUp /> : <ChevronDown />}
-              </Button>
-            )}
-          </div>
-          {done !== null && open ? (
-            <>
-              <AnalysisBody analysis={done} />
-              <div
-                className="flex flex-col gap-1 pt-2"
-                role="group"
-                aria-label={t('teams.suggestedReplies')}
-              >
-                {done.replies.map((reply, index) => (
-                  <Button
-                    key={`${String(index)}-${reply}`}
-                    variant="secondary"
-                    size="sm"
-                    className="h-auto justify-start whitespace-normal bg-surface py-1.5 text-left"
-                    onPress={() => {
-                      onUseReply(reply)
-                    }}
-                  >
-                    {reply}
-                  </Button>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </div>
       )}
     </div>
   )

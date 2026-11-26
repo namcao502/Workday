@@ -1,5 +1,6 @@
 import { Button, Input } from '@heroui/react'
 import type { ReportRangeKind } from '@workday/core'
+import { ActionMenu } from '../ui/ActionMenu.js'
 import { Segmented } from '../ui/Segmented.js'
 import { t } from '../i18n.js'
 import type { InsightsRange } from './useInsights.js'
@@ -17,19 +18,22 @@ interface ReportActionsProps {
   readonly onExport: () => void
 }
 
-// The report's actions; the page puts them in the top bar, next to the title.
+// The report's actions; the page puts them in the top bar, next to the title. Copy and export wait in a menu,
+// so the bar keeps room for the range and the status.
 export function ReportActions(props: ReportActionsProps): React.JSX.Element {
   return (
     <div className="flex shrink-0 items-center gap-2 max-[719px]:shrink max-[719px]:flex-wrap">
       <Button variant="secondary" size="sm" isDisabled={props.reading} onPress={props.onRefresh}>
         {t('insights.refresh')}
       </Button>
-      <Button variant="secondary" size="sm" isDisabled={!props.hasReport} onPress={props.onCopy}>
-        {t('insights.copyMarkdown')}
-      </Button>
-      <Button variant="secondary" size="sm" isDisabled={!props.hasReport} onPress={props.onExport}>
-        {t('insights.exportCsv')}
-      </Button>
+      <ActionMenu
+        size="sm"
+        label={t('insights.reportActions')}
+        actions={[
+          { label: t('insights.copyMarkdown'), disabled: !props.hasReport, onSelect: props.onCopy },
+          { label: t('insights.exportCsv'), disabled: !props.hasReport, onSelect: props.onExport },
+        ]}
+      />
     </div>
   )
 }

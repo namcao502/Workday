@@ -265,11 +265,11 @@ export function WorkspacePage(): React.JSX.Element {
                 toggle={
                   hidden === 'right'
                     ? {
-                        label: narrow ? 'Claude' : t('workspace.showClaude'),
+                        label: narrow ? 'Claude' : t('workspace.showChat'),
                         onPress: showBothNow,
                       }
                     : {
-                        label: t('workspace.hide'),
+                        label: t('workspace.hidePanel'),
                         onPress: () => {
                           split.setHidden('left')
                         },
@@ -291,11 +291,11 @@ export function WorkspacePage(): React.JSX.Element {
                 toggle={
                   hidden === 'left'
                     ? {
-                        label: narrow ? t('workspace.files') : t('workspace.showFiles'),
+                        label: narrow ? t('workspace.files') : t('workspace.showPanel'),
                         onPress: showBothNow,
                       }
                     : {
-                        label: t('workspace.hideClaude'),
+                        label: t('workspace.hideChat'),
                         onPress: () => {
                           split.setHidden('right')
                         },

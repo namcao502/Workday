@@ -237,7 +237,8 @@ export function TeamsView({
         </div>
       ) : null}
       {view.state === 'thread' ? (
-        <div className="flex flex-col gap-2 py-2" data-testid="teams-compose-slot">
+        // min-h-0: when the pane runs short, the analysis details give up height first, not the whole pane.
+        <div className="flex min-h-0 flex-col gap-2 py-2" data-testid="teams-compose-slot">
           <TeamsAnalysisPanel
             ticket={ticket}
             conversationId={view.conversationId}

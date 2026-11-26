@@ -1,7 +1,10 @@
+/* Code keeps its lines whole, as in an editor: a long line scrolls the pane sideways instead of breaking
+   mid-word. min-width keeps the row colors across the pane when every line is short. */
 .diff-view {
   border-collapse: collapse;
   font-family: monospace;
-  width: 100%;
+  min-width: 100%;
+  width: max-content;
 }
 
 .diff-number {
@@ -13,8 +16,7 @@
 }
 
 .diff-text {
-  white-space: pre-wrap;
-  word-break: break-all;
+  white-space: pre;
 }
 
 .diff-added {
@@ -25,9 +27,10 @@
   background: color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
+/* Left, not centered: a wide diff would center the note off screen. */
 .diff-gap td {
   color: var(--muted);
-  text-align: center;
+  padding-left: 6em;
 }
 
 .code-view {

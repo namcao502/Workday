@@ -2,6 +2,8 @@ import { Button, Dropdown } from '@heroui/react'
 import { EllipsisVertical } from '@gravity-ui/icons'
 import { t } from '../i18n.js'
 
+// A vertical-dots button whose menu holds the less-used actions of a bar or card.
+
 export interface MenuAction {
   readonly label: string
   readonly disabled: boolean

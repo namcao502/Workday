@@ -178,3 +178,16 @@ it('detail times follow the configured time zone', async () => {
   expect(await screen.findAllByText(/Nov 10, 3:00\sAM/)).not.toHaveLength(0)
   expect(screen.queryByText(/10:00\sAM/)).not.toBeInTheDocument()
 })
+
+it('keeps Refresh in the bar and puts Copy markdown and Export CSV in the actions menu', async () => {
+  stubFetch((url) =>
+    jsonResponse(url.startsWith('/api/insights') ? view([row('MDP-1')]) : settingsView()),
+  )
+  renderWithQuery(<InsightsPage />)
+  await screen.findByText('Summary of MDP-1')
+  expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Copy markdown' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Report actions' }))
+  expect(await screen.findByRole('menuitem', { name: 'Copy markdown' })).toBeInTheDocument()
+  expect(screen.getByRole('menuitem', { name: 'Export CSV...' })).toBeInTheDocument()
+})

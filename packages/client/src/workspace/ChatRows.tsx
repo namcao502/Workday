@@ -13,9 +13,102 @@ const COLLAPSE_FROM = 4
 type Row =
   | { readonly kind: 'message'; readonly message: ChatMessage }
   | { readonly kind: 'steps'; readonly tools: readonly ChatMessage[] }
+  | { readonly kind: 'analysis'; readonly messages: readonly ChatMessage[] }
+  | { readonly kind: 'analyses'; readonly turns: readonly (readonly ChatMessage[])[] }
 
-// A run of COLLAPSE_FROM or more tool lines becomes one "N steps" row.
-export function groupRows(messages: readonly ChatMessage[]): readonly Row[] {
+// The line the server sends for an automatic Teams analysis (teamsAnalysis.ts, analysisLine).
+const ANALYSIS_PROMPT =
+  /^Read .*teams-tasks[\\/][^\\/]*-analysis-[^\\/]*\.md and do the analysis it asks for\.$/
+
+function isAnalysisPrompt(message: ChatMessage): boolean {
+  return message.role === 'user' && ANALYSIS_PROMPT.test((message.text ?? '').trim())
+}
+
+// "Teams analysis: 2 issue(s), 1 open" from the JSON block Claude answered with; the plain title otherwise.
+function analysisTitle(messages: readonly ChatMessage[]): string {
+  const answer = messages.findLast((message) => message.role === 'assistant')?.text ?? ''
+  const start = answer.indexOf('{')
+  const end = answer.lastIndexOf('}')
+  try {
+    const parsed: unknown = JSON.parse(answer.slice(start, end + 1))
+    const issues =
+      typeof parsed === 'object' && parsed !== null
+        ? (parsed as Record<string, unknown>)['issues']
+        : null
+    if (Array.isArray(issues)) {
+      const open = issues.filter(
+        (issue: unknown) =>
+          typeof issue === 'object' &&
+          issue !== null &&
+          (issue as Record<string, unknown>)['status'] === 'open',
+      ).length
+      return t('workspace.teamsAnalysisIssues', {
+        total: String(issues.length),
+        open: String(open),
+      })
+    }
+  } catch {
+    // Not a finished analysis (still running, or Claude answered in prose): the plain title.
+  }
+  return t('workspace.teamsAnalysis')
+}
+
+// Back-to-back analysis turns (a burst of Teams messages) fold further into one "N Teams analyses" row.
+function mergeAnalyses(rows: readonly Row[]): readonly Row[] {
+  const merged: Row[] = []
+  let turns: (readonly ChatMessage[])[] = []
+  const flush = (): void => {
+    if (turns.length === 1 && turns[0] !== undefined) {
+      merged.push({ kind: 'analysis', messages: turns[0] })
+    } else if (turns.length > 1) {
+      merged.push({ kind: 'analyses', turns })
+    }
+    turns = []
+  }
+  for (const row of rows) {
+    if (row.kind === 'analysis') {
+      turns.push(row.messages)
+    } else {
+      flush()
+      merged.push(row)
+    }
+  }
+  flush()
+  return merged
+}
+
+// An automatic Teams analysis turn (its prompt up to the next user message) folds into one row, so the
+// chat reads as the user's own conversation; the rest groups as usual.
+export function groupRows(messages: readonly ChatMessage[], foldAnalysis = true): readonly Row[] {
+  if (foldAnalysis) {
+    const rows: Row[] = []
+    let plain: ChatMessage[] = []
+    let turn: ChatMessage[] | null = null
+    for (const message of messages) {
+      if (message.role === 'user') {
+        if (turn !== null) {
+          rows.push({ kind: 'analysis', messages: turn })
+          turn = null
+        }
+        if (isAnalysisPrompt(message)) {
+          rows.push(...groupRows(plain, false))
+          plain = []
+          turn = [message]
+          continue
+        }
+      }
+      if (turn === null) {
+        plain.push(message)
+      } else {
+        turn.push(message)
+      }
+    }
+    if (turn !== null) {
+      rows.push({ kind: 'analysis', messages: turn })
+    }
+    rows.push(...groupRows(plain, false))
+    return mergeAnalyses(rows)
+  }
   const rows: Row[] = []
   let run: ChatMessage[] = []
   const flush = (): void => {
@@ -219,6 +312,82 @@ function NoticeRow({
   )
 }
 
+function StepsRow({ tools }: { readonly tools: readonly ChatMessage[] }): React.JSX.Element {
+  return (
+    <Disclosure>
+      <Disclosure.Heading>
+        <Disclosure.Trigger className="flex items-center gap-1 text-xs text-muted">
+          {t('workspace.steps', { length: String(tools.length) })}
+          <Disclosure.Indicator />
+        </Disclosure.Trigger>
+      </Disclosure.Heading>
+      <Disclosure.Content>
+        <Disclosure.Body className="flex flex-col gap-1 pt-1">
+          {tools.map((tool) => (
+            <ToolLine key={tool.id} message={tool} />
+          ))}
+        </Disclosure.Body>
+      </Disclosure.Content>
+    </Disclosure>
+  )
+}
+
+function RowList({
+  rows,
+  onRewind,
+}: {
+  readonly rows: readonly Row[]
+  readonly onRewind?: ((uuid: string) => void) | undefined
+}): React.JSX.Element {
+  return (
+    <>
+      {rows.map((row) => {
+        switch (row.kind) {
+          case 'steps':
+            return <StepsRow key={row.tools[0]?.id} tools={row.tools} />
+          case 'analysis':
+            return (
+              <Disclosure key={row.messages[0]?.id}>
+                <Disclosure.Heading>
+                  <Disclosure.Trigger className="flex items-center gap-1 text-xs text-muted">
+                    {analysisTitle(row.messages)}
+                    <Disclosure.Indicator />
+                  </Disclosure.Trigger>
+                </Disclosure.Heading>
+                <Disclosure.Content>
+                  <Disclosure.Body className="flex flex-col gap-2 pt-1">
+                    <RowList rows={groupRows(row.messages, false)} onRewind={onRewind} />
+                  </Disclosure.Body>
+                </Disclosure.Content>
+              </Disclosure>
+            )
+          case 'analyses':
+            return (
+              <Disclosure key={row.turns[0]?.[0]?.id}>
+                <Disclosure.Heading>
+                  <Disclosure.Trigger className="flex items-center gap-1 text-xs text-muted">
+                    {t('workspace.teamsAnalyses', { count: String(row.turns.length) })}
+                    <Disclosure.Indicator />
+                  </Disclosure.Trigger>
+                </Disclosure.Heading>
+                <Disclosure.Content>
+                  <Disclosure.Body className="flex flex-col gap-1 pt-1 pl-3">
+                    <RowList
+                      rows={row.turns.map((turn): Row => ({ kind: 'analysis', messages: turn }))}
+                      onRewind={onRewind}
+                    />
+                  </Disclosure.Body>
+                </Disclosure.Content>
+              </Disclosure>
+            )
+          case 'message':
+            return <MessageRow key={row.message.id} message={row.message} onRewind={onRewind} />
+        }
+      })}
+    </>
+  )
+}
+
 export function ChatRows({
   messages,
   onRewind,
@@ -226,29 +395,5 @@ export function ChatRows({
   readonly messages: readonly ChatMessage[]
   readonly onRewind?: (uuid: string) => void
 }): React.JSX.Element {
-  return (
-    <>
-      {groupRows(messages).map((row) =>
-        row.kind === 'steps' ? (
-          <Disclosure key={row.tools[0]?.id}>
-            <Disclosure.Heading>
-              <Disclosure.Trigger className="flex items-center gap-1 text-xs text-muted">
-                {t('workspace.steps', { length: String(row.tools.length) })}
-                <Disclosure.Indicator />
-              </Disclosure.Trigger>
-            </Disclosure.Heading>
-            <Disclosure.Content>
-              <Disclosure.Body className="flex flex-col gap-1 pt-1">
-                {row.tools.map((tool) => (
-                  <ToolLine key={tool.id} message={tool} />
-                ))}
-              </Disclosure.Body>
-            </Disclosure.Content>
-          </Disclosure>
-        ) : (
-          <MessageRow key={row.message.id} message={row.message} onRewind={onRewind} />
-        ),
-      )}
-    </>
-  )
+  return <RowList rows={groupRows(messages)} onRewind={onRewind} />
 }
