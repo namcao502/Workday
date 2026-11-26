@@ -221,9 +221,9 @@ const STATE_COLOR = {
 // Off days get their own violet chip with an icon, apart from the grey "not yet".
 const OFF_CHIP = 'bg-violet-500/15 text-violet-700 dark:text-violet-300'
 // Diagonal stripes, as calendars draw a day nobody works.
-// Important: the season glass sets its own background-image on every card.
+// Important: the season glass sets its own background image and, in rain, a tile size on every card.
 const OFF_CARD =
-  'border border-dashed border-violet-400/70 bg-[image:repeating-linear-gradient(135deg,transparent_0_10px,rgb(139_92_246/0.12)_10px_20px)]!'
+  'border border-dashed border-violet-400/70 bg-[image:repeating-linear-gradient(135deg,transparent_0_10px,rgb(139_92_246/0.12)_10px_20px)]! bg-auto!'
 
 // A press on a control or the hours bar does its own job; picking the day then would steal its focus.
 const OWN_PRESS = 'button, input, textarea, select, a'
