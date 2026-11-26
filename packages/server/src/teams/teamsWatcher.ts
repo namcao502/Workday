@@ -50,7 +50,7 @@ export interface TeamsWatcherDeps {
   // The current fix drafts, read at the start of each check; without it no bug fix is watched.
   readonly readBugFixes?: () => Promise<readonly BugFix[]>
   readonly recordJob?: RecordJob
-  // The messages that just raised a notice: acknowledged and analyzed by TeamsService.
+  // The messages that just raised a notice: analyzed by TeamsService.
   readonly onNewMessages?: (messages: readonly NewTeamsMessage[]) => void
   readonly now?: () => number
   readonly logError: (message: string, error: unknown) => void

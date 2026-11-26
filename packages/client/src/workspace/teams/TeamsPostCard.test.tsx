@@ -51,3 +51,13 @@ it('post card warns first when the ticket was posted', async () => {
     )
   })
 })
+
+it('the post editor grows into the free height instead of a fixed box', () => {
+  const send: SendAction = async (action) => outcomeOf(await action())
+  renderWithQuery(
+    <TeamsPostCard ticket="MDP-1" view={view(false)} label="New post" locked={false} send={send} />,
+  )
+  const editor = screen.getByRole('textbox', { name: 'New post' })
+  expect(editor).toHaveClass('flex-1')
+  expect(editor).not.toHaveClass('max-h-60')
+})

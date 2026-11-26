@@ -20,7 +20,7 @@ interface ReportActionsProps {
 // The report's actions; the page puts them in the top bar, next to the title.
 export function ReportActions(props: ReportActionsProps): React.JSX.Element {
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className="flex shrink-0 items-center gap-2 max-[719px]:shrink max-[719px]:flex-wrap">
       <Button variant="secondary" size="sm" isDisabled={props.reading} onPress={props.onRefresh}>
         {t('insights.refresh')}
       </Button>

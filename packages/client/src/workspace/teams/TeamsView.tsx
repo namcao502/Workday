@@ -275,7 +275,7 @@ export function TeamsView({
         </div>
       ) : null}
       {view.state === 'notPosted' ? (
-        <div className="py-2" data-testid="teams-compose-slot">
+        <div className="flex min-h-0 flex-1 flex-col py-2" data-testid="teams-compose-slot">
           <TeamsPostCard ticket={ticket} view={view} label={label} locked={writing} send={send} />
         </div>
       ) : null}

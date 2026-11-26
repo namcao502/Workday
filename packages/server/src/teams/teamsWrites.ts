@@ -17,9 +17,6 @@ import type { TeamsGateway } from './teamsChatClient.js'
 import { bodyWithImages } from './teamsImages.js'
 import type { TeamsLookup } from './teamsLookup.js'
 
-// Teams' key for the hourglass emoji (U+231B), "on it"; never like, which reads as agreeing.
-export const ACKNOWLEDGE_REACTION = '231b_hourglassdone'
-
 // 'invalid': the request itself is wrong (empty after the whitelist, a key Teams does not take); the route answers 400.
 export type WriteOutcome = TeamsWriteResult | 'invalid'
 
@@ -197,31 +194,6 @@ export class TeamsWrites {
           reaction.key === request.key && reaction.userMris.some((mri) => sameId(mri, myId)),
       )
       await chat.setReaction(conversationOf(thread, message.id), message.id, request.key, !mine)
-      return { ok: true, id: null }
-    })
-  }
-
-  // "Got it, on it": the hourglass on a new message. A message I already reacted to keeps my reaction: react()
-  // toggles, this only ever adds. A refusal is logged; no other reaction stands in for it.
-  acknowledge(ticketKey: string, conversationId: string, messageId: string): Promise<WriteOutcome> {
-    return this.run(ticketKey, 'acknowledgement', async (chat) => {
-      const thread = await this.lookup.resolveThread(chat, ticketKey, conversationId)
-      const message = thread?.messages.find((tm) => tm.id === messageId)
-      if (thread === null || message === undefined) {
-        return FAILED
-      }
-      const myId = await chat.myId()
-      if (
-        message.reactions.some((reaction) => reaction.userMris.some((mri) => sameId(mri, myId)))
-      ) {
-        return { ok: true, id: null }
-      }
-      await chat.setReaction(
-        conversationOf(thread, message.id),
-        message.id,
-        ACKNOWLEDGE_REACTION,
-        true,
-      )
       return { ok: true, id: null }
     })
   }

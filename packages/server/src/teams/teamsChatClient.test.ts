@@ -80,7 +80,12 @@ function fakeStore(initial: TeamsSession | null = null): TeamsSessionStore & {
 describe('session store', () => {
   it('a stored session serves reads without a sniff', async () => {
     const source = sniffer()
-    const client = new TeamsChatClient(source, fakeFetch(() => json(200, {})), () => NOW, fakeStore(session()))
+    const client = new TeamsChatClient(
+      source,
+      fakeFetch(() => json(200, {})),
+      () => NOW,
+      fakeStore(session()),
+    )
     expect(await client.myId()).toBe('8:orgid:abc')
     expect(source.sniffs).toBe(0)
   })
@@ -88,7 +93,12 @@ describe('session store', () => {
   it('a fresh sniff is saved to the store', async () => {
     const source = sniffer()
     const store = fakeStore()
-    const client = new TeamsChatClient(source, fakeFetch(() => json(200, {})), () => NOW, store)
+    const client = new TeamsChatClient(
+      source,
+      fakeFetch(() => json(200, {})),
+      () => NOW,
+      store,
+    )
     await client.myId()
     expect(source.sniffs).toBe(1)
     expect(store.saved?.myId).toBe('8:orgid:abc')
@@ -96,7 +106,12 @@ describe('session store', () => {
 
   it('a sign-in clears the stored session', async () => {
     const store = fakeStore(session())
-    const client = new TeamsChatClient(sniffer(), fakeFetch(() => json(200, {})), () => NOW, store)
+    const client = new TeamsChatClient(
+      sniffer(),
+      fakeFetch(() => json(200, {})),
+      () => NOW,
+      store,
+    )
     await client.signIn()
     expect(store.cleared).toBe(true)
   })

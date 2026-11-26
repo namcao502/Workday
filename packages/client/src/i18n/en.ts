@@ -1026,6 +1026,7 @@ export const en = {
     stoppedByYou: 'Stopped by you',
     submit: 'Submit',
     suggestions: 'Suggestions',
+    sessionInfo: 'Session info',
     switchModel: 'Switch model',
     thatIsNotATicketKey: 'That is not a ticket key',
     theFolderCouldNotBeRead: 'The folder could not be read',

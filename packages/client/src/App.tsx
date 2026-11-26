@@ -12,6 +12,7 @@ import { setLanguage, t } from './i18n.js'
 import { PairPage } from './remote/PairPage.js'
 import { SeasonLayer } from './season/SeasonLayer.js'
 import { cursorValue } from './season/cursors.js'
+import { frameValue } from './season/frame.js'
 import { effectLevel } from './season/effectLevel.js'
 import { useActiveSeason } from './season/useActiveSeason.js'
 import { currentHash } from './shell/appHash.js'
@@ -93,6 +94,19 @@ function AppContent({ socketFactory }: AppProps): React.JSX.Element | null {
     root.style.setProperty('--season-cursor-pointer', cursorValue(cursor, 'pointer'))
     root.dataset['seasonCursor'] = ''
   }, [cursor])
+
+  // The sidebar's seasonal frame (season.css), drawn only while the season may decorate.
+  const framed = season !== null && level !== 'off' ? season : null
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    if (framed === null) {
+      delete root.dataset['seasonFrame']
+      root.style.removeProperty('--season-frame')
+    } else {
+      root.style.setProperty('--season-frame', frameValue(framed, theme === 'dark'))
+      root.dataset['seasonFrame'] = ''
+    }
+  }, [framed, theme])
 
   if (settings.data === undefined) {
     return settings.isError ? (

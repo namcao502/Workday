@@ -19,6 +19,8 @@ it('fills the arrow only on the pointer variant', () => {
 })
 
 it('builds a CSS cursor value with the tip as hotspot and a native fallback', () => {
-  expect(cursorValue('tet', 'default')).toMatch(/^url\("data:image\/svg\+xml,%3Csvg.*"\) 3 2, default$/)
+  expect(cursorValue('tet', 'default')).toMatch(
+    /^url\("data:image\/svg\+xml,%3Csvg.*"\) 3 2, default$/,
+  )
   expect(cursorValue('tet', 'pointer')).toMatch(/ 3 2, pointer$/)
 })

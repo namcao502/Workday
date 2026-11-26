@@ -41,7 +41,7 @@ export interface TeamsServiceDeps extends TeamsLookupDeps {
   readonly prs: { state(): { readonly tracking: PrTracking } }
   readonly workspace: {
     promptState(name: string): PromptOutcome
-    prompt(name: string, text: string): PromptOutcome
+    prompt(name: string, text: string, quiet?: boolean): PromptOutcome
     assistantTexts(name: string): readonly string[]
     isWorking(name: string): boolean
     isIdleAndWarm(name: string): boolean
@@ -118,11 +118,10 @@ export class TeamsService {
     }
   }
 
-  // A message the background check just found: the hourglass on it at once, then Claude's suggested replies, now if the
-  // ticket's Claude is free, else after one of its turns ends (retryAnalyses).
+  // A message the background check just found gets Claude's suggested replies: now if the ticket's Claude is free,
+  // else after one of its turns ends (retryAnalyses).
   async onNewMessages(messages: readonly NewTeamsMessage[]): Promise<void> {
     for (const message of messages) {
-      await this.write.acknowledge(message.ticketKey, message.conversationId, message.messageId)
       this.awaitingAnalysis.set(`${message.ticketKey}|${message.conversationId}`, message)
     }
     await this.retryAnalyses()
@@ -157,7 +156,7 @@ export class TeamsService {
     const view = await this.analysis.status(ticketKey, conversationId, lastMessageId)
     if (
       session === null ||
-      !this.analysis.shouldAutoStart(view, ticketKey, conversationId, lastMessageId, session)
+      !this.analysis.claimAutoStart(view, ticketKey, conversationId, lastMessageId, session)
     ) {
       return view
     }

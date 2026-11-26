@@ -1,5 +1,5 @@
-import { ArrowDown } from '@gravity-ui/icons'
-import { Button, Dropdown, Spinner } from '@heroui/react'
+import { ArrowDown, Cpu } from '@gravity-ui/icons'
+import { Button, Dropdown, Popover, Spinner } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AgentModel, AgentRewind, ChatAnswer, ChatMessage, UsageWindow } from '@workday/core'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -13,6 +13,7 @@ import { ChatRequestCard } from './ChatRequestCard.js'
 import { ChatRows } from './ChatRows.js'
 import { addEcho, dropEchoes, useEchoes } from './promptEchoes.js'
 import { Tip } from '../ui/Tip.js'
+import { useNarrow } from '../shell/useNarrow.js'
 
 const BOTTOM_SLACK_PX = 24
 
@@ -214,6 +215,7 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
   // The send row shows just the model; branch, diff, tokens, context fill, plan usage and the bypass flag wait in
   // its tooltip.
   const contextPercent = usage?.contextPercent ?? null
+  const narrow = useNarrow()
   const hasStatus =
     branch !== null ||
     added !== 0 ||
@@ -227,7 +229,8 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
       {branch === null ? null : <span className="text-purple-500">{branch}</span>}
       {added === 0 && removed === 0 ? null : (
         <span>
-          <span className="text-success">+{added}</span> <span className="text-danger">-{removed}</span>
+          <span className="text-success">+{added}</span>{' '}
+          <span className="text-danger">-{removed}</span>
         </span>
       )}
       {tokens === null ? null : (
@@ -245,17 +248,32 @@ export function ChatView({ session, tabId, shown = true }: ChatViewProps): React
       {mode === 'bypassPermissions' ? <span>{t('workspace.bypassPermissionsOn')}</span> : null}
     </span>
   )
-  const modelChip =
+  const picker =
     model === null ? null : (
+      <ModelPicker
+        session={session}
+        model={model}
+        models={chat.data?.catalog?.models ?? []}
+        disabled={working}
+      />
+    )
+  // A phone has no hover and little width: the chip folds into an icon whose popup holds the picker and status.
+  const modelChip =
+    picker === null ? null : narrow ? (
+      <Popover>
+        <Button isIconOnly size="sm" variant="secondary" aria-label={t('workspace.sessionInfo')}>
+          <Cpu width={16} height={16} aria-hidden="true" />
+        </Button>
+        <Popover.Content placement="top end">
+          <Popover.Dialog className="flex w-72 max-w-[92vw] flex-col items-start gap-2">
+            {picker}
+            {statusInfo}
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+    ) : (
       <Tip content={statusInfo}>
-        <span className="flex items-center gap-1 text-xs text-muted">
-          <ModelPicker
-            session={session}
-            model={model}
-            models={chat.data?.catalog?.models ?? []}
-            disabled={working}
-          />
-        </span>
+        <span className="flex items-center gap-1 text-xs text-muted">{picker}</span>
       </Tip>
     )
 

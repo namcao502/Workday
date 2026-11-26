@@ -173,7 +173,7 @@ describe('TeamsAnalysisRunner', () => {
   it('starts by itself for a new message only while Claude is idle and warm, and never again after a failure', async () => {
     const { runner, stop, busy } = rig()
     const none = await runner.status('MDP-1', 'conv1', 'm2')
-    expect(runner.shouldAutoStart(none, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(true)
+    expect(runner.claimAutoStart(none, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(true)
 
     await runner.start(input)
     stop()
@@ -181,19 +181,47 @@ describe('TeamsAnalysisRunner', () => {
     expect(failed).toEqual({ kind: 'failed' })
     const after = await runner.status('MDP-1', 'conv1', 'm2')
     // The failed message is not tried again by itself; a newer one is.
-    expect(runner.shouldAutoStart(after, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(false)
-    expect(runner.shouldAutoStart(after, 'MDP-1', 'conv1', 'm3', 'MDP-1')).toBe(true)
+    expect(runner.claimAutoStart(after, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(false)
+    expect(runner.claimAutoStart(after, 'MDP-1', 'conv1', 'm3', 'MDP-1')).toBe(true)
 
     busy()
-    expect(runner.shouldAutoStart(after, 'MDP-1', 'conv1', 'm3', 'MDP-1')).toBe(false)
+    expect(runner.claimAutoStart(after, 'MDP-1', 'conv1', 'm3', 'MDP-1')).toBe(false)
+  })
+
+  it('starts by itself at most once per last message, so a finished run cannot loop', () => {
+    const { runner } = rig()
+    expect(runner.claimAutoStart({ kind: 'none' }, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(true)
+    expect(runner.claimAutoStart({ kind: 'none' }, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(false)
+    expect(runner.claimAutoStart({ kind: 'none' }, 'MDP-1', 'conv2', 'm2', 'MDP-1')).toBe(true)
+    expect(runner.claimAutoStart({ kind: 'none' }, 'MDP-1', 'conv1', 'm3', 'MDP-1')).toBe(true)
+  })
+
+  it('an analysis of a newer Teams message id is not stale against an older one', async () => {
+    const { runner, sent, reply } = rig()
+    const numbered: TeamsThread = {
+      ...THREAD,
+      rootId: '1795668646473',
+      messages: [
+        message('1795668646473', 'me', 'posted'),
+        message('1795669364505', 'qc', 'review'),
+      ],
+    }
+    await runner.start({ ...input, thread: numbered })
+    const id = /"request": "([0-9a-f]{8})"/.exec(
+      (await import('node:fs')).readFileSync(sent[0]?.split(' ')[1] ?? '', 'utf8'),
+    )?.[1]
+    reply([BLOCK(id ?? '')])
+    // A read that came back with only the root names an older last message: still current.
+    expect(await runner.status('MDP-1', 'conv1', '1795668646473')).toMatchObject({ stale: false })
+    expect(await runner.status('MDP-1', 'conv1', '1795671084494')).toMatchObject({ stale: true })
   })
 
   it('does not start by itself while an analysis runs or is current', () => {
     const { runner } = rig()
-    expect(runner.shouldAutoStart({ kind: 'running' }, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(false)
+    expect(runner.claimAutoStart({ kind: 'running' }, 'MDP-1', 'conv1', 'm2', 'MDP-1')).toBe(false)
     const analysis = { issues: [], diagnosis: '', nextStep: '', replies: ['ok'] }
     expect(
-      runner.shouldAutoStart(
+      runner.claimAutoStart(
         { kind: 'done', analysis, stale: false },
         'MDP-1',
         'conv1',
@@ -202,7 +230,7 @@ describe('TeamsAnalysisRunner', () => {
       ),
     ).toBe(false)
     expect(
-      runner.shouldAutoStart(
+      runner.claimAutoStart(
         { kind: 'done', analysis, stale: true },
         'MDP-1',
         'conv1',

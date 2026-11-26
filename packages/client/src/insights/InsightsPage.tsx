@@ -67,8 +67,9 @@ export function InsightsPage(): React.JSX.Element {
     <Page
       title={t('insights.insights')}
       wide
+      phoneActionsBelow
       actions={
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2 max-[719px]:flex-wrap">
           <ReportRange
             range={insights.range}
             onRange={(range) => {

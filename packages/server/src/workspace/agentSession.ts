@@ -49,6 +49,7 @@ export interface AgentSessionState {
   readonly running: boolean
   readonly working: boolean
   readonly finished: boolean // a turn ended since the user last looked
+  readonly quiet: boolean // that turn only ran prompts the app sent by itself, so nobody needs telling
   readonly background: readonly string[] // live background tasks, which can outlast the turn that started them
   readonly mode: AgentMode
   readonly model: string | null
@@ -65,7 +66,7 @@ interface PendingRequest {
   readonly resolve: (decision: AgentDecision) => void
 }
 
-type Progress = Pick<AgentSessionState, 'running' | 'working' | 'finished'>
+type Progress = Pick<AgentSessionState, 'running' | 'working' | 'finished' | 'quiet'>
 
 const SESSION_ENDED: AgentDecision = { kind: 'deny', message: 'Session ended.' }
 const CANCELLED: AgentDecision = { kind: 'deny', message: 'Cancelled.' }
@@ -74,7 +75,7 @@ const CANCELLED: AgentDecision = { kind: 'deny', message: 'Cancelled.' }
 export class AgentSession {
   readonly name: string
   private handle: AgentSessionHandle | null = null
-  private progress: Progress = { running: false, working: false, finished: false }
+  private progress: Progress = { running: false, working: false, finished: false, quiet: false }
   private runningMode: AgentMode = 'default'
   private nextMode: AgentMode | null = null // set while stopped, used by the next start
   private model: string | null = null
@@ -82,6 +83,7 @@ export class AgentSession {
   private catalog: AgentCatalog | null = null
   private nextModel: string | null = null // set while stopped, used by the next start
   private turns = 0 // prompts sent whose turn has not ended; a prompt sent mid-turn queues behind it
+  private loud = false // a prompt of the user is among those turns
   private sessionId: string | null = null
   private cwd: string | null = null
   private pending: readonly PendingRequest[] = []
@@ -106,13 +108,15 @@ export class AgentSession {
     }
   }
 
-  send(text: string, images: readonly AgentImage[] = []): void {
+  // quiet: the app sent it by itself (a Teams analysis), so its finish raises no notice.
+  send(text: string, images: readonly AgentImage[] = [], quiet = false): void {
     if (this.disposed) {
       throw new WorkspaceStartError('sessionNotFound')
     }
     const handle = this.handle ?? this.start()
     handle.send(text, images)
     this.turns += 1
+    this.loud = this.loud || !quiet
     this.update({ running: true, working: true, finished: false })
   }
 
@@ -254,7 +258,10 @@ export class AgentSession {
         const prompted = this.turns !== 0
         // The SDK's own count wins: a prompt sent mid-turn may be folded into this turn and get no result of its own.
         this.turns = event.queued ?? Math.max(0, this.turns - 1)
-        this.update(this.turns === 0 && prompted ? { working: false, finished: true } : {})
+        if (this.turns === 0 && prompted) {
+          this.update({ working: false, finished: true, quiet: !this.loud })
+          this.loud = false
+        }
         this.deps.onChange()
         void this.refreshUsage()
         return
@@ -342,6 +349,7 @@ export class AgentSession {
   private end(): void {
     const pending = this.pending
     this.turns = 0
+    this.loud = false
     // The SDK's task list is per process: a new process starts with none until it reports.
     this.background = []
     this.update({ running: false, working: false }, [])
@@ -366,8 +374,8 @@ export class AgentSession {
   }
 
   private attentionKey(): string {
-    const { running, working, finished } = this.progress
+    const { running, working, finished, quiet } = this.progress
     const wait = waitOfRequests(this.pending.map((item) => item.request))
-    return JSON.stringify([running, working, finished, wait])
+    return JSON.stringify([running, working, finished, quiet, wait])
   }
 }

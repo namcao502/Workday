@@ -270,26 +270,4 @@ describe('TeamsWrites', () => {
       ['c1;messageid=r1', 'liked', 'heart', true],
     ])
   })
-
-  it('acknowledges a new message with the hourglass only, never with like, and never twice', async () => {
-    const { teams, service } = postedRig()
-    teams.threads.set(
-      'c1|r1',
-      threadOf(
-        'c1',
-        'r1',
-        teamsMessage('new', {}),
-        teamsMessage('other', {}),
-        teamsMessage('done', { reactions: [{ key: 'heart', userMris: [ME] }] }),
-      ),
-    )
-
-    await service.write.acknowledge('MDP-1', 'c1', 'new')
-    teams.refusedReactionKeys.add('231b_hourglassdone')
-    const refused = await service.write.acknowledge('MDP-1', 'c1', 'other')
-    await service.write.acknowledge('MDP-1', 'c1', 'done')
-
-    expect(refused).toMatchObject({ ok: false })
-    expect(teams.reactions).toEqual([['c1;messageid=r1', 'new', '231b_hourglassdone', true]])
-  })
 })

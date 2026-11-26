@@ -308,8 +308,13 @@ export function TeamsComposer({
     }
   }
 
+  // A new post is long and is the only thing on the pane, so its editor takes the free height; a reply stays compact.
+  const fills = mode === 'post'
   return (
-    <div className="relative flex flex-col gap-1.5" data-mode={mode}>
+    <div
+      className={`relative flex flex-col gap-1.5 ${fills ? 'min-h-0 flex-1' : ''}`}
+      data-mode={mode}
+    >
       <span className="text-xs text-muted">{label}</span>
       {withSubject ? (
         <Input
@@ -347,7 +352,7 @@ export function TeamsComposer({
       />
       <div
         ref={editorRef}
-        className="teams-content max-h-60 min-h-18 overflow-y-auto whitespace-pre-wrap rounded-2xl bg-surface-secondary p-2 text-sm outline-none focus:inset-ring-2 focus:inset-ring-focus"
+        className={`teams-content ${fills ? 'min-h-40 flex-1' : 'max-h-60 min-h-18'} overflow-y-auto whitespace-pre-wrap rounded-2xl bg-surface-secondary p-2 text-sm outline-none focus:inset-ring-2 focus:inset-ring-focus`}
         role="textbox"
         aria-multiline="true"
         aria-label={label}

@@ -185,12 +185,12 @@ describe('TeamsService.read', () => {
 })
 
 describe('TeamsService new messages', () => {
-  it('acknowledges a new message and has a free Claude suggest replies, a busy one once its turn ends', async () => {
+  it('a new message gets no reaction, and a free Claude suggests replies, a busy one once its turn ends', async () => {
     const { teams, service, claude } = serviceRig(['c1'], indexedOwnPost('c1', 'r1'))
     teams.threads.set('c1|r1', threadOf('c1', 'r1', teamsMessage('m1', { senderId: 'qc' })))
 
     await service.onNewMessages([{ ticketKey: 'MDP-1', conversationId: 'c1', messageId: 'm1' }])
-    expect(teams.reactions).toEqual([['c1;messageid=r1', 'm1', '231b_hourglassdone', true]])
+    expect(teams.reactions).toEqual([])
     expect(claude.prompts).toEqual([])
 
     claude.idle = true

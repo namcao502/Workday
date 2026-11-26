@@ -59,7 +59,8 @@ export interface WorkspaceServiceDeps {
   readonly environment?: Readonly<Record<string, string | undefined>>
   readonly logError?: (message: string, error: unknown) => void
   // A session just got a new wait (different from its last one); onSeen: the user looked at a session.
-  readonly onWait?: (session: string, tab: WorkspaceTab, wait: WaitReason) => void
+  // quiet: a finish of turns the app alone prompted, which needs no notice.
+  readonly onWait?: (session: string, tab: WorkspaceTab, wait: WaitReason, quiet: boolean) => void
   readonly onSeen?: (session: string) => void
   readonly now?: () => Date
   readonly board: TicketLauncherDeps['board']
@@ -331,7 +332,7 @@ export class WorkspaceService {
   }
 
   // An open request blocks a new prompt: the user answers it first.
-  send(name: string, text: string, images: readonly AgentImage[] = []): SendOutcome {
+  send(name: string, text: string, images: readonly AgentImage[] = [], quiet = false): SendOutcome {
     const session = this.session(name)
     if (session === null) {
       return 'notFound'
@@ -340,7 +341,7 @@ export class WorkspaceService {
       return 'waiting'
     }
     try {
-      session.send(text, images)
+      session.send(text, images, quiet)
       return 'sent'
     } catch (error: unknown) {
       if (error instanceof WorkspaceStartError) {
@@ -374,9 +375,9 @@ export class WorkspaceService {
     return requests.length === 0 ? 'sent' : 'waiting'
   }
 
-  // For the Teams hand-off: a session that cannot start is notRunning.
-  prompt(name: string, text: string): PromptOutcome {
-    const outcome = this.send(name, text)
+  // For the Teams hand-off: a session that cannot start is notRunning. quiet: see AgentSession.send.
+  prompt(name: string, text: string, quiet = false): PromptOutcome {
+    const outcome = this.send(name, text, [], quiet)
     if (outcome === 'sent' || outcome === 'notFound' || outcome === 'waiting') {
       return outcome
     }
@@ -515,7 +516,7 @@ export class WorkspaceService {
         this.waits.set(name, wait)
       }
       if (wait !== null && wait !== previous) {
-        this.deps.onWait?.(name, tab, wait)
+        this.deps.onWait?.(name, tab, wait, wait === 'finished' && session.state.quiet)
       }
     }
     this.deps.events.broadcast({ type: 'workspace.changed' })

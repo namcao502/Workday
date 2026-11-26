@@ -88,15 +88,3 @@ html:root[data-season] .app-toast {
     transition: none;
   }
 }
-
-/* Seasonal decorations hang from the top into the gap above the bar, so they never cover the title. */
-@media (min-width: 720px) {
-  html:root[data-season]:not([data-season-effects='off']) .app-topbar {
-    margin-top: 30px;
-  }
-
-  html:root[data-season]:not([data-season-effects='off']) .app-topbar::before,
-  html:root[data-season='christmas']:not([data-season-effects='off']) .app-topbar::after {
-    top: -19px;
-  }
-}

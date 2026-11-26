@@ -17,7 +17,7 @@ import { taskStamp, writeTaskFile, type PromptOutcome } from './teamsHandOff.js'
 export interface AnalysisRunnerDeps {
   readonly workspace: {
     promptState(name: string): PromptOutcome
-    prompt(name: string, text: string): PromptOutcome
+    prompt(name: string, text: string, quiet?: boolean): PromptOutcome
     assistantTexts(name: string): readonly string[] // newest last
     isWorking(name: string): boolean // a turn is running or queued
     // Running, no turn and no open question, and active within the hour, so its prompt cache is still warm.
@@ -55,10 +55,22 @@ function refusal(outcome: PromptOutcome): AppError {
   return { code: outcome === 'waiting' ? 'claudeWaiting' : 'claudeNotRunning' }
 }
 
+const MESSAGE_NUMBER = /^\d+$/
+
+// Teams message ids grow with time; a read that returned only the thread root names an older one, so an
+// analysis is stale only for a newer message. Ids that are not numbers compare by equality.
+function isNewer(lastMessageId: string, analyzedId: string): boolean {
+  if (MESSAGE_NUMBER.test(lastMessageId) && MESSAGE_NUMBER.test(analyzedId)) {
+    return BigInt(lastMessageId) > BigInt(analyzedId)
+  }
+  return lastMessageId !== analyzedId
+}
+
 export class TeamsAnalysisRunner {
   private readonly requests = new Map<string, Request>()
   private readonly kept = new Map<string, StoredAnalysis>() // when there is no dev repo to save into
   private readonly failed = new Map<string, string>() // conversation -> the last message a run failed on
+  private readonly autoStarted = new Map<string, string>() // conversation -> the last message it auto-started for
 
   constructor(private readonly deps: AnalysisRunnerDeps) {}
 
@@ -89,7 +101,8 @@ export class TeamsAnalysisRunner {
       `${ticketKey}-analysis-${taskStamp(this.deps.now())}.md`,
       text,
     )
-    const sent = this.deps.workspace.prompt(session, analysisLine(path))
+    // Quiet: the analysis shows in the Teams panel, so its finish is no news.
+    const sent = this.deps.workspace.prompt(session, analysisLine(path), true)
     if (sent !== 'sent') {
       return { ok: false, error: refusal(sent) }
     }
@@ -127,28 +140,38 @@ export class TeamsAnalysisRunner {
     const stored = this.stored(ticketKey, conversationId)
     return stored === null
       ? { kind: 'none' }
-      : { kind: 'done', analysis: stored.analysis, stale: stored.lastMessageId !== lastMessageId }
+      : {
+          kind: 'done',
+          analysis: stored.analysis,
+          stale: isNewer(lastMessageId, stored.lastMessageId),
+        }
   }
 
   // Port of the WPF unasked analysis: a message with no current analysis goes to Claude by itself while it is idle
   // and warm (a cold session reloads its whole conversation). A message a run failed on waits for Analyze.
-  shouldAutoStart(
+  // True once per last message: the caller starts the run, and a second ask for it is a loop (MDP-9998 sent 119).
+  claimAutoStart(
     view: TeamsAnalysisView,
     ticketKey: string,
     conversationId: string,
     lastMessageId: string,
     session: string,
   ): boolean {
+    const key = this.requestKey(ticketKey, conversationId)
     const isDue = view.kind === 'none' || (view.kind === 'done' && view.stale)
-    return (
+    const claimed =
       isDue &&
-      this.failed.get(this.requestKey(ticketKey, conversationId)) !== lastMessageId &&
+      this.failed.get(key) !== lastMessageId &&
+      this.autoStarted.get(key) !== lastMessageId &&
       this.deps.workspace.isIdleAndWarm(session)
-    )
+    if (claimed) {
+      this.autoStarted.set(key, lastMessageId)
+    }
+    return claimed
   }
 
   forgetTicket(ticketKey: string): void {
-    for (const map of [this.requests, this.failed]) {
+    for (const map of [this.requests, this.failed, this.autoStarted]) {
       for (const key of [...map.keys()]) {
         if (key.startsWith(`${ticketKey}|`)) {
           map.delete(key)

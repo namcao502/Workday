@@ -19,6 +19,7 @@ interface Built {
   readonly events: ServerEvent[]
   readonly saved: WorkspaceState[]
   readonly waits: { session: string; wait: WaitReason }[]
+  readonly quietWaits: boolean[]
   readonly seen: string[]
   readonly devRepo: string
   readonly homeDir: string
@@ -50,6 +51,7 @@ function build(state: WorkspaceState | StateFactory = EMPTY_WORKSPACE): Built {
   const events: ServerEvent[] = []
   const saved: WorkspaceState[] = []
   const waits: { session: string; wait: WaitReason }[] = []
+  const quietWaits: boolean[] = []
   const seen: string[] = []
   const clock = { now: new Date('2026-11-19T03:00:00Z') }
   const git: FakeGit = {
@@ -91,8 +93,9 @@ function build(state: WorkspaceState | StateFactory = EMPTY_WORKSPACE): Built {
     events: { broadcast: (event) => events.push(event) },
     agent,
     homeDir,
-    onWait: (session, _tab, wait) => {
+    onWait: (session, _tab, wait, quiet) => {
       waits.push({ session, wait })
+      quietWaits.push(quiet)
     },
     onSeen: (session) => {
       seen.push(session)
@@ -100,7 +103,7 @@ function build(state: WorkspaceState | StateFactory = EMPTY_WORKSPACE): Built {
     now: () => clock.now,
     logError: () => undefined,
   })
-  return { service, agent, events, saved, waits, seen, devRepo, homeDir, git, clock }
+  return { service, agent, events, saved, waits, quietWaits, seen, devRepo, homeDir, git, clock }
 }
 
 function terminalState(...sessions: string[]): WorkspaceState {
@@ -280,6 +283,18 @@ describe('WorkspaceService chat and prompt', () => {
     expect(service.view().sessions[0]?.wait).toBeNull()
     expect(seen).toEqual(['claude'])
     expect(waits).toHaveLength(2)
+  })
+
+  it('a finish the app alone prompted reaches onWait as quiet', () => {
+    const { service, agent, waits, quietWaits } = build(terminalState('claude'))
+    expect(service.prompt('claude', 'analyze', true)).toBe('sent')
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(waits.at(-1)).toEqual({ session: 'claude', wait: 'finished' })
+    expect(quietWaits.at(-1)).toBe(true)
+    service.seen('claude')
+    service.prompt('claude', 'fix it')
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(quietWaits.at(-1)).toBe(false)
   })
 
   it('interrupt and setMode reach the session; answer of an unknown id is notFound', async () => {

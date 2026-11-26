@@ -254,11 +254,14 @@ export function createServices(options: ServicesOptions): Services {
     initialState: loadWorkspace(dataDir),
     save: (state) => saveWorkspace(dataDir, state),
     events,
-    onWait: (session, tab, wait) => {
+    onWait: (session, tab, wait, quiet) => {
       if (wait === 'finished') {
         // Teams first: the PR lines wait a few seconds, so a suggested reply is not stuck behind a long fix.
         void teams.retryAnalyses()
         autoLines.runSoon()
+      }
+      if (quiet) {
+        return
       }
       notices.add(claudeWaitNotice(session, tab, wait)).catch((error: unknown) => {
         reportError('Adding a Claude notice failed', error)

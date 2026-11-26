@@ -216,8 +216,9 @@ export function BoardPage(): React.JSX.Element {
   }
 
   // Top bar, left to right: view switch, search (and the Add it offers), Check now, then the poll status.
+  // Wraps on a phone, where it sits under the top bar (phoneActionsBelow): the search then takes a line.
   const headerControls = (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2 max-[719px]:flex-wrap">
       {/* min-w-0 lets the switch shrink and scroll sideways before it pushes the search off the bar. */}
       <div className="flex min-w-0">
         <Segmented
@@ -236,7 +237,7 @@ export function BoardPage(): React.JSX.Element {
       </div>
       <SearchField
         variant="secondary"
-        className="w-56 shrink-0"
+        className="w-56 shrink-0 max-[719px]:w-full max-[719px]:shrink"
         aria-label={canAct ? t('board.searchOrAddATicket') : t('board.searchTickets')}
         value={search}
         onChange={(value) => {
@@ -293,7 +294,7 @@ export function BoardPage(): React.JSX.Element {
   )
 
   return (
-    <Page title={t('board.tickets')} wide actions={headerControls}>
+    <Page title={t('board.tickets')} wide phoneActionsBelow actions={headerControls}>
       {check.isError ? (
         <p className="text-sm text-danger">{errorText({ code: 'pollFailed' })}</p>
       ) : null}

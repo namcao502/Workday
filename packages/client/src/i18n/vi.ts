@@ -1025,6 +1025,7 @@ export const vi: Messages = {
     stoppedByYou: 'Bạn đã dừng yêu cầu',
     submit: 'Gửi',
     suggestions: 'Gợi ý',
+    sessionInfo: 'Thông tin phiên',
     switchModel: 'Đổi model',
     thatIsNotATicketKey: 'Đó không phải mã ticket',
     theFolderCouldNotBeRead: 'Không đọc được thư mục',

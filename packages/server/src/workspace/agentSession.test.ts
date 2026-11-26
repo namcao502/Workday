@@ -106,6 +106,17 @@ describe('AgentSession', () => {
     expect(session.state.finished).toBe(false)
   })
 
+  it('a turn only the app prompted finishes quietly; a prompt of the user in it makes it loud', () => {
+    const { session, agent } = build()
+    session.send('analyze the thread', [], true)
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    expect(session.state).toMatchObject({ finished: true, quiet: true })
+    session.send('analyze again', [], true)
+    session.send('and fix the bug')
+    agent.last().emit({ type: 'turnEnded', ok: true, queued: 0 })
+    expect(session.state).toMatchObject({ finished: true, quiet: false })
+  })
+
   it('a turn nobody prompted (a background task reporting) does not set finished again', () => {
     const { session, agent } = build()
     session.send('hi')

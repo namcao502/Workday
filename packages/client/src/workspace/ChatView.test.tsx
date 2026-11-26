@@ -1,7 +1,14 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { ChatMessage, ChatView as ChatData } from '@workday/core'
 import { afterEach, expect, it, vi } from 'vitest'
-import { hoverTip, jsonResponse, renderWithQuery, stubFetch, type FetchMock } from '../testSupport.js'
+import {
+  hoverTip,
+  jsonResponse,
+  renderWithQuery,
+  stubFetch,
+  stubMatchMedia,
+  type FetchMock,
+} from '../testSupport.js'
 import { ChatView } from './ChatView.js'
 import { OPEN_FILE_EVENT } from './fileLinks.js'
 
@@ -215,6 +222,23 @@ it('shows the context percent and the plan usage in the tooltip, not next to the
   expect(within(tip).getByText('7%')).toHaveClass('text-success')
   expect(within(tip).getByText('92%')).toHaveClass('text-danger')
   expect(tip).toHaveTextContent(/\(resets /)
+})
+
+it('on a phone folds the model chip into an icon whose popup holds the model and the status', async () => {
+  stubMatchMedia(true)
+  stubChat({
+    model: 'claude-sonnet-5-5',
+    contextTokens: 75500,
+    usage: { contextPercent: 7.2, usage: null },
+  })
+  renderWithQuery(<ChatView session="MDP-1" tabId="MDP-1" />)
+  const info = await screen.findByRole('button', { name: 'Session info' })
+  expect(screen.queryByText('claude-sonnet-5-5')).toBeNull()
+  fireEvent.click(info)
+  const dialog = await screen.findByRole('dialog')
+  expect(dialog).toHaveTextContent('claude-sonnet-5-5')
+  expect(dialog).toHaveTextContent('75.5K')
+  expect(dialog).toHaveTextContent('Context: 7%')
 })
 
 it('expands an Edit to its diff and shows a TodoWrite as a checklist', async () => {
