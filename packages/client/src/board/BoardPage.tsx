@@ -1,4 +1,4 @@
-import { CircleCheck, FaceSmile, ListCheck, PlugConnection } from '@gravity-ui/icons'
+import { FaceSmile, ListCheck, PlugConnection } from '@gravity-ui/icons'
 import { Button, SearchField, Spinner } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { parseTicketKey, type BoardAction, type BoardView } from '@workday/core'
@@ -20,6 +20,7 @@ import { BoardCards } from './BoardCard.js'
 import { BoardTable, type RowWork } from './BoardTable.js'
 import type { RowWorkspace } from './RowMenu.js'
 import { SuggestionsCard } from './SuggestionsCard.js'
+import { TodoSection } from './TodoSection.js'
 import { TodoView } from './TodoView.js'
 import { useReadyToTest } from './useReadyToTest.js'
 import { useAvailableDot } from './useAvailableDot.js'
@@ -41,8 +42,6 @@ const SEARCH_DEBOUNCE_MS = 200
 
 function viewLabel(view: BoardViewId, count: number): string {
   switch (view) {
-    case 'todo':
-      return t('board.toDo', { count: String(count) })
     case 'working':
       return t('board.working', { count: String(count) })
     case 'available':
@@ -117,7 +116,7 @@ export function BoardPage(): React.JSX.Element {
   const board = useQuery({ queryKey: queryKeys.board, queryFn: getBoard })
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search)
-  const [view, setView] = useState<BoardViewId>('working') // the To do view is one click away
+  const [view, setView] = useState<BoardViewId>('working')
   const [pickedForSearch, setPickedForSearch] = useState<string | null>(null)
   const [addError, setAddError] = useState<string | null>(null)
 
@@ -141,7 +140,6 @@ export function BoardPage(): React.JSX.Element {
     suggestions === null ? [] : filterSuggestions(suggestions.items, debouncedSearch)
   const counts = {
     ...countViews(rows, debouncedSearch),
-    todo: todoGroups.length,
     available: availableItems.length,
   }
   // No suggestions config: no Available view at all.
@@ -156,9 +154,6 @@ export function BoardPage(): React.JSX.Element {
     (suggestions?.items ?? []).filter((item) => item.urgent).map((item) => item.ticket.key),
     activeView === 'available',
   )
-
-  // The same count as the menu dot, so the dot leads to the view that holds the work; it goes when the work is done.
-  const todoDot = activeView !== 'todo' && (work?.attention ?? 0) !== 0
 
   const typedKey = projectKey === undefined ? null : parseTicketKey(search, projectKey)
   const addableKey =
@@ -204,11 +199,8 @@ export function BoardPage(): React.JSX.Element {
   const listProps = {
     workspace: rowWorkspace,
     work: rowWork,
-    rows:
-      activeView === 'todo' || activeView === 'available'
-        ? []
-        : rowsForView(rows, activeView, debouncedSearch),
-    view: activeView === 'todo' || activeView === 'available' ? 'working' : activeView,
+    rows: activeView === 'available' ? [] : rowsForView(rows, activeView, debouncedSearch),
+    view: activeView === 'available' ? 'working' : activeView,
     language,
     onAction: (key: string, action: BoardAction) => {
       act.mutate({ key, action })
@@ -227,7 +219,7 @@ export function BoardPage(): React.JSX.Element {
           options={viewIds.map((id) => ({
             value: id,
             label: viewLabel(id, counts[id]),
-            dot: (id === 'available' && availableDot) || (id === 'todo' && todoDot),
+            dot: id === 'available' && availableDot,
           }))}
           onChange={(picked) => {
             setView(picked)
@@ -314,6 +306,20 @@ export function BoardPage(): React.JSX.Element {
           {readyToTest.message}
         </p>
       )}
+      {board.data?.connected === true ? (
+        <TodoSection count={todoGroups.length}>
+          <TodoView
+            groups={todoGroups}
+            rows={rows}
+            language={language}
+            workspace={rowWorkspace}
+            onDone={(key) => {
+              act.mutate({ key, action: 'done' })
+            }}
+            onReadyToTest={readyToTest.ask}
+          />
+        </TodoSection>
+      ) : null}
       {board.data === undefined ? (
         <SkeletonRows label={t('board.loading')} rows={4} className="[&>div:not(.sr-only)]:h-16" />
       ) : !board.data.connected ? (
@@ -335,21 +341,6 @@ export function BoardPage(): React.JSX.Element {
             suggestions={{ ...suggestions, items: availableItems }}
             today={board.data.today}
             language={language}
-          />
-        )
-      ) : activeView === 'todo' ? (
-        todoGroups.length === 0 ? (
-          <EmptyState icon={<CircleCheck aria-hidden="true" />} message={t('board.nothingToDo')} />
-        ) : (
-          <TodoView
-            groups={todoGroups}
-            rows={rows}
-            language={language}
-            workspace={rowWorkspace}
-            onDone={(key) => {
-              act.mutate({ key, action: 'done' })
-            }}
-            onReadyToTest={readyToTest.ask}
           />
         )
       ) : listProps.rows.length === 0 ? (

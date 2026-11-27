@@ -15,9 +15,9 @@ Claude sessions and Teams threads in one window.
 ## Tickets: the ticket board
 
 The top bar of the Tickets page, left to right: the view switch, the search box, **Check now**, then when Jira was last
-checked. The views, each with its count: **To do**, **Working** (the default), **Available**, **Done** and **Dismissed**.
-A dot on To do means something waits on you; a dot on Available means an urgent ticket to take (High, or due within 2 days)
-you have not looked at yet.
+checked. The views, each with its count: **Working** (the default), **Available**, **Done** and **Dismissed**. A dot on
+Available means an urgent ticket to take (High, or due within 2 days) you have not looked at yet. **To do** is not a view:
+it is a line right under the top bar on every view, folded or open (click it), or "Nothing to do" with no toggle; it opens itself at two or more groups.
 
 - The search box filters every view, the to-do groups and the tickets to take (every word must match); the counts follow
   it, and when the view you are on has no hit the board shows the first one that has. Type or paste a ticket key or Jira

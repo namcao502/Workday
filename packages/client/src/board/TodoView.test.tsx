@@ -57,8 +57,14 @@ function stubBackend(
   })
 }
 
+// To do is a section on every view; one with fewer than two groups starts folded.
 async function openTodoView(): Promise<void> {
-  fireEvent.click(await screen.findByRole('radio', { name: /^To do/ }))
+  const toggle = within(await screen.findByTestId('board-todo')).getByRole('button', {
+    name: /^To do/,
+  })
+  if (toggle.getAttribute('aria-expanded') === 'false') {
+    fireEvent.click(toggle)
+  }
 }
 
 beforeEach(() => {
@@ -73,10 +79,8 @@ afterEach(() => {
 it('todo view lists needed-now groups first with their actions', async () => {
   stubBackend(GROUPS)
   renderWithQuery(<BoardPage />)
-  await waitFor(() => {
-    expect(screen.getByRole('radio', { name: 'To do (2)' })).toBeInTheDocument()
-  })
-  await openTodoView()
+  expect(await screen.findByRole('region', { name: 'To do (2)' })).toBeInTheDocument()
+  expect(screen.queryByRole('radio', { name: /^To do/ })).toBeNull()
   const titles = (
     await screen.findAllByText(/Claude needs your permission|on dev now|dev PR merged/)
   ).map((node) => node.textContent)
@@ -348,4 +352,20 @@ it('TodoView prComments shows View PR and Seen, and Seen clears the alert', asyn
       expect.objectContaining({ method: 'POST' }),
     )
   })
+})
+
+it('the To do section stays in sight on every view, opening itself at two groups', async () => {
+  stubBackend(GROUPS)
+  const first = renderWithQuery(<BoardPage />)
+  expect(await screen.findByRole('button', { name: 'To do (2)' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+  fireEvent.click(await screen.findByRole('radio', { name: /^Done/ }))
+  expect(screen.getByTestId('board-todo')).toBeInTheDocument()
+  first.unmount()
+  stubBackend([])
+  renderWithQuery(<BoardPage />)
+  expect(await screen.findByText('Nothing to do')).toBeInTheDocument()
+  expect(within(screen.getByTestId('board-todo')).queryByRole('button')).toBeNull()
 })

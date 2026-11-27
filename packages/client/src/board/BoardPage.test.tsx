@@ -294,7 +294,7 @@ it('Available to take is its own view between Working and Done, not part of Work
   renderWithQuery(<BoardPage />)
   await screen.findByText('Alpha work')
   const names = screen.getAllByRole('radio').map((radio) => radio.textContent)
-  expect(names).toEqual(['To do (0)', 'Working (1)', 'Available (2)', 'Done (1)', 'Dismissed (0)'])
+  expect(names).toEqual(['Working (1)', 'Available (2)', 'Done (1)', 'Dismissed (0)'])
   expect(screen.queryByText('Gamma task')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('radio', { name: /^Available/ }))
   expect(await screen.findByText('Gamma task')).toBeInTheDocument()
@@ -317,31 +317,6 @@ it('an unseen urgent suggestion puts a dot on Available until the view is opened
   const again = await screen.findByRole('radio', { name: /^Available/ })
   await screen.findByText('Alpha work')
   expect(again.querySelector('[data-testid="view-dot"]')).toBeNull()
-})
-
-it('work needed now puts a dot on To do, except while To do is open', async () => {
-  stubBackend({ board: TWO_VIEWS, work: workView({ attention: 2 }) })
-  renderWithQuery(<BoardPage />)
-  const todo = await screen.findByRole('radio', { name: /^To do/ })
-  await waitFor(() => {
-    expect(todo.querySelector('[data-testid="view-dot"]')).not.toBeNull()
-  })
-  expect(
-    screen.getByRole('radio', { name: /^Working/ }).querySelector('[data-testid="view-dot"]'),
-  ).toBeNull()
-  fireEvent.click(todo)
-  await waitFor(() => {
-    expect(todo.querySelector('[data-testid="view-dot"]')).toBeNull()
-  })
-})
-
-it('no work needed now leaves To do without a dot', async () => {
-  stubBackend({ board: TWO_VIEWS, work: workView({ attention: 0 }) })
-  renderWithQuery(<BoardPage />)
-  await screen.findByText('Alpha work')
-  expect(
-    screen.getByRole('radio', { name: /^To do/ }).querySelector('[data-testid="view-dot"]'),
-  ).toBeNull()
 })
 
 it('without suggestions configured there is no Available view', async () => {

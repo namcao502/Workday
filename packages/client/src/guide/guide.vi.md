@@ -15,9 +15,9 @@ phiên Claude và thread Teams của bạn vào một cửa sổ.
 ## Ticket: bảng ticket
 
 Thanh trên cùng của trang Ticket, từ trái sang phải: nút chuyển view, ô tìm kiếm, **Kiểm tra ngay**, rồi lần kiểm tra Jira
-gần nhất. Các view, mỗi view kèm số lượng: **Việc cần làm**, **Đang làm** (mặc định), **Có thể nhận**, **Xong** và **Đã bỏ
-qua**. Chấm trên Việc cần làm nghĩa là có việc đang chờ bạn; chấm trên Có thể nhận nghĩa là có ticket gấp để nhận (High,
-hoặc hạn trong 2 ngày) mà bạn chưa xem.
+gần nhất. Các view, mỗi view kèm số lượng: **Đang làm** (mặc định), **Có thể nhận**, **Xong** và **Đã bỏ qua**. Chấm trên
+Có thể nhận nghĩa là có ticket gấp để nhận (High, hoặc hạn trong 2 ngày) mà bạn chưa xem. **Việc cần làm** không phải một
+view: nó là một dòng ngay dưới thanh trên cùng ở mọi view, bấm để thu gọn hoặc mở ra, hoặc hiện "Không có việc cần làm" khi trống (không có nút thu gọn); có từ 2 nhóm việc trở lên thì tự mở.
 
 - Ô tìm kiếm lọc mọi view, các nhóm việc cần làm và các ticket có thể nhận (mỗi từ đều phải khớp); số lượng đổi theo, và nếu
   view đang xem không có kết quả thì bảng tự chuyển sang view đầu tiên có kết quả. Gõ hoặc dán mã ticket hay link Jira chưa

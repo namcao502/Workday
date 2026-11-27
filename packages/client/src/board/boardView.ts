@@ -1,21 +1,14 @@
 import { matchesTicket, type BoardRow, type Suggestion, type TodoGroup } from '@workday/core'
 
-// The views that list board rows; 'todo' lists WorkView groups, 'available' the epic's suggestions.
+// The views that list board rows; 'available' lists the epic's suggestions. To do is its own section on every view.
 export type RowViewId = 'working' | 'done' | 'dismissed'
-export type BoardViewId = 'todo' | 'available' | RowViewId
+export type BoardViewId = 'available' | RowViewId
 
 // Available sits between Working and Done, as in the WPF board.
-export const VIEW_IDS: readonly BoardViewId[] = [
-  'todo',
-  'working',
-  'available',
-  'done',
-  'dismissed',
-]
+export const VIEW_IDS: readonly BoardViewId[] = ['working', 'available', 'done', 'dismissed']
 
-// The todo and available counts come from the work view, which only the page knows.
+// The available count comes from the work view, which only the page knows.
 export type ViewCounts = Readonly<Record<RowViewId, number>> & {
-  readonly todo?: number
   readonly available?: number
 }
 
