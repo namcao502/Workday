@@ -129,7 +129,6 @@ it('a day card shows leave, the logged hours, or Nothing logged by its state', a
   const off = await screen.findByRole('group', { name: /TUE 10/ })
   expect(within(off).getByText('Leave')).toBeInTheDocument()
   expect(within(off).getByText('Approved in HRM')).toBeInTheDocument()
-  expect(screen.getByText('4 workdays, 1 off')).toBeInTheDocument()
   const monday = card(/MON 9/)
   expect(within(monday).getByText(/8h/)).toBeInTheDocument()
   expect(within(monday).getByText(/MDP-1, MDP-2/)).toBeInTheDocument()
@@ -404,4 +403,20 @@ it('Read again reads with the background browser, and a day with no token says h
       allowSniff: true,
     })
   })
+})
+
+it('the week table shows HRM and TSC per day, the totals, and what is still missing', async () => {
+  backend(timesheetView())
+  renderWithQuery(<TimesheetPage />)
+  const table = await screen.findByRole('table', { name: 'HRM and TSC this week' })
+  const [hrm, tsc] = within(table).getAllByRole('row').slice(1)
+  expect(hrm).toHaveTextContent('8h / 32h')
+  expect(tsc).toHaveTextContent('1 / 3')
+  expect(within(hrm as HTMLElement).getByRole('button', { name: /Leave/ })).toBeInTheDocument()
+  expect(screen.getByText('Still missing: WED 11 (HRM, TSC)')).toBeInTheDocument()
+  expect(
+    screen.getByText('Today still needs HRM 8h, TSC - add the tickets above, they log at 6:00 PM'),
+  ).toBeInTheDocument()
+  fireEvent.click(within(tsc as HTMLElement).getAllByRole('button')[2] as HTMLElement)
+  expect(within(table).getByRole('columnheader', { name: 'WED 11' })).toHaveClass('text-accent')
 })

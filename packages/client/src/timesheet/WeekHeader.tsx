@@ -1,13 +1,6 @@
 import { Button, Spinner } from '@heroui/react'
 import { ChevronLeft, ChevronRight, ArrowRotateRight } from '@gravity-ui/icons'
-import {
-  addDays,
-  hrmWeekTotal,
-  type DayCoverage,
-  type WeekState,
-  type WeekStep,
-  type WeekStepId,
-} from '@workday/core'
+import { addDays, type WeekState, type WeekStep, type WeekStepId } from '@workday/core'
 import { formatClock, formatDateOnly, t, type Language } from '../i18n.js'
 import { DONE_MARK } from './timesheetText.js'
 import { Tip } from '../ui/Tip.js'
@@ -16,7 +9,6 @@ const WORKDAYS = 5
 
 interface WeekHeaderProps {
   readonly monday: string
-  readonly today: string
   readonly week: WeekState | null
   readonly language: Language
   readonly timeZone: string
@@ -40,13 +32,6 @@ function titleFor(monday: string, thisMonday: string): string {
     return t('timesheet.lastWeek')
   }
   return monday === addDays(thisMonday, 7) ? t('timesheet.nextWeek') : t('timesheet.week')
-}
-
-// Days up to today that are not off: how many carry TSC text, out of how many.
-function tscCount(coverage: readonly DayCoverage[], today: string): string {
-  const days = coverage.filter((day) => day.date <= today && !day.isOff)
-  const done = days.filter((day) => (day.tscText ?? '').trim() !== '').length
-  return `${String(done)} / ${String(days.length)}`
 }
 
 // Week switcher shown between the log input and the week's cards.
@@ -148,11 +133,9 @@ function ReadSteps({ steps }: { readonly steps: readonly WeekStep[] }): React.JS
 }
 
 export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
-  const { week, language, today } = props
+  const { week, language } = props
   const coverage = week?.coverage ?? null
-  const hrm = coverage === null ? null : hrmWeekTotal(coverage, today)
   const steps = week?.steps ?? []
-  const offDays = coverage?.filter((day) => day.isOff).length ?? 0
   let status: React.ReactNode = ''
   if (steps.length !== 0) {
     status = <ReadSteps steps={steps} />
@@ -164,18 +147,6 @@ export function WeekHeader(props: WeekHeaderProps): React.JSX.Element {
   }
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
-      {hrm === null ? null : (
-        <span>{`HRM ${String(hrm.hours)}h / ${String(hrm.targetHours)}h`}</span>
-      )}
-      {coverage === null ? null : <span>{`TSC ${tscCount(coverage, today)}`}</span>}
-      {offDays === 0 ? null : (
-        <span className="font-medium text-violet-700 dark:text-violet-300">
-          {t('timesheet.weekWorkdaysOff', {
-            work: String(WORKDAYS - offDays),
-            off: String(offDays),
-          })}
-        </span>
-      )}
       {coverage?.some((day) => day.tscState === 'noToken') === true ? (
         <span>{t('timesheet.tscNotReadYetReadAgain')}</span>
       ) : null}

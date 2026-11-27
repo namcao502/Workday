@@ -37,6 +37,7 @@ import { dateLabel, formatMinutes } from './timesheetText.js'
 import { useColumns } from './useColumns.js'
 import { useTimesheetActions } from './useTimesheetActions.js'
 import { WeekHeader, WeekNav } from './WeekHeader.js'
+import { WeekMatrix } from './WeekMatrix.js'
 import { WeekTotals } from './WeekTotals.js'
 import { Tip } from '../ui/Tip.js'
 import { SkeletonRows } from '../ui/Skeleton.js'
@@ -260,11 +261,19 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
       />
       <WeekHeader
         monday={monday}
-        today={clock.date}
         week={week}
         language={language}
         timeZone={timeZone}
         reading={reading}
+      />
+      <WeekMatrix
+        days={days}
+        coverage={week?.coverage ?? null}
+        today={clock.date}
+        selected={date}
+        language={language}
+        logTime={view.logTime}
+        onSelect={setDate}
       />
       <div
         ref={gridRef}
