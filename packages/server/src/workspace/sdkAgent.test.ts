@@ -99,6 +99,7 @@ function start(
     executable: () => 'C:/claude.exe',
     env: () => ({ CLAUDE_X: '1' }),
     logError,
+    additionalDirectories: ['C:/data/tmp'],
   })
   const handle = agent.start({
     cwd: 'C:/repo',
@@ -183,6 +184,7 @@ describe('createSdkAgent', () => {
     const started = start({ mode: 'bypassPermissions', resume: 's-9', model: 'opus' })
     expect(started.options()).toMatchObject({
       cwd: 'C:/repo',
+      additionalDirectories: ['C:/data/tmp'],
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
       pathToClaudeCodeExecutable: 'C:/claude.exe',

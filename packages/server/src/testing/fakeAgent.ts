@@ -38,7 +38,12 @@ export class FakeAgentHandle implements AgentSessionHandle {
     return Promise.resolve()
   }
 
+  failSetMode = false
+
   setMode(mode: AgentMode): Promise<void> {
+    if (this.failSetMode) {
+      return Promise.reject(new Error('setMode failed'))
+    }
     this.modes.push(mode)
     return Promise.resolve()
   }

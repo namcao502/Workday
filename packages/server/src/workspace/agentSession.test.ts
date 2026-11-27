@@ -210,4 +210,51 @@ describe('AgentSession', () => {
     expect(agent.last().modes).toEqual(['plan'])
     expect(session.state.mode).toBe('plan')
   })
+
+  it('a quiet prompt in bypass mode runs in default mode, and the turn end puts bypass back', async () => {
+    const { session, agent } = build({ mode: () => 'bypassPermissions' })
+    session.send('analyze the thread', [], true)
+    expect(agent.last().sent).toEqual([])
+    await settle()
+    expect(agent.last().modes).toEqual(['default'])
+    expect(agent.last().sent).toEqual(['analyze the thread'])
+    expect(session.state.mode).toBe('default')
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    await settle()
+    expect(agent.last().modes).toEqual(['default', 'bypassPermissions'])
+    expect(session.state.mode).toBe('bypassPermissions')
+  })
+
+  it('a prompt of the user is sent at once in bypass mode', () => {
+    const { session, agent } = build({ mode: () => 'bypassPermissions' })
+    session.send('fix the bug')
+    expect(agent.last().sent).toEqual(['fix the bug'])
+    expect(agent.last().modes).toEqual([])
+  })
+
+  it('a mode the user picks during a guarded turn is kept when the turn ends', async () => {
+    const { session, agent } = build({ mode: () => 'bypassPermissions' })
+    session.send('analyze the thread', [], true)
+    await settle()
+    await session.setMode('plan')
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    await settle()
+    expect(agent.last().modes).toEqual(['default', 'plan'])
+    expect(session.state.mode).toBe('plan')
+  })
+
+  it('a quiet prompt whose mode switch fails is never sent and ends the turn', async () => {
+    const { session, agent } = build({ mode: () => 'bypassPermissions' })
+    session.send('start')
+    agent.last().emit({ type: 'turnEnded', ok: true })
+    agent.last().failSetMode = true
+    session.send('analyze the thread', [], true)
+    await settle()
+    expect(agent.last().sent).toEqual(['start'])
+    expect(session.state.working).toBe(false)
+  })
 })
+
+function settle(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}

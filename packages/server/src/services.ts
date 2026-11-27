@@ -137,6 +137,7 @@ export interface Services {
 // Loads the board and queue from the data dir; settings.start() then connects Jira, TSC, HRM and the schedules.
 export function createServices(options: ServicesOptions): Services {
   const { dataDir, config } = options
+  const tmpDir = options.tmpDir ?? join(dataDir, TMP_FOLDER)
   const logError = options.logError === undefined ? {} : { logError: options.logError }
   const reportError = options.logError ?? console.error
   const events = new EventHub()
@@ -248,6 +249,7 @@ export function createServices(options: ServicesOptions): Services {
         defaultClaudeExecutable(homeDir, process.platform === 'win32'),
       env: () => sessionEnvironment(process.env),
       logError: reportError,
+      additionalDirectories: [tmpDir],
     })
   const workspace = new WorkspaceService({
     config: config.workspace,
@@ -331,7 +333,7 @@ export function createServices(options: ServicesOptions): Services {
     board,
     prs,
     workspace,
-    tmpDir: options.tmpDir ?? join(dataDir, TMP_FOLDER),
+    tmpDir,
   })
   const teamsScheduler: Scheduler =
     options.teamsScheduler ??

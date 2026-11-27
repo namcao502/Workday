@@ -26,6 +26,7 @@ export interface SdkAgentDeps {
   readonly executable: () => string // pathToClaudeCodeExecutable, read at each start
   readonly env: () => Readonly<Record<string, string>>
   readonly logError: (message: string, error: unknown) => void
+  readonly additionalDirectories: readonly string[] // read with no question in default mode (Teams task files)
 }
 
 interface PromptQueue {
@@ -196,6 +197,7 @@ function start(deps: SdkAgentDeps, options: AgentStartOptions): AgentSessionHand
     prompt: prompts.messages,
     options: {
       cwd: options.cwd,
+      additionalDirectories: [...deps.additionalDirectories],
       permissionMode: options.mode,
       allowDangerouslySkipPermissions: options.mode === 'bypassPermissions',
       pathToClaudeCodeExecutable: deps.executable(),

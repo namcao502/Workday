@@ -70,6 +70,8 @@ type Progress = Pick<AgentSessionState, 'running' | 'working' | 'finished' | 'qu
 
 const SESSION_ENDED: AgentDecision = { kind: 'deny', message: 'Session ended.' }
 const CANCELLED: AgentDecision = { kind: 'deny', message: 'Cancelled.' }
+// Modes that run a tool with no question; a quiet prompt carries other people's text, so it is not sent in them.
+const UNGUARDED_MODES: ReadonlySet<AgentMode> = new Set(['bypassPermissions', 'acceptEdits'])
 
 // One Claude process per tab, started lazily by the first prompt and restarted after it exits.
 export class AgentSession {
@@ -78,6 +80,7 @@ export class AgentSession {
   private progress: Progress = { running: false, working: false, finished: false, quiet: false }
   private runningMode: AgentMode = 'default'
   private nextMode: AgentMode | null = null // set while stopped, used by the next start
+  private guardedFrom: AgentMode | null = null // the mode a quiet prompt switched away from, put back at the turn end
   private model: string | null = null
   private usage: AgentUsage | null = null
   private catalog: AgentCatalog | null = null
@@ -114,10 +117,42 @@ export class AgentSession {
       throw new WorkspaceStartError('sessionNotFound')
     }
     const handle = this.handle ?? this.start()
-    handle.send(text, images)
     this.turns += 1
     this.loud = this.loud || !quiet
     this.update({ running: true, working: true, finished: false })
+    if (quiet && UNGUARDED_MODES.has(this.runningMode)) {
+      void this.sendGuarded(handle, text, images)
+    } else {
+      handle.send(text, images)
+    }
+  }
+
+  // A Teams analysis could carry an injected instruction: in default mode any tool beyond a read asks the user.
+  private async sendGuarded(
+    handle: AgentSessionHandle,
+    text: string,
+    images: readonly AgentImage[],
+  ): Promise<void> {
+    const from = this.runningMode
+    try {
+      await handle.setMode('default')
+    } catch {
+      // Never sent unguarded: the turn is dropped, so the analysis reports failed and may run again.
+      if (handle === this.handle) {
+        this.turns = Math.max(0, this.turns - 1)
+        if (this.turns === 0) {
+          this.update({ working: false })
+        }
+      }
+      return
+    }
+    if (handle !== this.handle) {
+      return
+    }
+    this.guardedFrom ??= from
+    this.runningMode = 'default'
+    this.deps.onChange()
+    handle.send(text, images)
   }
 
   answer(requestId: string, answer: ChatAnswer): 'ok' | 'notFound' | 'invalid' {
@@ -138,6 +173,7 @@ export class AgentSession {
   }
 
   async setMode(mode: AgentMode): Promise<void> {
+    this.guardedFrom = null // the user's pick wins over putting the guarded mode back
     const handle = this.handle
     if (handle === null) {
       this.nextMode = mode
@@ -261,6 +297,10 @@ export class AgentSession {
         if (this.turns === 0 && prompted) {
           this.update({ working: false, finished: true, quiet: !this.loud })
           this.loud = false
+          if (this.guardedFrom !== null) {
+            // A failed switch leaves the session in default mode, the safe side; the next start uses the config mode.
+            void this.setMode(this.guardedFrom).catch(() => undefined)
+          }
         }
         this.deps.onChange()
         void this.refreshUsage()
@@ -273,7 +313,8 @@ export class AgentSession {
       case 'exited':
         this.handle = null
         // A restart keeps the mode the user last chose, not the config default.
-        this.nextMode = this.runningMode
+        this.nextMode = this.guardedFrom ?? this.runningMode
+        this.guardedFrom = null
         this.nextModel = this.model
         this.end()
         return
