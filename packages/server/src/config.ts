@@ -333,8 +333,7 @@ export function parseNoticeRouting(raw: unknown): NoticeRouting {
   }
   const away = raw['phoneOnlyWhenAway']
   return {
-    phoneOnlyWhenAway:
-      typeof away === 'boolean' ? away : DEFAULT_NOTICE_ROUTING.phoneOnlyWhenAway,
+    phoneOnlyWhenAway: typeof away === 'boolean' ? away : DEFAULT_NOTICE_ROUTING.phoneOnlyWhenAway,
     idleMinutes: routingMinutes(raw['idleMinutes'], 1, DEFAULT_NOTICE_ROUTING.idleMinutes),
     fallbackMinutes: routingMinutes(
       raw['fallbackMinutes'],

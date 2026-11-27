@@ -295,5 +295,8 @@ it('with only vpn running, Pair a device opens pairing and the closed setup page
 
   expect(await screen.findByText('ABC234')).toBeInTheDocument()
   expect(await screen.findByAltText('http://10.20.30.40:8444/setup')).toBeInTheDocument()
-  expect(fetchMock).toHaveBeenCalledWith('/api/remote/pairing', expect.objectContaining({ method: 'POST' }))
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/remote/pairing',
+    expect.objectContaining({ method: 'POST' }),
+  )
 })

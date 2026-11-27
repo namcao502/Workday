@@ -41,7 +41,9 @@ export function registerNoticeRoutes(
       idleSeconds < 0 ||
       typeof locked !== 'boolean'
     ) {
-      return reply.code(400).send({ error: 'Body must be { idleSeconds: number, locked: boolean }' })
+      return reply
+        .code(400)
+        .send({ error: 'Body must be { idleSeconds: number, locked: boolean }' })
     }
     notices.reportPresence(idleSeconds, locked)
     return { ok: true }

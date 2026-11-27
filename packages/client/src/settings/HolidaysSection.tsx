@@ -75,7 +75,12 @@ export function HolidaysSection({
         </ul>
       )}
       <div className="flex flex-wrap items-center gap-3">
-        <DateInput label={t('settings.holidayDate')} name="holiday" value={date} onChange={setDate} />
+        <DateInput
+          label={t('settings.holidayDate')}
+          name="holiday"
+          value={date}
+          onChange={setDate}
+        />
         <Input
           aria-label={t('settings.holidayName')}
           placeholder={t('settings.holidayName')}

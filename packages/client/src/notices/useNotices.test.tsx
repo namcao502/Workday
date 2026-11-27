@@ -72,7 +72,10 @@ it('a focused window still gets the Windows notification', async () => {
   await firstLoad(harness)
   harness.setView([
     first,
-    notice(2, { topic: 'claude', event: { type: 'claudeWait', subject: 'MDP-3', wait: 'finished' } }),
+    notice(2, {
+      topic: 'claude',
+      event: { type: 'claudeWait', subject: 'MDP-3', wait: 'finished' },
+    }),
   ])
   await act(() => harness.reload())
   await screen.findByText('MDP-3: Claude is done - your turn.')

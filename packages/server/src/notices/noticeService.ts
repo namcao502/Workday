@@ -125,8 +125,7 @@ export class NoticeService {
   holdsPhone(): boolean {
     const { routing } = this.deps.settings()
     return (
-      routing.phoneOnlyWhenAway &&
-      isAtPc(this.presence, routing, this.deps.now().toISOString())
+      routing.phoneOnlyWhenAway && isAtPc(this.presence, routing, this.deps.now().toISOString())
     )
   }
 

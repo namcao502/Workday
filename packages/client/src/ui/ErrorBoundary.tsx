@@ -39,7 +39,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return this.props.children
     }
     return (
-      <div role="alert" className="m-auto flex max-w-sm flex-col items-center gap-3 p-8 text-center">
+      <div
+        role="alert"
+        className="m-auto flex max-w-sm flex-col items-center gap-3 p-8 text-center"
+      >
         <h2 className="text-lg font-semibold">{t('app.appCrashedTitle')}</h2>
         <p className="text-sm text-muted">{t('app.appCrashedHint')}</p>
         <div className="flex gap-2">

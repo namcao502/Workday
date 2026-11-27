@@ -4,9 +4,13 @@ export interface Holiday {
   readonly name: string | null // null: the client names the built-in ones in the app language
 }
 
-export const DEFAULT_HOLIDAYS: readonly Holiday[] = ['01-01', '04-30', '05-01', '09-02', '11-24'].map(
-  (date) => ({ date, name: null }),
-)
+export const DEFAULT_HOLIDAYS: readonly Holiday[] = [
+  '01-01',
+  '04-30',
+  '05-01',
+  '09-02',
+  '11-24',
+].map((date) => ({ date, name: null }))
 
 const ENTRY_PATTERN = /^(?:(\d{4})-)?(\d{2})-(\d{2})$/
 const LEAP_YEAR = 2024 // lets "02-29" through as a yearly entry

@@ -526,7 +526,13 @@ describe('parseHolidays', () => {
     expect(parseHolidays(undefined)).toBe(DEFAULT_HOLIDAYS)
     expect(parseHolidays([])).toEqual([])
     expect(
-      parseHolidays(['04-30', { date: '2027-02-08', name: 'Tet' }, { date: 'nope' }, 5, { name: 'x' }]),
+      parseHolidays([
+        '04-30',
+        { date: '2027-02-08', name: 'Tet' },
+        { date: 'nope' },
+        5,
+        { name: 'x' },
+      ]),
     ).toEqual([
       { date: '04-30', name: null },
       { date: '2027-02-08', name: 'Tet' },

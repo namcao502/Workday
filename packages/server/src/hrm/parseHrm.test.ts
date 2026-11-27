@@ -165,9 +165,7 @@ describe('parseOffDates', () => {
   it('expands a multi-day range inclusively', () => {
     expect(
       parseOffDates(false, envelope(request('2026-04-28', '2026-04-30', 'AllDay', 'Approved'))),
-    ).toEqual(
-      ['2026-04-28', '2026-04-29', '2026-04-30'].map((date) => ({ date, approved: true })),
-    )
+    ).toEqual(['2026-04-28', '2026-04-29', '2026-04-30'].map((date) => ({ date, approved: true })))
   })
 
   it('skips half-day requests', () => {

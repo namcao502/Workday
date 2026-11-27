@@ -12,7 +12,11 @@ interface SectionProps {
 // with 1px dividers instead. Off by default: a lone Section still draws its own card.
 const SectionFlatContext = createContext(false)
 
-export function FlatSections({ children }: { readonly children: React.ReactNode }): React.JSX.Element {
+export function FlatSections({
+  children,
+}: {
+  readonly children: React.ReactNode
+}): React.JSX.Element {
   return <SectionFlatContext.Provider value={true}>{children}</SectionFlatContext.Provider>
 }
 
@@ -32,9 +36,7 @@ export function Section({
         <div className="flex flex-row items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h2 className="text-base font-semibold">{title}</h2>
-            {description === undefined ? null : (
-              <p className="text-sm text-muted">{description}</p>
-            )}
+            {description === undefined ? null : <p className="text-sm text-muted">{description}</p>}
           </div>
           {actions}
         </div>

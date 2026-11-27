@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  compareTicketKeys,
-  isTicketKey,
-  parseTicketKey,
-  parseTicketKeys,
-} from './ticketKey.js'
+import { compareTicketKeys, isTicketKey, parseTicketKey, parseTicketKeys } from './ticketKey.js'
 
 describe('compareTicketKeys', () => {
   it('orders by the numeric part, so a 5-digit key sorts after every smaller one', () => {
