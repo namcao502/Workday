@@ -19,6 +19,18 @@ const LOGIN_URL = /login|microsoftonline/i
 
 const BUSY: SheetError = { failure: 'browserBusy', detail: 'The TSC browser is already in use.' }
 
+export type LaunchContext = (profileDir: string, visible: boolean) => Promise<BrowserContext>
+
+function launchBrowser(profileDir: string, visible: boolean): Promise<BrowserContext> {
+  return chromium.launchPersistentContext(profileDir, {
+    channel: BROWSER_CHANNEL,
+    headless: !visible,
+    serviceWorkers: 'block',
+    args: ['--disable-blink-features=AutomationControlled'],
+    viewport: { width: 1280, height: 800 },
+  })
+}
+
 function sleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
@@ -39,6 +51,8 @@ export class PlaywrightTokenSource implements TokenSource {
     private readonly config: TscConfig,
     private readonly profileDir: string,
     private readonly lock: BrowserLock,
+    private readonly launch: LaunchContext = launchBrowser,
+    private readonly now: () => number = Date.now,
   ) {}
 
   sniff(): Promise<{ readonly token: string } | SheetError> {
@@ -59,8 +73,8 @@ export class PlaywrightTokenSource implements TokenSource {
         } catch {
           continue
         }
-        const deadline = Date.now() + SNIFF_WAIT_MILLISECONDS
-        while (Date.now() < deadline && ![...seen.values()].some(hasAllScope)) {
+        const deadline = this.now() + SNIFF_WAIT_MILLISECONDS
+        while (this.now() < deadline && ![...seen.values()].some(hasAllScope)) {
           await sleep(SNIFF_POLL_MILLISECONDS)
         }
         if ([...seen.values()].some(hasAllScope)) {
@@ -103,8 +117,8 @@ export class PlaywrightTokenSource implements TokenSource {
         waitUntil: 'domcontentloaded',
         timeout: GOTO_TIMEOUT_MILLISECONDS,
       })
-      const deadline = Date.now() + SIGN_IN_TIMEOUT_MILLISECONDS
-      while (Date.now() < deadline) {
+      const deadline = this.now() + SIGN_IN_TIMEOUT_MILLISECONDS
+      while (this.now() < deadline) {
         await sleep(SIGN_IN_POLL_MILLISECONDS)
         if (page.isClosed()) {
           return { failure: 'failed', detail: 'Browser closed before login completed.' } as const
@@ -135,8 +149,8 @@ export class PlaywrightTokenSource implements TokenSource {
       } catch {
         continue
       }
-      const deadline = Date.now() + SNIFF_WAIT_MILLISECONDS
-      while (Date.now() < deadline && !found()) {
+      const deadline = this.now() + SNIFF_WAIT_MILLISECONDS
+      while (this.now() < deadline && !found()) {
         await sleep(SNIFF_POLL_MILLISECONDS)
       }
     }
@@ -163,13 +177,7 @@ export class PlaywrightTokenSource implements TokenSource {
     let context: BrowserContext | null = null
     try {
       logBrowserLaunch(this.profileDir, 'tsc', purpose)
-      context = await chromium.launchPersistentContext(this.profileDir, {
-        channel: BROWSER_CHANNEL,
-        headless: !visible,
-        serviceWorkers: 'block',
-        args: ['--disable-blink-features=AutomationControlled'],
-        viewport: { width: 1280, height: 800 },
-      })
+      context = await this.launch(this.profileDir, visible)
       const opened = context
       if (!visible) {
         this.lock.offerStop(() => opened.close())
