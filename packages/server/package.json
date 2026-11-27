@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch --import tsx --conditions=development --env-file=dev.env --env-file-if-exists=../../.env src/main.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.323",
