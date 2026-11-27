@@ -86,7 +86,7 @@ export function BoardTable({
               </td>
               {/* max-w-0 lets the cell shrink, so a long summary cuts to one line instead of growing the row. */}
               <td className={`${td} w-full max-w-0`}>
-                <Tip className="block truncate" content={row.ticket.summary}>
+                <Tip className="block truncate" content={row.ticket.summary} whenTruncated>
                   {row.ticket.summary}
                 </Tip>
               </td>

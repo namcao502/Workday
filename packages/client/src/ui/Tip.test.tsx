@@ -26,3 +26,34 @@ it('shows no tooltip when the hint is empty', async () => {
   await new Promise((resolve) => setTimeout(resolve, 700))
   expect(screen.queryByRole('tooltip')).toBeNull()
 })
+
+function hover(element: HTMLElement): void {
+  fireEvent.pointerMove(document.body, { pointerType: 'mouse' })
+  fireEvent.pointerEnter(element, { pointerType: 'mouse' })
+}
+
+it('a truncated-only hint stays hidden while the text shows in full', async () => {
+  render(
+    <Tip content="src/deep/folder/app.ts" whenTruncated>
+      app.ts
+    </Tip>,
+  )
+  hover(screen.getByText('app.ts'))
+  await new Promise((resolve) => setTimeout(resolve, 700))
+  expect(screen.queryByRole('tooltip')).toBeNull()
+})
+
+it('a truncated-only hint shows once the text is cut, and never takes a click', async () => {
+  render(
+    <Tip content="src/deep/folder/a-very-long-name.ts" whenTruncated>
+      a-very-long-name.ts
+    </Tip>,
+  )
+  const text = screen.getByText('a-very-long-name.ts')
+  Object.defineProperty(text, 'scrollWidth', { configurable: true, value: 300 })
+  Object.defineProperty(text, 'clientWidth', { configurable: true, value: 120 })
+  hover(text)
+  const tooltip = await screen.findByRole('tooltip')
+  expect(tooltip).toHaveTextContent('src/deep/folder/a-very-long-name.ts')
+  expect(tooltip).toHaveClass('pointer-events-none')
+})

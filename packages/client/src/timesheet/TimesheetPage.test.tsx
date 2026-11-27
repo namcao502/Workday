@@ -186,7 +186,7 @@ it('week bars measure each ticket against the whole working week', async () => {
   expect(await hoverTip(track ?? document.body)).toHaveTextContent('10% of the week')
 })
 
-it('day cards show each ticket summary next to its key, the full text in a tooltip', async () => {
+it('day cards show each ticket summary next to its key, the full text in a tooltip when cut', async () => {
   const base = timesheetView({ queue: [queued('2026-11-11')] })
   const task = {
     date: '2026-11-09',
@@ -208,6 +208,9 @@ it('day cards show each ticket summary next to its key, the full text in a toolt
   await screen.findByRole('group', { name: /MON 9/ })
   const logged = within(card(/MON 9/)).getByText('Sticker WIP filters')
   expect(logged).toHaveClass('truncate')
+  // The tooltip shows only a cut summary: pretend this one does not fit.
+  Object.defineProperty(logged, 'scrollWidth', { configurable: true, value: 300 })
+  Object.defineProperty(logged, 'clientWidth', { configurable: true, value: 120 })
   expect(await hoverTip(logged)).toHaveTextContent('Sticker WIP filters')
   expect(
     await within(card(/WED 11/)).findByText('Queued one', {}, { timeout: 3000 }),

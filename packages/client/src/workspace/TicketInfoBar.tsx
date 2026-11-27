@@ -80,7 +80,11 @@ export function TicketInfoBar({ ticketKey }: { readonly ticketKey: string }): Re
       )}
       {row === undefined ? null : (
         // Two lines before the cut: the facts and buttons beside it would otherwise leave a stub.
-        <Tip className="min-w-48 flex-1 line-clamp-2 text-base" content={row.ticket.summary}>
+        <Tip
+          className="min-w-48 flex-1 line-clamp-2 text-base"
+          content={row.ticket.summary}
+          whenTruncated
+        >
           {row.ticket.summary}
         </Tip>
       )}

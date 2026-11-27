@@ -53,22 +53,22 @@ function FileButton({
   onSelect,
 }: FileButtonProps): React.JSX.Element {
   return (
-    <Tip className="block" content={path}>
-      <button
-        type="button"
-        className={`${ROW_CLASS}${selected ? ' bg-accent-soft text-accent-soft-foreground' : ''}`}
-        onClick={() => {
-          onSelect(path)
-        }}
-      >
-        {status === undefined ? null : (
-          <span className={`w-4 shrink-0 font-mono font-semibold ${STATUS_COLOR[status]}`}>
-            {status}
-          </span>
-        )}
-        <span className="min-w-0 truncate">{label}</span>
-      </button>
-    </Tip>
+    <button
+      type="button"
+      className={`${ROW_CLASS}${selected ? ' bg-accent-soft text-accent-soft-foreground' : ''}`}
+      onClick={() => {
+        onSelect(path)
+      }}
+    >
+      {status === undefined ? null : (
+        <span className={`w-4 shrink-0 font-mono font-semibold ${STATUS_COLOR[status]}`}>
+          {status}
+        </span>
+      )}
+      <Tip className="min-w-0 truncate" content={path} whenTruncated>
+        {label}
+      </Tip>
+    </button>
   )
 }
 
@@ -93,7 +93,7 @@ function FolderNode(props: FolderNodeProps): React.JSX.Element {
         }}
       >
         {open ? <ChevronDown className="shrink-0" /> : <ChevronRight className="shrink-0" />}
-        <Tip className="block min-w-0 truncate" content={folder.path}>
+        <Tip className="block min-w-0 truncate" content={folder.path} whenTruncated>
           {folder.name}
         </Tip>
       </button>

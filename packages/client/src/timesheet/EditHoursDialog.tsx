@@ -66,7 +66,11 @@ export function EditHoursDialog({
               {rows.map((row) => (
                 <li key={row.key} className="flex items-center gap-2">
                   <KeyPill ticketKey={row.key} url={urlFor(row.key)} />
-                  <Tip className="min-w-0 flex-1 truncate text-sm text-muted" content={row.summary}>
+                  <Tip
+                    className="min-w-0 flex-1 truncate text-sm text-muted"
+                    content={row.summary}
+                    whenTruncated
+                  >
                     {row.summary ?? ''}
                   </Tip>
                   <Button

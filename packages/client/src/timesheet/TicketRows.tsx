@@ -123,7 +123,11 @@ export function TicketRows({
               {checks === undefined ? null : <CheckDot check={check} />}
               <KeyPill ticketKey={row.key} url={urlFor(row.key)} />
               {/* A long summary ends in "...", the tooltip holds the whole of it. */}
-              <Tip className="min-w-0 flex-1 truncate text-sm text-muted" content={summary}>
+              <Tip
+                className="min-w-0 flex-1 truncate text-sm text-muted"
+                content={summary}
+                whenTruncated
+              >
                 {summary}
               </Tip>
               {onHours === undefined ? (

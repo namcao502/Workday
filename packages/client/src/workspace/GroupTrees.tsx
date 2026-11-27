@@ -52,7 +52,7 @@ function GroupSection({
           }}
         >
           <Chevron width={14} height={14} className="shrink-0" aria-hidden="true" />
-          <Tip className="block min-w-0 truncate" content={group.label}>
+          <Tip className="block min-w-0 truncate" content={group.label} whenTruncated>
             {group.label}
           </Tip>
         </button>
