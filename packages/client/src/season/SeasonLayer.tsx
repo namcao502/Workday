@@ -88,7 +88,7 @@ function Particles({
         const speed = layer.style.speed[0] === 0 ? 1 : layer.style.speed[0]
         const slant = (layer.style.drift ?? 0) / speed
         for (const particle of layer.particles) {
-          drawParticle(context, layer.style.shape, particle, slant, layer.style.outline ?? null)
+          drawParticle(context, layer.style.shape, particle, slant)
         }
       }
       frame = requestAnimationFrame(tick)

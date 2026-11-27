@@ -27,7 +27,6 @@ export interface ParticleStyle {
   readonly colors: readonly string[]
   readonly windy?: boolean // pushed by the passing gusts
   readonly drift?: number // steady sideways px per second (slanting rain)
-  readonly outline?: string // an edge drawn round each one, so a white shape shows on a light backdrop
 }
 
 // Fireflies and lantern glows float up; everything else falls.
@@ -42,13 +41,6 @@ const SNOW: ParticleStyle = {
   sway: [6, 22],
   spin: 0.3,
   colors: ['rgba(255,255,255,0.72)', 'rgba(255,255,255,0.52)'], // see-through: the flakes drift over text
-}
-
-// On a light backdrop: whiter flakes with a thin blue-grey edge, else they vanish into the near-white sky.
-const LIGHT_SNOW: ParticleStyle = {
-  ...SNOW,
-  colors: ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.85)'],
-  outline: 'rgba(80,110,155,0.55)',
 }
 
 const STARS: ParticleStyle = {
@@ -129,9 +121,9 @@ function rain(dark: boolean): ParticleStyle {
 export function seasonStyles(season: Season, dark: boolean): readonly ParticleStyle[] {
   switch (season) {
     case 'winter':
-      return [dark ? SNOW : LIGHT_SNOW]
+      return [SNOW]
     case 'christmas':
-      return [{ ...(dark ? SNOW : LIGHT_SNOW), areaPerParticle: 8000, maxCount: 170 }, STARS]
+      return [{ ...SNOW, areaPerParticle: 8000, maxCount: 170 }, STARS]
     case 'spring':
       return [PETALS]
     case 'summer':
