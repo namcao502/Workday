@@ -4,6 +4,7 @@ import { App } from './App.js'
 import { registerServiceWorker } from './registerServiceWorker.js'
 import { startAppHash } from './shell/appHash.js'
 import '@fontsource-variable/inter'
+import '@fontsource-variable/source-serif-4'
 import './styles/app.css'
 
 const container = document.getElementById('root')

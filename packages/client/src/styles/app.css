@@ -23,39 +23,81 @@
   }
 
   --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-serif: 'Source Serif 4 Variable', Cambria, serif;
 }
 
-/* No hairlines: blocks and fills tell areas apart, as on iOS and macOS. */
+/* Paper: a warm ivory page (warm charcoal on dark), ink text, serif headings, thin warm hairlines that tell
+   areas apart, small radii. The --paper-* tokens feed HeroUI's variables here and the season surfaces in
+   glass.css. The hairline ring is inset: drawn outside, a scroll pane clips it on a card flush with its top. */
 :root,
 [data-theme='light'],
 [data-theme='dark'] {
-  --border-width: 0px;
-  --field-border-width: 0px;
+  --border-width: 1px;
+  --field-border-width: 1px;
+  /* HeroUI scales every radius from this: a card 12px, a button 12px (no pill), a chip 6px. */
+  --radius: 0.25rem;
+  --field-radius: 0.375rem;
 }
 
-/* A faint-grey page so white cards lift by tone; each card also carries a 1px hairline ring, no drop
-   shadow (flat: tonal step + hairline). The ring is inset: drawn outside, a scroll pane clips it on a
-   card flush with its top. On the page a field or a segment track is grey so it does not vanish; inside a
-   card, dialog or popover they keep HeroUI's grey. */
 :root:not([data-theme='dark']) {
-  --background: oklch(0.97 0.002 286);
-  --surface-shadow: inset 0 0 0 1px oklch(0.915 0.003 286);
-  --surface-shadow-raised:
-    inset 0 0 0 1px oklch(0.87 0.004 286), 0 6px 18px -4px rgba(24, 24, 27, 0.12);
-  --default: oklch(0.965 0.002 286);
-  --surface-secondary: oklch(0.955 0.002 286);
-}
-
-:root:not([data-theme='dark']):not([data-season]) .app-sidebar {
-  background: oklch(0.975 0.002 286);
-  box-shadow: none;
+  --paper: oklch(0.985 0.006 88);
+  --paper-card: oklch(0.993 0.004 88);
+  --paper-sunk: oklch(0.965 0.009 88);
+  --paper-fill: oklch(0.948 0.011 88);
+  --paper-line: oklch(0.915 0.013 88);
+  --paper-line-strong: oklch(0.86 0.016 88);
+  --ink: oklch(0.29 0.008 90);
+  --ink-muted: oklch(0.58 0.014 85);
+  --accent: oklch(0.47 0.085 250);
+  --paper-raised: inset 0 0 0 1px var(--paper-line-strong), 0 6px 18px -6px rgba(60, 50, 30, 0.16);
 }
 
 :root[data-theme='dark'] {
-  /* HeroUI drops all shadow on dark; add a 1px hairline ring so cards read apart on the dark page. */
-  --surface-shadow: inset 0 0 0 1px oklch(0.3 0.006 286);
-  --surface-shadow-raised:
-    inset 0 0 0 1px oklch(0.34 0.006 286), 0 8px 22px -6px rgba(0, 0, 0, 0.5);
+  --paper: oklch(0.2 0.004 90);
+  --paper-card: oklch(0.225 0.004 90);
+  --paper-sunk: oklch(0.212 0.004 90);
+  --paper-fill: oklch(0.27 0.005 90);
+  --paper-line: oklch(0.3 0.006 90);
+  --paper-line-strong: oklch(0.37 0.007 90);
+  --ink: oklch(0.92 0.01 90);
+  --ink-muted: oklch(0.68 0.012 88);
+  --accent: oklch(0.72 0.085 245);
+  --accent-foreground: oklch(0.2 0.004 90);
+  --paper-raised: inset 0 0 0 1px var(--paper-line-strong), 0 8px 22px -6px rgba(0, 0, 0, 0.5);
+}
+
+:root,
+[data-theme='light'],
+[data-theme='dark'] {
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --surface: var(--paper-card);
+  --overlay: var(--paper-card);
+  --surface-secondary: var(--paper-fill);
+  --surface-tertiary: var(--paper-fill);
+  --default: var(--paper-fill);
+  --muted: var(--ink-muted);
+  --border: var(--paper-line);
+  --separator: var(--paper-line);
+  --field-background: var(--paper-card);
+  --segment: var(--paper-card);
+  --surface-shadow: inset 0 0 0 1px var(--paper-line);
+  --surface-shadow-raised: var(--paper-raised);
+}
+
+:root[data-theme='dark'] {
+  --segment: var(--paper-line-strong);
+}
+
+:root:not([data-season]) .app-sidebar {
+  background: var(--paper-sunk);
+  box-shadow: inset -1px 0 0 var(--paper-line);
+}
+
+/* Serif headings (Source Serif 4, which covers Vietnamese; Georgia breaks its stacked marks). */
+:where(h1, h2) {
+  font-family: var(--font-serif);
+  font-weight: 600;
 }
 
 /* A card that does something on a press lifts under the pointer; a card that only shows stays put. */
@@ -70,27 +112,6 @@
     box-shadow: var(--surface-shadow-raised);
     transform: translateY(-1px);
   }
-}
-
-:root:not([data-theme='dark'])
-  :is(
-    .card,
-    .surface,
-    .modal__dialog,
-    .drawer__dialog,
-    .sheet__dialog,
-    .popover,
-    .dropdown__popover,
-    .tooltip,
-    .bg-surface,
-    .bg-overlay
-  ) {
-  --default: oklch(94% 0.001 286.375);
-  --surface-secondary: oklch(0.9524 0.0013 286.37);
-  /* Re-derived here: a custom property inherits its value, not the formula. */
-  --default-hover: color-mix(in oklab, var(--default) 96%, var(--default-foreground) 4%);
-  --default-soft: color-mix(in oklab, var(--default) 50%, transparent);
-  --default-soft-hover: color-mix(in oklab, var(--default) 60%, transparent);
 }
 
 /* The shell fills the viewport; only panes inside it scroll. */
