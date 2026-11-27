@@ -71,6 +71,31 @@ describe('createApp', () => {
     expect(response.statusCode).toBe(403)
   })
 
+  it('a write from a foreign Origin gets 403, a loopback or missing Origin passes', async () => {
+    const app = await buildApp(false)
+    const post = (origin: string | undefined): Promise<number> =>
+      app
+        .inject({
+          method: 'POST',
+          url: '/api/notices/read-all',
+          headers: origin === undefined ? LOOPBACK_HEADERS : { ...LOOPBACK_HEADERS, origin },
+        })
+        .then((response) => response.statusCode)
+    expect(await post('https://evil.example')).toBe(403)
+    expect(await post('null')).toBe(403)
+    expect(await post(`http://127.0.0.1:${String(PORT)}`)).not.toBe(403)
+    expect(await post(undefined)).not.toBe(403)
+  })
+
+  it('a read from a foreign Origin still passes, like a link or an image', async () => {
+    const app = await buildApp(false)
+    const response = await app.inject({
+      url: '/api/health',
+      headers: { ...LOOPBACK_HEADERS, origin: 'https://evil.example' },
+    })
+    expect(response.statusCode).toBe(200)
+  })
+
   it('the events socket rejects a foreign Origin', async () => {
     const app = await buildApp(false)
     await expect(

@@ -30,7 +30,12 @@ import { registerChatRoutes } from './routes/chatRoute.js'
 import { registerWorkRoutes } from './routes/workRoutes.js'
 import { registerWorkspaceFilesRoutes } from './routes/workspaceFilesRoutes.js'
 import { registerWorkspaceRoutes } from './routes/workspaceRoutes.js'
-import { allowedHostHeaders, isAllowedHost, remoteHostHeaders } from './security/allowedHosts.js'
+import {
+  allowedHostHeaders,
+  isAllowedHost,
+  isAllowedOrigin,
+  remoteHostHeaders,
+} from './security/allowedHosts.js'
 import type { TicketUpdateService } from './jira/ticketUpdates.js'
 import type { SettingsService } from './settings/settingsService.js'
 import type { SuggestionService } from './suggestions/suggestionService.js'
@@ -41,6 +46,7 @@ import type { WorkspaceService } from './workspace/workspaceService.js'
 import type { WorktreeCleanupService } from './workspace/worktreeCleanup.js'
 
 const SOCKET_MAX_PAYLOAD = 1024 * 1024
+const SAFE_METHODS: ReadonlySet<string> = new Set(['GET', 'HEAD', 'OPTIONS'])
 
 export interface AppDeps {
   port: number
@@ -92,6 +98,21 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   })
 
   registerRemoteGate(app, deps.remote, vpn ?? null)
+
+  // Blocks CSRF: any page open in the browser can POST to 127.0.0.1. The remote gate checks its own Origin;
+  // a request with no Origin (curl, tests) is not from a browser page.
+  app.addHook('onRequest', async (request, reply) => {
+    const { origin } = request.headers
+    if (
+      request.isRemote ||
+      SAFE_METHODS.has(request.method) ||
+      origin === undefined ||
+      isAllowedOrigin(origin, allowedHosts)
+    ) {
+      return undefined
+    }
+    return reply.code(403).send({ error: 'Forbidden origin' })
+  })
 
   // One screen on this PC: the app wins. A header-less request (curl, tests) still passes.
   app.addHook('onRequest', async (request, reply) => {

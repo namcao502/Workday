@@ -33,11 +33,15 @@ function pageTitle(name: string): ReturnType<Page['getByRole']> {
 }
 
 // A raw request, since fetch drops a hand-set Host header.
-function statusWithHost(host: string): Promise<number> {
-  const url = new URL(`${app.baseUrl}/api/health`)
+function statusOf(
+  method: string,
+  path: string,
+  headers: Readonly<Record<string, string>>,
+): Promise<number> {
+  const url = new URL(`${app.baseUrl}${path}`)
   return new Promise((resolve, reject) => {
     const sent = request(
-      { hostname: url.hostname, port: url.port, path: url.pathname, headers: { host } },
+      { method, hostname: url.hostname, port: url.port, path: url.pathname, headers },
       (response) => {
         response.resume()
         resolve(response.statusCode ?? 0)
@@ -97,6 +101,13 @@ it('a language change is saved to config.json and survives a reload', async () =
 })
 
 it('the server refuses a foreign Host header', async () => {
-  expect(await statusWithHost(new URL(app.baseUrl).host)).toBe(200)
-  expect(await statusWithHost('evil.example.com')).toBe(403)
+  expect(await statusOf('GET', '/api/health', { host: new URL(app.baseUrl).host })).toBe(200)
+  expect(await statusOf('GET', '/api/health', { host: 'evil.example.com' })).toBe(403)
+})
+
+it('the server refuses a write sent by another site', async () => {
+  const post = (origin: string): Promise<number> =>
+    statusOf('POST', '/api/notices/read-all', { host: new URL(app.baseUrl).host, origin })
+  expect(await post('https://evil.example')).toBe(403)
+  expect(await post(app.baseUrl)).toBe(200)
 })
