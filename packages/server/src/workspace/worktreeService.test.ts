@@ -56,7 +56,10 @@ function options(repo: string, ticketKey: string, parentKey: string | null = nul
   }
 }
 
-describe('createWorktree', () => {
+// Real git: a clone, fetch and merge per test can pass 5s on a busy machine or under coverage.
+const GIT_TIMEOUT_MS = 30_000
+
+describe('createWorktree', { timeout: GIT_TIMEOUT_MS }, () => {
   it('cuts a new branch from the freshly fetched origin/main', async () => {
     const { repo, other } = fixture()
     pushFromOther(other, 'b.txt', 'two\n')
