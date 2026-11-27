@@ -240,7 +240,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
           </span>
           <div
             className="grid gap-3"
-            style={{ gridTemplateColumns: `repeat(${String(columns)}, 1fr)` }}
+            style={{ gridTemplateColumns: `repeat(${String(columns)}, minmax(0, 1fr))` }}
           >
             {queuedViews(outside).map(renderCard)}
           </div>
@@ -271,7 +271,7 @@ function TimesheetBody({ view, config }: BodyProps): React.JSX.Element {
         // Rows share one height, so a day alone on the last row lines up with the rest. Reading dims each
         // card's content, not the grid: opacity on the grid would cut the cards' glass off the backdrop.
         className={`grid gap-3 ${columns > 1 ? 'auto-rows-fr' : ''} ${reading ? 'pointer-events-none [&>*>*]:opacity-70' : ''}`}
-        style={{ gridTemplateColumns: `repeat(${String(columns)}, 1fr)` }}
+        style={{ gridTemplateColumns: `repeat(${String(columns)}, minmax(0, 1fr))` }}
       >
         {bento.days.map(renderCard)}
       </div>
