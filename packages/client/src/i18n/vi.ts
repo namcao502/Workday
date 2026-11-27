@@ -807,6 +807,7 @@ export const vi: Messages = {
     matrixCaption: 'HRM và TSC trong tuần',
     weekColumn: 'Tuần',
     tscEmpty: 'Trống',
+    offShort: 'Nghỉ',
     stillMissing: 'Còn thiếu: {days}',
     todayNeeds: 'Hôm nay còn thiếu {what} - nhập ticket ở trên, sẽ tự log lúc {time}',
     newYearsDay: 'Tết Dương lịch',

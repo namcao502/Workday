@@ -806,6 +806,7 @@ export const en = {
     matrixCaption: 'HRM and TSC this week',
     weekColumn: 'Week',
     tscEmpty: 'Empty',
+    offShort: 'Off',
     stillMissing: 'Still missing: {days}',
     todayNeeds: 'Today still needs {what} - add the tickets above, they log at {time}',
     newYearsDay: "New Year's Day",

@@ -24,7 +24,7 @@ it('an off day reads as leave or the holiday name in both rows', () => {
   const leave = day('2026-11-10', {
     coverage: coverage('2026-11-10', { isOff: true, tscText: 'OFF' }),
   })
-  expect(hrmCell(leave, TODAY)).toMatchObject({ tone: 'off', text: 'Leave' })
+  expect(hrmCell(leave, TODAY)).toMatchObject({ tone: 'off', text: 'Leave', short: 'Off' })
   expect(tscCell(leave, TODAY)).toMatchObject({ tone: 'off', text: 'OFF' })
   const holiday = day('2026-11-24', {
     coverage: coverage('2026-11-24', { isOff: true, holiday: { date: '11-24', name: null } }),

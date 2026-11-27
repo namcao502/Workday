@@ -27,7 +27,7 @@ function queuedMinutes(day: LogDayView): number {
 }
 
 function offCell(text: string): MatrixCell {
-  return { tone: 'off', text, short: t('settings.off') }
+  return { tone: 'off', text, short: t('timesheet.offShort') }
 }
 
 function offLabel(coverage: DayCoverage): string {
