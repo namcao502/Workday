@@ -84,8 +84,7 @@ export function ConnectionsSection({
   }
 
   return (
-    <Section title={t('settings.connections')}>
-      <h3 className="text-sm font-semibold">Jira</h3>
+    <Section title="Jira">
       <TextField
         id="jira-base-url"
         label={t('settings.jiraSiteUrl')}

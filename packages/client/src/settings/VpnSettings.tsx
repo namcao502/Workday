@@ -116,7 +116,7 @@ export function VpnSettings({
           </ListBox>
         </ComboBox.Popover>
       </ComboBox>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-1 @2xl:gap-3">
         <TextField
           id="vpn-https-port"
           label={t('settings.httpsPort')}

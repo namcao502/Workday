@@ -44,7 +44,7 @@ export function GeneralSection({
   const { theme, language, season, seasonEffects, seasonCursor, timeZone } = settings.config
   const shown = useActiveSeason(season, timeZone)
   return (
-    <Section title={t('settings.general')}>
+    <Section title={t('settings.appearance')}>
       <div className="flex flex-wrap items-center gap-3">
         <span className="w-24 text-sm text-muted">{t('settings.theme')}</span>
         <Segmented<Theme>

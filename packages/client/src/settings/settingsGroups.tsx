@@ -16,15 +16,23 @@ import { TimesheetSection } from './TimesheetSection.js'
 import { ThisDeviceSection } from './ThisDeviceSection.js'
 import { VpnSection } from './VpnSection.js'
 import { WorkspaceSection } from './WorkspaceSection.js'
-import { navigateToSettings, type SettingsGroupId } from './settingsNav.js'
+import { navigateToSettings, type SettingsEntryId, type SettingsGroupId } from './settingsNav.js'
 
-export { navigateToSettings, type SettingsGroupId }
+export { navigateToSettings, type SettingsEntryId, type SettingsGroupId }
+
+// 'on' = set up and switched on, 'off' = not set up or switched off; no status = nothing to connect.
+export type EntryStatus = 'on' | 'off'
 
 export interface SettingsEntry {
-  readonly id: string
+  readonly id: SettingsEntryId
   readonly title: string
   readonly keywords: string // lowercase words the search also matches, beyond the title
   readonly render: (settings: SettingsView) => React.JSX.Element
+  readonly status?: (settings: SettingsView) => EntryStatus
+}
+
+function onOff(on: boolean): EntryStatus {
+  return on ? 'on' : 'off'
 }
 
 export interface SettingsGroup {
@@ -43,8 +51,8 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
       label: t('settings.general'),
       entries: [
         {
-          id: 'general',
-          title: t('settings.general'),
+          id: 'appearance',
+          title: t('settings.appearance'),
           keywords: 'theme dark light language english vietnamese time zone port',
           render: (settings) => <GeneralSection settings={settings} />,
         },
@@ -73,22 +81,27 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
       label: t('settings.integrations'),
       entries: [
         {
-          id: 'connections',
-          title: t('settings.connections'),
-          keywords: 'jira url email api token project key eta dev priority jql poll',
+          id: 'jira',
+          title: 'Jira',
+          keywords: 'connections url email api token project key eta dev priority jql poll',
           render: (settings) => <ConnectionsSection settings={settings} />,
+          status: (settings) =>
+            onOff(settings.config.jira !== null && settings.jiraTokenSource !== null),
         },
         {
           id: 'ado',
           title: 'Azure DevOps',
           keywords: 'ado pull request pr pat organization repo',
           render: (settings) => <AzureDevOpsSection settings={settings} />,
+          status: (settings) =>
+            onOff(settings.config.azureDevOps !== null && settings.adoPatSource !== null),
         },
         {
           id: 'teams',
           title: 'Teams',
           keywords: 'microsoft chat channel browser profile sign in',
           render: (settings) => <TeamsSection settings={settings} />,
+          status: (settings) => onOff(settings.config.teams.watchedChannels.length > 0),
         },
       ],
     },
@@ -101,6 +114,8 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
           title: t('settings.timesheet2'),
           keywords: 'hrm tsc log time hours reminder sign in work log',
           render: (settings) => <TimesheetSection settings={settings} />,
+          status: (settings) =>
+            onOff(settings.config.timesheet.hrm !== null || settings.config.timesheet.tsc !== null),
         },
         {
           id: 'holidays',
@@ -137,15 +152,17 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
           title: t('settings.vpnAccess'),
           keywords: 'vpn https certificate firewall ip range iphone',
           render: (settings) => <VpnSection settings={settings} />,
+          status: (settings) => onOff(settings.config.vpn?.enabled === true),
         },
         {
           id: 'cloudflare',
           title: 'Cloudflare',
           keywords: 'tunnel cloudflared access jwt public host aud token',
           render: (settings) => <CloudflareSection settings={settings} />,
+          status: (settings) => onOff(settings.config.remote?.enabled === true),
         },
         {
-          id: 'remote',
+          id: 'devices',
           title: t('settings.devices'),
           keywords: 'remote access device pair phone mobile revoke activity',
           render: (settings) => <RemoteSection settings={settings} />,
@@ -171,10 +188,28 @@ export function settingsGroups(isRemote = false): readonly SettingsGroup[] {
   }))
 }
 
-// "#/settings/work" -> "work"; anything else is the first group.
-export function settingsGroupFromHash(hash: string): SettingsGroupId {
+export interface SettingsLocation {
+  readonly group: SettingsGroup
+  readonly entry: SettingsEntry
+  readonly picked: boolean // false = the hash names nothing, so the default entry stands in
+}
+
+// "#/settings/jira" opens that entry, "#/settings/work" the group's first entry; anything else the first entry.
+export function settingsLocation(groups: readonly SettingsGroup[], hash: string): SettingsLocation {
   const name = hash.replace(/^#\/?/, '').split('?')[0]?.split('/')[1]
-  return settingsGroups().find((group) => group.id === name)?.id ?? DEFAULT_GROUP
+  for (const group of groups) {
+    const entry = group.entries.find((candidate) => candidate.id === name)
+    if (entry !== undefined) {
+      return { group, entry, picked: true }
+    }
+  }
+  const named = groups.find((group) => group.id === name)
+  const group = named ?? groups.find((candidate) => candidate.id === DEFAULT_GROUP) ?? groups[0]
+  const entry = group?.entries[0]
+  if (group === undefined || entry === undefined) {
+    throw new Error('Settings has no entries')
+  }
+  return { group, entry, picked: named !== undefined }
 }
 
 // Every entry whose title or keywords contain all the words of the query; none for a blank query.
