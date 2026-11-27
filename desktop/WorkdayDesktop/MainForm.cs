@@ -34,6 +34,7 @@ internal sealed class MainForm : Form
     private bool? _isLastPostedMaximized;
     private bool _isServerBusy;
     private bool _isRestartFailureShown;
+    private readonly ShellConfirms _confirms = new();
 
     public MainForm(bool isStartMinimized)
     {
@@ -60,7 +61,7 @@ internal sealed class MainForm : Form
             async () => await BuildAndRestartAsync(),
             () => _settings.IsServerAutoRestartEnabled,
             ToggleServerAutoRestart,
-            UpdateApp,
+            async () => await UpdateAppAsync(),
             Quit);
         _keepAliveTimer.Tick += async (_, _) => await KeepServerAliveAsync();
         _presence = new PresenceReporter(_port);
@@ -154,6 +155,11 @@ internal sealed class MainForm : Form
 
             action = messageType != null && root.TryGetProperty("action", out var actionElement) &&
                 actionElement.ValueKind == JsonValueKind.String ? actionElement.GetString() : null;
+            if (messageType == "confirm")
+            {
+                HandleConfirmMessage(root, action);
+                return;
+            }
         }
         catch (JsonException)
         {
@@ -291,18 +297,17 @@ internal sealed class MainForm : Form
     }
 
     // The server is left running, so Claude sessions survive and the reopened app finds it.
-    private void UpdateApp()
+    private async Task UpdateAppAsync()
     {
-        var owner = Visible ? this : null;
+        var title = MenuTitle(_text.UpdateApp);
         var script = DesktopUpdate.ScriptPath(ResolveServerDir());
         if (script == null)
         {
-            MessageBox.Show(owner, _text.UpdateAppNoScript, "Workday", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            await ConfirmAsync(title, _text.UpdateAppNoScript, _text.Ok, null);
             return;
         }
 
-        var answer = MessageBox.Show(owner, _text.UpdateAppConfirm, "Workday", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-        if (answer != DialogResult.Yes)
+        if (!await ConfirmAsync(title, _text.UpdateAppConfirm, _text.UpdateAppAction, _text.Cancel))
         {
             return;
         }
@@ -381,11 +386,51 @@ internal sealed class MainForm : Form
         return _settings.ServerDir ?? DesktopPaths.FindServerDir(AppContext.BaseDirectory);
     }
 
+    private void HandleConfirmMessage(JsonElement root, string? action)
+    {
+        if (action == "ready")
+        {
+            _confirms.PageReady();
+        }
+        else if (action == "answer" && root.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String &&
+            root.TryGetProperty("answer", out var answer) && (answer.ValueKind == JsonValueKind.True || answer.ValueKind == JsonValueKind.False))
+        {
+            _confirms.Answer(id.GetString() ?? "", answer.GetBoolean());
+        }
+    }
+
+    // In the app's own dialog when the app page is up; a message box when it is not (server down, error page).
+    private async Task<bool> ConfirmAsync(string title, string message, string confirmLabel, string? cancelLabel)
+    {
+        if (!_confirms.IsPageReady || _webView.CoreWebView2 == null)
+        {
+            var owner = Visible ? this : null;
+            if (cancelLabel == null)
+            {
+                MessageBox.Show(owner, message, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            return MessageBox.Show(owner, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+        }
+
+        ShowWindow();
+        var (id, answer) = _confirms.Ask();
+        _webView.CoreWebView2.PostWebMessageAsJson(ShellConfirms.Message(id, title, message, confirmLabel, cancelLabel));
+        return await answer;
+    }
+
+    // A tray menu label escapes & as &&.
+    private static string MenuTitle(string label)
+    {
+        return label.Replace("&&", "&");
+    }
+
     private async Task BuildAndRestartAsync()
     {
-        var owner = Visible ? this : null;
-        var answer = MessageBox.Show(owner, _text.BuildAndRestartConfirm, "Workday", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-        if (answer != DialogResult.Yes)
+        var isConfirmed = await ConfirmAsync(MenuTitle(_text.BuildAndRestart), _text.BuildAndRestartConfirm,
+            _text.BuildAndRestartAction, _text.Cancel);
+        if (!isConfirmed)
         {
             return;
         }
@@ -514,7 +559,11 @@ internal sealed class MainForm : Form
             {
                 e.Cancel = true;
                 OpenInBrowser(e.Uri);
+                return;
             }
+
+            // The page is replaced, so its open questions are answered no and the next one waits for it to say ready.
+            _confirms.PageLeft();
         };
         core.PermissionRequested += (_, e) =>
         {

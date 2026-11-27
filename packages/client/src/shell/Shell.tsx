@@ -11,6 +11,7 @@ import { needsAttention } from '../timesheet/timesheetState.js'
 import { NoticeToasts } from '../notices/NoticeToasts.js'
 import { TicketUpdateHost } from '../board/TicketUpdateHost.js'
 import { useNotices } from '../notices/useNotices.js'
+import { ShellConfirmHost } from './ShellConfirmHost.js'
 import { Sidebar } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
 import { TopBar } from './TopBar.js'
@@ -129,6 +130,7 @@ export function Shell({ page }: ShellProps): React.JSX.Element {
       ) : null}
       <NoticeToasts alerts={alerts} />
       <TicketUpdateHost />
+      <ShellConfirmHost />
     </div>
   )
 }
