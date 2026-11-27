@@ -54,6 +54,7 @@ export function FolderPickerDialog({
               <Tip
                 className="block min-w-0 flex-1 truncate text-sm text-muted"
                 content={current?.path}
+                whenTruncated
               >
                 {current === undefined
                   ? ''
