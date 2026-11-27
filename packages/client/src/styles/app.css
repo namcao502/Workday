@@ -204,12 +204,6 @@ body {
     box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--foreground) 7%, transparent);
   }
 
-  /* Keyboard focus shows as a soft ring; the mouse never does. */
-  :is(button, [role='tab'], [role='option'], [role='slider'], a[href], summary):focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
-    outline-offset: 2px;
-  }
-
   table:not(.calendar__grid) tbody tr > :is(td, th):first-child {
     border-top-left-radius: 0.75rem;
     border-bottom-left-radius: 0.75rem;
@@ -409,4 +403,18 @@ body {
   [data-scrollon]::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in oklch, var(--foreground) 40%, transparent);
   }
+}
+
+/* No focus ring on buttons, tabs, links and the like, mouse or keyboard (the user's choice); text fields keep
+   theirs, since they show where typing goes. Unlayered so it beats HeroUI's rings in @layer components. */
+:is(:focus-visible, [data-focus-visible='true']):not(
+  input,
+  textarea,
+  select,
+  [contenteditable='true'],
+  [role='textbox']
+) {
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  outline: none;
 }

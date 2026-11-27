@@ -111,3 +111,21 @@ it('the server refuses a write sent by another site', async () => {
   expect(await post('https://evil.example')).toBe(403)
   expect(await post(app.baseUrl)).toBe(200)
 })
+
+it('buttons show no focus ring, after a click and a key or on Tab', async () => {
+  await open('#/settings')
+  const guide = page.getByRole('button', { name: 'Guide', exact: true })
+  const hasRing = (): Promise<boolean> =>
+    page.evaluate(() => {
+      const style = getComputedStyle(document.activeElement ?? document.body)
+      const ringShadow = /\) 0px 0px 0px [1-9]/.test(
+        style.boxShadow.replace(/rgba\(0, 0, 0, 0\)[^,]*/g, ''),
+      )
+      return ringShadow || style.outlineStyle !== 'none'
+    })
+  for (const key of ['F5', 'Escape', 'Tab']) {
+    await guide.click()
+    await page.keyboard.press(key)
+    expect(await hasRing()).toBe(false)
+  }
+})
