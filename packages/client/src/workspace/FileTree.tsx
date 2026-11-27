@@ -9,7 +9,7 @@ import { Tip } from '../ui/Tip.js'
 const FILTER_DELAY_MS = 150
 const FILTER_LIMIT = 500
 const ROW_CLASS =
-  'flex min-h-8 w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm leading-snug hover:bg-surface-secondary'
+  'press-flat flex min-h-8 w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm leading-snug hover:bg-surface-secondary'
 const STATUS_COLOR: Record<ChangeStatus, string> = {
   A: 'text-success',
   M: 'text-warning',

@@ -45,7 +45,7 @@ function GroupSection({
       <h3 className="mb-1 mt-2 text-sm font-semibold">
         <button
           type="button"
-          className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-1 py-0.5 text-left hover:bg-surface-secondary"
+          className="press-flat flex w-full cursor-pointer items-center gap-1 rounded-lg px-1 py-0.5 text-left hover:bg-surface-secondary"
           aria-expanded={!collapsed}
           onClick={() => {
             setCollapsed(!collapsed)

@@ -48,7 +48,8 @@ it('starts collapsed to its summary line, opens on demand, remembers it per tick
   const summary = screen.getByRole('status')
   const analyze = screen.getByRole('button', { name: 'Analyze again' })
   expect(summary.compareDocumentPosition(analyze) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  fireEvent.click(screen.getByRole('button', { name: 'Expand' }))
+  // The whole summary line is the toggle, not just its chevron.
+  fireEvent.click(screen.getByRole('button', { name: /Claude: 2 issue\(s\), 1 open/ }))
   expect(screen.getByText('The SP misses a join')).toBeInTheDocument()
   // The details scroll inside a box capped at a third of the screen.
   expect(screen.getByTestId('teams-analysis-details')).toHaveClass('overflow-y-auto')

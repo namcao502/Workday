@@ -172,6 +172,12 @@ body {
     transform: translateY(0) scale(0.98);
   }
 
+  /* A full-width bar shrinks too far at 98%: its right edge (the chevron) leaves the pointer
+     before the release, and the click is lost. Such bars keep their size while pressed. */
+  :is(button, [role='tab'], a[href]).press-flat:active {
+    transform: translateY(0);
+  }
+
   table:not(.calendar__grid) tbody tr {
     transition: background-color 150ms ease;
   }

@@ -714,7 +714,6 @@ export const vi: Messages = {
     claudeSAnalysis: 'Phân tích của Claude',
     claudeStoppedWithoutAnAnalysisThe:
       'Claude dừng mà chưa trả phân tích; lý do ở khung Claude. Bấm Phân tích để thử lại.',
-    collapse: 'Thu gọn',
     conversation: 'Hội thoại',
     couldNotReachTheWorkdayServer: 'Không kết nối được tới Workday server',
     couldNotReadTeams: 'Không đọc được Teams.',
@@ -726,7 +725,6 @@ export const vi: Messages = {
     edit: 'Sửa',
     editMessage: 'Sửa tin nhắn',
     edited: '(đã sửa)',
-    expand: 'Mở rộng',
     filesTogetherMayBeAtMost: 'Các file cộng lại tối đa {limit} MB.',
     fixed: 'Đã sửa',
     insertCodeBlockPressAgainTo: 'Chèn khối code - bấm lại để bỏ',

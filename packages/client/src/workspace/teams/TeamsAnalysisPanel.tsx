@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from '@gravity-ui/icons'
+import { ChevronDown } from '@gravity-ui/icons'
 import { Button, Input } from '@heroui/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TeamsAnalysis, TeamsAnalysisView, TeamsIssueStatus } from '@workday/core'
@@ -186,28 +186,36 @@ export function TeamsAnalysisPanel({
     <div className="flex min-h-0 flex-col gap-2 py-1" data-testid="teams-analysis">
       {parts.length === 0 ? null : (
         <div className="flex min-h-0 flex-col rounded-2xl bg-surface-secondary p-3">
-          <div className="flex items-center gap-2">
+          {done === null ? (
             <p
-              className={`m-0 min-w-0 flex-1 text-sm ${view.kind === 'failed' ? 'text-danger' : ''}`}
+              className={`m-0 min-w-0 text-sm ${view.kind === 'failed' ? 'text-danger' : ''}`}
               role="status"
             >
               {parts.join('  -  ')}
             </p>
-            {done === null ? null : (
-              <Button
-                isIconOnly
-                size="sm"
-                variant="ghost"
-                aria-label={open ? t('teams.collapse') : t('teams.expand')}
-                onPress={() => {
-                  writeOpen(ticket, !open)
-                  setOpen(!open)
-                }}
+          ) : (
+            // The whole line folds and opens; the chevron only shows that it can.
+            <button
+              type="button"
+              aria-expanded={open}
+              className="press-flat flex w-full cursor-pointer items-center gap-2 text-left"
+              onClick={() => {
+                writeOpen(ticket, !open)
+                setOpen(!open)
+              }}
+            >
+              <span
+                className={`min-w-0 flex-1 text-sm ${view.kind === 'failed' ? 'text-danger' : ''}`}
+                role="status"
               >
-                {open ? <ChevronUp /> : <ChevronDown />}
-              </Button>
-            )}
-          </div>
+                {parts.join('  -  ')}
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className={`pointer-events-none flex-none transition-transform ${open ? 'rotate-180' : ''}`}
+              />
+            </button>
+          )}
           {done !== null && open ? (
             // At most a third of the screen, and less when the pane is short: the details scroll here, so
             // neither the thread nor the whole pane has to.

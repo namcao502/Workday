@@ -711,7 +711,6 @@ export const en = {
     claudeSAnalysis: "Claude's analysis",
     claudeStoppedWithoutAnAnalysisThe:
       'Claude stopped without an analysis; the Claude pane shows why. Press Analyze to try again.',
-    collapse: 'Collapse',
     conversation: 'Conversation',
     couldNotReachTheWorkdayServer: 'Could not reach the Workday server',
     couldNotReadTeams: 'Could not read Teams.',
@@ -723,7 +722,6 @@ export const en = {
     edit: 'Edit',
     editMessage: 'Edit message',
     edited: '(edited)',
-    expand: 'Expand',
     filesTogetherMayBeAtMost: 'Files together may be at most {limit} MB.',
     fixed: 'Fixed',
     insertCodeBlockPressAgainTo: 'Insert code block - press again to undo',
