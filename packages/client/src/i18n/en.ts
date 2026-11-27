@@ -284,6 +284,7 @@ export const en = {
     dismiss: 'Dismiss',
     loading: 'Loading...',
     markAllRead: 'Mark all read',
+    noLongerAvailable: 'No longer available to take: {keys}',
     noNotificationsYet: 'No notifications yet',
     notices: 'Notices',
     noticesWorkRunning: 'Notices, work running',

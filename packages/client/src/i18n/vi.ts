@@ -286,6 +286,7 @@ export const vi: Messages = {
     dismiss: 'Đóng',
     loading: 'Đang tải...',
     markAllRead: 'Đánh dấu đã đọc tất cả',
+    noLongerAvailable: 'Đã không còn để nhận: {keys}',
     noNotificationsYet: 'Chưa có thông báo',
     notices: 'Thông báo',
     noticesWorkRunning: 'Thông báo, đang chạy việc',

@@ -4,6 +4,7 @@ import { Bell } from '@gravity-ui/icons'
 import { useState } from 'react'
 import { useAccess } from '../api/useMe.js'
 import { useSettings } from '../api/useSettings.js'
+import { useWork } from '../api/useWork.js'
 import { useGlobalBusy, useRunningWork } from '../shell/useGlobalBusy.js'
 import { formatShortDate, getLanguage, t } from '../i18n.js'
 import { openNoticeTarget } from './noticeTarget.js'
@@ -27,15 +28,26 @@ const TONE_TEXT: Readonly<Record<Notice['tone'], string>> = {
   error: 'text-danger',
 }
 
+// Keys of an urgent-ticket notice that left the Available list since (someone took them, or they moved on).
+function goneKeys(notice: Notice, available: ReadonlySet<string> | null): readonly string[] {
+  if (available === null || notice.event.type !== 'suggestionsUrgent') {
+    return []
+  }
+  return notice.event.keys.filter((key) => !available.has(key))
+}
+
 function NoticeItem({
   notice,
   timeZone,
+  available,
   onOpen,
 }: {
   readonly notice: Notice
   readonly timeZone: string
+  readonly available: ReadonlySet<string> | null
   readonly onOpen: (notice: Notice) => void
 }): React.JSX.Element {
+  const gone = goneKeys(notice, available)
   return (
     <li>
       <button
@@ -51,6 +63,11 @@ function NoticeItem({
         />
         <span className="flex flex-col">
           <span className="text-sm">{noticeText(notice.event, getLanguage())}</span>
+          {gone.length === 0 ? null : (
+            <span className="text-xs text-warning">
+              {t('notices.noLongerAvailable', { keys: gone.join(', ') })}
+            </span>
+          )}
           <span className="text-xs text-muted">
             {formatShortDate(new Date(notice.at), getLanguage(), timeZone)}
           </span>
@@ -89,6 +106,10 @@ export function NoticeBell(): React.JSX.Element {
   const busy = useGlobalBusy()
   const running = useRunningWork()
   const [open, setOpen] = useState(false)
+  const suggestions = useWork().data?.suggestions ?? null
+  // Null until the work view is in, so nothing is marked gone before the list is known.
+  const available =
+    suggestions === null ? null : new Set(suggestions.items.map((item) => item.ticket.key))
   // Shown before the notices load too: the first load of the page spins in it.
   const unread = view?.unread ?? 0
   const newestFirst = view === undefined ? [] : [...view.notices].reverse()
@@ -150,6 +171,7 @@ export function NoticeBell(): React.JSX.Element {
                   key={notice.id}
                   notice={notice}
                   timeZone={timeZone}
+                  available={available}
                   onOpen={openNotice}
                 />
               ))}

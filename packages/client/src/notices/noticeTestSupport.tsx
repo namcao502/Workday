@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render, waitFor } from '@testing-library/react'
 import { expect } from 'vitest'
-import type { Notice, NoticePrefs, NoticesView } from '@workday/core'
+import type { Notice, NoticePrefs, NoticesView, WorkView } from '@workday/core'
 import type { ReactElement } from 'react'
 import { queryKeys } from '../api/client.js'
 import { jsonResponse, stubFetch, type FetchMock } from '../testSupport.js'
@@ -27,11 +27,12 @@ export interface NoticeHarness {
   readonly reload: () => Promise<void>
 }
 
-// A fake /api/notices whose list the test can change, then reload.
+// A fake /api/notices whose list the test can change, then reload; /api/work answers with work when given.
 export function renderNotices(
   element: ReactElement,
   initial: readonly Notice[],
   prefs: NoticePrefs = {},
+  work: WorkView | null = null,
 ): NoticeHarness {
   let current: NoticesView = {
     notices: initial,
@@ -39,6 +40,9 @@ export function renderNotices(
     prefs,
   }
   const fetchMock = stubFetch((url, init) => {
+    if (url === '/api/work' && work !== null) {
+      return jsonResponse(work)
+    }
     if (url === '/api/notices/read-all' && init?.method === 'POST') {
       current = {
         ...current,

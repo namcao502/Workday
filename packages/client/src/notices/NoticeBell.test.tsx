@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { trackAction } from '../api/pendingActions.js'
 import { NoticeBell } from './NoticeBell.js'
+import { suggestion, workView } from '../board/workTestSupport.js'
 import { notice, renderNotices } from './noticeTestSupport.js'
 
 afterEach(() => {
@@ -77,4 +78,16 @@ it('the open bell lists the running work by name above the notices', async () =>
   await waitFor(() => {
     expect(screen.queryByText('Running now')).toBeNull()
   })
+})
+
+it('an urgent-ticket notice says which keys are no longer available to take', async () => {
+  const urgent = notice(1, {
+    topic: 'suggestions',
+    event: { type: 'suggestionsUrgent', keys: ['MDP-10', 'MDP-11'] },
+    target: { kind: 'board', key: null },
+  })
+  const work = workView({ suggestions: { epicKey: 'MDP-1', items: [suggestion('MDP-11')] } })
+  renderNotices(<NoticeBell />, [urgent], {}, work)
+  fireEvent.click(await screen.findByRole('button', { name: /Notices/ }))
+  expect(await screen.findByText('No longer available to take: MDP-10')).toBeInTheDocument()
 })
