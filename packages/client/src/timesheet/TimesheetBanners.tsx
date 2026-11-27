@@ -1,7 +1,7 @@
 import { Alert, Button } from '@heroui/react'
 import type { TimesheetView } from '@workday/core'
 import { t } from '../i18n.js'
-import { navigateTo } from '../shell/pages.js'
+import { navigateToSettings } from '../settings/settingsNav.js'
 
 interface TimesheetBannersProps {
   readonly view: TimesheetView
@@ -26,7 +26,7 @@ function Banner({ status, text, withSettings }: BannerProps): React.JSX.Element 
           variant="secondary"
           size="sm"
           onPress={() => {
-            navigateTo('settings')
+            navigateToSettings('timesheet')
           }}
         >
           {t('timesheet.openSettings')}

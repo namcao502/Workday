@@ -11,7 +11,7 @@ import { useRepoLabels, useWork } from '../api/useWork.js'
 import { useWorkspace } from '../api/useWorkspace.js'
 import { errorText } from '../errors.js'
 import { formatClock, t, type Language } from '../i18n.js'
-import { navigateTo } from '../shell/pages.js'
+import { navigateToSettings } from '../settings/settingsNav.js'
 import { useNarrow } from '../shell/useNarrow.js'
 import { ConfirmDialog } from '../ui/ConfirmDialog.js'
 import { Page } from '../ui/Page.js'
@@ -329,7 +329,7 @@ export function BoardPage(): React.JSX.Element {
           action={{
             label: t('board.openSettings'),
             onPress: () => {
-              navigateTo('settings')
+              navigateToSettings('jira')
             },
           }}
         />

@@ -180,7 +180,7 @@ it('without Jira the page links to Settings instead of a table', async () => {
   expect(await screen.findByText('Jira is not connected yet.')).toBeInTheDocument()
   expect(screen.queryByRole('table')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Open Settings' }))
-  expect(window.location.hash).toBe('#/settings')
+  expect(window.location.hash).toBe('#/settings/jira')
 })
 
 it('a board act device keeps Check now and the row menu', async () => {

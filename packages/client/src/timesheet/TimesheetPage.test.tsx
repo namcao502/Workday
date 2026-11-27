@@ -420,3 +420,10 @@ it('the week table shows HRM and TSC per day, the totals, and what is still miss
   fireEvent.click(within(tsc as HTMLElement).getAllByRole('button')[2] as HTMLElement)
   expect(within(table).getByRole('columnheader', { name: 'WED 11' })).toHaveClass('text-accent')
 })
+
+it('Open Settings on a not-connected banner goes to the timesheet settings', async () => {
+  backend(timesheetView({ tscConnected: false }))
+  renderWithQuery(<TimesheetPage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Open Settings' }))
+  expect(window.location.hash).toBe('#/settings/timesheet')
+})
