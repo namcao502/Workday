@@ -47,7 +47,7 @@ it is a line right under the top bar on every view, folded or open (click it), o
 ## Logging your hours
 
 The **Timesheet** page, top to bottom: **WORKED ON** (the tickets your commits and Claude sessions show for the picked day),
-the input, the week, a card for each day, then **This week by ticket**. A red number on its sidebar row counts the days that
+the input, the week and its HRM and TSC table, a card for each day, then **This week by ticket**. A red number on its sidebar row counts the days that
 still need you: a queued day the auto-log could not log, today after the auto-log time with nothing queued, and the days
 this week flags. Hover the row to see each day and why.
 
@@ -62,10 +62,16 @@ this week flags. Hover the row to see each day and why.
   today it is off until then ("(after 6 PM)"); queue it instead.
 - The **...** menu: **Log OFF...** marks a day off (it overwrites that day and drops its queued entries), **Log now: TSC
   only**, **Log now: HRM only** and **Clear queue...**.
-- The week: arrows to page the weeks and **Read again**, then **HRM 8h / 40h** (the week against 8h per working day, days
-  off not counted), **TSC 1 / 1** (the past days TSC holds) and how many workdays are off. While the week is read, each part
-  (TSC sheet, HRM hours, days off, HRM tasks, Jira tickets) shows its own mark. On Fridays the app reviews the week and tells
-  you about days that look wrong.
+- The week: arrows to page the weeks and **Read again**, then when it was read. While the week is read, each part (TSC
+  sheet, HRM hours, days off, HRM tasks, Jira tickets) shows its own mark. On Fridays the app reviews the week and tells you
+  about days that look wrong.
+- The **week table** under it: a row for **HRM** and one for **TSC**, a cell per weekday. Green with ✓ is done (the HRM hours,
+  or the TSC text); red is a past day still short (the hours against 8h, or **Empty**); a dashed outline is today or a queued
+  day, not late yet; violet stripes are a leave or a holiday (its name). The last column, **Week**, holds the totals: the HRM
+  hours against 8h per working day (days off not counted) and the past days TSC holds. Below it, a red line names the past days
+  still missing (**Still missing: WED 25 (HRM, TSC)**), and a yellow one says what today still needs before the auto-log time
+  when nothing is queued for it. Click a cell to pick that day for the input. On a phone the cells shorten to "8h", "✓" or
+  "Off".
 - A **card for each weekday**, Monday to Friday (fewer per row in a narrow window). Click a card to pick its date for the
   input. A card is one of:
   - **Logged** (✓ and the HRM hours): the tickets HRM logged with their hours, the TSC line, and "ticket(s) to check" when
@@ -86,13 +92,16 @@ The **Insights** page shows what you worked on in a range of days, ticket by tic
 markdown**, **Export CSV...**, then when the report was read. The range you pick is remembered.
 
 - Under it, one line of totals: **TICKETS**, **HOURS** (from HRM), **TOKENS** (Claude), **COMMITS** and **FILES**.
-- Four charts follow: **Hours by ticket** and **Tokens by ticket** (the top ten tickets, the rest folded into **Other**),
-  then **Hours by day** and **Tokens by day**. Point at a bar to see its value.
+- Then one chart, **By day**: a pair of bars per day, hours (accent color) and tokens (violet), each scaled to its own
+  largest day. Under each pair, the day and, for a range of up to ten days, its values; otherwise, and on a phone,
+  point at a pair to read them.
 - The table has a row per ticket: its key (click it to open Jira), summary, status, hours, Claude sessions, turns
-  and time, tokens, commits, files and lines. Click a row to open that ticket's Claude detail under the table: **Skills**,
-  **Tools**, **Subagents**, **Compacts** and **API errors** inside the range. A ticket without Claude activity says so.
-- When HRM cannot be read, the hours show a dash, the hours charts are hidden and a line above the table says so (the log
-  has the reason).
+  and time, tokens, commits, files and lines. The hours and tokens cells carry a small bar against the range's largest, so
+  the big tickets stand out. The first ticket's Claude detail shows under the table from the start: **Skills**, **Tools**,
+  **Subagents**, **Compacts** and **API errors** inside the range. Click another ticket's summary to show its detail
+  instead, or the open one to hide it. A ticket without Claude activity says so.
+- When HRM cannot be read, the hours show a dash, the chart has only the token bars and a line above the table says so
+  (the log has the reason).
 - With no work in the range the page says "No work in this range - pick another range".
 - The page reads when you open it if it has no report yet, the range changed or the report is older than 5 minutes. A
   Claude notice about context or compacts opens this page on that ticket's row.
@@ -154,18 +163,24 @@ Priority (P) and ETA are only facts, so they are never colored.
 
 ## Settings
 
-The groups are listed on the left of the Settings page:
+The menu on the left lists every entry under its group; click one and only that entry shows, with its group and name
+above it ("Integrations / Jira"). A green dot beside Jira, Azure DevOps, Teams, Timesheet, VPN access or Cloudflare means
+it is set up and on, a gray one that it is not. The search box at the top finds an entry in any group by its name or what
+it holds ("jql", "holiday", "vpn"). On a phone the menu comes first as a list; an entry opens on its own screen with
+**All settings** to go back. In a wide window a text field reads as a row: its name and hint on the left, the box on the
+right. The **Open Settings** buttons elsewhere (Tickets without Jira, Timesheet without HRM or TSC) open the right entry.
 
-- **General**: theme, season (effects and a seasonal mouse cursor), language; **Notices** per topic (see above); **Phone and PC** (when a notice goes to the
-  phone); **Backup & move to another PC** (see below).
-- **Integrations**: **Connections** (Jira; **Advanced** holds the board queries, the status flow and the Available to take
-  queries), **Azure DevOps** (PR tracking) and **Teams** (watched channels, posts, Database Review). **Check** tests the
+- **General**: **Appearance** (theme, season with its effects and seasonal mouse cursor, language); **Notices** per topic
+  (see above); **Phone and PC** (when a notice goes to the phone); **Backup & move to another PC** (see below).
+- **Integrations**: **Jira** (**Advanced** holds the board queries, the status flow and the Available to take queries),
+  **Azure DevOps** (PR tracking) and **Teams** (watched channels, posts, Database Review). **Check** tests the
   saved details; **Save** checks before it saves. When Teams cannot be read (signed out, or Teams web stuck on a screen
   such as the browser's own sign-in), Teams shows **Sign in to Teams**: it opens Microsoft Edge, you sign in or skip that
   screen, and the window closes by itself.
 - **Work**: **Timesheet** (log time, HRM, TSC and its session), **Public holidays**, **Workspace** (dev repo, sibling
   repos, start prompt, clean up worktrees) and **Schedules** (how often Jira and the PRs are checked, the scheduled jobs).
-- **Remote access**: this device, VPN access, Cloudflare and the paired devices.
+- **Remote access**: this device (on a phone), **VPN access**, **Cloudflare** and **Devices** (the paired devices, their
+  activity, and revoke).
 - **Guide**: this page.
 
 ## Moving to another PC
@@ -179,7 +194,7 @@ secrets with the key that opens them, the board and its history) to one `.wdback
 The files it replaces are kept in a `before-import-<date>` folder in `%AppData%\Workday`. Keep the file and the password
 apart: anyone with both can read your tokens.
 
-Without a backup, fill in **Integrations > Connections** (Jira URL, email and API token from id.atlassian.com > Security >
+Without a backup, fill in **Integrations > Jira** (Jira URL, email and API token from id.atlassian.com > Security >
 API tokens) and **Work > Timesheet** (HRM key, TSC); the rest keeps its defaults.
 
 Sign-ins do not move with the file. Afterwards use **Work > Timesheet > Sign in to TSC** and **Integrations > Teams >
@@ -190,7 +205,7 @@ Sign in to Teams**.
 Everything specific to NOIS and MDP is a setting, so start with an empty `%AppData%\Workday` (not a copy of someone
 else's: it keeps signing in to their systems) and fill in:
 
-- **Connections**: the Jira site, your email and token, the ticket key prefix; under **Advanced**, the status names of
+- **Jira**: the Jira site, your email and token, the ticket key prefix; under **Advanced**, the status names of
   that Jira workflow. Leave the Available to take queries empty to drop that view.
 - **Azure DevOps**: organization and project, or leave them empty for no PR tracking.
 - **Teams**: the channels to watch, or none to turn Teams off.

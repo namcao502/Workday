@@ -47,7 +47,7 @@ view: nó là một dòng ngay dưới thanh trên cùng ở mọi view, bấm �
 ## Bảng công
 
 Trang **Bảng công**, từ trên xuống: **ĐÃ LÀM** (các ticket mà commit và phiên Claude cho thấy trong ngày đang chọn), ô nhập,
-tuần, mỗi ngày một thẻ, rồi **Tuần này theo ticket**. Số đỏ trên dòng của nó ở thanh bên đếm số ngày cần bạn xử lý: ngày
+tuần cùng bảng HRM và TSC của nó, mỗi ngày một thẻ, rồi **Tuần này theo ticket**. Số đỏ trên dòng của nó ở thanh bên đếm số ngày cần bạn xử lý: ngày
 trong hàng đợi mà auto-log không log được, hôm nay đã qua giờ auto-log mà chưa có gì trong hàng đợi, và những ngày tuần này
 bị đánh dấu. Rê chuột lên dòng đó để xem từng ngày và lý do.
 
@@ -61,9 +61,14 @@ bị đánh dấu. Rê chuột lên dòng đó để xem từng ngày và lý do
   nên với hôm nay nút bị tắt tới lúc đó ("(sau 6 PM)"); hãy đưa vào hàng đợi.
 - Menu **...**: **Log nghỉ...** đánh dấu ngày nghỉ (ghi đè ngày đó và bỏ các entry đang đợi của nó), **Log ngay: chỉ TSC**,
   **Log ngay: chỉ HRM** và **Xóa hàng đợi...**.
-- Tuần: mũi tên để chuyển tuần và **Đọc lại**, rồi **HRM 8h / 40h** (giờ của tuần so với 8h mỗi ngày làm, không tính ngày
-  nghỉ), **TSC 1 / 1** (số ngày đã qua mà TSC có) và số ngày làm bị nghỉ. Trong lúc đọc tuần, mỗi phần (Sheet TSC, Giờ HRM,
+- Tuần: mũi tên để chuyển tuần và **Đọc lại**, rồi lúc tuần được đọc. Trong lúc đọc tuần, mỗi phần (Sheet TSC, Giờ HRM,
   Ngày nghỉ, Task HRM, Ticket Jira) có dấu riêng. Thứ Sáu app xem lại cả tuần và báo những ngày có vẻ sai.
+- **Bảng tuần** ngay bên dưới: một dòng **HRM** và một dòng **TSC**, mỗi ngày làm một ô. Xanh kèm ✓ là đã đủ (số giờ HRM,
+  hoặc nội dung TSC); đỏ là ngày đã qua mà còn thiếu (số giờ so với 8h, hoặc **Trống**); viền đứt là hôm nay hoặc ngày đang
+  trong hàng đợi, chưa trễ; sọc tím là nghỉ phép hoặc nghỉ lễ (kèm tên ngày lễ). Cột cuối, **Tuần**, là tổng: giờ HRM so với
+  8h mỗi ngày làm (không tính ngày nghỉ) và số ngày đã qua mà TSC có. Dưới bảng, một dòng đỏ liệt kê các ngày đã qua còn thiếu
+  (**Còn thiếu: T4 25/11 (HRM, TSC)**), và một dòng vàng cho biết hôm nay còn thiếu gì trước giờ auto-log khi chưa có gì trong
+  hàng đợi. Bấm một ô để chọn ngày đó cho ô nhập. Trên điện thoại các ô rút gọn thành "8h", "✓" hoặc "Nghỉ".
 - **Mỗi ngày làm một thẻ**, Thứ Hai tới Thứ Sáu (cửa sổ hẹp thì ít thẻ mỗi hàng hơn). Bấm một thẻ để chọn ngày đó cho ô
   nhập. Thẻ là một trong:
   - **Đã log** (✓ và số giờ HRM): các ticket HRM đã log kèm giờ, dòng TSC, và "ticket cần xem" khi lần xem lại tuần đánh dấu
@@ -84,12 +89,16 @@ Trang **Thống kê** cho thấy bạn đã làm gì trong một khoảng ngày,
 **Sao chép markdown**, **Xuất CSV...**, rồi lúc báo cáo được đọc. Khoảng bạn chọn được nhớ lại.
 
 - Bên dưới là một dòng tổng: **TICKET**, **GIỜ** (từ HRM), **TOKENS** (Claude), **COMMITS** và **FILE**.
-- Tiếp theo là bốn biểu đồ: **Giờ theo ticket** và **Token theo ticket** (mười ticket đầu, phần còn lại gộp vào **Khác**),
-  rồi **Giờ theo ngày** và **Token theo ngày**. Trỏ vào một cột để xem giá trị.
+- Tiếp theo là một biểu đồ, **Theo ngày**: mỗi ngày một cặp cột, giờ (màu nhấn) và token (tím), mỗi loại tính theo ngày
+  cao nhất của chính nó. Dưới mỗi cặp là ngày và, khi khoảng có tối đa mười ngày, các giá trị; còn lại, và trên điện thoại,
+  trỏ vào cặp cột để xem.
 - Bảng có một dòng mỗi ticket: mã (bấm để mở Jira), tóm tắt, trạng thái, giờ, số phiên Claude, lượt và thời gian, token,
-  commit, file và số dòng. Bấm một dòng để mở chi tiết Claude của ticket đó dưới bảng: **Skills**, **Tools**, **Subagents**,
-  **Compacts** và **API errors** trong khoảng ngày. Ticket không có hoạt động Claude thì báo vậy.
-- Khi không đọc được HRM, cột giờ hiện gạch ngang, biểu đồ giờ bị ẩn và một dòng trên bảng báo vậy (lý do có trong log).
+  commit, file và số dòng. Ô giờ và ô token có một thanh nhỏ so với ticket lớn nhất trong khoảng, để thấy ngay ticket nào
+  tốn nhiều. Chi tiết Claude của ticket đầu tiên hiện sẵn dưới bảng: **Skills**, **Tools**, **Subagents**, **Compacts** và
+  **API errors** trong khoảng ngày. Bấm tóm tắt của ticket khác để xem chi tiết của nó, hoặc bấm ticket đang mở để ẩn đi.
+  Ticket không có hoạt động Claude thì báo vậy.
+- Khi không đọc được HRM, cột giờ hiện gạch ngang, biểu đồ chỉ còn cột token và một dòng trên bảng báo vậy (lý do có trong
+  log).
 - Không có việc nào trong khoảng thì trang báo "Không có việc trong khoảng này - chọn khoảng khác".
 - Trang đọc lại khi bạn mở nếu chưa có báo cáo, khoảng ngày đã đổi hoặc báo cáo cũ hơn 5 phút. Thông báo Claude về context
   hoặc compact mở trang này ở đúng dòng của ticket đó.
@@ -151,18 +160,24 @@ Tab ticket nằm đầu hàng tab của Không gian làm việc, mỗi ticket b�
 
 ## Cài đặt
 
-Các nhóm nằm bên trái trang Cài đặt:
+Menu bên trái liệt kê từng mục theo nhóm; bấm mục nào thì chỉ hiện mục đó, phía trên ghi nhóm và tên mục ("Tích hợp /
+Jira"). Chấm xanh cạnh Jira, Azure DevOps, Teams, Chấm công, Truy cập qua VPN hoặc Cloudflare nghĩa là đã thiết lập và đang
+bật, chấm xám là chưa. Ô tìm kiếm ở trên cùng tìm mục ở mọi nhóm theo tên hoặc nội dung ("jql", "holiday", "vpn"). Trên
+điện thoại, menu hiện trước dạng danh sách; mở một mục thì mục đó chiếm cả màn hình, có nút **Tất cả cài đặt** để quay lại.
+Ở cửa sổ rộng, mỗi ô nhập là một dòng: tên và gợi ý bên trái, ô bên phải. Các nút **Mở Cài đặt** ở nơi khác (Ticket khi
+chưa nối Jira, Bảng công khi chưa nối HRM hoặc TSC) mở đúng mục cần điền.
 
-- **Chung**: giao diện, mùa (hiệu ứng và con trỏ chuột theo mùa), ngôn ngữ; **Thông báo** theo từng chủ đề (xem ở trên); **Điện thoại và PC** (khi nào thông báo
-  gửi sang điện thoại); **Sao lưu & chuyển máy** (xem bên dưới).
-- **Tích hợp**: **Kết nối** (Jira; **Nâng cao** chứa các câu query của bảng, luồng trạng thái và các query của Có thể nhận),
+- **Chung**: **Giao diện** (theme, mùa với hiệu ứng và con trỏ chuột theo mùa, ngôn ngữ); **Thông báo** theo từng chủ đề
+  (xem ở trên); **Điện thoại và PC** (khi nào thông báo gửi sang điện thoại); **Sao lưu & chuyển máy** (xem bên dưới).
+- **Tích hợp**: **Jira** (**Nâng cao** chứa các câu query của bảng, luồng trạng thái và các query của Có thể nhận),
   **Azure DevOps** (theo dõi PR) và **Teams** (kênh theo dõi, bài đăng, Database Review). **Kiểm tra** thử thông tin đã lưu;
   **Lưu** kiểm tra trước rồi mới lưu. Khi không đọc được Teams (đã đăng xuất, hoặc Teams web kẹt ở một màn hình như đăng
   nhập tài khoản của trình duyệt), Teams hiện **Đăng nhập Teams**: nút này mở Microsoft Edge, bạn đăng nhập hoặc bỏ qua
   màn hình đó, cửa sổ tự đóng.
 - **Công việc**: **Chấm công** (giờ log, HRM, TSC và phiên TSC), **Ngày lễ**, **Không gian làm việc** (dev repo, các repo
   anh em, câu lệnh bắt đầu, dọn worktree) và **Lịch chạy** (bao lâu kiểm tra Jira và PR một lần, các job theo lịch).
-- **Truy cập từ xa**: thiết bị này, truy cập qua VPN, Cloudflare và các thiết bị đã ghép nối.
+- **Truy cập từ xa**: thiết bị này (khi mở trên điện thoại), **Truy cập qua VPN**, **Cloudflare** và **Thiết bị** (các
+  thiết bị đã ghép nối, hoạt động của chúng, và thu hồi).
 - **Hướng dẫn**: trang này.
 
 ## Chuyển sang máy khác
@@ -175,7 +190,7 @@ chúng, bảng ticket và lịch sử) vào một file `.wdbackup` khóa bằng 
 cùng chỗ, gõ mật khẩu, bấm **Nhập file**, rồi **Khởi động lại ngay**. Các file bị thay được giữ lại trong thư mục
 `before-import-<ngày>` trong `%AppData%\Workday`. Giữ file và mật khẩu ở hai nơi riêng: ai có cả hai đều đọc được token của bạn.
 
-Nếu không có bản sao lưu, điền **Tích hợp > Kết nối** (Jira URL, email và API token lấy ở id.atlassian.com > Security >
+Nếu không có bản sao lưu, điền **Tích hợp > Jira** (Jira URL, email và API token lấy ở id.atlassian.com > Security >
 API tokens) và **Công việc > Chấm công** (HRM key, TSC); phần còn lại giữ mặc định.
 
 Phiên đăng nhập không đi theo file. Sau đó dùng **Công việc > Chấm công > Đăng nhập TSC** và **Tích hợp > Teams >
@@ -186,7 +201,7 @@ Phiên đăng nhập không đi theo file. Sau đó dùng **Công việc > Chấ
 Mọi thứ riêng của NOIS và MDP đều là cài đặt, nên hãy bắt đầu với `%AppData%\Workday` trống (đừng copy của người khác: app
 sẽ tiếp tục đăng nhập vào hệ thống của họ) rồi điền:
 
-- **Kết nối**: site Jira, email và token của bạn, tiền tố mã ticket; trong **Nâng cao**, tên các trạng thái theo workflow
+- **Jira**: site Jira, email và token của bạn, tiền tố mã ticket; trong **Nâng cao**, tên các trạng thái theo workflow
   Jira đó. Để trống các query của Có thể nhận nếu không cần mục này.
 - **Azure DevOps**: organization và project, hoặc để trống nếu không theo dõi PR.
 - **Teams**: các kênh cần theo dõi, hoặc không kênh nào để tắt Teams.
