@@ -41,7 +41,11 @@ function StatsTable({ title, headers, rows }: StatsTableProps): React.JSX.Elemen
               {rows.map((cells, index) => (
                 <tr key={`${String(index)}-${cells.join('|')}`}>
                   {cells.map((cell, cellIndex) => (
-                    <td key={headers[cellIndex]} className="px-3 py-2 align-top">
+                    // The first column is a time or a name: one line, the rest wraps.
+                    <td
+                      key={headers[cellIndex]}
+                      className={`px-3 py-2 align-top ${cellIndex === 0 ? 'whitespace-nowrap' : ''}`}
+                    >
                       {cell}
                     </td>
                   ))}

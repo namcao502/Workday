@@ -157,23 +157,28 @@ it('hours cells show a dash when HRM was not read', async () => {
   expect(screen.getByText('HRM hours could not be read (see log)')).toBeInTheDocument()
 })
 
-it('clicking a row shows its Claude detail tables', async () => {
+it('the Claude detail of the first ticket shows from the start, a click hides or shows it', async () => {
   stubFetch((url) =>
-    jsonResponse(url.startsWith('/api/insights') ? view([row('MDP-1')]) : settingsView()),
+    jsonResponse(
+      url.startsWith('/api/insights') ? view([row('MDP-1'), row('MDP-2')]) : settingsView(),
+    ),
   )
   renderWithQuery(<InsightsPage />)
-  expect(screen.queryByText('plan-write')).not.toBeInTheDocument()
-  fireEvent.click(await screen.findByText('Summary of MDP-1'))
-  expect(screen.getByText('plan-write')).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'MDP-1' })).toBeInTheDocument()
+  expect(screen.getAllByText('plan-write')).toHaveLength(1)
   expect(screen.getByText('Bash')).toBeInTheDocument()
   expect(screen.getByText('150k → 20k')).toBeInTheDocument()
+  fireEvent.click(screen.getByText('Summary of MDP-1'))
+  expect(screen.queryByText('plan-write')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByText('Summary of MDP-2'))
+  expect(screen.getByRole('heading', { name: 'MDP-2' })).toBeInTheDocument()
 })
 
 it('detail times follow the configured time zone', async () => {
   const utc = settingsView({ config: { ...settingsView().config, timeZone: 'UTC' } })
   stubFetch((url) => jsonResponse(url.startsWith('/api/insights') ? view([row('MDP-1')]) : utc))
   renderWithQuery(<InsightsPage />)
-  fireEvent.click(await screen.findByText('Summary of MDP-1'))
+  await screen.findByText('Summary of MDP-1')
   // 03:00Z is 3:00 AM in UTC, 10:00 AM in Ho Chi Minh.
   expect(await screen.findAllByText(/Nov 10, 3:00\sAM/)).not.toHaveLength(0)
   expect(screen.queryByText(/10:00\sAM/)).not.toBeInTheDocument()

@@ -12,6 +12,32 @@ interface ReportTableProps {
   readonly onSelect: (key: string) => void
 }
 
+// A value with a thin bar scaled to the range's largest, so the big tickets stand out without a chart.
+function BarCell({
+  text,
+  value,
+  max,
+  fill,
+}: {
+  readonly text: string
+  readonly value: number
+  readonly max: number
+  readonly fill: string
+}): React.JSX.Element {
+  const width = max === 0 ? 0 : Math.round((value / max) * 100)
+  return (
+    <span className="flex items-center gap-2">
+      <span className="w-14 flex-none text-right tabular-nums">{text}</span>
+      <span className="h-1.5 w-16 flex-none overflow-hidden rounded-full bg-surface-secondary">
+        <span
+          className={`block h-full rounded-full ${fill}`}
+          style={{ width: `${String(width)}%` }}
+        />
+      </span>
+    </span>
+  )
+}
+
 function numberCell(value: number): string {
   return value === 0 ? EMPTY_CELL : String(value)
 }
@@ -52,13 +78,15 @@ export function ReportTable({
   urlFor,
   onSelect,
 }: ReportTableProps): React.JSX.Element {
+  const maxHours = Math.max(0, ...report.rows.map((row) => row.hours ?? 0))
+  const maxTokens = Math.max(0, ...report.rows.map((row) => totalTokens(row.tokens)))
   const th = 'whitespace-nowrap px-3 py-2 text-left text-xs font-medium text-muted'
   const td = 'px-3 py-2 align-top'
   const num = `${td} whitespace-nowrap text-right`
   const centered = `${td} text-center`
   return (
     <Card className="overflow-x-auto p-0">
-      <table className="w-full min-w-[960px] text-sm">
+      <table className="w-full min-w-[1100px] text-sm">
         <thead>
           <tr>
             {headers().map((header, index) => (
@@ -78,11 +106,15 @@ export function ReportTable({
           {report.rows.map((row) => {
             const url = urlFor(row.ticketKey)
             return (
-              <tr key={row.ticketKey} data-selected={row.ticketKey === selectedKey}>
+              <tr
+                key={row.ticketKey}
+                data-selected={row.ticketKey === selectedKey}
+                className={row.ticketKey === selectedKey ? 'bg-accent-soft/50' : ''}
+              >
                 <td className={centered}>
                   {url === null ? row.ticketKey : <KeyPill ticketKey={row.ticketKey} url={url} />}
                 </td>
-                <td className={`${td} max-w-xs`}>
+                <td className={`${td} min-w-64`}>
                   <button
                     type="button"
                     className="w-full cursor-pointer text-left"
@@ -104,11 +136,29 @@ export function ReportTable({
                     />
                   )}
                 </td>
-                <td className={num}>{hoursCell(row, report.hoursRead)}</td>
+                <td className={td}>
+                  {report.hoursRead && row.hours !== null ? (
+                    <BarCell
+                      text={hoursCell(row, report.hoursRead)}
+                      value={row.hours}
+                      max={maxHours}
+                      fill="bg-accent"
+                    />
+                  ) : (
+                    <span className="block w-14 text-right">{EMPTY_CELL}</span>
+                  )}
+                </td>
                 <td className={num}>{numberCell(row.sessions)}</td>
                 <td className={num}>{numberCell(row.turns)}</td>
                 <td className={num}>{formatClaudeTime(row.claudeSeconds)}</td>
-                <td className={num}>{formatTokens(totalTokens(row.tokens))}</td>
+                <td className={td}>
+                  <BarCell
+                    text={formatTokens(totalTokens(row.tokens))}
+                    value={totalTokens(row.tokens)}
+                    max={maxTokens}
+                    fill="bg-violet-500"
+                  />
+                </td>
                 <td className={num}>{numberCell(row.commits?.commits ?? 0)}</td>
                 <td className={num}>{numberCell(row.commits?.files ?? 0)}</td>
                 <td className={num}>{linesCell(row)}</td>

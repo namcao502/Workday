@@ -4,8 +4,8 @@ import { totalTokens, type TicketReport } from '@workday/core'
 import { useState } from 'react'
 import { t } from '../i18n.js'
 import { EmptyState } from '../ui/EmptyState.js'
-import { BarChart, type Bar } from './BarChart.js'
-import { dayLabel, EMPTY_CELL, formatHours, formatTokens } from './insightsText.js'
+import { DayChart, type DayValue } from './DayChart.js'
+import { EMPTY_CELL, formatHours, formatTokens } from './insightsText.js'
 import { ReportDetail } from './ReportDetail.js'
 import { ReportTable } from './ReportTable.js'
 
@@ -40,50 +40,19 @@ function totals(report: TicketReport): readonly Fact[] {
   ]
 }
 
-function dayBars(byDay: Readonly<Record<string, number>>): readonly Bar[] {
-  return Object.entries(byDay)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([day, value]) => ({ label: dayLabel(day), value }))
-}
-
-function Charts({ report }: { readonly report: TicketReport }): React.JSX.Element {
-  const hoursBars = report.rows.map((row) => ({ label: row.ticketKey, value: row.hours ?? 0 }))
-  const tokenBars = report.rows.map((row) => ({
-    label: row.ticketKey,
-    value: totalTokens(row.tokens),
+// Every day that has hours or tokens, in order; hours stay null when HRM was not read.
+function dayValues(report: TicketReport): readonly DayValue[] {
+  const days = [...new Set([...Object.keys(report.hoursByDay), ...Object.keys(report.tokensByDay)])]
+  return days.sort().map((day) => ({
+    day,
+    hours: report.hoursRead ? (report.hoursByDay[day] ?? 0) : null,
+    tokens: report.tokensByDay[day] ?? 0,
   }))
-  return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(380px,100%),1fr))] items-start gap-x-6 gap-y-4">
-      {report.hoursRead ? (
-        <BarChart title={t('insights.hoursByTicket')} bars={hoursBars} formatValue={formatHours} />
-      ) : null}
-      <BarChart
-        title={t('insights.tokensByTicket')}
-        bars={tokenBars}
-        formatValue={formatTokens}
-        measure="tokens"
-      />
-      {report.hoursRead ? (
-        <BarChart
-          title={t('insights.hoursByDay')}
-          bars={dayBars(report.hoursByDay)}
-          formatValue={formatHours}
-          horizontal={false}
-        />
-      ) : null}
-      <BarChart
-        title={t('insights.tokensByDay')}
-        bars={dayBars(report.tokensByDay)}
-        formatValue={formatTokens}
-        measure="tokens"
-        horizontal={false}
-      />
-    </div>
-  )
 }
 
 export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Element {
-  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  // undefined = nothing picked yet: the first ticket's detail shows; null = the user closed it.
+  const [pickedKey, setPickedKey] = useState<string | null | undefined>(undefined)
   if (report.rows.length === 0) {
     return (
       <EmptyState
@@ -92,22 +61,26 @@ export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Eleme
       />
     )
   }
-  const selected = report.rows.find((row) => row.ticketKey === selectedKey) ?? null
+  // A pick that is not in this range (another range was read) falls back to the first ticket too.
+  const picked =
+    pickedKey === undefined
+      ? undefined
+      : pickedKey === null
+        ? null
+        : report.rows.find((row) => row.ticketKey === pickedKey)
+  const selected = picked === undefined ? (report.rows[0] ?? null) : picked
+  const selectedKey = selected?.ticketKey ?? null
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
         {totals(report).map((fact) => (
-          <div key={fact.label} className="flex flex-col items-center text-center">
+          <Card key={fact.label} className="gap-0 px-4 py-3">
             <span className="text-xs font-medium text-muted">{fact.label}</span>
-            <span className="text-2xl font-semibold">{fact.value}</span>
-          </div>
+            <span className="text-2xl font-semibold tabular-nums">{fact.value}</span>
+          </Card>
         ))}
       </div>
-      <Card>
-        <Card.Content>
-          <Charts report={report} />
-        </Card.Content>
-      </Card>
+      <DayChart days={dayValues(report)} />
       {report.hoursRead ? null : (
         <p className="text-sm text-muted">{t('insights.hrmHoursCouldNotBeRead')}</p>
       )}
@@ -115,7 +88,9 @@ export function ReportBody({ report, urlFor }: ReportBodyProps): React.JSX.Eleme
         report={report}
         selectedKey={selectedKey}
         urlFor={urlFor}
-        onSelect={setSelectedKey}
+        onSelect={(key) => {
+          setPickedKey(key === selectedKey ? null : key)
+        }}
       />
       {selected === null ? null : (
         <Card aria-label={selected.ticketKey}>
