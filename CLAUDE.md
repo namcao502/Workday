@@ -13,6 +13,8 @@ npm run dev        # server (tsx watch, port 4870) + Vite client (port 5173)
 npm run build      # tsc -b for core + server, then vite build
 npm start          # node --env-file-if-exists=.env packages/server/dist/main.js (serves packages/client/dist)
 npm test           # all three workspaces
+npm run test:coverage   # the same with v8 coverage (text summary + packages/*/coverage/index.html)
+npm run test:e2e   # after npm run build: the built server on a temp data dir, driven through Edge (packages/e2e)
 npm run typecheck
 npm run lint
 npm run format
@@ -31,7 +33,9 @@ npx vitest run -t "health returns ok" --root packages/server
 - `packages/core` (`@workday/core`): domain logic and the port interfaces. No I/O.
 - `packages/server` (`@workday/server`): Fastify app (`createApp(deps)`), REST + WebSocket, adapters for the ports.
 - `packages/client` (`@workday/client`): Vite + React UI built on HeroUI + Tailwind; `src/ui/` holds the shared components, hand-written CSS remains only for rendered content (markdown, code, diff, Teams HTML).
+- `packages/e2e` (`@workday/e2e`): end-to-end tests (`*.e2e.ts`) against the built app with no integrations configured.
 - `desktop/WorkdayDesktop`: .NET WinForms + WebView2 shell (tray, notifications, starts the server); tests in `desktop/WorkdayDesktop.Tests`.
+- `.github/workflows/ci.yml`: on push to main and on PRs, Windows: format, lint, typecheck, test, build, e2e; and the desktop tests.
 
 `@workday/core` exports a `development` condition pointing at `src`, so dev and tests need no core build;
 `npm start` uses the built `dist`.
